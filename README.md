@@ -12,7 +12,7 @@
 <h3 align="center">Ambulo's Property Management System</h3>
 
 <p align="center">
-    -----insert project description here----
+    A team-based software development project that delivered a custom web-based property management system for Ambulo's Properties. The solution digitizes and optimizes key operational processes, improving efficiency and reducing manual workflows through modern web technologies.
   </p>  
 </div>
 
@@ -35,6 +35,18 @@
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+----------------------------------------------------------------------------------------------------
+## 👥 Team
+
+This project was developed by a collaborative team of 4 developers:
+
+| Name | Role | Contributions | GitHub | LinkedIn |
+|------|------|---------------|--------|----------|
+| **Kei Lebron** | Project Manager & Backend Developer | Project coordination, server-side logic, database architecture | [@keilebron](https://github.com/kklebron) | [LinkedIn](https://linkedin.com/in/kei-lebron) |
+| **Rea Buena** | Backend Developer | Server-side logic, database operations, API endpoints | [@reabuena](https://github.com/rrreigun) | N/A |
+| **Joshua Deputo** | Frontend Developer | User interface implementation, client-side functionality, responsive layouts | [@joshuadeputo](https://github.com/joshuadeputo) | N/A |
+| **Jerson Matuguina** | UI/UX Designer | Web design, user experience | [@jersonmatuguina](https://github.com/jersonmatuguina) | N/A |
+----------------------------------------------------------------------------------------------------
 
 <!-- PROJECT ROADMAP -->
 ## Project Roadmap
@@ -67,7 +79,11 @@
 - [ ] Maintenance Ticketing - Admin side
 - [ ] Maintenance Request - user side
 - [ ] Inbox - send/received messages
+      
+----------------------------------------------------------------------------------------------------
 
+## **Gant Chart**
+![Gant Chart](https://github.com/user-attachments/assets/4f28dfd0-9b42-44cb-a950-4d4a9316f9b5)
 
 
 See the [open issues](https://github.com/RankFour/AmbuloProperties/issues) for a full list of proposed features (and known issues).
