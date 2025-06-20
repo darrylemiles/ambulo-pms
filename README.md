@@ -28,12 +28,10 @@
 
 ### Built With
 
-
-* [![React][React.js]][React-url]
-* [![Bootstrap][Bootstrap.com]][Bootstrap-url]
-* [![JQuery][JQuery.com]][JQuery-url]
 * ![HTML](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 * ![CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
+* ![React](https://img.shields.io/badge/REACT-20232A?logo=react&logoColor=61DAFB)
+* ![Bootstrap](https://img.shields.io/badge/BOOTSTRAP-563D7C?logo=bootstrap&logoColor=white)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
