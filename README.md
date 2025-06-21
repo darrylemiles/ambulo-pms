@@ -3,10 +3,10 @@
 
 <!-- PROJECT LOGO -->
 <br />
-<div align="center">
+<!-- <div align="center">
   <a href="https://github.com/RankFour/AmbuloProperties#">
     <img src="images/ambulo_prop_logo.png" alt="Logo" width="80" height="80">
-  </a>
+  </a> -->
 
 
 <h3 align="center">Ambulo's Property Management System</h3>
@@ -46,7 +46,11 @@ This project was developed by a collaborative team of 4 developers:
 | **Rea Buena** | Backend Developer | Server-side logic, database operations, API endpoints | [@reabuena](https://github.com/rrreigun) | N/A |
 | **Joshua Deputo** | Frontend Developer | User interface implementation, client-side functionality, responsive layouts | [@joshuadeputo](https://github.com/joshuadeputo) | N/A |
 | **Jerson Matuguina** | UI/UX Designer | Web design, user experience | [@jersonmatuguina](https://github.com/jersonmatuguina) | N/A |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 ----------------------------------------------------------------------------------------------------
+
+
 
 <!-- PROJECT ROADMAP -->
 ## Project Roadmap
@@ -82,7 +86,7 @@ This project was developed by a collaborative team of 4 developers:
       
 ----------------------------------------------------------------------------------------------------
 
-## **Gant Chart**
+## **Gantt Chart**
 ![Gant Chart](https://github.com/user-attachments/assets/4f28dfd0-9b42-44cb-a950-4d4a9316f9b5)
 
 
