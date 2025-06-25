@@ -31,7 +31,10 @@
 * ![HTML](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 * ![CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
 * ![React](https://img.shields.io/badge/REACT-20232A?logo=react&logoColor=61DAFB)
-* ![Bootstrap](https://img.shields.io/badge/BOOTSTRAP-563D7C?logo=bootstrap&logoColor=white)
+* ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
+* ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
+* ![Express.js](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white)
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -43,7 +46,7 @@ This project was developed by a collaborative team of 4 developers:
 | Name | Role | Contributions | GitHub | LinkedIn |
 |------|------|---------------|--------|----------|
 | **Kei Lebron** | Project Manager & Backend Developer | Project coordination, server-side logic, database architecture | [@keilebron](https://github.com/kklebron) | [LinkedIn](https://linkedin.com/in/kei-lebron) |
-| **Rea Buena** | Backend Developer | Server-side logic, database operations, API endpoints | [@reabuena](https://github.com/rrreigun) | N/A |
+| **Rea Buena** | Backend Developer | Server-side logic, database operations, API endpoints | [@rrreigun](https://github.com/rrreigun) | N/A |
 | **Joshua Deputo** | Frontend Developer | User interface implementation, client-side functionality, responsive layouts | [@joshuadeputo](https://github.com/joshuadeputo) | N/A |
 | **Jerson Matuguina** | UI/UX Designer | Web design, user experience | [@jersonmatuguina](https://github.com/jersonmatuguina) | N/A |
 
@@ -83,13 +86,14 @@ This project was developed by a collaborative team of 4 developers:
 - [ ] Maintenance Ticketing - Admin side
 - [ ] Maintenance Request - user side
 - [ ] Inbox - send/received messages
-      
+
+See the [open issues](https://github.com/RankFour/AmbuloProperties/issues) for a full list of proposed features (and known issues).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ----------------------------------------------------------------------------------------------------
 
 ## **Gantt Chart**
-![Gant Chart](https://github.com/user-attachments/assets/4f28dfd0-9b42-44cb-a950-4d4a9316f9b5)
-
-
-See the [open issues](https://github.com/RankFour/AmbuloProperties/issues) for a full list of proposed features (and known issues).
+![Gantt Chart](https://github.com/user-attachments/assets/4f28dfd0-9b42-44cb-a950-4d4a9316f9b5)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
