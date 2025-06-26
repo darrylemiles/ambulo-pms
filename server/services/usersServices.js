@@ -1,8 +1,59 @@
+import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcrypt";
+import conn from "./../config/db.js";
+
+const pool = await conn();
+
 const createUser = async (userData = {}) => {
+  const {
+    first_name,
+    last_name,
+    business_name,
+    business_type,
+    email,
+    phone_number,
+    password
+  } = userData || {};
+
+  const user_id = uuidv4();
+
   try {
+    console.log("Creating user with ID:", user_id);
+    console.log("Creating user with data:", userData);
+
+    if (!password) {
+      throw new Error("Password is required to create a user.");
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = {
+      user_id,
+      first_name,
+      last_name,
+      business_name,
+      business_type,
+      email,
+      phone_number,
+      password_hash: hashedPassword, 
+      isAdmin: 0,
+    };
+
+    Object.keys(newUser).forEach(
+      (key) => newUser[key] === undefined && delete newUser[key]
+    );
+
+    const fields = Object.keys(newUser).join(", ");
+    const placeholders = Object.keys(newUser).map(() => "?").join(", ");
+    const values = Object.values(newUser);
+
+    const query = `INSERT INTO users (${fields}) VALUES (${placeholders})`;
+    await pool.query(query, values);
+
     return {
       message: "User created successfully",
-      userData,
+      user_id,
     };
   } catch (error) {
     console.error("Error creating user:", error);
@@ -12,97 +63,52 @@ const createUser = async (userData = {}) => {
 
 const getUsers = async (queryObj = {}) => {
   try {
-    const users = {
-    "users": [
-        {
-            "_id": "68592d9eb74b1764029fb18e",
-            "userId": "8ce89274-007c-4215-b43e-9cde4dbf66cc",
-            "firstName": "Darryle",
-            "lastName": "Bacay",
-            "emailAddress": "darryle2.bacay@example.com",
-            "avatar": "https://res.cloudinary.com/demo/image/upload/sample-avatar.jpg",
-            "status": "ACTIVE",
-            "position": [
-                {
-                    "label": "Master Admin",
-                    "value": "MASTER_ADMIN"
-                }
-            ],
-            "createdAt": "2025-06-23T10:34:06.245Z",
-            "updatedAt": "2025-06-23T10:34:06.245Z",
-            "__v": 0
-        },
-        {
-            "_id": "68592d9ab74b1764029fb18c",
-            "userId": "1fa4a42d-2d06-40ee-aff3-052de60510f8",
-            "firstName": "Darryle",
-            "lastName": "Bacay",
-            "emailAddress": "darryle1.bacay@example.com",
-            "avatar": "https://res.cloudinary.com/demo/image/upload/sample-avatar.jpg",
-            "status": "ACTIVE",
-            "position": [
-                {
-                    "label": "Master Admin",
-                    "value": "MASTER_ADMIN"
-                }
-            ],
-            "createdAt": "2025-06-23T10:34:02.720Z",
-            "updatedAt": "2025-06-23T10:34:02.720Z",
-            "__v": 0
-        }
-    ],
-    "totalPages": 2,
-    "currentPage": 1,
-    "totalUsers": 3
-}
-    return users;
+    let query = 'SELECT * FROM users WHERE isAdmin = 0';
+    const params = [];
+
+    const filters = Object.entries(queryObj)
+      .filter(([_, value]) => value !== undefined && value !== "")
+      .map(([key, value]) => {
+        params.push(value);
+        return `${key} = ?`;
+      });
+
+    if (filters.length > 0) {
+      query += ' AND ' + filters.join(' AND ');
+    }
+
+    const [rows] = await pool.query(query, params);
+    return rows;
   } catch (error) {
     console.error("Error getting users:", error);
     throw new Error(error.message || "Failed to get users");
   }
 };
 
-const getSingleUserById = async (userId = "") => {
+const getSingleUserById = async (user_id = "") => {
   try {
-    
-    const user = {
-            "_id": "68592d9ab74b1764029fb18c",
-            "userId": "1fa4a42d-2d06-40ee-aff3-052de60510f8",
-            "firstName": "Darryle",
-            "lastName": "Bacay",
-            "emailAddress": "darryle1.bacay@example.com",
-            "avatar": "https://res.cloudinary.com/demo/image/upload/sample-avatar.jpg",
-            "status": "ACTIVE",
-            "position": [
-                {
-                    "label": "Master Admin",
-                    "value": "MASTER_ADMIN"
-                }
-            ],
-            "createdAt": "2025-06-23T10:34:02.720Z",
-            "updatedAt": "2025-06-23T10:34:02.720Z",
-            "__v": 0
-        }
+    const query = `
+      SELECT * FROM users WHERE user_id = ?
+    `;
 
+    const [user] = await pool.query(query, [user_id]);
 
-        if (!user) {
-            throw new Error("[User] not found!!!!!")
-        }
+    if (user.length === 0) {
+      throw new Error("[User] not found!.");
+    }
 
-        return user;
+    return user[0];
+
   } catch (error) {
     console.error("Error getting user:", error);
     throw new Error(error.message || "Failed to get user");
   }
 };
 
-const updateSingleUserById = async (userId = "", userData = {}) => {
+const updateSingleUserById = async (user_id = "", userData = {}) => {
   try {
-
-    
-
     return {
-      message: `${userId} has been successfully updated!!!!!`,
+      message: `${user_id} has been successfully updated!!!!!`,
       userData,
     };
   } catch (error) {
@@ -111,22 +117,21 @@ const updateSingleUserById = async (userId = "", userData = {}) => {
   }
 };
 
-const deleteUserById = async (userId = "") => {
+const deleteUserById = async (user_id = "") => {
   try {
-    const user = await getSingleUserById(userId);
+    const user = await getSingleUserById(user_id);
 
-    return `User with an id of ${userId} has been successfully deleted.`;
+    return `User with an id of ${user_id} has been successfully deleted.`;
   } catch (error) {
     console.error("Error deleting user:", error);
     throw new Error(error.message || "Failed to delete user");
   }
 };
 
-
 export default {
-  createUser, 
+  createUser,
   getUsers,
   getSingleUserById,
   updateSingleUserById,
-  deleteUserById
+  deleteUserById,
 };
