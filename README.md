@@ -4,7 +4,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://imgur.com/a/ambulo-pms-logo-6ewWKOu">
+  <a href="https://imgur.com/gallery/ambulo-pms-logo-6ewWKOu#yNwir48">
     <img src="images/ambulo_prop_logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -24,7 +24,7 @@
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
+----------------------------------------------------------------------------------------------------
 
 ### Built With
 
@@ -52,6 +52,8 @@ This project was developed by a collaborative team of 4 developers:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+----------------------------------------------------------------------------------------------------
+
 <!-- PROJECT ROADMAP -->
 ## Project Roadmap
 
@@ -78,7 +80,7 @@ This project was developed by a collaborative team of 4 developers:
 **BACK-END**
 - [x] Users
 - [x] Properties 
-- [ ] Maintenance Ticketing
+- [x] Maintenance Ticketing
 - [ ] Messages
 - [ ] Service Providers
 - [ ] Reports
@@ -94,3 +96,5 @@ See the [open issues](https://github.com/RankFour/AmbuloProperties/issues) for a
 ![Gantt Chart](https://github.com/user-attachments/assets/4f28dfd0-9b42-44cb-a950-4d4a9316f9b5)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+----------------------------------------------------------------------------------------------------
