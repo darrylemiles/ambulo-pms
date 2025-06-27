@@ -12,6 +12,7 @@ import express from 'express';
 
 /*  ========== Importing Routes ========== */
 import usersRoutes from './routes/usersRoutes.js';
+import propertiesRoutes from './routes/propertiesRoutes.js';
 
 const app = express();
 const __dirname = path.resolve();
@@ -33,6 +34,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true, parameterLimit: 5000
 
 /*  ========== API - Routes ========== */
 app.use(`/api/${API_VERSION}/users`, usersRoutes);
+app.use(`/api/${API_VERSION}/properties`, propertiesRoutes);
 
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'client', 'build')));
