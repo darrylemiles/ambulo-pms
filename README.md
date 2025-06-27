@@ -3,10 +3,10 @@
 
 <!-- PROJECT LOGO -->
 <br />
-<!-- <div align="center">
-  <a href="https://github.com/RankFour/AmbuloProperties#">
+<div align="center">
+  <a href="https://imgur.com/a/ambulo-pms-logo-6ewWKOu">
     <img src="images/ambulo_prop_logo.png" alt="Logo" width="80" height="80">
-  </a> -->
+  </a>
 
 
 <h3 align="center">Ambulo's Property Management System</h3>
@@ -20,7 +20,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-<p>INSERT DESCRIPTION HERE</p>
+<p>This project is a web-based Property Management System (PMS) developed to streamline and automate the operations of Ambulo Properties. The system provides a centralized platform for managing tenant information, lease agreements, rent notices, maintenance requests, and internal communication. Administrators can oversee all operations through a dedicated dashboard, manually input payments, generate online receipts, and access comprehensive financial reports. Tenants are given restricted access through a dedicated portal where they can view leases, track rent payments, and submit maintenance requests.</p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -51,14 +51,11 @@ This project was developed by a collaborative team of 4 developers:
 | **Jerson Matuguina** | UI/UX Designer | Web design, user experience | [@jersonmatuguina](https://github.com/jersonmatuguina) | N/A |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-----------------------------------------------------------------------------------------------------
-
-
 
 <!-- PROJECT ROADMAP -->
 ## Project Roadmap
 
-**Week 1**(June 17) - Week 2 (June 28)
+**Week 1**(June 17) - **Week 2** (June 28)
 
 **DESIGN**
 - [x] Login
@@ -79,13 +76,13 @@ This project was developed by a collaborative team of 4 developers:
 - [ ] Inbox - send/received messages
 
 **BACK-END**
-- [ ] Login
-- [ ] Home Page 
-- [ ] Admin Dashboard
-- [ ] User Dashboard
-- [ ] Maintenance Ticketing - Admin side
-- [ ] Maintenance Request - user side
-- [ ] Inbox - send/received messages
+- [x] Users
+- [x] Properties 
+- [ ] Maintenance Ticketing
+- [ ] Messages
+- [ ] Service Providers
+- [ ] Reports
+- [ ] Chatbot
 
 See the [open issues](https://github.com/RankFour/AmbuloProperties/issues) for a full list of proposed features (and known issues).
 
