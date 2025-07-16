@@ -1,0 +1,121 @@
+.header {
+  background: #92B6B8;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.header.scrolled {
+  padding: 12px 0;
+  background: rgba(146, 182, 184, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  max-width: 1400px; 
+  margin: 0 auto;
+  padding: 0 20px; 
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 600;
+  color: #201F23;
+  display: flex;
+  align-items: center;
+  z-index: 1001;
+  transition: font-size 0.3s ease; /* Smooth size transition */
+}
+
+/* Slightly smaller logo when scrolled */
+.header.scrolled .logo {
+  font-size: 22px;
+}
+
+.logo::before {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #201F23;
+  font-weight: 500;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-links a:hover {
+  color: #3d5e86;
+  transform: translateY(-1px);
+}
+
+.main-content {
+  margin-top: 90px;
+}
+
+.header.scrolled ~ .main-content {
+  margin-top: 80px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .header {
+    padding: 15px 0;
+  }
+  
+  .header.scrolled {
+    padding: 10px 0;
+  }
+  
+  nav {
+    flex-direction: column;
+    align-items: center;
+    max-width: 100%;
+    padding: 0 10px;
+  }
+  
+  .nav-links {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .logo {
+    font-size: 20px;
+  }
+  
+  .header.scrolled .logo {
+    font-size: 18px;
+  }
+  
+  /* Adjust main content margin for mobile */
+  .main-content {
+    margin-top: 140px; /* More space needed for stacked mobile nav */
+  }
+  
+  .header.scrolled ~ .main-content {
+    margin-top: 120px;
+  }
+}
