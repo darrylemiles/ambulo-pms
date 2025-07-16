@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="CSS/adminDashboard.css">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <span>☰</span>
+    </button>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="assets/logo-property.png" alt="Logo" class="logo">
+            <div class="sidebar-title">Ambulo Properties</div>
+        </div>
+        
+        <div class="sidebar-toggle" id="sidebarToggle">
+            <span>←</span>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="#" class="nav-link active">
+                    <div class="nav-icon">📊</div>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Property Management</div>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">🏠</div>
+                    <span class="nav-text">Properties</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">👥</div>
+                    <span class="nav-text">Tenants</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">📋</div>
+                    <span class="nav-text">Leases</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Operations</div>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">🔧</div>
+                    <span class="nav-text">Maintenance</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">💰</div>
+                    <span class="nav-text">Payments</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">📊</div>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="header">
+            <div class="title-section">
+                <div>
+                    <h1>Hello, Kei!</h1>
+                    <h2>Dashboard</h2>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search Anything...">
+                </div>
+                <button class="icon notification">🔔</button>
+                <button class="icon inbox">✉️</button>
+                <button class="profile">K</button>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card tasks-card">
+                <div class="card-header">
+                    <h3 class="card-title">Tasks 📋</h3>
+                </div>
+                <div class="task-item">
+                    <div class="task-date">📅 May 13, 2025 at 1:00 PM</div>
+                    <div class="task-title">Property Checking at STI</div>
+                </div>
+                <div class="task-item">
+                    <div class="task-date">📅 May 14, 2025 at 12:00 PM</div>
+                    <div class="task-title">List Unit 9 - Silong, Cavite</div>
+                </div>
+                <div class="task-item">
+                    <div class="task-date">📅 May 15, 2025 at 09:00 AM</div>
+                    <div class="task-title">New Tenant welcoming</div>
+                </div>
+                <div class="task-item">
+                    <div class="task-date">📅 May 20, 2025 at 3:00 PM</div>
+                    <div class="task-title">Maintenance at Unit 11 103</div>
+                </div>
+                <div class="task-item">
+                    <div class="task-date">📅 May 22, 2025 at 07:00 PM</div>
+                    <div class="task-title">Meralco Bill Due Date</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Total Property</h3>
+                </div>
+                <div class="card-value">12</div>
+                <div class="card-change negative">📉 20% Last month total 12</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Total number of Transaction</h3>
+                </div>
+                <div class="card-value">36</div>
+                <div class="card-change negative">📉 20% Last month total 24</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Last Transaction</h3>
+                    <a href="#" class="see-all">See All</a>
+                </div>
+                <div class="transaction-item">
+                    <div class="transaction-icon">🏠</div>
+                    <div class="transaction-details">
+                        <h4>Unit 1, 101</h4>
+                        <p>12 April 2025, 9:24</p>
+                    </div>
+                    <span class="transaction-type payment">Payment</span>
+                </div>
+                <div class="transaction-item">
+                    <div class="transaction-icon">🔧</div>
+                    <div class="transaction-details">
+                        <h4>Unit 3, 102</h4>
+                        <p>12 April 2025, 9:20</p>
+                    </div>
+                    <span class="transaction-type maintenance">Maintenance</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Total Income</h3>
+                </div>
+                <div class="card-value">₱150k</div>
+                <div class="card-change positive">📈 30% Last month total ₱90k</div>
+            </div>
+        </div>
+
+        <div class="transactions-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Maintenance Request</h3>
+                    <a href="#" class="see-all">See All</a>
+                </div>
+                <div class="maintenance-requests">
+                    <div class="maintenance-item">
+                        <div class="transaction-icon">🔧</div>
+                        <div class="transaction-details">
+                            <h4>Plumbing | Unit 3, 102</h4>
+                            <p>Broken Garbage</p>
+                            <small>Request ID: MR-2025</small>
+                        </div>
+                        <div class="maintenance-avatar">KL</div>
+                    </div>
+                    <div class="maintenance-item">
+                        <div class="transaction-icon">⚡</div>
+                        <div class="transaction-details">
+                            <h4>Electrical | Unit 2, 101</h4>
+                            <p>Broken Switch</p>
+                            <small>Request ID: MR-2025</small>
+                        </div>
+                        <div class="maintenance-avatar">JD</div>
+                    </div>
+                    <div class="maintenance-item">
+                        <div class="transaction-icon">❄️</div>
+                        <div class="transaction-details">
+                            <h4>HVAC | Unit 2, 103</h4>
+                            <p>Non Functional Fan</p>
+                        </div>
+                        <div class="maintenance-avatar">RB</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Late Payments</h3>
+                </div>
+                <div class="no-records">No Records</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Report Monthly Sales</h3>
+                    <select style="border: none; background: transparent; color: #64748b;">
+                        <option>📅 Weekday</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar" style="height: 60%;"></div>
+                        <div class="bar" style="height: 80%;"></div>
+                        <div class="bar" style="height: 70%;"></div>
+                        <div class="bar" style="height: 40%;"></div>
+                        <div class="bar" style="height: 90%;"></div>
+                        <div class="bar" style="height: 85%;"></div>
+                        <div class="bar" style="height: 95%;"></div>
+                    </div>
+                    <div class="chart-labels">
+                        <span>Mon</span>
+                        <span>Tue</span>
+                        <span>Wed</span>
+                        <span>Thu</span>
+                        <span>Fri</span>
+                        <span>Sat</span>
+                        <span>Sun</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Cost Breakdown</h3>
+                    <a href="#" class="see-all">See Details</a>
+                </div>
+                <div class="chart-container">
+                    <div class="pie-chart">
+                        <div class="pie-center">
+                            <div class="pie-amount">₱40,750</div>
+                            <div style="font-size: 12px; color: #64748b;">Total</div>
+                        </div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #10b981;"></div>
+                            <span>Maintenance</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #f59e0b;"></div>
+                            <span>Utilities</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #8b5cf6;"></div>
+                            <span>Other</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Property Overview</h3>
+                </div>
+                <div class="chart-container">
+                    <div style="display: flex; justify-content: space-around; align-items: center; height: 200px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 48px; font-weight: 700; color: #10b981;">85%</div>
+                            <div style="font-size: 14px; color: #64748b;">Occupied</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 48px; font-weight: 700; color: #ef4444;">15%</div>
+                            <div style="font-size: 14px; color: #64748b;">Vacant</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="Javascript/adminDashboard.js"></script>
+</body>
+</html>
