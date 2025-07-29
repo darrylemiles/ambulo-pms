@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/tenantDashboard.css">
+    <title>Tenant Dashboard</title>
+</head>
+<body>
+        <div class="overlay" id="overlay"></div>
+    
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <span>☰</span>
+    </button>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="assets/logo-property.png" alt="Logo" class="logo">
+            <div class="sidebar-title">Ambulo Properties</div>
+        </div>
+        
+        <div class="sidebar-toggle" id="sidebarToggle">
+            <span>←</span>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="#" class="nav-link active">
+                    <div class="nav-icon">📊</div>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Property Management</div>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">🏠</div>
+                    <span class="nav-text">Properties</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">👥</div>
+                    <span class="nav-text">Tenants</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">📋</div>
+                    <span class="nav-text">Leases</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Operations</div>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">🔧</div>
+                    <span class="nav-text">Maintenance Requests</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">💰</div>
+                    <span class="nav-text">Last Transactions</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <div class="nav-icon">📊</div>
+                    <span class="nav-text">Documents</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="header">
+            <div class="title-section">
+                <div>
+                    <h1>Hello, Rei!</h1>
+                    <h2>Dashboard</h2>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search Anything...">
+                </div>
+                <button class="icon notification">🔔</button>
+                <button class="icon inbox">✉️</button>
+                <button class="profile">R</button>
+            </div>
+        </div>
+        <div class="dashboard-container">
+            <!-- Calendar Column (Today's reminders + Calendar) -->
+            <div class="calendar-column">
+                <!-- Today's Reminders -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Today, August 1</h3>
+                    </div>
+                    <div class="reminder-content">You have 0 reminder for Today. <a href="#" class="see-all">View All</a></div>
+                </div>
+
+                <!-- Calendar Card -->
+                <div class="card calendar-card">
+                    <div class="calendar-header">
+                        <h2 class="month-title">August 2025</h2>
+                        <div class="month-nav">
+                            <button class="nav-btn">‹</button>
+                            <button class="nav-btn">›</button>
+                        </div>
+                    </div>
+                    
+                    <div class="calendar-grid">
+                        <div class="day-header">Mo</div>
+                        <div class="day-header">Tu</div>
+                        <div class="day-header">We</div>
+                        <div class="day-header">Th</div>
+                        <div class="day-header">Fr</div>
+                        <div class="day-header">Sa</div>
+                        <div class="day-header">Su</div>
+                        
+                        <div class="day"></div>
+                        <div class="day"></div>
+                        <div class="day"></div>
+                        <div class="day"></div>
+                        <div class="day today">1</div>
+                        <div class="day">2</div>
+                        <div class="day">3</div>
+                        <div class="day">4</div>
+                        <div class="day">5</div>
+                        <div class="day">6</div>
+                        <div class="day">7</div>
+                        <div class="day">8</div>
+                        <div class="day">9</div>
+                        <div class="day">10</div>
+                        <div class="day">11</div>
+                        <div class="day">12</div>
+                        <div class="day">13</div>
+                        <div class="day">14</div>
+                        <div class="day">15</div>
+                        <div class="day">16</div>
+                        <div class="day">17</div>
+                        <div class="day">18</div>
+                        <div class="day">19</div>
+                        <div class="day">20</div>
+                        <div class="day">21</div>
+                        <div class="day">22</div>
+                        <div class="day">23</div>
+                        <div class="day">24</div>
+                        <div class="day">25</div>
+                        <div class="day">26</div>
+                        <div class="day">27</div>
+                        <div class="day">28</div>
+                        <div class="day">29</div>
+                        <div class="day">30</div>
+                        <div class="day">31</div>
+                    </div>
+                    
+                    <div class="rent-payment">
+                        <div class="payment-label">Rent Payment</div>
+                        <div class="payment-amount">Amount: ₱23,000.00</div>
+                        <button class="pay-now-btn">Pay Now</button>
+                        <div style="clear: both;"></div>
+                    </div>
+                </div>
+            </div>
+
+                        <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Maintenance Requests</h3>
+                    <a href="#" class="see-all">See All</a>
+                </div>
+                <div class="maintenance-item">
+                    <div class="maintenance-icon">🔧</div>
+                    <div class="maintenance-details">
+                        <div class="maintenance-type">Plumbing</div>
+                        <div class="maintenance-id">Request ID: RR-001</div>
+                        <div class="maintenance-issue">Broken Garbage Disposal</div>
+                    </div>
+                    <div class="status processing">Processing</div>
+                </div>
+                <div class="maintenance-item">
+                    <div class="maintenance-icon">⚡</div>
+                    <div class="maintenance-details">
+                        <div class="maintenance-type">Electrical</div>
+                        <div class="maintenance-id">Request ID: RR-002</div>
+                        <div class="maintenance-issue">Broken Light Switch</div>
+                    </div>
+                    <div class="status done">Done</div>
+                </div>
+                <div class="maintenance-item">
+                    <div class="maintenance-icon">🚿</div>
+                    <div class="maintenance-details">
+                        <div class="maintenance-type">Plumbing</div>
+                        <div class="maintenance-id">Request ID: RR-003</div>
+                        <div class="maintenance-issue">Leaky Faucet</div>
+                    </div>
+                    <div class="status processing">Processing</div>
+                </div>
+            </div>
+
+            <!-- Last Transaction -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Last Transactions</h3>
+                    <a href="#" class="see-all">See All</a>
+                </div>
+                <div class="transaction-item">
+                    <div class="transaction-icon">🏠</div>
+                    <div class="transaction-details">
+                        <div class="transaction-type">Rent</div>
+                        <div class="transaction-date">15 April 2025, 9:25</div>
+                    </div>
+                    <div class="transaction-category payment">Payment</div>
+                </div>
+                <div class="transaction-item">
+                    <div class="transaction-icon">⚡</div>
+                    <div class="transaction-details">
+                        <div class="transaction-type">Electrical</div>
+                        <div class="transaction-date">15 April 2025, 9:25</div>
+                    </div>
+                    <div class="transaction-category maintenance">Maintenance</div>
+                </div>
+            </div>
+
+                        <!-- Announcements -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Announcement</h3>
+                </div>
+                <div class="announcement-item">
+                    <div class="announcement-icon"></div>
+                    <div class="announcement-content">
+                        <div class="announcement-date">Aug 1, 2025 - 7:00 AM</div>
+                        <div class="announcement-text">Water Interruption</div>
+                    </div>
+                </div>
+                <div class="announcement-item">
+                    <div class="announcement-icon"></div>
+                    <div class="announcement-content">
+                        <div class="announcement-date">Sep 5, 2025 - 10:00 PM</div>
+                        <div class="announcement-text">Building Check up</div>
+                    </div>
+                </div>
+                <div class="announcement-item">
+                    <div class="announcement-icon"></div>
+                    <div class="announcement-content">
+                        <div class="announcement-date">Sep 8, 2025 - 7:00 AM</div>
+                        <div class="announcement-text">Rent Payment Due</div>
+                    </div>
+                </div>
+                <div class="announcement-item">
+                    <div class="announcement-icon"></div>
+                    <div class="announcement-content">
+                        <div class="announcement-date">May 20, 2025 - 3:00 PM</div>
+                        <div class="announcement-text">Electric Maintenance</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom row cards container -->
+            <div class="bottom-cards-container">
+                <!-- Late Payments -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Late Payments</h3>
+                    </div>
+                    <div class="no-records">No Records</div>
+                </div>
+
+                <!-- Your Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Your Information</h3>
+                    </div>
+                    <div class="no-records">No Records</div>
+                </div>
+
+                <!-- Documents -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Documents</h3>
+                    </div>
+                    <div class="no-records">No Records</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="Javascript/tenantDashboard.js"></script>
+</body>
+</html>
