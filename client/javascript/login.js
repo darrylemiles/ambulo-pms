@@ -1,4 +1,3 @@
-
 // Toggle password visibility
 const toggleButton = document.getElementById('toggleButton');
 const passwordField = document.getElementById('passwordField');
