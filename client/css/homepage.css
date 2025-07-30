@@ -192,7 +192,7 @@
         }
 
         .property-card:hover {
-            transform: translateY(-8px) scale(1.02);
+            transform: translateY(-8px) scale(3.02);
             box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
 
