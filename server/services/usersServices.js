@@ -5,13 +5,19 @@ import conn from "./../config/db.js";
 const pool = await conn();
 
 const createUser = async (userData = {}) => {
+  // const {
+  //   first_name,
+  //   last_name,
+  //   business_name,
+  //   business_type,
+  //   email,
+  //   phone_number,
+  //   password
+  // } = userData || {};
+
   const {
     first_name,
-    last_name,
-    business_name,
-    business_type,
-    email,
-    phone_number,
+    avatar,
     password
   } = userData || {};
 
@@ -28,32 +34,42 @@ const createUser = async (userData = {}) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // const newUser = {
+    //   user_id,
+    //   first_name,
+    //   last_name,
+    //   business_name,
+    //   business_type,
+    //   email,
+    //   phone_number,
+    //   password_hash: hashedPassword, 
+    //   isAdmin: 0,
+    // };
+
     const newUser = {
       user_id,
       first_name,
-      last_name,
-      business_name,
-      business_type,
-      email,
-      phone_number,
-      password_hash: hashedPassword, 
-      isAdmin: 0,
+      avatar,
+      password_hash: hashedPassword
     };
 
     Object.keys(newUser).forEach(
       (key) => newUser[key] === undefined && delete newUser[key]
     );
 
+    
+
     const fields = Object.keys(newUser).join(", ");
     const placeholders = Object.keys(newUser).map(() => "?").join(", ");
     const values = Object.values(newUser);
 
-    const query = `INSERT INTO users (${fields}) VALUES (${placeholders})`;
+    // const query = `INSERT INTO users (${fields}) VALUES (${placeholders})`;
+    const query = `INSERT INTO test_user (${fields}) VALUES (${placeholders})`;
     await pool.query(query, values);
 
     return {
       message: "User created successfully",
-      user_id,
+      userData: newUser
     };
   } catch (error) {
     console.error("Error creating user:", error);
