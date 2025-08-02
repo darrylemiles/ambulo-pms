@@ -25,7 +25,20 @@ router.post(
 
 router.get('/', getUsers);
 router.get('/:user_id', getSingleUserById);
-router.patch('/:user_id', updateSingleUserById);
+
+router.patch(
+  '/:user_id',
+  createUploadMiddleware({
+    fields: [
+      { name: 'avatar', maxCount: 1 },
+    ],
+    fieldFolders: {
+      avatar: 'user_avatars',
+    },
+  }),
+  updateSingleUserById
+);
+
 router.delete('/:user_id', deleteUserById)
 
 export default router;

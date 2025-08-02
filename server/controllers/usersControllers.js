@@ -36,9 +36,12 @@ const getSingleUserById = expressAsync(async (req, res) => {
 
 const updateSingleUserById = expressAsync(async (req, res) => {
   try {
+    const avatar = req.files && req.files['avatar'] ? req.files['avatar'][0].path : "";
+    const payload = { ...req.body, avatar };
+
     const response = await usersServices.updateSingleUserById(
       req.params.user_id,
-      req.body
+      payload
     );
     res.json(response);
   } catch (error) {

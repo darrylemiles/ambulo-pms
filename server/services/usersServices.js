@@ -5,20 +5,16 @@ import conn from "./../config/db.js";
 const pool = await conn();
 
 const createUser = async (userData = {}) => {
-  // const {
-  //   first_name,
-  //   last_name,
-  //   business_name,
-  //   business_type,
-  //   email,
-  //   phone_number,
-  //   password
-  // } = userData || {};
-
   const {
     first_name,
+    last_name,
+    business_name,
+    business_type,
     avatar,
-    password
+    email,
+    phone_number,
+    password,
+    role
   } = userData || {};
 
   const user_id = uuidv4();
@@ -34,37 +30,30 @@ const createUser = async (userData = {}) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // const newUser = {
-    //   user_id,
-    //   first_name,
-    //   last_name,
-    //   business_name,
-    //   business_type,
-    //   email,
-    //   phone_number,
-    //   password_hash: hashedPassword, 
-    //   isAdmin: 0,
-    // };
-
     const newUser = {
       user_id,
       first_name,
+      last_name,
+      business_name,
+      business_type,
       avatar,
-      password_hash: hashedPassword
+      email,
+      phone_number,
+      password_hash: hashedPassword, 
+      role 
     };
+
 
     Object.keys(newUser).forEach(
       (key) => newUser[key] === undefined && delete newUser[key]
     );
 
-    
 
     const fields = Object.keys(newUser).join(", ");
     const placeholders = Object.keys(newUser).map(() => "?").join(", ");
     const values = Object.values(newUser);
 
-    // const query = `INSERT INTO users (${fields}) VALUES (${placeholders})`;
-    const query = `INSERT INTO test_user (${fields}) VALUES (${placeholders})`;
+    const query = `INSERT INTO users (${fields}) VALUES (${placeholders})`;
     await pool.query(query, values);
 
     return {
@@ -79,7 +68,7 @@ const createUser = async (userData = {}) => {
 
 const getUsers = async (queryObj = {}) => {
   try {
-    let query = 'SELECT * FROM users WHERE isAdmin = 0';
+    let query = 'SELECT * FROM users WHERE role = "TENANT"';
     const params = [];
 
     const filters = Object.entries(queryObj)
@@ -123,10 +112,43 @@ const getSingleUserById = async (user_id = "") => {
 
 const updateSingleUserById = async (user_id = "", userData = {}) => {
   try {
-    return {
-      message: `${user_id} has been successfully updated!!!!!`,
-      userData,
+    const user = await getSingleUserById(user_id);
+
+    const {
+      first_name,
+      last_name,
+      business_name,
+      business_type,
+      avatar,
+      email,
+      phone_number
+    } = userData || {};
+
+    const updatedUser = {
+      first_name: first_name || user.first_name,
+      last_name: last_name || user.last_name,
+      business_name: business_name || user.business_name,
+      business_type: business_type || user.business_type,
+      avatar: avatar || user.avatar,
+      email: email || user.email,
+      phone_number: phone_number || user.phone_number
     };
+
+
+
+    const fields = Object.keys(updatedUser)
+      .map((key) => `${key} = ?`)
+      .join(", ");
+    const values = Object.values(updatedUser);
+
+    const query = `UPDATE users SET ${fields} WHERE user_id = ?`;
+    await pool.query(query, [...values, user_id]);
+
+    return {
+      message: "User updated successfully",
+      userData: updatedUser
+    };
+
   } catch (error) {
     console.error("Error updating user:", error);
     throw new Error(error.message || "Failed to update user");
