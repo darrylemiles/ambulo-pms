@@ -5,68 +5,17 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Poppins, sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #C3D2D2;
             overflow-x: hidden;
         }
 
-        .container {
+        .nav-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
-        }
-
-        /* Scroll reveal animations */
-        .reveal-element {
-            opacity: 0;
-            transform: translateY(50px);
-            transition: all 0.8s ease;
-        }
-
-        .reveal-element.revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .slide-left {
-            transform: translateX(-100px);
-            opacity: 0;
-        }
-
-        .slide-left.revealed {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .slide-right {
-            transform: translateX(100px);
-            opacity: 0;
-        }
-
-        .slide-right.revealed {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .scale-up {
-            transform: scale(0.8);
-            opacity: 0;
-        }
-
-        .scale-up.revealed {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        .fade-in {
-            opacity: 0;
-            transition: opacity 0.8s ease;
-        }
-
-        .fade-in.revealed {
-            opacity: 1;
         }
 
         header {

@@ -75,3 +75,22 @@
         updateLayout();
       })
       .catch(err => console.error('Error loading sidebar:', err));
+
+      // Responsive sidebar for mobile
+      function handleResize() {
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('hidden');
+            mainContent.classList.add('sidebar-hidden');
+            mainContent.classList.remove('sidebar-collapsed');
+        } else if (!sidebarHidden) {
+            sidebar.classList.remove('hidden');
+        if (sidebarCollapsed) {
+              mainContent.classList.add('sidebar-collapsed');
+              mainContent.classList.remove('sidebar-hidden');
+        } else {
+              mainContent.classList.remove('sidebar-hidden', 'sidebar-collapsed');
+            }
+        }
+    }
+      window.addEventListener('resize', handleResize);
+      handleResize(); // Call on initial load

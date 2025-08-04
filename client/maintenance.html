@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+    <link rel="stylesheet" href="../client/css/maintenance.css">
+    <title>Maintenance</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div id="sidebarContainer"></div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="header">
+            <div class="title-section">
+                <div>
+                    <h1>Hello, Kei!</h1>
+                    <h2>Maintenance</h2>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search Anything...">
+                </div>
+                <button class="icon notification">🔔</button>
+                <button class="icon inbox">✉️</button>
+                <div class="profile-dropdown">
+                    <button class="profile" id="profileBtnIcon">K</button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="userProfile.html">👤 Profile</a>
+                        <a href="login.html">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Ticketing System -->
+        <div class="maintenance-container">
+            <div class="header-controls">
+                <button class="new-ticket-btn" onclick="openNewTicketModal()">
+                    + New Ticket
+                </button>
+                
+                <div class="date-control">
+                    <span>From:</span>
+                    📅
+                    <input type="text" value="July 04, 2025" readonly>
+                </div>
+                
+                <div class="date-control">
+                    <span>To:</span>
+                    📅
+                    <input type="text" value="August 04, 2025" readonly>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search" id="searchInput">
+                </div>
+                
+                <button class="clear-filters-btn" onclick="clearFilters()">Clear filters</button>
+                <button class="filter-btn">🔽</button>
+            </div>
+
+            <div class="tickets-container">
+                <div class="table-header">
+                    <div>Ticket ID</div>
+                    <div>Status</div>
+                    <div>Title</div>
+                    <div>Description</div>
+                    <div>Priority 🔽</div>
+                    <div>Request Type</div>
+                    <div>Assigned To</div>
+                    <div>Requested By</div>
+                    <div>Building No.</div>
+                </div>
+                
+                <div class="table-subheader">
+                    <div>Ticket ID</div>
+                    <div>Status</div>
+                    <div>Title</div>
+                    <div>Description</div>
+                    <div>Priority</div>
+                    <div>Request Type</div>
+                    <div>Assigned To</div>
+                    <div>Requested By</div>
+                    <div>Building No.</div>
+                </div>
+                
+                <div id="ticketsContainer">
+                    <!-- Tickets will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Ticket Modal -->
+    <div class="modal" id="newTicketModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h2>Create Ticket</h2>
+                    <p class="modal-subtitle">Write and address new queries and issues.</p>
+                </div>
+                <button class="close-btn" onclick="closeNewTicketModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="newTicketForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="tenantEmail">Tenant Email</label>
+                            <input type="email" id="tenantEmail" placeholder="Tenant Email" required>
+                        </div>
+                        
+                        <div class="form-group form-grid-full">
+                            <label for="ticketTitle">Title</label>
+                            <input type="text" id="ticketTitle" placeholder="Title" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group dropdown-group">
+                            <label for="requestedBy">Requested By</label>
+                            <select id="requestedBy" required>
+                                <option value="">Requested By</option>
+                                <option value="Henzel Maluto">Henzel Maluto</option>
+                                <option value="Maria Santos">Maria Santos</option>
+                                <option value="Juan Dela Cruz">Juan Dela Cruz</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="buildingNo">Building No.:</label>
+                            <input type="text" id="buildingNo" placeholder="Building No." required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="requestType">Request Ticket Type</label>
+                            <input type="text" id="requestType" placeholder="Request Ticket Type" required>
+                        </div>
+                        
+                        <div class="form-group dropdown-group">
+                            <label for="ticketPriority">Priority Status</label>
+                            <select id="ticketPriority" required>
+                                <option value="">Priority Status</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="attachments">Attachments</label>
+                        <div class="attachments-area" onclick="document.getElementById('fileInput').click()">
+                            <span>/Add Files or Drop Files Here</span>
+                        </div>
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                    </div>
+                    
+                    <div class="form-group form-grid-full">
+                        <label for="ticketDescription">Description</label>
+                        <textarea id="ticketDescription" placeholder="Description" required></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn-primary" onclick="submitNewTicket()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../client/javascript/maintenance.js"></script>
+    <script src="../client/javascript/sidebar.js"></script>
+</body>
+</html>

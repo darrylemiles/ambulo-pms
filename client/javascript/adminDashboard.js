@@ -108,7 +108,7 @@
       document.querySelectorAll('.bar').forEach((bar) => {
         bar.addEventListener('mouseenter', function () {
           this.style.transform = 'scaleY(1.1)';
-          this.style.background = 'linear-gradient(to top, #030303ff, #3b82f6)';
+          this.style.background = 'linear-gradient(to top, #3b82f6, #3b82f6)';
         });
         bar.addEventListener('mouseleave', function () {
           this.style.transform = 'scaleY(1)';
