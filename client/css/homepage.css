@@ -5,7 +5,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Poppins, sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #C3D2D2;
@@ -28,26 +28,6 @@
         .reveal-element.revealed {
             opacity: 1;
             transform: translateY(0);
-        }
-
-        .slide-left {
-            transform: translateX(-100px);
-            opacity: 0;
-        }
-
-        .slide-left.revealed {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .slide-right {
-            transform: translateX(100px);
-            opacity: 0;
-        }
-
-        .slide-right.revealed {
-            transform: translateX(0);
-            opacity: 1;
         }
 
         .scale-up {
@@ -192,7 +172,7 @@
         }
 
         .property-card:hover {
-            transform: translateY(-8px) scale(3.02);
+            transform: translateY(-8px);
             box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
 
