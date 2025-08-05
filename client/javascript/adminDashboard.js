@@ -1,4 +1,4 @@
-    fetch('../client/components/sidebar.html') 
+    fetch('/components/sidebar.html') 
       .then(res => res.text())
       .then(html => {
         document.getElementById('sidebarContainer').innerHTML = html;

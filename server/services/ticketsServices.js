@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from "uuid";
-import bcrypt from "bcrypt";
 import conn from "./../config/db.js";
 
 const pool = await conn();
@@ -25,9 +24,6 @@ const createTicket = async (ticketData = {}) => {
   const now = new Date();
   
   try {
-    console.log("Creating ticket with ID:", ticket_id);
-    console.log("Creating ticket with data:", ticketData);
-
     const newTicket = {
       ticket_id,
       ticket_title,
@@ -190,30 +186,52 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("No data provided for update");
     }
 
-  
+    const allowedFields = [
+      'ticket_title',
+      'description', 
+      'priority',
+      'ticket_status',
+      'assigned_to',
+      'start_date',
+      'end_date',
+      'notes',
+      'attachments'
+    ];
+
+    const filteredData = {};
+    Object.keys(ticketData).forEach(key => {
+      if (allowedFields.includes(key)) {
+        filteredData[key] = ticketData[key];
+      }
+    });
+
+    if (Object.keys(filteredData).length === 0) {
+      throw new Error("No valid fields provided for update");
+    }
+
+
     const existingTicket = await getSingleTicketById(ticket_id);
     const existingTicketData = existingTicket.ticket;
 
 
     let updatedAttachments = existingTicketData.attachments || "";
     
-    if (ticketData.attachments) {
-
-      if (updatedAttachments && ticketData.attachments) {
-        updatedAttachments = `${updatedAttachments},${ticketData.attachments}`;
-      } else if (ticketData.attachments) {
-
-        updatedAttachments = ticketData.attachments;
+    if (filteredData.attachments) {
+      if (updatedAttachments && filteredData.attachments) {
+        updatedAttachments = `${updatedAttachments},${filteredData.attachments}`;
+      } else if (filteredData.attachments) {
+        updatedAttachments = filteredData.attachments;
       }
+    } else {
+      updatedAttachments = existingTicketData.attachments;
     }
 
     const updatedData = {
-      ...ticketData,
+      ...filteredData,
       attachments: updatedAttachments,
       updated_at: new Date()
     };
 
- 
     Object.keys(updatedData).forEach(
       (key) => updatedData[key] === undefined && delete updatedData[key]
     );
@@ -230,13 +248,13 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("Ticket could not be updated");
     }
 
-
     const updatedTicket = await getSingleTicketById(ticket_id);
 
     return {
       message: "Ticket updated successfully",
       ticket_id,
-      ticket: updatedTicket.ticket
+      ticket: updatedTicket.ticket,
+      updatedFields: Object.keys(filteredData)
     };
   } catch (error) {
     console.error("Error updating ticket:", error);

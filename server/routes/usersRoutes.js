@@ -1,13 +1,18 @@
 import express from 'express';
+import { authenticateToken } from '../middlewares/authMiddleware.js';
 import { 
-    createUser, 
-    getUsers, 
-    getSingleUserById, 
-    updateSingleUserById, 
-    deleteUserById } from '../controllers/usersControllers.js';
+  authUser,
+  createUser, 
+  getUsers, 
+  getSingleUserById, 
+  updateSingleUserById, 
+  deleteUserById } from '../controllers/usersControllers.js';
 
 import createUploadMiddleware from '../middlewares/multer/uploadMiddleware.js';
 const router = express.Router();
+
+
+router.post('/login', authUser);
 
 router.post(
   '/create-user',
@@ -23,7 +28,7 @@ router.post(
   createUser
 );
 
-router.get('/', getUsers);
+router.get('/', authenticateToken, getUsers);
 router.get('/:user_id', getSingleUserById);
 
 router.patch(
@@ -39,6 +44,6 @@ router.patch(
   updateSingleUserById
 );
 
-router.delete('/:user_id', deleteUserById)
+router.delete('/:user_id', authenticateToken, deleteUserById);
 
 export default router;

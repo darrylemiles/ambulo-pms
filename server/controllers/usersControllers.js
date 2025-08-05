@@ -1,6 +1,37 @@
 import expressAsync from "express-async-handler";
 import usersServices from "../services/usersServices.js";
 
+const authUser = expressAsync(async (req, res) => {
+  try {
+    console.log('Request body:', req.body); // Debug log
+    console.log('Request headers:', req.headers); // Debug log
+    
+    if (!req.body) {
+      return res.status(400).json({ message: "Request body is missing" });
+    }
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const response = await usersServices.authUser(email, password);
+
+    res.cookie('token', response.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error in login controller:", error);
+    res.status(401).json({ message: error.message });
+  }
+});
+
 const createUser = expressAsync(async (req, res) => {
   try {
     const avatar = req.files && req.files['avatar'] ? req.files['avatar'][0].path : "";
@@ -61,6 +92,7 @@ const deleteUserById = expressAsync(async (req, res) => {
 });
 
 export {
+  authUser,
   createUser,
   getUsers,
   getSingleUserById,
