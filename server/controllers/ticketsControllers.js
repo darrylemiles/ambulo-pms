@@ -3,7 +3,13 @@ import ticketsServices from "../services/ticketsServices.js";
 
 const createTicket = expressAsync(async (req, res) => {
   try {
-    const response = await ticketsServices.createTicket(req.body);
+    const attachments = req.files && req.files['attachments'] 
+      ? req.files['attachments'].map(file => file.path).join(',') 
+      : "";
+
+    const payload = { ...req.body, attachments };
+    
+    const response = await ticketsServices.createTicket(payload);
     res.json(response);
   } catch (error) {
     console.error("Error creating ticket:", error);
@@ -41,9 +47,14 @@ const getTicketsByUserId = expressAsync(async (req, res) => {
   }
 });
 
-const updateTicket = expressAsync(async (req, res) => {
+const updateTicketById = expressAsync(async (req, res) => {
   try {
-    const response = await ticketsServices.updateTicket(req.params.ticket_id, req.body);
+    const attachments = req.files && req.files['attachments'] 
+      ? req.files['attachments'].map(file => file.path).join(',') 
+      : "";
+
+    const payload = { ...req.body, attachments };
+    const response = await ticketsServices.updateTicketById(req.params.ticket_id, payload);
     res.json(response);
   } catch (error) {
     console.error("Error updating ticket:", error);
@@ -66,6 +77,6 @@ export {
     getTickets,
     getSingleTicketById,
     getTicketsByUserId,
-    updateTicket,
+    updateTicketById,
     deleteTicket
 };

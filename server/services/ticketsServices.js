@@ -1,9 +1,69 @@
+import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcrypt";
+import conn from "./../config/db.js";
+
+const pool = await conn();
+
+
 const createTicket = async (ticketData = {}) => {
+  const {
+    ticket_title,
+    description,
+    priority,
+    request_type,
+    assigned_to,
+    user_id,
+    unit_no,
+    ticket_status,
+    start_date,
+    end_date,
+    attachments,
+    notes
+  } = ticketData || {};
+
+  const ticket_id = uuidv4();
+  const now = new Date();
+  
   try {
+    console.log("Creating ticket with ID:", ticket_id);
+    console.log("Creating ticket with data:", ticketData);
+
+    const newTicket = {
+      ticket_id,
+      ticket_title,
+      description,
+      priority,
+      request_type,
+      assigned_to,
+      user_id,
+      unit_no,
+      ticket_status,
+      start_date,
+      end_date,
+      attachments,
+      notes,
+      created_at: now,
+      updated_at: now
+    };
+
+    Object.keys(newTicket).forEach(
+      (key) => newTicket[key] === undefined && delete newTicket[key]
+    );
+
+    const fields = Object.keys(newTicket).join(", ");
+    const placeholders = Object.keys(newTicket).map(() => "?").join(", ");
+    const values = Object.values(newTicket);
+
+    const query = `INSERT INTO tickets (${fields}) VALUES (${placeholders})`;
+    
+    await pool.query(query, values);
+
     return {
       message: "Ticket created successfully",
-      ticketData,
+      ticket_id,
+      ticketData: newTicket
     };
+
   } catch (error) {
     console.error("Error creating ticket:", error);
     throw new Error(error.message || "Failed to create ticket");
@@ -12,10 +72,59 @@ const createTicket = async (ticketData = {}) => {
 
 const getTickets = async (queryObj = {}) => {
   try {
-    return [
-      { id: 1, title: "Sample Ticket 1", status: "open" },
-      { id: 2, title: "Sample Ticket 2", status: "closed" },
-    ];
+    const { page = 1, limit = 10, ...filters } = queryObj;
+    const skip = (page - 1) * limit;
+
+    
+    let query = 'SELECT * FROM tickets';
+    const params = [];
+
+    
+    const filterConditions = Object.entries(filters)
+      .filter(([_, value]) => value !== undefined && value !== "")
+      .map(([key, value]) => {
+        params.push(value);
+        return `${key} = ?`;
+      });
+
+    if (filterConditions.length > 0) {
+      query += ' WHERE ' + filterConditions.join(' AND ');
+    }
+
+    
+    query += ' ORDER BY created_at DESC';
+
+    
+    query += ' LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), parseInt(skip));
+
+    
+    let countQuery = 'SELECT COUNT(*) as total FROM tickets';
+    const countParams = [];
+
+    if (filterConditions.length > 0) {
+      countQuery += ' WHERE ' + filterConditions.join(' AND ');
+      
+      Object.entries(filters)
+        .filter(([_, value]) => value !== undefined && value !== "")
+        .forEach(([_, value]) => countParams.push(value));
+    }
+
+    
+    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query(countQuery, countParams);
+    const total = countResult[0].total;
+
+    return {
+      tickets: rows,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalTickets: total,
+        hasNextPage: page * limit < total,
+        hasPrevPage: page > 1
+      }
+    };
   } catch (error) {
     console.error("Error fetching tickets:", error);
     throw new Error(error.message || "Failed to fetch tickets");
@@ -24,9 +133,16 @@ const getTickets = async (queryObj = {}) => {
 
 const getSingleTicketById = async (ticket_id = "") => {
   try {
+    const query = `SELECT * FROM tickets WHERE ticket_id = ?`;
+    const [rows] = await pool.query(query, [ticket_id]);
+
+    if (rows.length === 0) {
+      throw new Error("Ticket not found");
+    }
+
     return {
       message: "Ticket retrieved successfully",
-      ticket_id,
+      ticket: rows[0]
     };
   } catch (error) {
     console.error("Error getting ticket:", error);
@@ -34,44 +150,93 @@ const getSingleTicketById = async (ticket_id = "") => {
   }
 };
 
-const getTicketsByUserId = async (user_id = "") => {
+const getTicketsByUserId = async (user_id = "", queryObj = {}) => {
   try {
-    // Mock data for demonstration purposes
-    const user1 = {
-      id: 1,
-      name: "User One",
-      tickets: [
-        { id: 1002, title: "User One Ticket 1", status: "open" },
-        { id: 2002, title: "User One Ticket 2", status: "closed" },
-        { id: 3002, title: "User One Ticket 3", status: "open" },
-      ],
-    };
-    const user2 = {
-      id: 2,
-      name: "User Two",
-      tickets: [
-        { id: 2005, title: "User Two Ticket 1", status: "closed" },
-        { id: 3190, title: "User Two Ticket 2", status: "open" },
-      ],
-    };
+    const { page = 1, limit = 10 } = queryObj;
+    const skip = (page - 1) * limit;
 
-    return user_id === "1"
-      ? user1.tickets
-      : user_id === "2"
-      ? user2.tickets
-      : [];
+    const query = `SELECT * FROM tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    const [rows] = await pool.query(query, [user_id, parseInt(limit), parseInt(skip)]);
+
+    const countQuery = `SELECT COUNT(*) as total FROM tickets WHERE user_id = ?`;
+    const [countResult] = await pool.query(countQuery, [user_id]);
+    const total = countResult[0].total;
+
+    return {
+      message: "User tickets retrieved successfully",
+      user_id,
+      tickets: rows,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalTickets: total,
+        hasNextPage: page * limit < total,
+        hasPrevPage: page > 1
+      }
+    };
   } catch (error) {
     console.error("Error fetching user tickets:", error);
     throw new Error(error.message || "Failed to fetch user tickets");
   }
 };
 
-const updateTicket = async (ticket_id = "", ticketData = {}) => {
+const updateTicketById = async (ticket_id = "", ticketData = {}) => {
   try {
+    if (!ticket_id) {
+      throw new Error("Ticket ID is required");
+    }
+
+    if (Object.keys(ticketData).length === 0) {
+      throw new Error("No data provided for update");
+    }
+
+  
+    const existingTicket = await getSingleTicketById(ticket_id);
+    const existingTicketData = existingTicket.ticket;
+
+
+    let updatedAttachments = existingTicketData.attachments || "";
+    
+    if (ticketData.attachments) {
+
+      if (updatedAttachments && ticketData.attachments) {
+        updatedAttachments = `${updatedAttachments},${ticketData.attachments}`;
+      } else if (ticketData.attachments) {
+
+        updatedAttachments = ticketData.attachments;
+      }
+    }
+
+    const updatedData = {
+      ...ticketData,
+      attachments: updatedAttachments,
+      updated_at: new Date()
+    };
+
+ 
+    Object.keys(updatedData).forEach(
+      (key) => updatedData[key] === undefined && delete updatedData[key]
+    );
+
+
+    const fields = Object.keys(updatedData);
+    const setClause = fields.map(field => `${field} = ?`).join(', ');
+    const values = Object.values(updatedData);
+
+    const query = `UPDATE tickets SET ${setClause} WHERE ticket_id = ?`;
+    const [result] = await pool.query(query, [...values, ticket_id]);
+
+    if (result.affectedRows === 0) {
+      throw new Error("Ticket could not be updated");
+    }
+
+
+    const updatedTicket = await getSingleTicketById(ticket_id);
+
     return {
       message: "Ticket updated successfully",
       ticket_id,
-      ticketData,
+      ticket: updatedTicket.ticket
     };
   } catch (error) {
     console.error("Error updating ticket:", error);
@@ -81,9 +246,23 @@ const updateTicket = async (ticket_id = "", ticketData = {}) => {
 
 const deleteTicket = async (ticket_id = "") => {
   try {
+    const existingTicket = await getSingleTicketById(ticket_id);
+    
+    const query = `DELETE FROM tickets WHERE ticket_id = ?`;
+    const [result] = await pool.query(query, [ticket_id]);
+    
+    if (result.affectedRows === 0) {
+      throw new Error("Ticket could not be deleted");
+    }
+
     return {
       message: "Ticket deleted successfully",
       ticket_id,
+      deletedTicket: {
+        ticket_id: existingTicket.ticket.ticket_id,
+        ticket_title: existingTicket.ticket.ticket_title,
+        ticket_status: existingTicket.ticket.ticket_status
+      }
     };
   } catch (error) {
     console.error("Error deleting ticket:", error);
@@ -96,6 +275,6 @@ export default {
   getTickets,
   getSingleTicketById,
   getTicketsByUserId,
-  updateTicket,
+  updateTicketById,
   deleteTicket,
 };
