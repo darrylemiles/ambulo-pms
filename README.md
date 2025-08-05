@@ -4,7 +4,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-    <img src="images/ambulo_prop_logo.png" alt="Logo" width="80" height="80">
+    <img src="https://res.cloudinary.com/degn0zm6s/image/upload/v1754146538/ambulo_logo_f2rloe.png" alt="Logo" width="80" height="80">
   
 
 <h3 align="center">Ambulo's Property Management System</h3>
