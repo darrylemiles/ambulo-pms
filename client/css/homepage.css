@@ -51,11 +51,23 @@
 
         /* Hero Section - Add top padding to account for fixed header */
         .hero {
+            background-image: url();
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             background: #C3D2D2;
             text-align: center;
             padding: 200px 0 150px 0; /* Added top padding for fixed header */
             position: relative;
             overflow: hidden;
+        }
+
+        .hero-image {
+            width: 100%; /* or use a fixed size like 400px */
+            max-width: 500px;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 10px; /* optional rounded corners */
         }
 
         .hero-content {

@@ -84,3 +84,15 @@
                 }, index * 100);
             });
         });
+
+            //interactive hover effects
+            document.querySelectorAll('.property-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-12px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+            

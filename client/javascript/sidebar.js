@@ -17,6 +17,7 @@
     
             let isCollapsed = false;
             let isMobile = window.innerWidth <= 768;
+
     
             function updateLayout() {
                 isMobile = window.innerWidth <= 768;
