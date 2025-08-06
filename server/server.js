@@ -15,6 +15,11 @@ import usersRoutes from './routes/usersRoutes.js';
 import propertiesRoutes from './routes/propertiesRoutes.js';
 import ticketsRoutes from './routes/ticketsRoutes.js';
 
+import tables from './tables/tables.js';
+
+/*  ========== Database Connection ========== */
+import conn from './config/db.js';
+
 const app = express();
 const __dirname = path.resolve();
 dotenv.config();
@@ -81,4 +86,15 @@ const startServer = async () => {
     }
 };
 
+const createTables = async () => {
+  try {
+    const pool = await conn();
+    await tables(pool);
+  } catch (error) {
+    console.error('Error setting up tables:', error);
+  }
+};
+
+
 startServer();
+createTables();

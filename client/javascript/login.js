@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
                 if (data.user.role === 'ADMIN') {
-                    // window.location.href = 'adminDashboard.html';
+                    window.location.href = 'adminDashboard.html';
                 } else {
                     window.location.href = 'tenantDashboard.html';
                 }
