@@ -278,7 +278,7 @@
             padding: 12px 20px;
             border-bottom: 1px solid #e5e7eb;
             display: grid;
-            grid-template-columns: 175px 175px 175px 175px 175px 175px 175px 175px 175px;
+            grid-template-columns: 150px 150px 150px 150px 150px 150px 150px 150px 150px;
             gap: 15px;
             font-weight: 600;
             font-size: 13px;
@@ -291,7 +291,7 @@
             padding: 8px 20px;
             border-bottom: 1px solid #e5e7eb;
             display: grid;
-            grid-template-columns: 175px 175px 175px 175px 175px 175px 175px 175px 175px;
+            grid-template-columns: 150px 150px 150px 150px 150px 150px 150px 150px 150px;
             gap: 15px;
             font-size: 12px;
             color: #9ca3af;
@@ -302,7 +302,7 @@
             padding: 12px 20px;
             border-bottom: 1px solid #f3f4f6;
             display: grid;
-            grid-template-columns: 175px 175px 175px 175px 175px 175px 175px 175px 175px;
+            grid-template-columns: 150px 150px 150px 150px 150px 150px 150px 150px 150px;
             gap: 15px;
             align-items: center;
             transition: all 0.2s ease;
@@ -633,54 +633,148 @@
             }
         }
 
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .header-controls {
+                gap: 10px;
+            }
+            
+            .table-header,
+            .table-subheader,
+            .ticket-row {
+                grid-template-columns: repeat(9, minmax(100px, 1fr));
+                gap: 10px;
+                font-size: 13px;
+            }
+        }
+
         @media (max-width: 768px) {
             .mobile-menu-btn {
                 display: block;
             }
 
+            .sidebar-placeholder {
+                display: none;
+            }
+
             .main-content {
-                margin-left: 0;
                 padding: 20px;
                 padding-top: 80px;
             }
 
-            .main-content.sidebar-hidden,
-            .main-content.sidebar-collapsed {
-                margin-left: 0;
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .title-section {
+                text-align: center;
+            }
+
+            .header-right {
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .search-bar input {
+                width: 100%;
+                min-width: 200px;
             }
 
             .header-controls {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 10px;
+                gap: 12px;
             }
 
-            .search-input {
+            .header-controls > * {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .date-control {
+                justify-content: space-between;
+            }
+
+            /* Switch to card view on mobile */
+            .table-view {
+                display: none;
+            }
+
+            .card-view {
+                display: block;
+                padding: 20px;
+            }
+
+            .ticket-card-body {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            /* Modal responsive */
+            .modal {
+                padding: 10px;
+            }
+
+            .modal-header {
+                padding: 15px 20px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .form-actions {
+                padding: 15px 20px;
+                flex-direction: column;
+            }
+
+            .btn-primary {
                 width: 100%;
             }
+        }
 
-            .tickets-container {
-                overflow-x: auto;
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 15px;
+                padding-top: 70px;
             }
 
-            .table-header,
-            .table-subheader,
-            .ticket-row {
-                min-width: 800px;
-            }
-            
-            .search-bar input {
-                width: 200px;
+            .header h1 {
+                font-size: 20px;
             }
 
-            .header {
-                flex-direction: column;
-                gap: 20px;
-                align-items: flex-start;
+            .header h2 {
+                font-size: 24px;
             }
 
             .header-right {
-                width: 100%;
-                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .icon, .profile {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .card-view {
+                padding: 15px;
+            }
+
+            .ticket-card {
+                padding: 15px;
+            }
+
+            .modal-content {
+                margin: 10px;
+                max-height: calc(100vh - 20px);
             }
         }
