@@ -71,42 +71,72 @@ const getTickets = async (queryObj = {}) => {
     const { page = 1, limit = 10, ...filters } = queryObj;
     const skip = (page - 1) * limit;
 
-    
-    let query = 'SELECT * FROM tickets';
+    // Modified query to join with users table
+    let query = `
+      SELECT 
+        t.*,
+        CONCAT(u.first_name, ' ', u.last_name) as requested_by_name,
+        u.email as requested_by_email
+      FROM tickets t
+      LEFT JOIN users u ON t.user_id = u.user_id
+    `;
     const params = [];
 
-    
-    const filterConditions = Object.entries(filters)
-      .filter(([_, value]) => value !== undefined && value !== "")
+    // Apply filters (excluding user-related filters that need special handling)
+    const ticketFilters = Object.entries(filters)
+      .filter(([key, value]) => 
+        value !== undefined && 
+        value !== "" && 
+        !['requested_by_name', 'requested_by_email'].includes(key)
+      )
       .map(([key, value]) => {
         params.push(value);
-        return `${key} = ?`;
+        return `t.${key} = ?`;
       });
 
-    if (filterConditions.length > 0) {
-      query += ' WHERE ' + filterConditions.join(' AND ');
+    // Handle user name search if provided
+    if (filters.requested_by_name) {
+      ticketFilters.push(`CONCAT(u.first_name, ' ', u.last_name) LIKE ?`);
+      params.push(`%${filters.requested_by_name}%`);
     }
 
-    
-    query += ' ORDER BY created_at DESC';
+    if (ticketFilters.length > 0) {
+      query += ' WHERE ' + ticketFilters.join(' AND ');
+    }
 
-    
+    // Order by creation date
+    query += ' ORDER BY t.created_at DESC';
+
+    // Pagination
     query += ' LIMIT ? OFFSET ?';
     params.push(parseInt(limit), parseInt(skip));
 
-    
-    let countQuery = 'SELECT COUNT(*) as total FROM tickets';
+    // Count query with joins
+    let countQuery = `
+      SELECT COUNT(*) as total 
+      FROM tickets t
+      LEFT JOIN users u ON t.user_id = u.user_id
+    `;
     const countParams = [];
 
-    if (filterConditions.length > 0) {
-      countQuery += ' WHERE ' + filterConditions.join(' AND ');
+    if (ticketFilters.length > 0) {
+      countQuery += ' WHERE ' + ticketFilters.join(' AND ');
       
+      // Add the same filter parameters for count query
       Object.entries(filters)
-        .filter(([_, value]) => value !== undefined && value !== "")
+        .filter(([key, value]) => 
+          value !== undefined && 
+          value !== "" && 
+          !['requested_by_name', 'requested_by_email'].includes(key)
+        )
         .forEach(([_, value]) => countParams.push(value));
+      
+      if (filters.requested_by_name) {
+        countParams.push(`%${filters.requested_by_name}%`);
+      }
     }
 
-    
+    // Execute queries
     const [rows] = await pool.query(query, params);
     const [countResult] = await pool.query(countQuery, countParams);
     const total = countResult[0].total;
@@ -129,7 +159,15 @@ const getTickets = async (queryObj = {}) => {
 
 const getSingleTicketById = async (ticket_id = "") => {
   try {
-    const query = `SELECT * FROM tickets WHERE ticket_id = ?`;
+    const query = `
+      SELECT 
+        t.*,
+        CONCAT(u.first_name, ' ', u.last_name) as requested_by_name,
+        u.email as requested_by_email
+      FROM tickets t
+      LEFT JOIN users u ON t.user_id = u.user_id
+      WHERE t.ticket_id = ?
+    `;
     const [rows] = await pool.query(query, [ticket_id]);
 
     if (rows.length === 0) {
@@ -151,7 +189,17 @@ const getTicketsByUserId = async (user_id = "", queryObj = {}) => {
     const { page = 1, limit = 10 } = queryObj;
     const skip = (page - 1) * limit;
 
-    const query = `SELECT * FROM tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    const query = `
+      SELECT 
+        t.*,
+        CONCAT(u.first_name, ' ', u.last_name) as requested_by_name,
+        u.email as requested_by_email
+      FROM tickets t
+      LEFT JOIN users u ON t.user_id = u.user_id
+      WHERE t.user_id = ? 
+      ORDER BY t.created_at DESC 
+      LIMIT ? OFFSET ?
+    `;
     const [rows] = await pool.query(query, [user_id, parseInt(limit), parseInt(skip)]);
 
     const countQuery = `SELECT COUNT(*) as total FROM tickets WHERE user_id = ?`;
