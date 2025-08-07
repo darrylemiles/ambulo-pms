@@ -13,7 +13,6 @@ const authUser = async (email, password) => {
       throw new Error("Email and password are required");
     }
 
-    // Find user by email
     const query = `SELECT * FROM users WHERE email = ?`;
     const [users] = await pool.query(query, [email]);
 
@@ -42,10 +41,9 @@ const authUser = async (email, password) => {
         role: user.role 
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '30d' }
     );
 
-    // Remove password from response
     const { password_hash, ...userWithoutPassword } = user;
 
     return {
@@ -76,9 +74,6 @@ const createUser = async (userData = {}) => {
   const user_id = uuidv4();
 
   try {
-    console.log("Creating user with ID:", user_id);
-    console.log("Creating user with data:", userData);
-
     if (!password) {
       throw new Error("Password is required to create a user.");
     }

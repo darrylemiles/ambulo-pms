@@ -3,9 +3,6 @@ import usersServices from "../services/usersServices.js";
 
 const authUser = expressAsync(async (req, res) => {
   try {
-    console.log('Request body:', req.body); // Debug log
-    console.log('Request headers:', req.headers); // Debug log
-    
     if (!req.body) {
       return res.status(400).json({ message: "Request body is missing" });
     }
