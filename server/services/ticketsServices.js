@@ -87,18 +87,13 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
   }
 };
 
-// Replace the updateTicketStatuses function with this corrected version
 const updateTicketStatuses = async () => {
   try {
     const now = new Date();
     const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
+   
     
-    console.log(`=== Updating Ticket Statuses ===`);
-    console.log(`Current Date: ${currentDate}`);
-    console.log(`Current Time: ${currentTime}`);
-    
-    // First, let's see what tickets are eligible for status update
     const checkQuery = `
       SELECT 
         ticket_id, 
@@ -114,25 +109,7 @@ const updateTicketStatuses = async () => {
     `;
     
     const [eligibleTickets] = await pool.query(checkQuery);
-    console.log(`Found ${eligibleTickets.length} tickets with ASSIGNED/PENDING status and start_date`);
     
-    if (eligibleTickets.length > 0) {
-      console.log('Eligible tickets detailed:', eligibleTickets.map(t => ({
-        id: t.ticket_id,
-        title: t.ticket_title,
-        status: t.ticket_status,
-        start_date: t.start_date,
-        start_time: t.start_time,
-        end_date: t.end_date,
-        end_time: t.end_time,
-        startDateReady: t.start_date <= currentDate,
-        startTimeReady: !t.start_time || t.start_time === '' || t.start_time <= currentTime,
-        notEnded: !t.end_date || t.end_date >= currentDate
-      })));
-    }
-    
-    // Update tickets to IN_PROGRESS 
-    // Check both start conditions and end conditions
     const updateToInProgressQuery = `
       UPDATE tickets 
       SET ticket_status = 'IN_PROGRESS', updated_at = NOW()
@@ -161,9 +138,7 @@ const updateTicketStatuses = async () => {
     
     const [result] = await pool.query(updateToInProgressQuery);
     
-    console.log(`Update query executed. Affected rows: ${result.affectedRows}`);
     
-    // Let's also check what tickets were actually updated
     if (result.affectedRows > 0) {
       const updatedTicketsQuery = `
         SELECT ticket_id, ticket_title, ticket_status, start_date, start_time, end_date, end_time 
@@ -173,18 +148,9 @@ const updateTicketStatuses = async () => {
       `;
       
       const [updatedTickets] = await pool.query(updatedTicketsQuery);
-      console.log('Tickets updated to IN_PROGRESS:', updatedTickets.map(t => ({
-        id: t.ticket_id,
-        title: t.ticket_title,
-        status: t.ticket_status,
-        start_date: t.start_date,
-        start_time: t.start_time,
-        end_date: t.end_date,
-        end_time: t.end_time
-      })));
+      
     }
     
-    // Also check for tickets that should be marked as COMPLETED (past end_date/end_time)
     const updateToCompletedQuery = `
       UPDATE tickets 
       SET ticket_status = 'COMPLETED', updated_at = NOW()
@@ -199,7 +165,6 @@ const updateTicketStatuses = async () => {
     const [completedResult] = await pool.query(updateToCompletedQuery);
     
     if (completedResult.affectedRows > 0) {
-      console.log(`Marked ${completedResult.affectedRows} tickets as COMPLETED`);
       
       const completedTicketsQuery = `
         SELECT ticket_id, ticket_title, ticket_status, end_date, end_time 
@@ -209,13 +174,7 @@ const updateTicketStatuses = async () => {
       `;
       
       const [completedTickets] = await pool.query(completedTicketsQuery);
-      console.log('Tickets marked as COMPLETED:', completedTickets.map(t => ({
-        id: t.ticket_id,
-        title: t.ticket_title,
-        status: t.ticket_status,
-        end_date: t.end_date,
-        end_time: t.end_time
-      })));
+      
     }
     
     return { 
