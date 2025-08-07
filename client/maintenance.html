@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,9 +8,10 @@
     <link rel="stylesheet" href="/css/maintenance.css">
     <title>Maintenance</title>
 </head>
+
 <body>
     <div class="overlay" id="overlay"></div>
-    
+
     <div id="sidebarContainer"></div>
 
     <!-- Main Content -->
@@ -32,7 +34,7 @@
                     <button class="profile" id="profileBtnIcon">K</button>
                     <div class="dropdown-menu" id="dropdownMenu">
                         <a href="userProfile.html">👤 Profile</a>
-                        <a href="login.html">🚪 Logout</a>
+                        <a href="#" onclick="logout(); return false;">🚪 Logout</a>
                     </div>
                 </div>
             </div>
@@ -40,27 +42,27 @@
 
         <!-- Maintenance Ticketing System -->
         <div class="maintenance-container">
-                        <div class="header-controls">
+            <div class="header-controls">
                 <button class="new-ticket-btn" onclick="openNewTicketModal()">
                     + New Ticket
                 </button>
-                
+
                 <div class="date-control">
                     <span>From:</span>
                     📅
                     <input type="date" id="fromDate" class="date-picker">
                 </div>
-                
+
                 <div class="date-control">
                     <span>To:</span>
                     📅
                     <input type="date" id="toDate" class="date-picker">
                 </div>
-                
+
                 <div class="search-container">
                     <input type="text" class="search-input" placeholder="Search" id="searchInput">
                 </div>
-                
+
                 <button class="clear-filters-btn" onclick="clearFilters()">Clear filters</button>
                 <button class="filter-btn">🔽</button>
             </div>
@@ -68,7 +70,7 @@
             <div class="tickets-container">
                 <div class="table-header">
                     <div class="header-center">Status</div>
-                    <div class="header-left">Ticket Title</div>  
+                    <div class="header-left">Ticket Title</div>
                     <div class="header-center">Unit No.</div>
                     <div class="header-center">Priority</div>
                     <div class="header-center">Request Type</div>
@@ -77,7 +79,7 @@
                     <div class="header-center">Actions</div>
                     <div class="header-center">Expand</div>
                 </div>
-                
+
                 <div id="ticketsContainer">
                 </div>
             </div>
@@ -94,7 +96,7 @@
                 </div>
                 <button class="close-btn" onclick="closeNewTicketModal()">&times;</button>
             </div>
-            
+
             <form id="newTicketForm">
                 <div class="modal-body">
                     <!-- First row -->
@@ -105,7 +107,8 @@
                         </div>
                         <div class="form-group">
                             <label for="ticketTitle">Ticket Title <span class="required">*</span></label>
-                            <input type="text" id="ticketTitle" name="ticket_title" placeholder="Brief description of the issue" required>
+                            <input type="text" id="ticketTitle" name="ticket_title"
+                                placeholder="Brief description of the issue" required>
                         </div>
                     </div>
 
@@ -154,11 +157,9 @@
                         <div class="form-group">
                             <label for="requestedBy">Requested By</label>
                             <div class="autocomplete-container">
-                                <input type="text" 
-                                       id="requestedBy" 
-                                       name="requested_by" 
-                                       placeholder="Start typing tenant name... (Leave blank if requested by Admin)"
-                                       autocomplete="off">
+                                <input type="text" id="requestedBy" name="requested_by"
+                                    placeholder="Start typing tenant name... (Leave blank if requested by Admin)"
+                                    autocomplete="off">
                                 <div class="autocomplete-dropdown" id="requestedByDropdown">
                                     <!-- Suggestions will be populated here -->
                                 </div>
@@ -166,20 +167,23 @@
                         </div>
                         <div class="form-group">
                             <label for="assignedTo">Assigned To</label>
-                            <input type="text" id="assignedTo" name="assigned_to" placeholder="Leave blank for auto-assignment">
+                            <input type="text" id="assignedTo" name="assigned_to"
+                                placeholder="Leave blank for auto-assignment">
                         </div>
                     </div>
 
                     <!-- Description - full width -->
                     <div class="form-group form-grid-full">
                         <label for="description">Description <span class="required">*</span></label>
-                        <textarea id="description" name="description" placeholder="Detailed description of the maintenance request" required rows="4"></textarea>
+                        <textarea id="description" name="description"
+                            placeholder="Detailed description of the maintenance request" required rows="4"></textarea>
                     </div>
 
                     <!-- Notes - full width -->
                     <div class="form-group form-grid-full">
                         <label for="notes">Additional Notes</label>
-                        <textarea id="notes" name="notes" placeholder="Any additional information or special instructions" rows="3"></textarea>
+                        <textarea id="notes" name="notes"
+                            placeholder="Any additional information or special instructions" rows="3"></textarea>
                     </div>
 
                     <!-- Attachments - full width -->
@@ -187,9 +191,11 @@
                         <label for="attachments">Attachments</label>
                         <div class="attachments-area" onclick="document.getElementById('fileInput').click()">
                             <span>📎 Click here to upload files or drag and drop</span>
-                            <input type="file" id="fileInput" name="attachments" multiple accept="image/*,application/pdf,.doc,.docx" style="display: none;">
+                            <input type="file" id="fileInput" name="attachments" multiple
+                                accept="image/*,application/pdf,.doc,.docx" style="display: none;">
                         </div>
-                        <small class="file-info">Accepted formats: Images, PDF, Word documents (Max 10MB per file)</small>
+                        <small class="file-info">Accepted formats: Images, PDF, Word documents (Max 10MB per
+                            file)</small>
                     </div>
                 </div>
 
@@ -201,9 +207,233 @@
         </div>
     </div>
 
+
+    <!-- Edit Ticket Modal -->
+    <div class="modal" id="editTicketModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h2>Update Ticket</h2>
+                    <p class="modal-subtitle">Edit the ticket details below</p>
+                </div>
+                <button class="close-btn" onclick="closeEditTicketModal()">&times;</button>
+            </div>
+
+            <form id="editTicketForm">
+                <input type="hidden" id="editTicketId" name="ticket_id">
+
+                <div class="modal-body">
+                    <!-- First row - Read-only fields -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editTicketIdDisplay">Ticket ID</label>
+                            <input type="text" id="editTicketIdDisplay" readonly class="readonly-field">
+                        </div>
+                        <div class="form-group">
+                            <label for="editUnitNo">Unit Number</label>
+                            <input type="text" id="editUnitNo" readonly class="readonly-field">
+                        </div>
+                    </div>
+
+                    <!-- Second row - Editable fields -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editTicketTitle">Ticket Title <span class="required">*</span></label>
+                            <input type="text" id="editTicketTitle" name="ticket_title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editRequestType">Request Type <span class="required">*</span></label>
+                            <select id="editRequestType" name="request_type" required>
+                                <option value="">Select request type</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="HVAC">HVAC</option>
+                                <option value="Appliance">Appliance</option>
+                                <option value="Structural">Structural</option>
+                                <option value="Painting">Painting</option>
+                                <option value="Cleaning">Cleaning</option>
+                                <option value="Security">Security</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Third row -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editPriority">Priority <span class="required">*</span></label>
+                            <select id="editPriority" name="priority" required>
+                                <option value="">Select priority</option>
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="URGENT">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStatus">Current Status</label>
+                            <input type="text" id="editStatus" readonly class="readonly-field">
+                        </div>
+                    </div>
+
+                                        <!-- Update the labels in your edit modal: -->
+                    
+                    <!-- Fourth row - Dates -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editStartDate">Start Date <span class="required">*</span></label>
+                            <input type="date" id="editStartDate" name="start_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editEndDate">End Date</label>
+                            <input type="date" id="editEndDate" name="end_date">
+                        </div>
+                    </div>
+                    
+                    <!-- Fifth row - Times -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editStartTime">Start Time</label>
+                            <input type="time" id="editStartTime" name="start_time">
+                        </div>
+                        <div class="form-group">
+                            <label for="editEndTime">End Time</label>
+                            <input type="time" id="editEndTime" name="end_time">
+                        </div>
+                    </div>
+
+                    <!-- Sixth row - Cost and Assignment -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editMaintenanceCosts">Maintenance Costs</label>
+                            <input type="number" id="editMaintenanceCosts" name="maintenance_cost" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <div class="form-group" id="editAssignedToGroup">
+                            <label for="editAssignedTo">Assigned To <span style="color: #6b7280; font-size: 12px;">(Read-only)</span></label>
+                            <input type="text" id="editAssignedTo" name="assigned_to" readonly class="readonly-field">
+                        </div>
+                    </div>
+
+                    <!-- Seventh row - Read-only info -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editRequestedBy">Requested By</label>
+                            <input type="text" id="editRequestedBy" readonly class="readonly-field">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCreatedAt">Created At</label>
+                            <input type="text" id="editCreatedAt" readonly class="readonly-field">
+                        </div>
+                    </div>
+
+                    <!-- Description - full width -->
+                    <div class="form-group form-grid-full">
+                        <label for="editDescription">Description <span class="required">*</span></label>
+                        <textarea id="editDescription" name="description" required rows="4"></textarea>
+                    </div>
+
+                    <!-- Notes - full width -->
+                    <div class="form-group form-grid-full">
+                        <label for="editNotes">Additional Notes</label>
+                        <textarea id="editNotes" name="notes" rows="3"></textarea>
+                    </div>
+
+                    <!-- Current Attachments Display -->
+                    <div class="form-group form-grid-full" id="currentAttachmentsGroup">
+                        <label>Current Attachments</label>
+                        <div id="currentAttachmentsList" class="attachments-list">
+                            <!-- Current attachments will be displayed here -->
+                        </div>
+                    </div>
+
+                    <!-- New Attachments - full width -->
+                    <div class="form-group form-grid-full">
+                        <label for="editAttachments">Add New Attachments</label>
+                        <div class="attachments-area" onclick="document.getElementById('editFileInput').click()">
+                            <span>📎 Click here to upload additional files or drag and drop</span>
+                            <input type="file" id="editFileInput" name="attachments" multiple
+                                accept="image/*,application/pdf,.doc,.docx" style="display: none;">
+                        </div>
+                        <small class="file-info">Accepted formats: Images (JPEG, PNG), PDF, Word documents (Max 10MB per
+                            file)</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditTicketModal()">Cancel</button>
+                    <button type="submit" class="btn-submit">Update Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+    <!-- Assign Ticket Modal -->
+    <div class="modal" id="assignTicketModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h2>Assign Ticket</h2>
+                    <p class="modal-subtitle">Select a person to assign this ticket to</p>
+                </div>
+                <button class="close-btn" onclick="closeAssignTicketModal()">&times;</button>
+            </div>
+    
+            <form id="assignTicketForm">
+                <input type="hidden" id="assignTicketId" name="ticket_id">
+                
+                <div class="modal-body">
+                    <!-- Ticket Info Display -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="assignTicketIdDisplay">Ticket ID</label>
+                            <input type="text" id="assignTicketIdDisplay" readonly class="readonly-field">
+                        </div>
+                        <div class="form-group">
+                            <label for="assignTicketTitle">Ticket Title</label>
+                            <input type="text" id="assignTicketTitle" readonly class="readonly-field">
+                        </div>
+                    </div>
+    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="assignUnitNo">Unit Number</label>
+                            <input type="text" id="assignUnitNo" readonly class="readonly-field">
+                        </div>
+                        <div class="form-group">
+                            <label for="assignPriority">Priority</label>
+                            <input type="text" id="assignPriority" readonly class="readonly-field">
+                        </div>
+                    </div>
+    
+                    <!-- Assignment Field -->
+                    <div class="form-group form-grid-full">
+                        <label for="assignedToInput">Assign To <span class="required">*</span></label>
+                        <input type="text" id="assignedToInput" name="assigned_to" 
+                               placeholder="Enter the name of the person to assign this ticket to..." 
+                               required>
+                        <small class="file-info">Enter the name of the person responsible for this ticket</small>
+                    </div>
+    
+                    <!-- Notes for Assignment -->
+                    <div class="form-group form-grid-full">
+                        <label for="assignmentNotes">Assignment Notes (Optional)</label>
+                        <textarea id="assignmentNotes" name="assignment_notes" 
+                                  placeholder="Any special instructions or notes for the assignee..." 
+                                  rows="3"></textarea>
+                    </div>
+                </div>
+    
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeAssignTicketModal()">Cancel</button>
+                    <button type="submit" class="btn-submit">Assign Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/javascript/maintenance.js"></script>
+    <script src="/javascript/sidebar.js"></script>
 
-
-</html></body>    <script src="/javascript/sidebar.js"></script>
 </body>
+
 </html>

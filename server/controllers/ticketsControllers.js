@@ -3,26 +3,35 @@ import ticketsServices from "../services/ticketsServices.js";
 
 const createTicket = expressAsync(async (req, res) => {
   try {
-   
-    if (!currentUserId && !req.body.user_id) {
-      return res.status(401).json({ 
-        message: "User authentication required. No user ID found in session or request." 
-      });
-    }
+    console.log('Request session:', req.session);
+    console.log('Request user:', req.user);
+    console.log('Request body user_id:', req.body.user_id);
     
     const attachments = req.files && req.files['attachments'] 
       ? req.files['attachments'].map(file => file.path).join(',') 
       : "";
 
+    // Get current user ID from authenticated request
+    const currentUserId = req.user?.user_id || req.session?.user_id;
+    
+    if (!currentUserId) {
+      return res.status(401).json({ 
+        message: "User authentication required. Please log in again." 
+      });
+    }
+
+    // Use the provided user_id (from tenant selection) or default to current user
     const finalUserId = req.body.user_id || currentUserId;
-    console.log('Final user_id being used:', finalUserId);
 
     const payload = { 
       ...req.body, 
       attachments, 
-      user_id: finalUserId
+      user_id: finalUserId // This will be the tenant's ID or current user's ID
     };
 
+    console.log('Final payload being sent to service:', payload);
+    console.log('Current user ID:', currentUserId);
+    console.log('Final user ID for ticket:', finalUserId);
 
     const response = await ticketsServices.createTicket(payload, currentUserId);
     res.json(response);
@@ -84,18 +93,23 @@ const updateTicketById = expressAsync(async (req, res) => {
 
     let payload = { ...req.body, attachments };
     
-    // Handle status logic for updates
-    if (req.body.end_time && req.body.end_time.trim() !== '') {
+    // Handle status logic for updates - REORDERED for proper priority
+    if (req.body.ticket_status === 'CANCELLED') {
+      // Manual cancellation takes highest priority
+      payload.ticket_status = 'CANCELLED';
+      console.log('Manual cancellation requested');
+    } else if (req.body.end_time && req.body.end_time.trim() !== '') {
       // If end_time is being set, mark as COMPLETED
       payload.ticket_status = 'COMPLETED';
       payload.end_date = new Date().toISOString().split('T')[0]; // Set end_date to today
+      console.log('Setting status to COMPLETED due to end_time');
     } else if (req.body.assigned_to && req.body.assigned_to.trim() !== '' && !req.body.ticket_status) {
       // If assigning to someone and no explicit status provided
       payload.ticket_status = 'ASSIGNED';
-    } else if (req.body.ticket_status === 'CANCELLED') {
-      // Allow manual cancellation
-      payload.ticket_status = 'CANCELLED';
+      console.log('Setting status to ASSIGNED due to assignment');
     }
+
+    console.log('Final payload ticket_status:', payload.ticket_status);
 
     const response = await ticketsServices.updateTicketById(req.params.ticket_id, payload);
     res.json(response);

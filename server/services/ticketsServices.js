@@ -87,18 +87,23 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
   }
 };
 
+// Replace the updateTicketStatuses function with this corrected version
 const updateTicketStatuses = async () => {
   try {
     const now = new Date();
     const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
-   
+    
+    console.log(`=== Updating Ticket Statuses ===`);
+    console.log(`Current Date: ${currentDate}`);
+    console.log(`Current Time: ${currentTime}`);
     
     const checkQuery = `
       SELECT 
         ticket_id, 
         ticket_title, 
         ticket_status, 
+        assigned_to,
         start_date,
         start_time,
         end_date,
@@ -110,10 +115,15 @@ const updateTicketStatuses = async () => {
     
     const [eligibleTickets] = await pool.query(checkQuery);
     
+    
+    // Update tickets to IN_PROGRESS - ONLY if they have someone assigned
     const updateToInProgressQuery = `
       UPDATE tickets 
       SET ticket_status = 'IN_PROGRESS', updated_at = NOW()
       WHERE ticket_status IN ('ASSIGNED', 'PENDING')
+        -- Must have someone assigned to move to IN_PROGRESS
+        AND assigned_to IS NOT NULL 
+        AND assigned_to != ''
         -- Start date condition
         AND start_date <= CURDATE()
         -- Start time condition (if start_date is today, check time; if past date, ignore time)
@@ -141,16 +151,16 @@ const updateTicketStatuses = async () => {
     
     if (result.affectedRows > 0) {
       const updatedTicketsQuery = `
-        SELECT ticket_id, ticket_title, ticket_status, start_date, start_time, end_date, end_time 
+        SELECT ticket_id, ticket_title, ticket_status, assigned_to, start_date, start_time, end_date, end_time 
         FROM tickets 
         WHERE ticket_status = 'IN_PROGRESS' 
           AND updated_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
       `;
       
       const [updatedTickets] = await pool.query(updatedTicketsQuery);
-      
     }
     
+    // Update to COMPLETED (only for tickets that are already IN_PROGRESS)
     const updateToCompletedQuery = `
       UPDATE tickets 
       SET ticket_status = 'COMPLETED', updated_at = NOW()
@@ -174,7 +184,6 @@ const updateTicketStatuses = async () => {
       `;
       
       const [completedTickets] = await pool.query(completedTicketsQuery);
-      
     }
     
     return { 
@@ -352,17 +361,19 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("No data provided for update");
     }
 
+    // ADDED ticket_status to allowed fields
     const allowedFields = [
       'ticket_title',
       'description', 
       'priority',
-      'ticket_status',
+      'request_type',
       'assigned_to',
+      'ticket_status', // <- ADDED THIS
       'start_date',
       'end_date',
       'start_time',
       'end_time',
-      'maintenance_costs',
+      'maintenance_cost',
       'notes',
       'attachments'
     ];
@@ -378,10 +389,10 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("No valid fields provided for update");
     }
 
+    console.log('Filtered data for update:', filteredData);
 
     const existingTicket = await getSingleTicketById(ticket_id);
     const existingTicketData = existingTicket.ticket;
-
 
     let updatedAttachments = existingTicketData.attachments || "";
     
@@ -405,17 +416,23 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       (key) => updatedData[key] === undefined && delete updatedData[key]
     );
 
+    console.log('Final update data:', updatedData);
 
     const fields = Object.keys(updatedData);
     const setClause = fields.map(field => `${field} = ?`).join(', ');
     const values = Object.values(updatedData);
 
     const query = `UPDATE tickets SET ${setClause} WHERE ticket_id = ?`;
+    console.log('Update query:', query);
+    console.log('Update values:', [...values, ticket_id]);
+    
     const [result] = await pool.query(query, [...values, ticket_id]);
 
     if (result.affectedRows === 0) {
       throw new Error("Ticket could not be updated");
     }
+
+    console.log('Update result:', result);
 
     const updatedTicket = await getSingleTicketById(ticket_id);
 

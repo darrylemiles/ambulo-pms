@@ -1558,3 +1558,56 @@ body {
         width: calc(100% - 2rem);
     }
 }
+
+/* Enhanced read-only and disabled field styling */
+.readonly-field,
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background-color: #f3f4f6 !important;
+    color: #6b7280 !important;
+    cursor: not-allowed !important;
+    border-color: #d1d5db !important;
+    opacity: 0.7 !important;
+}
+
+.readonly-field:focus,
+input:disabled:focus,
+select:disabled:focus,
+textarea:disabled:focus {
+    background-color: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+}
+
+/* Disabled attachments area */
+.attachments-area[style*="pointer-events: none"] {
+    background-color: #f9fafb !important;
+    border-color: #e5e7eb !important;
+    cursor: not-allowed !important;
+}
+
+.attachments-area[style*="pointer-events: none"] span {
+    color: #9ca3af !important;
+}
+
+/* Disabled submit button styling */
+.btn-submit:disabled {
+    background-color: #9ca3af !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Status editing indicators */
+.form-group label span[style*="color: #059669"] {
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group label span[style*="color: #6b7280"] {
+    font-weight: 400;
+    font-style: italic;
+    text-transform: lowercase;
+}

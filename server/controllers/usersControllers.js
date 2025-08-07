@@ -88,8 +88,40 @@ const deleteUserById = expressAsync(async (req, res) => {
   }
 });
 
+const logoutUser = expressAsync(async (req, res) => {
+  try {
+    // Clear the session if using sessions
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+        }
+      });
+    }
+
+    // Clear cookies
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+
+    res.clearCookie('connect.sid'); // Default session cookie name
+
+    res.status(200).json({
+      message: "Logged out successfully"
+    });
+  } catch (error) {
+    console.error("Error during logout:", error);
+    res.status(500).json({
+      message: "Error during logout"
+    });
+  }
+});
+
 export {
   authUser,
+  logoutUser,
   createUser,
   getUsers,
   getSingleUserById,

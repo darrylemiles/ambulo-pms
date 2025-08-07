@@ -29,9 +29,9 @@ router.post(
     createTicket
 );
 
-router.post('/update-ticket-statuses', requireRole('ADMIN'), updateTicketStatuses);
+router.post('/update-ticket-statuses', updateTicketStatuses);
 
-router.get('/', requireRole('ADMIN'), getTickets);
+router.get('/', getTickets);
 router.get('/:ticket_id', getSingleTicketById);
 router.get('/user/:user_id', getTicketsByUserId);
 
@@ -45,6 +45,6 @@ router.patch('/:ticket_id', createUploadMiddleware({
   }),
     updateTicketById);
 
-router.delete('/:ticket_id', requireRole('ADMIN'), deleteTicket);
+router.delete('/:ticket_id', deleteTicket);
 
 export default router;

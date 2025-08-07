@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticateToken, requireRole } from '../middlewares/authMiddleware.js';
 import { 
   authUser,
+  logoutUser, // ADD THIS
   createUser, 
   getUsers, 
   getSingleUserById, 
@@ -11,12 +12,11 @@ import {
 import createUploadMiddleware from '../middlewares/multer/uploadMiddleware.js';
 const router = express.Router();
 
-router.use(authenticateToken);
-
 router.post('/login', authUser);
+router.post('/logout', logoutUser); // ADD THIS LINE
 
 router.post(
-  '/create-user', requireRole('ADMIN'),
+  '/create-user',
   createUploadMiddleware({
     fields: [
       { name: 'avatar', maxCount: 1 },
@@ -29,7 +29,7 @@ router.post(
   createUser
 );
 
-router.get('/', requireRole('ADMIN'), getUsers);
+router.get('/', authenticateToken, getUsers);
 router.get('/:user_id', getSingleUserById);
 
 router.patch(
@@ -45,6 +45,6 @@ router.patch(
   updateSingleUserById
 );
 
-router.delete('/:user_id', requireRole('ADMIN'), deleteUserById);
+router.delete('/:user_id', deleteUserById);
 
 export default router;
