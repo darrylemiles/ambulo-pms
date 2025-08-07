@@ -19,7 +19,7 @@
             padding: 30px;
             overflow-y: auto;
             transition: margin-left 0.3s ease;
-            margin-left: 280px;
+            margin-left: 270px;
         }
 
         .main-content.sidebar-hidden {
