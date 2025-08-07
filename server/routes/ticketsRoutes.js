@@ -1,6 +1,8 @@
 import express from 'express';
+import { authenticateToken, requireRole } from '../middlewares/authMiddleware.js';
 import {
   createTicket,
+  updateTicketStatuses,
   getTickets,
   getSingleTicketById,
   getTicketsByUserId,
@@ -11,6 +13,8 @@ import {
 import createUploadMiddleware from '../middlewares/multer/uploadMiddleware.js';
 
 const router = express.Router();
+
+router.use(authenticateToken);
 
 router.post(
     '/create-ticket',
@@ -25,7 +29,9 @@ router.post(
     createTicket
 );
 
-router.get('/', getTickets);
+router.post('/update-ticket-statuses', requireRole('ADMIN'), updateTicketStatuses);
+
+router.get('/', requireRole('ADMIN'), getTickets);
 router.get('/:ticket_id', getSingleTicketById);
 router.get('/user/:user_id', getTicketsByUserId);
 
@@ -39,6 +45,6 @@ router.patch('/:ticket_id', createUploadMiddleware({
   }),
     updateTicketById);
 
-router.delete('/:ticket_id', deleteTicket);
+router.delete('/:ticket_id', requireRole('ADMIN'), deleteTicket);
 
 export default router;

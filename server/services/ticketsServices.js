@@ -4,7 +4,11 @@ import conn from "./../config/db.js";
 const pool = await conn();
 
 
-const createTicket = async (ticketData = {}) => {
+const createTicket = async (ticketData = {}, currentUserId = null) => {
+  console.log("=== Creating ticket with data ===");
+  console.log("ticketData:", ticketData);
+  console.log("currentUserId:", currentUserId);
+  
   const {
     ticket_title,
     description,
@@ -13,17 +17,28 @@ const createTicket = async (ticketData = {}) => {
     assigned_to,
     user_id,
     unit_no,
-    ticket_status,
     start_date,
-    end_date,
+    start_time,
+    end_time,
     attachments,
-    notes
+    notes,
+    maintenance_costs
   } = ticketData || {};
 
   const ticket_id = uuidv4();
   const now = new Date();
   
   try {
+    const finalUserId = user_id || currentUserId;
+    
+    // Determine initial ticket status based on assigned_to field
+    let ticket_status;
+    if (!assigned_to || assigned_to.trim() === '') {
+      ticket_status = 'PENDING';
+    } else {
+      ticket_status = 'ASSIGNED';
+    }
+
     const newTicket = {
       ticket_id,
       ticket_title,
@@ -31,17 +46,23 @@ const createTicket = async (ticketData = {}) => {
       priority,
       request_type,
       assigned_to,
-      user_id,
+      user_id: finalUserId,
       unit_no,
-      ticket_status,
+      ticket_status, // Use the determined status
       start_date,
-      end_date,
+      end_date: null,
+      start_time,
+      end_time,
       attachments,
       notes,
+      maintenance_costs,
       created_at: now,
       updated_at: now
     };
 
+    console.log("New ticket object:", newTicket);
+
+    // Remove undefined values
     Object.keys(newTicket).forEach(
       (key) => newTicket[key] === undefined && delete newTicket[key]
     );
@@ -66,12 +87,157 @@ const createTicket = async (ticketData = {}) => {
   }
 };
 
+// Replace the updateTicketStatuses function with this corrected version
+const updateTicketStatuses = async () => {
+  try {
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
+    
+    console.log(`=== Updating Ticket Statuses ===`);
+    console.log(`Current Date: ${currentDate}`);
+    console.log(`Current Time: ${currentTime}`);
+    
+    // First, let's see what tickets are eligible for status update
+    const checkQuery = `
+      SELECT 
+        ticket_id, 
+        ticket_title, 
+        ticket_status, 
+        start_date,
+        start_time,
+        end_date,
+        end_time 
+      FROM tickets 
+      WHERE ticket_status IN ('ASSIGNED', 'PENDING')
+        AND start_date IS NOT NULL
+    `;
+    
+    const [eligibleTickets] = await pool.query(checkQuery);
+    console.log(`Found ${eligibleTickets.length} tickets with ASSIGNED/PENDING status and start_date`);
+    
+    if (eligibleTickets.length > 0) {
+      console.log('Eligible tickets detailed:', eligibleTickets.map(t => ({
+        id: t.ticket_id,
+        title: t.ticket_title,
+        status: t.ticket_status,
+        start_date: t.start_date,
+        start_time: t.start_time,
+        end_date: t.end_date,
+        end_time: t.end_time,
+        startDateReady: t.start_date <= currentDate,
+        startTimeReady: !t.start_time || t.start_time === '' || t.start_time <= currentTime,
+        notEnded: !t.end_date || t.end_date >= currentDate
+      })));
+    }
+    
+    // Update tickets to IN_PROGRESS 
+    // Check both start conditions and end conditions
+    const updateToInProgressQuery = `
+      UPDATE tickets 
+      SET ticket_status = 'IN_PROGRESS', updated_at = NOW()
+      WHERE ticket_status IN ('ASSIGNED', 'PENDING')
+        -- Start date condition
+        AND start_date <= CURDATE()
+        -- Start time condition (if start_date is today, check time; if past date, ignore time)
+        AND (
+          start_time IS NULL 
+          OR start_time = '' 
+          OR (start_date < CURDATE() OR (start_date = CURDATE() AND start_time <= CURTIME()))
+        )
+        -- End date condition (ticket shouldn't be expired)
+        AND (
+          end_date IS NULL 
+          OR end_date >= CURDATE()
+        )
+        -- End time condition (if end_date is today, check time; if future date, ignore time)
+        AND (
+          end_time IS NULL 
+          OR end_time = ''
+          OR end_date IS NULL
+          OR (end_date > CURDATE() OR (end_date = CURDATE() AND end_time > CURTIME()))
+        )
+    `;
+    
+    const [result] = await pool.query(updateToInProgressQuery);
+    
+    console.log(`Update query executed. Affected rows: ${result.affectedRows}`);
+    
+    // Let's also check what tickets were actually updated
+    if (result.affectedRows > 0) {
+      const updatedTicketsQuery = `
+        SELECT ticket_id, ticket_title, ticket_status, start_date, start_time, end_date, end_time 
+        FROM tickets 
+        WHERE ticket_status = 'IN_PROGRESS' 
+          AND updated_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
+      `;
+      
+      const [updatedTickets] = await pool.query(updatedTicketsQuery);
+      console.log('Tickets updated to IN_PROGRESS:', updatedTickets.map(t => ({
+        id: t.ticket_id,
+        title: t.ticket_title,
+        status: t.ticket_status,
+        start_date: t.start_date,
+        start_time: t.start_time,
+        end_date: t.end_date,
+        end_time: t.end_time
+      })));
+    }
+    
+    // Also check for tickets that should be marked as COMPLETED (past end_date/end_time)
+    const updateToCompletedQuery = `
+      UPDATE tickets 
+      SET ticket_status = 'COMPLETED', updated_at = NOW()
+      WHERE ticket_status = 'IN_PROGRESS'
+        AND end_date IS NOT NULL
+        AND (
+          end_date < CURDATE()
+          OR (end_date = CURDATE() AND end_time IS NOT NULL AND end_time <= CURTIME())
+        )
+    `;
+    
+    const [completedResult] = await pool.query(updateToCompletedQuery);
+    
+    if (completedResult.affectedRows > 0) {
+      console.log(`Marked ${completedResult.affectedRows} tickets as COMPLETED`);
+      
+      const completedTicketsQuery = `
+        SELECT ticket_id, ticket_title, ticket_status, end_date, end_time 
+        FROM tickets 
+        WHERE ticket_status = 'COMPLETED' 
+          AND updated_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
+      `;
+      
+      const [completedTickets] = await pool.query(completedTicketsQuery);
+      console.log('Tickets marked as COMPLETED:', completedTickets.map(t => ({
+        id: t.ticket_id,
+        title: t.ticket_title,
+        status: t.ticket_status,
+        end_date: t.end_date,
+        end_time: t.end_time
+      })));
+    }
+    
+    return { 
+      message: "Ticket statuses updated successfully",
+      inProgressCount: result.affectedRows,
+      completedCount: completedResult.affectedRows,
+      currentDate,
+      currentTime,
+      eligibleTickets: eligibleTickets.length
+    };
+    
+  } catch (error) {
+    console.error("Error updating ticket statuses:", error);
+    throw new Error(`Failed to update ticket statuses: ${error.message}`);
+  }
+};
+
 const getTickets = async (queryObj = {}) => {
   try {
     const { page = 1, limit = 10, ...filters } = queryObj;
     const skip = (page - 1) * limit;
 
-    // Modified query to join with users table
     let query = `
       SELECT 
         t.*,
@@ -82,7 +248,6 @@ const getTickets = async (queryObj = {}) => {
     `;
     const params = [];
 
-    // Apply filters (excluding user-related filters that need special handling)
     const ticketFilters = Object.entries(filters)
       .filter(([key, value]) => 
         value !== undefined && 
@@ -94,7 +259,6 @@ const getTickets = async (queryObj = {}) => {
         return `t.${key} = ?`;
       });
 
-    // Handle user name search if provided
     if (filters.requested_by_name) {
       ticketFilters.push(`CONCAT(u.first_name, ' ', u.last_name) LIKE ?`);
       params.push(`%${filters.requested_by_name}%`);
@@ -104,14 +268,11 @@ const getTickets = async (queryObj = {}) => {
       query += ' WHERE ' + ticketFilters.join(' AND ');
     }
 
-    // Order by creation date
     query += ' ORDER BY t.created_at DESC';
 
-    // Pagination
     query += ' LIMIT ? OFFSET ?';
     params.push(parseInt(limit), parseInt(skip));
 
-    // Count query with joins
     let countQuery = `
       SELECT COUNT(*) as total 
       FROM tickets t
@@ -122,7 +283,6 @@ const getTickets = async (queryObj = {}) => {
     if (ticketFilters.length > 0) {
       countQuery += ' WHERE ' + ticketFilters.join(' AND ');
       
-      // Add the same filter parameters for count query
       Object.entries(filters)
         .filter(([key, value]) => 
           value !== undefined && 
@@ -136,7 +296,6 @@ const getTickets = async (queryObj = {}) => {
       }
     }
 
-    // Execute queries
     const [rows] = await pool.query(query, params);
     const [countResult] = await pool.query(countQuery, countParams);
     const total = countResult[0].total;
@@ -242,6 +401,9 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       'assigned_to',
       'start_date',
       'end_date',
+      'start_time',
+      'end_time',
+      'maintenance_costs',
       'notes',
       'attachments'
     ];
@@ -310,26 +472,46 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
   }
 };
 
-const deleteTicket = async (ticket_id = "") => {
+const deleteTicket = async (ticketId) => {
   try {
-    const existingTicket = await getSingleTicketById(ticket_id);
+    console.log(`Attempting to delete ticket: ${ticketId}`);
     
-    const query = `DELETE FROM tickets WHERE ticket_id = ?`;
-    const [result] = await pool.query(query, [ticket_id]);
+    // First check if ticket exists
+    const checkQuery = `SELECT ticket_id, ticket_title, ticket_status FROM tickets WHERE ticket_id = ?`;
+    const [existingTickets] = await pool.query(checkQuery, [ticketId]);
+    
+    if (existingTickets.length === 0) {
+      throw new Error("Ticket not found");
+    }
+    
+    const ticket = existingTickets[0];
+    console.log(`Found ticket to delete: ${ticket.ticket_title} (Status: ${ticket.ticket_status})`);
+    
+    // Optional: Prevent deletion of completed tickets
+    if (ticket.ticket_status === 'COMPLETED') {
+      throw new Error("Cannot delete completed tickets. Archive instead if needed.");
+    }
+    
+    // Delete the ticket
+    const deleteQuery = `DELETE FROM tickets WHERE ticket_id = ?`;
+    const [result] = await pool.query(deleteQuery, [ticketId]);
     
     if (result.affectedRows === 0) {
-      throw new Error("Ticket could not be deleted");
+      throw new Error("Failed to delete ticket");
     }
-
+    
+    console.log(`Successfully deleted ticket: ${ticketId}`);
+    
     return {
       message: "Ticket deleted successfully",
-      ticket_id,
+      ticket_id: ticketId,
       deletedTicket: {
-        ticket_id: existingTicket.ticket.ticket_id,
-        ticket_title: existingTicket.ticket.ticket_title,
-        ticket_status: existingTicket.ticket.ticket_status
+        ticket_id: ticket.ticket_id,
+        ticket_title: ticket.ticket_title,
+        ticket_status: ticket.ticket_status
       }
     };
+    
   } catch (error) {
     console.error("Error deleting ticket:", error);
     throw new Error(error.message || "Failed to delete ticket");
@@ -338,6 +520,7 @@ const deleteTicket = async (ticket_id = "") => {
 
 export default {
   createTicket,
+  updateTicketStatuses,
   getTickets,
   getSingleTicketById,
   getTicketsByUserId,

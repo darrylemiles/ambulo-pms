@@ -3,17 +3,34 @@ import ticketsServices from "../services/ticketsServices.js";
 
 const createTicket = expressAsync(async (req, res) => {
   try {
+   
+    if (!currentUserId && !req.body.user_id) {
+      return res.status(401).json({ 
+        message: "User authentication required. No user ID found in session or request." 
+      });
+    }
+    
     const attachments = req.files && req.files['attachments'] 
       ? req.files['attachments'].map(file => file.path).join(',') 
       : "";
 
-    const payload = { ...req.body, attachments };
-    
-    const response = await ticketsServices.createTicket(payload);
+    const finalUserId = req.body.user_id || currentUserId;
+    console.log('Final user_id being used:', finalUserId);
+
+    const payload = { 
+      ...req.body, 
+      attachments, 
+      user_id: finalUserId
+    };
+
+
+    const response = await ticketsServices.createTicket(payload, currentUserId);
     res.json(response);
   } catch (error) {
     console.error("Error creating ticket:", error);
-    throw new Error(error.message || "Failed to create ticket");
+    res.status(500).json({ 
+      message: error.message || "Failed to create ticket"
+    });
   }
 });
 
@@ -47,13 +64,39 @@ const getTicketsByUserId = expressAsync(async (req, res) => {
   }
 });
 
+const updateTicketStatuses = expressAsync(async (req, res) => {
+  try {
+    const response = await ticketsServices.updateTicketStatuses();
+    res.json(response);
+  } catch (error) {
+    console.error("Error updating ticket statuses:", error);
+    res.status(500).json({ 
+      message: error.message || "Failed to update ticket statuses"
+    });
+  }
+});
+
 const updateTicketById = expressAsync(async (req, res) => {
   try {
     const attachments = req.files && req.files['attachments'] 
       ? req.files['attachments'].map(file => file.path).join(',') 
       : "";
 
-    const payload = { ...req.body, attachments };
+    let payload = { ...req.body, attachments };
+    
+    // Handle status logic for updates
+    if (req.body.end_time && req.body.end_time.trim() !== '') {
+      // If end_time is being set, mark as COMPLETED
+      payload.ticket_status = 'COMPLETED';
+      payload.end_date = new Date().toISOString().split('T')[0]; // Set end_date to today
+    } else if (req.body.assigned_to && req.body.assigned_to.trim() !== '' && !req.body.ticket_status) {
+      // If assigning to someone and no explicit status provided
+      payload.ticket_status = 'ASSIGNED';
+    } else if (req.body.ticket_status === 'CANCELLED') {
+      // Allow manual cancellation
+      payload.ticket_status = 'CANCELLED';
+    }
+
     const response = await ticketsServices.updateTicketById(req.params.ticket_id, payload);
     res.json(response);
   } catch (error) {
@@ -74,6 +117,7 @@ const deleteTicket = expressAsync(async (req, res) => {
 
 export {
   createTicket,
+  updateTicketStatuses,
     getTickets,
     getSingleTicketById,
     getTicketsByUserId,

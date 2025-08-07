@@ -68,7 +68,7 @@
             <div class="tickets-container">
                 <div class="table-header">
                     <div class="header-center">Status</div>
-                    <div class="header-left">Ticket Title</div>  <!-- Keep title left-aligned -->
+                    <div class="header-left">Ticket Title</div>  
                     <div class="header-center">Unit No.</div>
                     <div class="header-center">Priority</div>
                     <div class="header-center">Request Type</div>
@@ -79,7 +79,6 @@
                 </div>
                 
                 <div id="ticketsContainer">
-                    <!-- Tickets will be populated by JavaScript -->
                 </div>
             </div>
         </div>
@@ -87,7 +86,7 @@
 
     <!-- New Ticket Modal -->
     <div class="modal" id="newTicketModal">
-        <div class="modal-content">
+        <div class="modal-content modal-content-large">
             <div class="modal-header">
                 <div class="modal-header-content">
                     <h2>Create New Ticket</h2>
@@ -138,11 +137,32 @@
                         </div>
                     </div>
 
-                    <!-- Third row -->
+                    <!-- Third row - Date and Time -->
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="startDate">Start Date <span class="required">*</span></label>
                             <input type="date" id="startDate" name="start_date" required>
+                        </div>
+                        <div class="form-group" id="startTimeGroup" style="display: none;">
+                            <label for="startTime">Start Time</label>
+                            <input type="time" id="startTime" name="start_time">
+                        </div>
+                    </div>
+
+                    <!-- Fourth row - Assigned To -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="requestedBy">Requested By</label>
+                            <div class="autocomplete-container">
+                                <input type="text" 
+                                       id="requestedBy" 
+                                       name="requested_by" 
+                                       placeholder="Start typing tenant name... (Leave blank if requested by Admin)"
+                                       autocomplete="off">
+                                <div class="autocomplete-dropdown" id="requestedByDropdown">
+                                    <!-- Suggestions will be populated here -->
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="assignedTo">Assigned To</label>
