@@ -120,42 +120,77 @@ const createUser = async (userData = {}) => {
 
 const getUsers = async (queryObj = {}) => {
   try {
-    const { page = 1, limit = 10, ...filters } = queryObj;
+    const { page = 1, limit = 10, search, status, ...otherFilters } = queryObj;
     const skip = (page - 1) * limit;
 
     let query = 'SELECT user_id, first_name, last_name, business_name, business_type, avatar, email, phone_number, role, created_at, status FROM users WHERE role = "TENANT"';
     const params = [];
 
-    
-    const filterConditions = Object.entries(filters)
+    // Handle search parameter
+    if (search && search.trim() !== '') {
+      query += ` AND (
+        first_name LIKE ? OR 
+        last_name LIKE ? OR 
+        email LIKE ? OR 
+        business_name LIKE ? OR 
+        phone_number LIKE ?
+      )`;
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Handle status filter
+    if (status && status.trim() !== '') {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+
+    // Handle other filters
+    const otherFilterConditions = Object.entries(otherFilters)
       .filter(([_, value]) => value !== undefined && value !== "")
       .map(([key, value]) => {
         params.push(value);
         return `${key} = ?`;
       });
 
-    if (filterConditions.length > 0) {
-      query += ' AND ' + filterConditions.join(' AND ');
+    if (otherFilterConditions.length > 0) {
+      query += ' AND ' + otherFilterConditions.join(' AND ');
     }
 
-    
+    // Order and pagination
     query += ' ORDER BY created_at DESC';
-
-    
     query += ' LIMIT ? OFFSET ?';
     params.push(parseInt(limit), parseInt(skip));
 
+    // Count query for pagination
     let countQuery = 'SELECT COUNT(*) as total FROM users WHERE role = "TENANT"';
     const countParams = [];
 
-    if (filterConditions.length > 0) {
-      countQuery += ' AND ' + filterConditions.join(' AND ');
-
-      Object.entries(filters)
-        .filter(([_, value]) => value !== undefined && value !== "")
-        .forEach(([_, value]) => countParams.push(value));
+    // Apply same filters to count query
+    if (search && search.trim() !== '') {
+      countQuery += ` AND (
+        first_name LIKE ? OR 
+        last_name LIKE ? OR 
+        email LIKE ? OR 
+        business_name LIKE ? OR 
+        phone_number LIKE ?
+      )`;
+      const searchTerm = `%${search.trim()}%`;
+      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
+    if (status && status.trim() !== '') {
+      countQuery += ' AND status = ?';
+      countParams.push(status);
+    }
+
+    // Add other filters to count query
+    Object.entries(otherFilters)
+      .filter(([_, value]) => value !== undefined && value !== "")
+      .forEach(([key, value]) => {
+        countQuery += ` AND ${key} = ?`;
+        countParams.push(value);
+      });
 
     const [rows] = await pool.query(query, params);
     const [countResult] = await pool.query(countQuery, countParams);
