@@ -407,61 +407,44 @@ function renderTickets() {
         ? `priority-${ticket.priority.toLowerCase()}`
         : "priority-medium";
 
-      // Check if status is PENDING to show assign button
-      const isPending =
-        ticket.ticket_status &&
-        ticket.ticket_status.toUpperCase() === "PENDING";
+      // ✅ Use constants instead of hardcoded strings
+      const isPending = ticket.ticket_status && 
+        ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.PENDING;
 
       return `
         <div class="ticket-item" data-ticket-id="${ticket.ticket_id}">
             <!-- Main row - ensure exact column alignment -->
             <div class="ticket-row">
-                <span class="status-badge ${statusClass}">${AppUtils.formatStatus(
-        ticket.ticket_status
-      )}</span>
-                <span class="ticket-title">${
-                  ticket.ticket_title || "N/A"
-                }</span>
+                <span class="status-badge ${statusClass}">${AppUtils.formatStatus(ticket.ticket_status)}</span>
+                <span class="ticket-title">${ticket.ticket_title || "N/A"}</span>
                 <span>${ticket.unit_no || "N/A"}</span>
-                <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(
-        ticket.priority
-      )}</span>
+                <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(ticket.priority)}</span>
                 <span>${AppUtils.formatRequestType(ticket.request_type)}</span>
                 <span>${AppUtils.formatDate(ticket.start_date) || "Not set"}</span>
                 <span>${AppUtils.formatDate(ticket.end_date) || "Not set"}</span>
                 
                 <!-- Action buttons - Only show assign button if status is PENDING -->
                 <div class="row-actions">
-                    <button class="action-btn action-btn-edit" onclick="editTicket('${
-                      ticket.ticket_id
-                    }'); event.stopPropagation();" title="Update">
-    ✏️
-</button>
-                    ${
-                      isPending
-                        ? `
+                    <button class="action-btn action-btn-edit" onclick="editTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Update">
+                        ✏️
+                    </button>
+                    ${isPending ? `
                     <button class="action-btn action-btn-assign" onclick="assignTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Assign">
                         👤
                     </button>
-                    `
-                        : ""
-                    }
-                    <button class="action-btn action-btn-delete" onclick="deleteTicket('${
-                      ticket.ticket_id
-                    }'); event.stopPropagation();" title="Delete">
+                    ` : ""}
+                    <button class="action-btn action-btn-delete" onclick="deleteTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Delete">
                         🗑️
                     </button>
                 </div>
                 
                 <!-- Expand button -->
-                <button class="expand-btn" onclick="toggleTicketDetails('${
-                  ticket.ticket_id
-                }')" title="Expand Details">
+                <button class="expand-btn" onclick="toggleTicketDetails('${ticket.ticket_id}')" title="Expand Details">
                     <span class="expand-icon">▼</span>
                 </button>
             </div>
             
-            <!-- Expanded details with updated layout -->
+            <!-- ✅ ADD BACK THE EXPANDED DETAILS HTML -->
             <div class="ticket-details" id="details-${ticket.ticket_id}">
                 <div class="details-grid">
                     <!-- Basic Information -->
@@ -471,17 +454,13 @@ function renderTickets() {
                     </div>
                     <div class="detail-item">
                         <strong>Current Status</strong>
-                        <span class="status-badge ${statusClass}">${AppUtils.formatStatus(
-        ticket.ticket_status
-      )}</span>
+                        <span class="status-badge ${statusClass}">${AppUtils.formatStatus(ticket.ticket_status)}</span>
                     </div>
                     
                     <!-- Contact Information -->
                     <div class="detail-item">
                         <strong>Requested By</strong>
-                        <span title="${ticket.requested_by_email || ""}">${
-        ticket.requested_by_name || ticket.user_id || "Unknown"
-      }</span>
+                        <span title="${ticket.requested_by_email || ""}">${ticket.requested_by_name || ticket.user_id || "Unknown"}</span>
                     </div>
                     <div class="detail-item">
                         <strong>Assigned To</strong>
@@ -491,78 +470,53 @@ function renderTickets() {
                     <!-- Schedule Information -->
                     <div class="detail-item">
                         <strong>Start Time</strong>
-                        <span>${
-                          AppUtils.formatTime(ticket.start_time) || "Not scheduled"
-                        }</span>
+                        <span>${AppUtils.formatTime(ticket.start_time) || "Not scheduled"}</span>
                     </div>
                     <div class="detail-item">
                         <strong>End Time</strong>
-                        <span>${
-                          AppUtils.formatTime(ticket.end_time) || "Not scheduled"
-                        }</span>
+                        <span>${AppUtils.formatTime(ticket.end_time) || "Not scheduled"}</span>
                     </div>
                     
                     <!-- Cost Information -->
                     <div class="detail-item">
                         <strong>Maintenance Cost</strong>
-                        <span class="cost-display">${
-                          AppUtils.formatCurrency(ticket.maintenance_cost) ||
-                          "Not estimated"
-                        }</span>
+                        <span class="cost-display">${AppUtils.formatCurrency(ticket.maintenance_cost) || "Not estimated"}</span>
                     </div>
                     <div class="detail-item">
                         <strong>Priority Level</strong>
-                        <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(
-        ticket.priority
-      )}</span>
+                        <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(ticket.priority)}</span>
                     </div>
                     
-                    ${
-                      ticket.description
-                        ? `
+                    ${ticket.description ? `
                     <div class="detail-item full-width">
                         <strong>Description</strong>
                         <span>${ticket.description}</span>
-                    </div>`
-                        : ""
-                    }
+                    </div>` : ""}
                     
-                    ${
-                      ticket.notes
-                        ? `
+                    ${ticket.notes ? `
                     <div class="detail-item full-width">
                         <strong>Additional Notes</strong>
                         <div class="notes-content">${ticket.notes}</div>
-                    </div>`
-                        : ""
-                    }
+                    </div>` : ""}
                     
-                    ${
-                      ticket.attachments
-                        ? `
+                    ${ticket.attachments ? `
                     <div class="detail-item full-width">
                         <strong>Attachments</strong>
                         <div class="attachments-list">
                             ${AppUtils.formatAttachments(ticket.attachments)}
                         </div>
-                    </div>`
-                        : ""
-                    }
+                    </div>` : ""}
                 </div>
                 
                 <!-- Date information as simple text below attachments -->
                 <div class="ticket-dates-info">
                     <div class="date-info-item">
                         <span class="date-label">Created:</span>
-                        <span class="date-value">${AppUtils.formatDateTime(
-                          ticket.created_at
-                        )}</span>
+                        <span class="date-value">${AppUtils.formatDateTime(ticket.created_at)}</span>
                     </div>
                     <div class="date-info-item">
                         <span class="date-label">Last Updated:</span>
-                        <span class="date-value">${AppUtils.formatDateTime(
-                          ticket.updated_at
-                        )}</span>
+                        <span class="date-value">${AppUtils.formatDateTime(ticket.updated_at)}</span>
                     </div>
                 </div>
             </div>
@@ -693,7 +647,6 @@ function clearFilters() {
 }
 
 
-// Update the editTicket function to add initial checks:
 async function editTicket(ticketId) {
     event.stopPropagation();
     
@@ -716,9 +669,11 @@ async function editTicket(ticketId) {
         const result = await response.json();
         const ticket = result.ticket;
         
-        // Check if ticket is in a state that allows viewing but not editing
-        const isCompleted = ticket.ticket_status && ticket.ticket_status.toUpperCase() === 'COMPLETED';
-        const isCancelled = ticket.ticket_status && ticket.ticket_status.toUpperCase() === 'CANCELLED';
+        // ✅ Use constants for status checks
+        const isCompleted = ticket.ticket_status && 
+            ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.COMPLETED;
+        const isCancelled = ticket.ticket_status && 
+            ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.CANCELLED;
         
         if (isCompleted || isCancelled) {
             const statusText = isCompleted ? 'completed' : 'cancelled';
@@ -754,17 +709,16 @@ function populateEditForm(ticket) {
     document.getElementById('editRequestedBy').value = ticket.requested_by_name || 'Unknown';
     document.getElementById('editCreatedAt').value = AppUtils.formatDateTime(ticket.created_at);
     
-    // Debug: Log the ticket data to see what we're getting
-    console.log('Populating edit form with ticket data:', ticket);
-    console.log('start_date:', ticket.start_date, 'end_date:', ticket.end_date);
-    console.log('start_time:', ticket.start_time, 'end_time:', ticket.end_time);
     
-    // Check if ticket is editable
-    const isCompleted = ticket.ticket_status && ticket.ticket_status.toUpperCase() === 'COMPLETED';
-    const isCancelled = ticket.ticket_status && ticket.ticket_status.toUpperCase() === 'CANCELLED';
+    const isCompleted = ticket.ticket_status && 
+        ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.COMPLETED;
+    const isCancelled = ticket.ticket_status && 
+        ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.CANCELLED;
     const isNotEditable = isCompleted || isCancelled;
     const isPendingOrAssigned = ticket.ticket_status && 
-        (ticket.ticket_status.toUpperCase() === 'PENDING' || ticket.ticket_status.toUpperCase() === 'ASSIGNED');
+        (ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.PENDING || 
+         ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.ASSIGNED);
+    
     
     // Editable fields (NOW INCLUDES start_date and start_time)
     const editableFields = [
@@ -786,7 +740,6 @@ function populateEditForm(ticket) {
         }
     });
     
-    // Populate basic editable fields
     document.getElementById('editTicketTitle').value = ticket.ticket_title || '';
     document.getElementById('editRequestType').value = ticket.request_type || '';
     document.getElementById('editPriority').value = ticket.priority || '';
@@ -794,7 +747,6 @@ function populateEditForm(ticket) {
     document.getElementById('editDescription').value = ticket.description || '';
     document.getElementById('editNotes').value = ticket.notes || '';
     
-    // Handle start_date - NOW EDITABLE
     const startDateField = document.getElementById('editStartDate');
     if (startDateField) {
         let formattedStartDate = '';
@@ -944,18 +896,17 @@ function populateEditForm(ticket) {
     }
 }
 
-// Replace the handleStatusFieldEditing function with this corrected version:
+
 function handleStatusFieldEditing(ticket, isPendingOrAssigned, isNotEditable) {
     const statusGroup = document.getElementById('editStatus').parentElement;
     const currentStatus = ticket.ticket_status;
     
-    // Remove existing status select if it exists
+   
     const existingSelect = document.getElementById('editStatusSelect');
     if (existingSelect) {
         existingSelect.remove();
     }
     
-    // If ticket can have status manually changed to CANCELLED
     if (isPendingOrAssigned && !isNotEditable) {
         // Replace the read-only status field with a select
         const statusSelect = document.createElement('select');
@@ -969,9 +920,9 @@ function handleStatusFieldEditing(ticket, isPendingOrAssigned, isNotEditable) {
         currentOption.textContent = `Keep as ${AppUtils.formatStatus(currentStatus)}`;
         statusSelect.appendChild(currentOption);
         
-        // Add cancelled option
-        const cancelledOption = document.createElement('option'); // FIX: Properly declare the variable
-        cancelledOption.value = 'CANCELLED';
+        // ✅ Use constant for cancelled option
+        const cancelledOption = document.createElement('option');
+        cancelledOption.value = AppConstants.TICKET_STATUSES.CANCELLED;
         cancelledOption.textContent = 'Cancel Ticket';
         statusSelect.appendChild(cancelledOption);
         
@@ -1025,7 +976,6 @@ function resetEditFileUploadDisplay() {
 }
 
 
-
 async function submitEditTicket(event) {
     event.preventDefault();
     
@@ -1039,7 +989,7 @@ async function submitEditTicket(event) {
         return;
     }
     
-    // Get form values - NOW INCLUDING start_date and start_time
+    // Get form values
     const formData = new FormData(form);
     
     const ticketData = {
@@ -1047,33 +997,33 @@ async function submitEditTicket(event) {
         request_type: formData.get('request_type'),
         description: formData.get('description').trim(),
         priority: formData.get('priority'),
-        start_date: formData.get('start_date') || null, // ✅ NOW INCLUDED
-        start_time: formData.get('start_time') || null, // ✅ NOW INCLUDED
+        start_date: formData.get('start_date') || null,
+        start_time: formData.get('start_time') || null,
         end_date: formData.get('end_date') || null,
         end_time: formData.get('end_time') || null,
         maintenance_cost: formData.get('maintenance_cost') || null,
         notes: formData.get('notes')?.trim() || null
     };
     
-    // Handle manual status change (only for PENDING/ASSIGNED -> CANCELLED)
+    // ✅ Use constant for status check
     const statusSelect = document.getElementById('editStatusSelect');
-    if (statusSelect && statusSelect.value === 'CANCELLED') {
-        ticketData.ticket_status = 'CANCELLED';
+    if (statusSelect && statusSelect.value === AppConstants.TICKET_STATUSES.CANCELLED) {
+        ticketData.ticket_status = AppConstants.TICKET_STATUSES.CANCELLED;
         console.log('Setting ticket_status to CANCELLED in frontend');
     }
     
     console.log('Frontend ticketData before submission:', ticketData);
 
-    // Client-side validation - UPDATED to include start_date validation
+    // Client-side validation
     const validationErrors = validateEditTicketForm(ticketData);
     if (validationErrors.length > 0) {
         alert('Please fix the following errors:\n\n' + validationErrors.join('\n'));
         return;
     }
 
-    // Special confirmation for cancellation
+    // ✅ Use constant for confirmation message
     let confirmMessage;
-    if (ticketData.ticket_status === 'CANCELLED') {
+    if (ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED) {
         confirmMessage = `⚠️ CANCEL TICKET CONFIRMATION ⚠️\n\nAre you sure you want to CANCEL this ticket?\n\nTicket: ${ticketData.ticket_title}\n\n⚠️ Once cancelled, this ticket cannot be edited or reactivated!`;
     } else {
         confirmMessage = `Are you sure you want to update this ticket?\n\nTicket: ${ticketData.ticket_title}\nType: ${ticketData.request_type}\nPriority: ${ticketData.priority}`;
@@ -1085,7 +1035,7 @@ async function submitEditTicket(event) {
 
     // Disable submit button during submission
     submitBtn.disabled = true;
-    submitBtn.textContent = ticketData.ticket_status === 'CANCELLED' ? 'Cancelling...' : 'Updating...';
+    submitBtn.textContent = ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED ? 'Cancelling...' : 'Updating...';
 
     try {
         const submitData = new FormData();
@@ -1104,7 +1054,8 @@ async function submitEditTicket(event) {
             for (let i = 0; i < fileInput.files.length; i++) {
                 const file = fileInput.files[i];
                 
-                if (file.size > 10 * 1024 * 1024) {
+                // ✅ Use constant for file size check
+                if (file.size > AppConstants.FILE_UPLOAD.MAX_SIZE) {
                     alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
                     return;
                 }
@@ -1125,7 +1076,7 @@ async function submitEditTicket(event) {
         console.log('Server response:', result);
 
         if (response.ok) {
-            const statusMessage = ticketData.ticket_status === 'CANCELLED' 
+            const statusMessage = ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED 
                 ? `❌ Ticket cancelled successfully!\n\nTicket "${ticketData.ticket_title}" has been cancelled.`
                 : `✅ Ticket updated successfully!\n\nTicket "${ticketData.ticket_title}" has been updated.`;
             
@@ -1146,44 +1097,6 @@ async function submitEditTicket(event) {
     }
 }
 
-
-function validateEditTicketForm(data) {
-    const errors = [];
-    
-    if (!data.ticket_title) errors.push('• Ticket Title is required');
-    if (!data.request_type) errors.push('• Request Type is required');
-    if (!data.description) errors.push('• Description is required');
-    if (!data.priority) errors.push('• Priority is required');
-    if (!data.start_date) errors.push('• Start Date is required'); // ✅ ADDED validation
-    
-    // Validate start date is not in the past (only for new dates)
-    if (data.start_date) {
-        const selectedDate = new Date(data.start_date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        if (selectedDate < today) {
-            errors.push('• Start Date cannot be in the past');
-        }
-    }
-    
-    // Validate dates if both are provided
-    if (data.start_date && data.end_date) {
-        const startDate = new Date(data.start_date);
-        const endDate = new Date(data.end_date);
-        
-        if (endDate < startDate) {
-            errors.push('• End Date cannot be earlier than Start Date');
-        }
-    }
-    
-    // Validate maintenance cost if provided
-    if (data.maintenance_cost && (isNaN(data.maintenance_cost) || parseFloat(data.maintenance_cost) < 0)) {
-        errors.push('• Maintenance Cost must be a valid positive number');
-    }
-    
-    return errors;
-}
 
 // Initialize edit modal functionality
 function initializeEditModal() {
@@ -1253,8 +1166,8 @@ function initializeEditFileUpload() {
 // Handle file selection for edit modal
 function handleEditFileSelection(files) {
     const attachmentsArea = document.querySelector('#editTicketModal .attachments-area span');
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    const validTypes = ['image/', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const maxSize = AppConstants.FILE_UPLOAD.MAX_SIZE;
+    const validTypes = AppConstants.FILE_UPLOAD.ALLOWED_TYPES;
     
     if (!files || files.length === 0) {
         resetEditFileUploadDisplay();
@@ -1274,10 +1187,10 @@ function handleEditFileSelection(files) {
             continue;
         }
         
-        // Check file type
-        const isValidType = validTypes.some(type => file.type.startsWith(type));
+        // ✅ Fix the file type validation
+        const isValidType = validTypes.includes(file.type);
         if (!isValidType) {
-            errors.push(`${file.name} is not a supported file type`);
+            errors.push(`${file.name} is not a supported file type (${file.type})`);
             continue;
         }
         
@@ -1302,7 +1215,7 @@ function handleEditFileSelection(files) {
 }
 
 function showDeleteConfirmationModal(ticket) {
-  const modalHtml = `
+    const modalHtml = `
         <div class="delete-confirmation-modal" id="deleteModal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1314,23 +1227,19 @@ function showDeleteConfirmationModal(ticket) {
                         <strong>Ticket ID:</strong> ${ticket.ticket_id}<br>
                         <strong>Title:</strong> ${ticket.ticket_title}<br>
                         <strong>Unit:</strong> ${ticket.unit_no}<br>
-                        <strong>Status:</strong> ${AppUtils.formatStatus(
-                          ticket.ticket_status
-                        )}
+                        <strong>Status:</strong> ${AppUtils.formatStatus(ticket.ticket_status)}
                     </div>
                     <p class="warning-text">⚠️ This action cannot be undone!</p>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="button" class="btn-danger" onclick="confirmDelete('${
-                      ticket.ticket_id
-                    }')">Delete Ticket</button>
+                    <button type="button" class="btn-danger" onclick="confirmDelete('${ticket.ticket_id}')">Delete Ticket</button>
                 </div>
             </div>
         </div>
     `;
 
-  document.body.insertAdjacentHTML("beforeend", modalHtml);
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
 }
 
 function closeDeleteModal() {
@@ -1429,14 +1338,8 @@ async function deleteTicket(ticketId) {
     alert("Error preparing delete confirmation. Please try again.");
   }
 }
-function assignTicket(ticketId) {
-  event.stopPropagation();
-  // TODO: Implement assign functionality - open modal to select assignee
-  console.log(`Assigning ticket: ${ticketId}`);
-  alert(
-    `Assignment functionality for ticket ${ticketId} will be implemented here.`
-  );
-}
+
+
 
 async function openNewTicketModal() {
   const modal = document.getElementById("newTicketModal");
@@ -1523,38 +1426,34 @@ function hideTimeFields() {
   if (startTimeInput) startTimeInput.value = "";
 }
 
-// Update the form validation function to remove end_time and cost validation
-function validateTicketForm(data) {
-  const errors = [];
+// function validateTicketForm(data) {
+//     const errors = [];
 
-  if (!data.unit_no) errors.push("• Unit Number is required");
-  if (!data.ticket_title) errors.push("• Ticket Title is required");
-  if (!data.request_type) errors.push("• Request Type is required");
-  if (!data.description) errors.push("• Description is required");
-  if (!data.priority) errors.push("• Priority is required");
-  if (!data.start_date) errors.push("• Start Date is required");
+//     if (!data.unit_no) errors.push("• Unit Number is required");
+//     if (!data.ticket_title) errors.push("• Ticket Title is required");
+//     if (!data.request_type) errors.push("• Request Type is required");
+//     if (!data.description) errors.push("• Description is required");
+//     if (!data.priority) errors.push("• Priority is required");
+//     if (!data.start_date) errors.push("• Start Date is required");
 
-  // Validate start date is not in the past
-  if (data.start_date) {
-    const selectedDate = new Date(data.start_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+//     // Validate start date is not in the past
+//     if (data.start_date) {
+//         const selectedDate = new Date(data.start_date);
+//         const today = new Date();
+//         today.setHours(0, 0, 0, 0);
 
-    if (selectedDate < today) {
-      errors.push("• Start Date cannot be in the past");
-    }
-  }
+//         if (selectedDate < today) {
+//             errors.push("• Start Date cannot be in the past");
+//         }
+//     }
 
-  // Validate unit number format (optional - adjust regex as needed)
-  if (
-    data.unit_no &&
-    !/^[A-Z]?\d+[A-Z]?$/i.test(data.unit_no.replace(/\s/g, ""))
-  ) {
-    errors.push("• Unit Number should be in format like A101, B205, or 123");
-  }
+//     // ✅ Use constant for unit number validation
+//     if (data.unit_no && !AppConstants.VALIDATION.UNIT_NUMBER_REGEX.test(data.unit_no.replace(/\s/g, ""))) {
+//         errors.push("• Unit Number should be in format like A101, B205, or 123");
+//     }
 
-  return errors;
-}
+//     return errors;
+// }
 
 // Enhanced file upload functionality
 function initializeFileUpload() {
@@ -1595,59 +1494,53 @@ function initializeFileUpload() {
 }
 
 function handleFileSelection(files) {
-  const attachmentsArea = document.querySelector(".attachments-area span");
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  const validTypes = [
-    "image/",
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
+    const attachmentsArea = document.querySelector(".attachments-area span");
+    const maxSize = AppConstants.FILE_UPLOAD.MAX_SIZE;
+    const validTypes = AppConstants.FILE_UPLOAD.ALLOWED_TYPES;
 
-  if (!files || files.length === 0) {
-    resetFileUploadDisplay();
-    return;
-  }
-
-  let validFiles = 0;
-  let fileNames = [];
-  let errors = [];
-
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-
-    // Check file size
-    if (file.size > maxSize) {
-      errors.push(`${file.name} is too large (max 10MB)`);
-      continue;
+    if (!files || files.length === 0) {
+        resetFileUploadDisplay();
+        return;
     }
 
-    // Check file type
-    const isValidType = validTypes.some((type) => file.type.startsWith(type));
-    if (!isValidType) {
-      errors.push(`${file.name} is not a supported file type`);
-      continue;
+    let validFiles = 0;
+    let fileNames = [];
+    let errors = [];
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Check file size
+        if (file.size > maxSize) {
+            errors.push(`${file.name} is too large (max 10MB)`);
+            continue;
+        }
+
+        // ✅ Fix the file type validation
+        const isValidType = validTypes.includes(file.type);
+        if (!isValidType) {
+            errors.push(`${file.name} is not a supported file type (${file.type})`);
+            continue;
+        }
+
+        validFiles++;
+        fileNames.push(file.name);
     }
 
-    validFiles++;
-    fileNames.push(file.name);
-  }
+    if (errors.length > 0) {
+        alert("Some files were not added:\n\n" + errors.join("\n"));
+    }
 
-  if (errors.length > 0) {
-    alert("Some files were not added:\n\n" + errors.join("\n"));
-  }
+    if (validFiles > 0) {
+        const displayText = validFiles === 1 
+            ? `📎 ${fileNames[0]}` 
+            : `📎 ${validFiles} files selected: ${fileNames.join(", ")}`;
 
-  if (validFiles > 0) {
-    const displayText =
-      validFiles === 1
-        ? `📎 ${fileNames[0]}`
-        : `📎 ${validFiles} files selected: ${fileNames.join(", ")}`;
-
-    attachmentsArea.textContent = displayText;
-    attachmentsArea.style.color = "#374151";
-  } else {
-    resetFileUploadDisplay();
-  }
+        attachmentsArea.textContent = displayText;
+        attachmentsArea.style.color = "#374151";
+    } else {
+        resetFileUploadDisplay();
+    }
 }
 
 // Load tenants when modal opens
@@ -1982,7 +1875,6 @@ function initializeModal() {
 
 // Add these simplified functions to your maintenance.js file
 
-// Open assign ticket modal
 async function assignTicket(ticketId) {
     event.stopPropagation();
     
@@ -2005,10 +1897,10 @@ async function assignTicket(ticketId) {
         const result = await response.json();
         const ticket = result.ticket;
         
-        // Check if ticket can be assigned
+        // ✅ Use constants for status checks
         const isAssignable = ticket.ticket_status && 
-            (ticket.ticket_status.toUpperCase() === 'PENDING' || 
-             ticket.ticket_status.toUpperCase() === 'ASSIGNED');
+            (ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.PENDING || 
+             ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.ASSIGNED);
         
         if (!isAssignable) {
             alert(`This ticket cannot be assigned because its status is "${ticket.ticket_status}". Only PENDING or ASSIGNED tickets can be reassigned.`);

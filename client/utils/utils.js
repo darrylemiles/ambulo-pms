@@ -117,6 +117,66 @@ function formatAttachments(attachments) {
 }
 
 
+// Add these helper functions to your maintenance.js:
+
+// Check if a ticket status allows editing
+function canEditTicket(status) {
+    if (!status) return true;
+    const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+    return statusMapping ? statusMapping.canEdit : false;
+}
+
+// Check if a ticket can be assigned
+function canAssignTicket(status) {
+    if (!status) return true;
+    const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+    return statusMapping ? statusMapping.canAssign : false;
+}
+
+// Check if a ticket can be deleted
+function canDeleteTicket(status) {
+    if (!status) return true;
+    const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+    return statusMapping ? statusMapping.canDelete : false;
+}
+
+// Get status color
+function getStatusColor(status) {
+    if (!status) return '#6b7280';
+    const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+    return statusMapping ? statusMapping.color : '#6b7280';
+}
+
+// Get priority color  
+function getPriorityColor(priority) {
+    if (!priority) return '#f59e0b';
+    const priorityMapping = AppConstants.PRIORITY_MAPPINGS[priority.toUpperCase()];
+    return priorityMapping ? priorityMapping.color : '#f59e0b';
+}
+
+function validateEditTicketForm(data) {
+    const errors = [];
+
+    if (!data.ticket_title) errors.push("• Ticket Title is required");
+    if (!data.request_type) errors.push("• Request Type is required");
+    if (!data.description) errors.push("• Description is required");
+    if (!data.priority) errors.push("• Priority is required");
+
+    // Validate start date if provided
+    if (data.start_date) {
+        const selectedDate = new Date(data.start_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (selectedDate < today) {
+            errors.push("• Start Date cannot be in the past");
+        }
+    }
+
+    return errors;
+}
+
+
 if (typeof module !== "undefined" && module.exports) {
   // Export functions for Node.js
   module.exports = {
@@ -128,6 +188,12 @@ if (typeof module !== "undefined" && module.exports) {
     formatDate,
     formatDateTime,
     formatAttachments,
+    canEditTicket,
+    canAssignTicket,
+    canDeleteTicket,
+    getStatusColor,
+    getPriorityColor,
+    validateEditTicketForm
   };
 } else {
   // Attach to global window object for browser usage
@@ -140,5 +206,11 @@ if (typeof module !== "undefined" && module.exports) {
     formatDate,
     formatDateTime,
     formatAttachments,
+    canEditTicket,
+    canAssignTicket,
+    canDeleteTicket,
+    getStatusColor,
+    getPriorityColor,
+    validateEditTicketForm
   };
 }
