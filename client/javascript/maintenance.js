@@ -1,3 +1,4 @@
+
 // Global variables
 let tickets = [];
 let allTickets = [];
@@ -60,9 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeModal();
   initializeEditModal();
 
-  handleSidebarToggle();
 
-  // If you have a sidebar toggle button, add event listener
   const sidebarToggle =
     document.querySelector(".mobile-menu-btn") ||
     document.querySelector(".sidebar-toggle") ||
@@ -303,15 +302,12 @@ function updateFilterStatus() {
       year: "numeric",
     });
 
-    // Update the display values
-    console.log(`Filtering tickets from ${fromFormatted} to ${toFormatted}`);
-    console.log(`Showing ${tickets.length} of ${allTickets.length} tickets`);
+    
 
     // Show tickets that are created, end, or span within the date range
     const activeTickets = tickets.filter(
       (t) => t.ticket_status !== "completed"
     ).length;
-    console.log(`Active tickets in range: ${activeTickets}`);
   }
 }
 
@@ -379,7 +375,6 @@ function clearFilters() {
   renderTickets();
 }
 
-// Add a function to get readable date range for display
 function getDateRangeDisplay() {
   if (!currentFromDate || !currentToDate) return "";
 
@@ -421,19 +416,19 @@ function renderTickets() {
         <div class="ticket-item" data-ticket-id="${ticket.ticket_id}">
             <!-- Main row - ensure exact column alignment -->
             <div class="ticket-row">
-                <span class="status-badge ${statusClass}">${formatStatus(
+                <span class="status-badge ${statusClass}">${AppUtils.formatStatus(
         ticket.ticket_status
       )}</span>
                 <span class="ticket-title">${
                   ticket.ticket_title || "N/A"
                 }</span>
                 <span>${ticket.unit_no || "N/A"}</span>
-                <span class="status-badge ${priorityClass}">${formatPriority(
+                <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(
         ticket.priority
       )}</span>
-                <span>${formatRequestType(ticket.request_type)}</span>
-                <span>${formatDate(ticket.start_date) || "Not set"}</span>
-                <span>${formatDate(ticket.end_date) || "Not set"}</span>
+                <span>${AppUtils.formatRequestType(ticket.request_type)}</span>
+                <span>${AppUtils.formatDate(ticket.start_date) || "Not set"}</span>
+                <span>${AppUtils.formatDate(ticket.end_date) || "Not set"}</span>
                 
                 <!-- Action buttons - Only show assign button if status is PENDING -->
                 <div class="row-actions">
@@ -476,7 +471,7 @@ function renderTickets() {
                     </div>
                     <div class="detail-item">
                         <strong>Current Status</strong>
-                        <span class="status-badge ${statusClass}">${formatStatus(
+                        <span class="status-badge ${statusClass}">${AppUtils.formatStatus(
         ticket.ticket_status
       )}</span>
                     </div>
@@ -497,13 +492,13 @@ function renderTickets() {
                     <div class="detail-item">
                         <strong>Start Time</strong>
                         <span>${
-                          formatTime(ticket.start_time) || "Not scheduled"
+                          AppUtils.formatTime(ticket.start_time) || "Not scheduled"
                         }</span>
                     </div>
                     <div class="detail-item">
                         <strong>End Time</strong>
                         <span>${
-                          formatTime(ticket.end_time) || "Not scheduled"
+                          AppUtils.formatTime(ticket.end_time) || "Not scheduled"
                         }</span>
                     </div>
                     
@@ -511,13 +506,13 @@ function renderTickets() {
                     <div class="detail-item">
                         <strong>Maintenance Cost</strong>
                         <span class="cost-display">${
-                          formatCurrency(ticket.maintenance_cost) ||
+                          AppUtils.formatCurrency(ticket.maintenance_cost) ||
                           "Not estimated"
                         }</span>
                     </div>
                     <div class="detail-item">
                         <strong>Priority Level</strong>
-                        <span class="status-badge ${priorityClass}">${formatPriority(
+                        <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(
         ticket.priority
       )}</span>
                     </div>
@@ -548,7 +543,7 @@ function renderTickets() {
                     <div class="detail-item full-width">
                         <strong>Attachments</strong>
                         <div class="attachments-list">
-                            ${formatAttachments(ticket.attachments)}
+                            ${AppUtils.formatAttachments(ticket.attachments)}
                         </div>
                     </div>`
                         : ""
@@ -559,13 +554,13 @@ function renderTickets() {
                 <div class="ticket-dates-info">
                     <div class="date-info-item">
                         <span class="date-label">Created:</span>
-                        <span class="date-value">${formatDateTime(
+                        <span class="date-value">${AppUtils.formatDateTime(
                           ticket.created_at
                         )}</span>
                     </div>
                     <div class="date-info-item">
                         <span class="date-label">Last Updated:</span>
-                        <span class="date-value">${formatDateTime(
+                        <span class="date-value">${AppUtils.formatDateTime(
                           ticket.updated_at
                         )}</span>
                     </div>
@@ -580,37 +575,6 @@ function renderTickets() {
   currentlyExpandedTicket = null;
 }
 
-// Add helper functions for formatting new fields
-function formatTime(timeString) {
-  if (!timeString) return null;
-
-  // Handle both HH:MM and HH:MM:SS formats
-  const timeParts = timeString.split(":");
-  if (timeParts.length >= 2) {
-    const hours = parseInt(timeParts[0]);
-    const minutes = timeParts[1];
-    const ampm = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes} ${ampm}`;
-  }
-  return timeString;
-}
-
-function formatCurrency(amount) {
-  if (!amount || amount === 0) return null;
-
-  // Convert to number if it's a string
-  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
-
-  if (isNaN(numAmount)) return null;
-
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numAmount);
-}
 
 function toggleTicketDetails(ticketId) {
   const details = document.getElementById(`details-${ticketId}`);
@@ -665,48 +629,7 @@ function expandTicket(ticketId, details, ticketItem, expandIcon) {
   }, 200);
 }
 
-function formatStatus(status) {
-  if (!status)
-    return '<span class="status-badge status-pending">Pending</span>';
 
-  const statusLower = status.toLowerCase().replace(/[^a-z_]/g, "");
-  const statusClass = `status-${statusLower}`;
-
-  const statusMap = {
-    pending: "Pending",
-    assigned: "Assigned",
-    inprogress: "In Progress",
-    in_progress: "In Progress",
-    completed: "Completed",
-    cancelled: "Cancelled",
-    canceled: "Cancelled",
-  };
-
-  const displayText =
-    statusMap[statusLower] ||
-    status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
-
-  return displayText; // Return just the text, not wrapped in span since you already wrap it in renderTickets
-}
-
-// Add a similar function for priority (keep only this one)
-function formatPriority(priority) {
-  if (!priority) return "Medium";
-
-  const priorityLower = priority.toLowerCase();
-  const displayText = priority.charAt(0).toUpperCase() + priority.slice(1);
-
-  return displayText; // Return just the text
-}
-
-// Add function for request type
-function formatRequestType(type) {
-  if (!type) return "General";
-
-  const displayText = type.charAt(0).toUpperCase() + type.slice(1);
-
-  return displayText; // Return just the text
-}
 
 // Add a function to periodically check and update ticket statuses
 async function checkAndUpdateTicketStatuses() {
@@ -729,45 +652,6 @@ async function checkAndUpdateTicketStatuses() {
   }
 }
 
-function formatPriority(priority) {
-  if (!priority) return "Medium";
-  return priority.charAt(0).toUpperCase() + priority.slice(1);
-}
-
-// Helper function to format dates
-function formatDate(dateString) {
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatDateTime(dateString) {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatAttachments(attachments) {
-  if (!attachments) return "";
-
-  const attachmentsList = attachments.split(",");
-  return attachmentsList
-    .map((attachment) => {
-      const fileName = attachment.trim().split("/").pop();
-      return `<a href="${attachment.trim()}" target="_blank" class="attachment-link">${fileName}</a>`;
-    })
-    .join(", ");
-}
 
 // Filter tickets based on search
 function filterTickets() {
@@ -866,9 +750,9 @@ function populateEditForm(ticket) {
     // Read-only fields
     document.getElementById('editTicketIdDisplay').value = ticket.ticket_id;
     document.getElementById('editUnitNo').value = ticket.unit_no || '';
-    document.getElementById('editStatus').value = formatStatus(ticket.ticket_status);
+    document.getElementById('editStatus').value = AppUtils.formatStatus(ticket.ticket_status);
     document.getElementById('editRequestedBy').value = ticket.requested_by_name || 'Unknown';
-    document.getElementById('editCreatedAt').value = formatDateTime(ticket.created_at);
+    document.getElementById('editCreatedAt').value = AppUtils.formatDateTime(ticket.created_at);
     
     // Debug: Log the ticket data to see what we're getting
     console.log('Populating edit form with ticket data:', ticket);
@@ -1082,7 +966,7 @@ function handleStatusFieldEditing(ticket, isPendingOrAssigned, isNotEditable) {
         // Add current status as default option
         const currentOption = document.createElement('option');
         currentOption.value = '';
-        currentOption.textContent = `Keep as ${formatStatus(currentStatus)}`;
+        currentOption.textContent = `Keep as ${AppUtils.formatStatus(currentStatus)}`;
         statusSelect.appendChild(currentOption);
         
         // Add cancelled option
@@ -1115,7 +999,7 @@ function displayCurrentAttachments(attachments) {
     
     if (attachments && attachments.trim() !== '') {
         currentAttachmentsGroup.style.display = 'block';
-        currentAttachmentsList.innerHTML = formatAttachments(attachments);
+        currentAttachmentsList.innerHTML = AppUtils.formatAttachments(attachments);
     } else {
         currentAttachmentsGroup.style.display = 'none';
     }
@@ -1430,7 +1314,7 @@ function showDeleteConfirmationModal(ticket) {
                         <strong>Ticket ID:</strong> ${ticket.ticket_id}<br>
                         <strong>Title:</strong> ${ticket.ticket_title}<br>
                         <strong>Unit:</strong> ${ticket.unit_no}<br>
-                        <strong>Status:</strong> ${formatStatus(
+                        <strong>Status:</strong> ${AppUtils.formatStatus(
                           ticket.ticket_status
                         )}
                     </div>
@@ -1957,7 +1841,7 @@ async function submitNewTicket(event) {
     const form = document.getElementById("newTicketForm");
     const submitBtn = document.querySelector(".btn-submit");
 
-    // Disable submit button to prevent double submission
+    
     submitBtn.disabled = true;
     submitBtn.textContent = "Creating...";
 
@@ -2020,7 +1904,7 @@ async function submitNewTicket(event) {
         if (response.ok) {
             alert(`✅ Ticket created successfully!\n\nTicket ID: ${result.ticket_id}\nTitle: ${ticketData.ticket_title}`);
             closeNewTicketModal();
-            await loadTickets(); // Refresh the tickets list
+            await loadTickets();
         } else {
             throw new Error(result.message || 'Failed to create ticket');
         }
@@ -2158,7 +2042,7 @@ function populateAssignForm(ticket) {
     document.getElementById('assignTicketIdDisplay').value = ticket.ticket_id;
     document.getElementById('assignTicketTitle').value = ticket.ticket_title || '';
     document.getElementById('assignUnitNo').value = ticket.unit_no || '';
-    document.getElementById('assignPriority').value = formatPriority(ticket.priority);
+    document.getElementById('assignPriority').value = AppUtils.formatPriority(ticket.priority);
     
     // Pre-fill with current assignment if exists
     document.getElementById('assignedToInput').value = ticket.assigned_to || '';
