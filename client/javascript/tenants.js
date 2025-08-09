@@ -1,467 +1,1078 @@
-        const tenants = [
-            { id: 1, name: 'Kei Lebron', phone: '(+63) 906 5959', unit: 'Unit 1, 101' },
-            { id: 2, name: 'Joshua Deputo', phone: '', unit: 'Unit 1, 102' },
-            { id: 3, name: 'Jerson Matuguina', phone: '(+63) 999 4 543', unit: 'Unit 2, 101' },
-            { id: 4, name: 'Analiza Buena', phone: '(+63) 929 4 9503', unit: 'Unit 2, 102' }
-        ];
+// Global variables
+let tenants = [];
+let allTenants = [];
+let selectedTenants = new Set();
+let currentView = "grid";
+let currentPage = 1;
+let totalPages = 1;
+let isLoading = false;
 
-        let selectedTenants = new Set([1]);
-        let currentView = 'grid';
+// API Configuration
+const API_BASE_URL = "/api/v1";
 
-        function toggleView(viewType) {
-            const buttons = document.querySelectorAll('.view-btn');
-            const gridView = document.getElementById('gridView');
-            const listView = document.getElementById('listView');
-            
-            buttons.forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[data-view="${viewType}"]`).classList.add('active');
-            
-            if (viewType === 'list') {
-                gridView.style.display = 'none';
-                listView.style.display = 'flex';
-                currentView = 'list';
-            } else {
-                gridView.style.display = 'grid';
-                listView.style.display = 'none';
-                currentView = 'grid';
-            }
-        }
+// Initialize the page
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("DOM loaded, checking elements...");
 
-        function setupEventListeners() {
-            // Grid view listeners
-            const tenantCards = document.querySelectorAll('.tenant-card');
-            const checkboxes = document.querySelectorAll('.tenant-card .checkbox');
+  // Check if required elements exist
+  const requiredElements = [
+    "gridView",
+    "listView",
+    "loadingState",
+    "errorState",
+    "searchInput",
+    "statusFilter",
+  ];
+  requiredElements.forEach((id) => {
+    const element = document.getElementById(id);
+    console.log(`Element ${id}:`, element ? "Found" : "Missing");
+  });
 
-            tenantCards.forEach((card) => {
-                card.addEventListener('click', function(e) {
-                    if (e.target.type === 'checkbox') return;
-                    
-                    const checkbox = card.querySelector('.checkbox');
-                    const tenantId = parseInt(card.dataset.tenant);
-                    
-                    if (selectedTenants.has(tenantId)) {
-                        selectedTenants.delete(tenantId);
-                        card.classList.remove('selected');
-                        checkbox.checked = false;
-                    } else {
-                        selectedTenants.add(tenantId);
-                        card.classList.add('selected');
-                        checkbox.checked = true;
+  loadTenants();
+  updateSelectAllButton();
+  setupEventListeners();
+});
+
+// Load tenants from backend
+async function loadTenants(page = 1, filters = {}) {
+  if (isLoading) return;
+
+  try {
+    isLoading = true;
+    showLoadingState();
+
+    const queryParams = new URLSearchParams({
+      page: page,
+      limit: 12,
+      ...filters,
+    });
+
+    console.log("Loading tenants with params:", queryParams.toString());
+    console.log("Full URL:", `${API_BASE_URL}/users?${queryParams}`);
+
+    const response = await fetch(`${API_BASE_URL}/users?${queryParams}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    console.log("Response status:", response.status);
+    console.log("Response headers:", response.headers);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("API Response:", result);
+
+    if (result.users) {
+      tenants = result.users;
+      allTenants = [...tenants];
+
+      console.log("Loaded tenants:", tenants.length);
+
+      // Update pagination info
+      if (result.pagination) {
+        currentPage = result.pagination.currentPage;
+        totalPages = result.pagination.totalPages;
+        console.log("Pagination:", result.pagination);
+      }
+
+      renderTenants();
+      renderPagination();
+      hideLoadingState();
+
+      if (tenants.length === 0) {
+        showEmptyState();
+      }
+    } else {
+      console.error("No users property in response:", result);
+      throw new Error("Invalid response format");
+    }
+  } catch (error) {
+    console.error("Error loading tenants:", error);
+    showErrorState();
+  } finally {
+    isLoading = false;
+  }
+}
+
+function renderTenants() {
+  console.log(
+    "Rendering tenants, view:",
+    currentView,
+    "count:",
+    tenants.length
+  );
+
+  if (currentView === "grid") {
+    renderGridView();
+  } else {
+    renderListView();
+  }
+
+  // Update selection states after rendering
+  updateSelectAllButton();
+  updateListSelectAll();
+}
+
+// Render grid view
+function renderGridView() {
+  const container = document.getElementById("gridView");
+
+  if (tenants.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const cardsHTML = tenants
+    .map((tenant) => {
+      const initials = getInitials(tenant.first_name, tenant.last_name);
+      const fullName = `${tenant.first_name || ""} ${
+        tenant.last_name || ""
+      }`.trim();
+      const isSelected = selectedTenants.has(tenant.user_id);
+
+      // ✅ Generate avatar HTML - use avatar URL if available, fallback to initials
+      const avatarHTML = generateAvatarHTML(tenant);
+
+      return `
+                    <div class="tenant-card ${
+                      isSelected ? "selected" : ""
+                    }" data-tenant="${tenant.user_id}">
+                        <div class="tenant-card-header">
+                            <div class="tenant-info">
+                                <div class="tenant-avatar">
+                                    ${avatarHTML}
+                                </div>
+                                <div class="tenant-details">
+                                    <h4>${fullName || "No Name"}</h4>
+                                    <p>${tenant.email || "No Email"}</p>
+                                </div>
+                            </div>
+                            <input type="checkbox" class="checkbox" ${
+                              isSelected ? "checked" : ""
+                            }>
+                        </div>
+                        
+                        <div class="tenant-card-body">
+                            <div class="tenant-meta-item">
+                                <span class="label">Phone:</span>
+                                <span class="value">${
+                                  tenant.phone_number || "Not provided"
+                                }</span>
+                            </div>
+                            <div class="tenant-meta-item">
+                                <span class="label">Business:</span>
+                                <span class="value">${
+                                  tenant.business_name || "N/A"
+                                }</span>
+                            </div>
+                        </div>
+                        
+                        <div class="tenant-meta">
+                            <span class="status-badge status-${(
+                              tenant.status || "active"
+                            ).toLowerCase()}">
+                                ${
+                                  AppUtils.formatStatus(tenant.status) ||
+                                  "Active"
+                                }
+                            </span>
+                            <span class="created-date">${AppUtils.formatDate(
+                              tenant.created_at
+                            )}</span>
+                        </div>
+                    </div>
+                `;
+    })
+    .join("");
+
+  container.innerHTML = cardsHTML;
+  setupGridEventListeners();
+}
+
+// Render list view
+function renderListView() {
+  const container = document.getElementById("listContainer");
+  console.log("listContainer element:", container);
+
+  if (!container) {
+    console.error("❌ listContainer not found in DOM!");
+    return;
+  }
+
+  if (tenants.length === 0) {
+    console.log("No tenants to render");
+    container.innerHTML = "";
+    return;
+  }
+
+  console.log("Generating HTML for", tenants.length, "tenants");
+
+  const rowsHTML = tenants
+    .map((tenant) => {
+      const fullName = `${tenant.first_name || ""} ${
+        tenant.last_name || ""
+      }`.trim();
+      const isSelected = selectedTenants.has(tenant.user_id);
+
+      const avatarHTML = generateAvatarHTML(tenant, "small");
+
+      console.log("Processing tenant:", tenant.user_id, fullName);
+
+      return `
+        <div class="tenant-list-item ${
+          isSelected ? "selected" : ""
+        }" data-tenant="${tenant.user_id}">
+            <div class="list-col list-col-checkbox">
+                <input type="checkbox" class="list-checkbox" ${
+                  isSelected ? "checked" : ""
+                }>
+            </div>
+            <div class="list-col list-col-name">
+                <div class="tenant-info">
+                    <div class="tenant-avatar">
+                                    ${avatarHTML}
+                    </div>
+                    <div style="margin-left: 0.5rem;">
+                        <div style="font-weight: 500;">${
+                          fullName || "No Name"
+                        }</div>
+                        <div style="font-size: 0.75rem; color: #6b7280;">${
+                          tenant.business_name || ""
+                        }</div>
+                    </div>
+                </div>
+            </div>
+            <div class="list-col list-col-email">${
+              tenant.email || "No Email"
+            }</div>
+            <div class="list-col list-col-phone">${
+              tenant.phone_number || "Not provided"
+            }</div>
+            <div class="list-col list-col-status">
+                <span class="status-badge status-${(
+                  tenant.status || "active"
+                ).toLowerCase()}">
+                    ${
+                      AppUtils?.formatStatus
+                        ? AppUtils.formatStatus(tenant.status)
+                        : tenant.status || "Active"
                     }
-                    
-                    syncListView(tenantId);
-                    updateSelectAllButton();
-                });
-            });
+                </span>
+            </div>
+            <div class="list-col list-col-created">${
+              AppUtils?.formatDate
+                ? AppUtils.formatDate(tenant.created_at)
+                : tenant.created_at
+            }</div>
+            <div class="list-col list-col-actions">
+                <button class="action-btn" onclick="editTenant('${
+                  tenant.user_id
+                }')" title="Edit">✏️</button>
+                <button class="action-btn" onclick="deleteTenant('${
+                  tenant.user_id
+                }')" title="Delete">🗑️</button>
+            </div>
+        </div>
+      `;
+    })
+    .join("");
 
-            checkboxes.forEach((checkbox) => {
-                checkbox.addEventListener('change', function() {
-                    const card = checkbox.closest('.tenant-card');
-                    const tenantId = parseInt(card.dataset.tenant);
-                    
-                    if (checkbox.checked) {
-                        selectedTenants.add(tenantId);
-                        card.classList.add('selected');
-                    } else {
-                        selectedTenants.delete(tenantId);
-                        card.classList.remove('selected');
-                    }
-                    
-                    syncListView(tenantId);
-                    updateSelectAllButton();
-                });
-            });
+  console.log("Generated HTML length:", rowsHTML.length);
+  console.log("Setting innerHTML...");
 
-            // List view listeners
-            const listItems = document.querySelectorAll('.tenant-list-item');
-            const listCheckboxes = document.querySelectorAll('.tenant-list-item .list-checkbox');
+  container.innerHTML = rowsHTML;
 
-            listItems.forEach((item) => {
-                item.addEventListener('click', function(e) {
-                    if (e.target.type === 'checkbox') return;
-                    
-                    const checkbox = item.querySelector('.list-checkbox');
-                    const tenantId = parseInt(item.dataset.tenant);
-                    
-                    if (selectedTenants.has(tenantId)) {
-                        selectedTenants.delete(tenantId);
-                        item.classList.remove('selected');
-                        checkbox.checked = false;
-                    } else {
-                        selectedTenants.add(tenantId);
-                        item.classList.add('selected');
-                        checkbox.checked = true;
-                    }
-                    
-                    syncGridView(tenantId);
-                    updateSelectAllButton();
-                });
-            });
+  console.log("HTML set, calling setupListEventListeners...");
+  setupListEventListeners();
 
-            listCheckboxes.forEach((checkbox) => {
-                checkbox.addEventListener('change', function() {
-                    const item = checkbox.closest('.tenant-list-item');
-                    const tenantId = parseInt(item.dataset.tenant);
-                    
-                    if (checkbox.checked) {
-                        selectedTenants.add(tenantId);
-                        item.classList.add('selected');
-                    } else {
-                        selectedTenants.delete(tenantId);
-                        item.classList.remove('selected');
-                    }
-                    
-                    syncGridView(tenantId);
-                    updateSelectAllButton();
-                });
-            });
+  console.log("List view rendering complete");
+}
+
+// Render pagination
+function renderPagination() {
+  const container = document.getElementById("pagination");
+
+  if (totalPages <= 1) {
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "flex";
+
+  let paginationHTML = "";
+
+  // Previous button
+  paginationHTML += `
+                <button class="pagination-btn" ${
+                  currentPage === 1 ? "disabled" : ""
+                } onclick="goToPage(${currentPage - 1})">
+                    ← Previous
+                </button>
+            `;
+
+  // Page numbers
+  for (let i = 1; i <= totalPages; i++) {
+    if (
+      i === 1 ||
+      i === totalPages ||
+      (i >= currentPage - 2 && i <= currentPage + 2)
+    ) {
+      paginationHTML += `
+                        <button class="pagination-btn ${
+                          i === currentPage ? "active" : ""
+                        }" onclick="goToPage(${i})">
+                            ${i}
+                        </button>
+                    `;
+    } else if (i === currentPage - 3 || i === currentPage + 3) {
+      paginationHTML += '<span class="pagination-ellipsis">...</span>';
+    }
+  }
+
+  // Next button
+  paginationHTML += `
+                <button class="pagination-btn" ${
+                  currentPage === totalPages ? "disabled" : ""
+                } onclick="goToPage(${currentPage + 1})">
+                    Next →
+                </button>
+            `;
+
+  container.innerHTML = paginationHTML;
+}
+
+// Utility functions
+function getInitials(firstName, lastName) {
+  const first = (firstName || "").charAt(0).toUpperCase();
+  const last = (lastName || "").charAt(0).toUpperCase();
+  return first + last || "??";
+}
+
+function goToPage(page) {
+  if (page >= 1 && page <= totalPages && page !== currentPage) {
+    loadTenants(page);
+  }
+}
+
+function searchTenants() {
+  const searchInput = document.getElementById("searchInput");
+  const statusFilter = document.getElementById("statusFilter");
+  
+  if (!searchInput || !statusFilter) {
+    console.error('Search elements not found');
+    return;
+  }
+  
+  const searchTerm = searchInput.value.trim();
+  const statusValue = statusFilter.value;
+
+  console.log("Searching with term:", searchTerm, "status:", statusValue);
+
+  const filters = {};
+  if (searchTerm) filters.search = searchTerm;
+  if (statusValue) filters.status = statusValue;
+
+  // Reset to page 1 when searching
+  currentPage = 1;
+  loadTenants(1, filters);
+}
+
+function filterTenants() {
+  searchTenants(); // Reuse search function
+}
+
+// State management functions
+function showLoadingState() {
+  document.getElementById("loadingState").style.display = "flex";
+  document.getElementById("errorState").style.display = "none";
+  document.getElementById("emptyState").style.display = "none";
+  document.getElementById("gridView").style.display = "none";
+  document.getElementById("listView").style.display = "none";
+}
+
+function hideLoadingState() {
+  document.getElementById("loadingState").style.display = "none";
+  document.getElementById("errorState").style.display = "none";
+  document.getElementById("emptyState").style.display = "none";
+
+  if (currentView === "grid") {
+    document.getElementById("gridView").style.display = "grid";
+    document.getElementById("listView").style.display = "none";
+  } else {
+    document.getElementById("gridView").style.display = "none";
+    document.getElementById("listView").style.display = "flex";
+  }
+}
+
+function showErrorState() {
+  document.getElementById("errorState").style.display = "flex";
+  document.getElementById("loadingState").style.display = "none";
+  document.getElementById("gridView").style.display = "none";
+  document.getElementById("listView").style.display = "none";
+  document.getElementById("emptyState").style.display = "none";
+}
+
+function showEmptyState() {
+  document.getElementById("emptyState").style.display = "flex";
+  document.getElementById("gridView").style.display = "none";
+  document.getElementById("listView").style.display = "none";
+}
+
+// View toggle function
+function toggleView(viewType) {
+  console.log("Toggling to view:", viewType);
+
+  const buttons = document.querySelectorAll(".view-btn");
+  const gridView = document.getElementById("gridView");
+  const listView = document.getElementById("listView");
+
+  // Update button states
+  buttons.forEach((btn) => btn.classList.remove("active"));
+  const targetBtn = document.querySelector(`[data-view="${viewType}"]`);
+  if (targetBtn) targetBtn.classList.add("active");
+
+  // Update global view state
+  currentView = viewType;
+
+  // Force re-render in the new view
+  if (viewType === "list") {
+    gridView.style.display = "none";
+    listView.style.display = "flex";
+    console.log("Switching to list view, re-rendering...");
+    renderListView(); // Force re-render
+  } else {
+    gridView.style.display = "grid";
+    listView.style.display = "none";
+    console.log("Switching to grid view, re-rendering...");
+    renderGridView(); // Force re-render
+  }
+
+  console.log("View toggle complete, current view:", currentView);
+}
+
+// Event listeners setup
+function setupEventListeners() {
+  // Search input with debounce
+  let searchTimeout;
+  const searchInput = document.getElementById("searchInput");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(searchTenants, 300);
+    });
+    
+    // Also handle Enter key
+    searchInput.addEventListener("keypress", function(e) {
+      if (e.key === 'Enter') {
+        clearTimeout(searchTimeout);
+        searchTenants();
+      }
+    });
+  }
+
+  // Status filter
+  const statusFilter = document.getElementById("statusFilter");
+  if (statusFilter) {
+    statusFilter.addEventListener("change", searchTenants);
+  }
+}
+
+function setupListEventListeners() {
+  const listItems = document.querySelectorAll(".tenant-list-item");
+  listItems.forEach((item) => {
+    // Handle checkbox clicks
+    const checkbox = item.querySelector(".list-checkbox");
+    if (checkbox) {
+      checkbox.addEventListener("click", function (e) {
+        e.stopPropagation();
+        const tenantId = item.dataset.tenant;
+
+        if (this.checked) {
+          selectedTenants.add(tenantId);
+          item.classList.add("selected");
+        } else {
+          selectedTenants.delete(tenantId);
+          item.classList.remove("selected");
         }
 
-        function syncListView(tenantId) {
-            const listItem = document.querySelector(`.tenant-list-item[data-tenant="${tenantId}"]`);
-            const listCheckbox = listItem.querySelector('.list-checkbox');
-            
-            if (selectedTenants.has(tenantId)) {
-                listItem.classList.add('selected');
-                listCheckbox.checked = true;
-            } else {
-                listItem.classList.remove('selected');
-                listCheckbox.checked = false;
-            }
+        updateSelectAllButton();
+        updateListSelectAll();
+      });
+    }
+
+    // Handle row clicks (but not action buttons)
+    item.addEventListener("click", function (e) {
+      if (
+        e.target.classList.contains("action-btn") ||
+        e.target.type === "checkbox"
+      ) {
+        return;
+      }
+
+      const tenantId = item.dataset.tenant;
+      const checkbox = item.querySelector(".list-checkbox");
+
+      toggleTenantSelection(tenantId, item, checkbox);
+      updateListSelectAll();
+    });
+  });
+}
+
+function setupGridEventListeners() {
+  const tenantCards = document.querySelectorAll(".tenant-card");
+  tenantCards.forEach((card) => {
+    // Handle checkbox clicks
+    const checkbox = card.querySelector(".checkbox");
+    if (checkbox) {
+      checkbox.addEventListener("click", function (e) {
+        e.stopPropagation();
+        const tenantId = card.dataset.tenant;
+
+        if (this.checked) {
+          selectedTenants.add(tenantId);
+          card.classList.add("selected");
+        } else {
+          selectedTenants.delete(tenantId);
+          card.classList.remove("selected");
         }
 
-        function syncGridView(tenantId) {
-            const gridCard = document.querySelector(`.tenant-card[data-tenant="${tenantId}"]`);
-            const gridCheckbox = gridCard.querySelector('.checkbox');
-            
-            if (selectedTenants.has(tenantId)) {
-                gridCard.classList.add('selected');
-                gridCheckbox.checked = true;
-            } else {
-                gridCard.classList.remove('selected');
-                gridCheckbox.checked = false;
-            }
+        updateSelectAllButton();
+      });
+    }
+
+    // Handle card clicks (but not checkbox)
+    card.addEventListener("click", function (e) {
+      if (e.target.type === "checkbox") {
+        return;
+      }
+
+      const tenantId = card.dataset.tenant;
+      const checkbox = card.querySelector(".checkbox");
+
+      toggleTenantSelection(tenantId, card, checkbox);
+    });
+  });
+}
+
+function toggleSelectAll() {
+  const listSelectAll = document.getElementById("listSelectAll");
+
+  if (listSelectAll && listSelectAll.checked) {
+    // Select all
+    selectedTenants.clear();
+    tenants.forEach((tenant) => selectedTenants.add(tenant.user_id));
+    document.querySelectorAll(".tenant-list-item").forEach((item) => {
+      item.classList.add("selected");
+      const checkbox = item.querySelector(".list-checkbox");
+      if (checkbox) checkbox.checked = true;
+    });
+  } else {
+    // Deselect all
+    selectedTenants.clear();
+    document.querySelectorAll(".tenant-list-item").forEach((item) => {
+      item.classList.remove("selected");
+      const checkbox = item.querySelector(".list-checkbox");
+      if (checkbox) checkbox.checked = false;
+    });
+  }
+
+  updateSelectAllButton();
+  updateListSelectAll();
+}
+
+function updateListSelectAll() {
+  const listSelectAll = document.getElementById("listSelectAll");
+  if (!listSelectAll) return;
+
+  const totalTenants = tenants.length;
+
+  if (selectedTenants.size === totalTenants && totalTenants > 0) {
+    listSelectAll.checked = true;
+    listSelectAll.indeterminate = false;
+  } else if (selectedTenants.size > 0) {
+    listSelectAll.checked = false;
+    listSelectAll.indeterminate = true;
+  } else {
+    listSelectAll.checked = false;
+    listSelectAll.indeterminate = false;
+  }
+}
+
+function handleCardClick(e) {
+  if (e.target.type === "checkbox") return;
+
+  const card = e.currentTarget;
+  const checkbox = card.querySelector(".checkbox");
+  const tenantId = card.dataset.tenant;
+
+  toggleTenantSelection(tenantId, card, checkbox);
+}
+
+function handleListItemClick(e) {
+  if (e.target.type === "checkbox" || e.target.classList.contains("action-btn"))
+    return;
+
+  const item = e.currentTarget;
+  const checkbox = item.querySelector(".list-checkbox");
+  const tenantId = item.dataset.tenant;
+
+  toggleTenantSelection(tenantId, item, checkbox);
+}
+
+function toggleTenantSelection(tenantId, element, checkbox) {
+  if (selectedTenants.has(tenantId)) {
+    selectedTenants.delete(tenantId);
+    element.classList.remove("selected");
+    checkbox.checked = false;
+  } else {
+    selectedTenants.add(tenantId);
+    element.classList.add("selected");
+    checkbox.checked = true;
+  }
+
+  updateSelectAllButton();
+}
+
+function updateSelectAllButton() {
+  const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+  const totalTenants = tenants.length;
+
+  if (selectedTenants.size === totalTenants && totalTenants > 0) {
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.indeterminate = false;
+  } else if (selectedTenants.size > 0) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = true;
+  } else {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+  }
+}
+
+function selectAll() {
+  const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+
+  if (selectAllCheckbox.checked || selectedTenants.size === tenants.length) {
+    // Deselect all
+    selectedTenants.clear();
+    document
+      .querySelectorAll(".tenant-card")
+      .forEach((card) => card.classList.remove("selected"));
+    document
+      .querySelectorAll(".tenant-list-item")
+      .forEach((item) => item.classList.remove("selected"));
+    document
+      .querySelectorAll(".checkbox, .list-checkbox")
+      .forEach((cb) => (cb.checked = false));
+    selectAllCheckbox.checked = false;
+  } else {
+    // Select all
+    selectedTenants.clear();
+    tenants.forEach((tenant) => selectedTenants.add(tenant.user_id));
+    document
+      .querySelectorAll(".tenant-card")
+      .forEach((card) => card.classList.add("selected"));
+    document
+      .querySelectorAll(".tenant-list-item")
+      .forEach((item) => item.classList.add("selected"));
+    document
+      .querySelectorAll(".checkbox, .list-checkbox")
+      .forEach((cb) => (cb.checked = true));
+    selectAllCheckbox.checked = true;
+  }
+  selectAllCheckbox.indeterminate = false;
+}
+
+// Action functions
+function editTenant(tenantId) {
+  console.log("Edit tenant:", tenantId);
+  // Implement edit functionality
+}
+
+function deleteTenant(tenantId) {
+  if (confirm("Are you sure you want to delete this tenant?")) {
+    console.log("Delete tenant:", tenantId);
+    // Implement delete functionality
+  }
+}
+
+let currentStep = 1;
+
+function openCreateAccountModal() {
+  document.getElementById("createAccountModal").classList.add("active");
+  document.body.style.overflow = "hidden";
+  resetModal();
+}
+
+function closeCreateAccountModal() {
+  document.getElementById("createAccountModal").classList.remove("active");
+  document.body.style.overflow = "auto";
+  resetModal();
+}
+
+function resetModal() {
+  currentStep = 1;
+  updateStepDisplay();
+  document.getElementById("createAccountForm").reset();
+
+  // Reset profile picture preview
+  const profilePreview = document.querySelector(".profile-preview");
+  profilePreview.innerHTML = '<div class="profile-preview-icon">👤+</div>';
+}
+
+function updateStepDisplay() {
+  // Update step indicators
+  for (let i = 1; i <= 3; i++) {
+    const step = document.getElementById(`step${i}`);
+    const connector = document.getElementById(`connector${i}`);
+    const formStep = document.getElementById(`formStep${i}`);
+
+    if (i < currentStep) {
+      step.className = "step completed";
+      if (connector) connector.className = "step-connector completed";
+    } else if (i === currentStep) {
+      step.className = "step active";
+      if (connector) connector.className = "step-connector";
+    } else {
+      step.className = "step inactive";
+      if (connector) connector.className = "step-connector";
+    }
+
+    // Show/hide form steps
+    if (i === currentStep) {
+      formStep.classList.add("active");
+    } else {
+      formStep.classList.remove("active");
+    }
+  }
+
+  // Update buttons
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const confirmBtn = document.getElementById("confirmBtn");
+
+  prevBtn.style.display = currentStep === 1 ? "none" : "block";
+
+  if (currentStep === 3) {
+    nextBtn.style.display = "none";
+    confirmBtn.style.display = "block";
+  } else {
+    nextBtn.style.display = "block";
+    confirmBtn.style.display = "none";
+  }
+}
+
+function nextStep() {
+  if (validateCurrentStep() && currentStep < 3) {
+    currentStep++;
+    updateStepDisplay();
+  }
+}
+
+function previousStep() {
+  if (currentStep > 1) {
+    currentStep--;
+    updateStepDisplay();
+  }
+}
+
+function validateCurrentStep() {
+  const currentFormStep = document.getElementById(`formStep${currentStep}`);
+  const requiredFields = currentFormStep.querySelectorAll("input[required]");
+
+  for (let field of requiredFields) {
+    if (!field.value.trim()) {
+      field.focus();
+      field.style.borderColor = "#dc3545";
+      setTimeout(() => {
+        field.style.borderColor = "#e1e8ed";
+      }, 3000);
+      return false;
+    }
+  }
+
+  // Additional validation for step 3 (password confirmation)
+  if (currentStep === 3) {
+    const password = document.getElementById("defaultPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const agreeTerms = document.getElementById("agreeTerms").checked;
+
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      document.getElementById("confirmPassword").focus();
+      return false;
+    }
+
+    if (!agreeTerms) {
+      alert("Please agree to the terms and privacy policies");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function confirmAccount() {
+  if (validateCurrentStep()) {
+    // Collect form data
+    const formData = new FormData(document.getElementById("createAccountForm"));
+    const accountData = {};
+
+    for (let [key, value] of formData.entries()) {
+      accountData[key] = value;
+    }
+
+    // Show success message
+    alert("Tenant account created successfully!");
+    console.log("New tenant data:", accountData);
+
+    // Close modal
+    closeCreateAccountModal();
+  }
+}
+
+function togglePassword(fieldId) {
+  const field = document.getElementById(fieldId);
+  const toggle = field.nextElementSibling;
+
+  if (field.type === "password") {
+    field.type = "text";
+    toggle.textContent = "🙈";
+  } else {
+    field.type = "password";
+    toggle.textContent = "👁️";
+  }
+}
+
+// Handle file uploads
+document
+  .getElementById("documentUpload")
+  .addEventListener("change", function (e) {
+    const files = e.target.files;
+    const uploadArea = e.target.parentElement;
+
+    if (files.length > 0) {
+      uploadArea.querySelector(".upload-text").innerHTML = `<strong>${
+        files.length
+      } file(s) selected</strong><br>
+                     ${Array.from(files)
+                       .map((f) => f.name)
+                       .join(", ")}`;
+    }
+  });
+
+document
+  .getElementById("profileUpload")
+  .addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    const preview = document.querySelector(".profile-preview");
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview">`;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+// Close modal when clicking outside
+document
+  .getElementById("createAccountModal")
+  .addEventListener("click", function (e) {
+    if (e.target === this) {
+      closeCreateAccountModal();
+    }
+  });
+
+// Handle keyboard navigation
+document.addEventListener("keydown", function (e) {
+  const modal = document.getElementById("createAccountModal");
+  if (modal.classList.contains("active")) {
+    if (e.key === "Escape") {
+      closeCreateAccountModal();
+    }
+  }
+});
+
+// Form validation helpers
+function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+function formatPhoneNumber(input) {
+  // Auto-format phone number as user types
+  input.addEventListener("input", function (e) {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.startsWith("63")) {
+      value = "+" + value;
+    } else if (!value.startsWith("+63")) {
+      value = "+63" + value;
+    }
+    e.target.value = value;
+  });
+}
+
+// Initialize phone number formatting
+document.addEventListener("DOMContentLoaded", function () {
+  const phoneInputs = document.querySelectorAll('input[type="tel"]');
+  phoneInputs.forEach(formatPhoneNumber);
+});
+
+// Auto-save form data to prevent loss (using sessionStorage since localStorage is not available)
+function autoSaveFormData() {
+  const formData = new FormData(document.getElementById("createAccountForm"));
+  const data = {};
+  for (let [key, value] of formData.entries()) {
+    if (typeof value === "string") {
+      data[key] = value;
+    }
+  }
+  try {
+    sessionStorage.setItem("tenantFormData", JSON.stringify(data));
+  } catch (e) {
+    // Handle case where sessionStorage might not be available
+    console.log("Could not save form data");
+  }
+}
+
+function loadSavedFormData() {
+  try {
+    const savedData = sessionStorage.getItem("tenantFormData");
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      Object.keys(data).forEach((key) => {
+        const field = document.querySelector(`[name="${key}"]`);
+        if (field && field.type !== "file") {
+          field.value = data[key];
         }
+      });
+    }
+  } catch (e) {
+    console.log("Could not load saved form data");
+  }
+}
 
-        function updateSelectAllButton() {
-            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            const totalTenants = tenants.length;
-            
-            if (selectedTenants.size === totalTenants) {
-                selectAllCheckbox.checked = true;
-                selectAllCheckbox.indeterminate = false;
-            } else if (selectedTenants.size > 0) {
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = true;
-            } else {
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = false;
-            }
-        }
+// Clear saved data when form is submitted
+function clearSavedFormData() {
+  try {
+    sessionStorage.removeItem("tenantFormData");
+  } catch (e) {
+    console.log("Could not clear saved form data");
+  }
+}
 
-        function createAccount() {
-            alert('Create Account functionality would be implemented here');
-        }
+// Auto-save every 30 seconds
+setInterval(autoSaveFormData, 30000);
 
-        function selectAll() {
-            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-            const allCards = document.querySelectorAll('.tenant-card');
-            const allItems = document.querySelectorAll('.tenant-list-item');
-            const allGridCheckboxes = document.querySelectorAll('.tenant-card .checkbox');
-            const allListCheckboxes = document.querySelectorAll('.tenant-list-item .list-checkbox');
-            
-            if (selectAllCheckbox.checked || selectedTenants.size === tenants.length) {
-                // Deselect all
-                selectedTenants.clear();
-                allCards.forEach(card => card.classList.remove('selected'));
-                allItems.forEach(item => item.classList.remove('selected'));
-                allGridCheckboxes.forEach(checkbox => checkbox.checked = false);
-                allListCheckboxes.forEach(checkbox => checkbox.checked = false);
-                selectAllCheckbox.checked = false;
-            } else {
-                // Select all
-                selectedTenants.clear();
-                tenants.forEach(tenant => selectedTenants.add(tenant.id));
-                allCards.forEach(card => card.classList.add('selected'));
-                allItems.forEach(item => item.classList.add('selected'));
-                allGridCheckboxes.forEach(checkbox => checkbox.checked = true);
-                allListCheckboxes.forEach(checkbox => checkbox.checked = true);
-                selectAllCheckbox.checked = true;
-            }
-            selectAllCheckbox.indeterminate = false;
-        }
+// Load saved data when modal opens
+document
+  .getElementById("createAccountModal")
+  .addEventListener("transitionend", function (e) {
+    if (this.classList.contains("active")) {
+      loadSavedFormData();
+    }
+  });
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            setupEventListeners();
-            updateSelectAllButton();
-        });
+// Add this utility function to handle broken images:
 
-                let currentStep = 1;
+function handleAvatarError(imgElement, initials) {
+  // Replace broken image with initials
+  const avatarContainer = imgElement.parentElement;
+  imgElement.style.display = "none";
 
-        function openCreateAccountModal() {
-            document.getElementById('createAccountModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-            resetModal();
-        }
+  // Create initials fallback
+  const initialsDiv = document.createElement("div");
+  initialsDiv.className = "tenant-avatar-initials";
+  initialsDiv.textContent = initials;
 
-        function closeCreateAccountModal() {
-            document.getElementById('createAccountModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-            resetModal();
-        }
+  avatarContainer.appendChild(initialsDiv);
+}
 
-        function resetModal() {
-            currentStep = 1;
-            updateStepDisplay();
-            document.getElementById('createAccountForm').reset();
-            
-            // Reset profile picture preview
-            const profilePreview = document.querySelector('.profile-preview');
-            profilePreview.innerHTML = '<div class="profile-preview-icon">👤+</div>';
-        }
+// Update your avatar HTML generation to include error handling:
+function generateAvatarHTML(tenant, size = "normal") {
+  const initials = getInitials(tenant.first_name, tenant.last_name);
+  const fullName = `${tenant.first_name || ""} ${
+    tenant.last_name || ""
+  }`.trim();
 
-        function updateStepDisplay() {
-            // Update step indicators
-            for (let i = 1; i <= 3; i++) {
-                const step = document.getElementById(`step${i}`);
-                const connector = document.getElementById(`connector${i}`);
-                const formStep = document.getElementById(`formStep${i}`);
-                
-                if (i < currentStep) {
-                    step.className = 'step completed';
-                    if (connector) connector.className = 'step-connector completed';
-                } else if (i === currentStep) {
-                    step.className = 'step active';
-                    if (connector) connector.className = 'step-connector';
-                } else {
-                    step.className = 'step inactive';
-                    if (connector) connector.className = 'step-connector';
-                }
-                
-                // Show/hide form steps
-                if (i === currentStep) {
-                    formStep.classList.add('active');
-                } else {
-                    formStep.classList.remove('active');
-                }
-            }
-            
-            // Update buttons
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const confirmBtn = document.getElementById('confirmBtn');
-            
-            prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
-            
-            if (currentStep === 3) {
-                nextBtn.style.display = 'none';
-                confirmBtn.style.display = 'block';
-            } else {
-                nextBtn.style.display = 'block';
-                confirmBtn.style.display = 'none';
-            }
-        }
+  if (tenant.avatar && tenant.avatar.trim() !== "") {
+    return `
+      <img src="${tenant.avatar}" 
+           alt="${fullName}" 
+           class="tenant-avatar-img"
+           onerror="handleAvatarError(this, '${initials}')"
+           onload="this.style.display='block'">
+      <div class="tenant-avatar-initials" style="display: none;">${initials}</div>
+    `;
+  } else {
+    return `<div class="tenant-avatar-initials">${initials}</div>`;
+  }
+}
 
-        function nextStep() {
-            if (validateCurrentStep() && currentStep < 3) {
-                currentStep++;
-                updateStepDisplay();
-            }
-        }
+// Add this function to generate placeholder avatars:
 
-        function previousStep() {
-            if (currentStep > 1) {
-                currentStep--;
-                updateStepDisplay();
-            }
-        }
+function getPlaceholderAvatar(name, size = 48) {
+  // Generate a color based on the name
+  const colors = [
+    "#667eea",
+    "#764ba2",
+    "#f093fb",
+    "#f5576c",
+    "#4facfe",
+    "#00f2fe",
+    "#43e97b",
+    "#38f9d7",
+    "#ffecd2",
+    "#fcb69f",
+    "#a8edea",
+    "#fed6e3",
+  ];
 
-        function validateCurrentStep() {
-            const currentFormStep = document.getElementById(`formStep${currentStep}`);
-            const requiredFields = currentFormStep.querySelectorAll('input[required]');
-            
-            for (let field of requiredFields) {
-                if (!field.value.trim()) {
-                    field.focus();
-                    field.style.borderColor = '#dc3545';
-                    setTimeout(() => {
-                        field.style.borderColor = '#e1e8ed';
-                    }, 3000);
-                    return false;
-                }
-            }
+  const initials = getInitials(name?.split(" ")[0], name?.split(" ")[1]);
+  const colorIndex = (name || "").length % colors.length;
+  const backgroundColor = colors[colorIndex];
 
-            // Additional validation for step 3 (password confirmation)
-            if (currentStep === 3) {
-                const password = document.getElementById('defaultPassword').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-                const agreeTerms = document.getElementById('agreeTerms').checked;
-                
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match!');
-                    document.getElementById('confirmPassword').focus();
-                    return false;
-                }
-                
-                if (!agreeTerms) {
-                    alert('Please agree to the terms and privacy policies');
-                    return false;
-                }
-            }
-            
-            return true;
-        }
+  // Use a service like UI Avatars or generate inline SVG
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    initials
+  )}&size=${size}&background=${backgroundColor.replace(
+    "#",
+    ""
+  )}&color=ffffff&bold=true`;
+}
 
-        function confirmAccount() {
-            if (validateCurrentStep()) {
-                // Collect form data
-                const formData = new FormData(document.getElementById('createAccountForm'));
-                const accountData = {};
-                
-                for (let [key, value] of formData.entries()) {
-                    accountData[key] = value;
-                }
-                
-                // Show success message
-                alert('Tenant account created successfully!');
-                console.log('New tenant data:', accountData);
-                
-                // Close modal
-                closeCreateAccountModal();
-                
-            }
-        }
+// Then use it as a fallback:
+function generateAvatarHTML(tenant, size = "normal") {
+  const initials = getInitials(tenant.first_name, tenant.last_name);
+  const fullName = `${tenant.first_name || ""} ${
+    tenant.last_name || ""
+  }`.trim();
+  const imageSize = size === "small" ? 32 : 48;
 
-        function togglePassword(fieldId) {
-            const field = document.getElementById(fieldId);
-            const toggle = field.nextElementSibling;
-            
-            if (field.type === 'password') {
-                field.type = 'text';
-                toggle.textContent = '🙈';
-            } else {
-                field.type = 'password';
-                toggle.textContent = '👁️';
-            }
-        }
+  let avatarSrc = tenant.avatar;
 
-        // Handle file uploads
-        document.getElementById('documentUpload').addEventListener('change', function(e) {
-            const files = e.target.files;
-            const uploadArea = e.target.parentElement;
-            
-            if (files.length > 0) {
-                uploadArea.querySelector('.upload-text').innerHTML = 
-                    `<strong>${files.length} file(s) selected</strong><br>
-                     ${Array.from(files).map(f => f.name).join(', ')}`;
-            }
-        });
+  // If no avatar, use placeholder service
+  if (!avatarSrc || avatarSrc.trim() === "") {
+    avatarSrc = getPlaceholderAvatar(fullName, imageSize);
+  }
 
-        document.getElementById('profileUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const preview = document.querySelector('.profile-preview');
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Close modal when clicking outside
-        document.getElementById('createAccountModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeCreateAccountModal();
-            }
-        });
-
-        // Handle keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            const modal = document.getElementById('createAccountModal');
-            if (modal.classList.contains('active')) {
-                if (e.key === 'Escape') {
-                    closeCreateAccountModal();
-                }
-            }
-        });
-
-        // Form validation helpers
-        function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-
-        function formatPhoneNumber(input) {
-            // Auto-format phone number as user types
-            input.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.startsWith('63')) {
-                    value = '+' + value;
-                } else if (!value.startsWith('+63')) {
-                    value = '+63' + value;
-                }
-                e.target.value = value;
-            });
-        }
-
-        // Initialize phone number formatting
-        document.addEventListener('DOMContentLoaded', function() {
-            const phoneInputs = document.querySelectorAll('input[type="tel"]');
-            phoneInputs.forEach(formatPhoneNumber);
-        });
-
-        // Auto-save form data to prevent loss (using sessionStorage since localStorage is not available)
-        function autoSaveFormData() {
-            const formData = new FormData(document.getElementById('createAccountForm'));
-            const data = {};
-            for (let [key, value] of formData.entries()) {
-                if (typeof value === 'string') {
-                    data[key] = value;
-                }
-            }
-            try {
-                sessionStorage.setItem('tenantFormData', JSON.stringify(data));
-            } catch (e) {
-                // Handle case where sessionStorage might not be available
-                console.log('Could not save form data');
-            }
-        }
-
-        function loadSavedFormData() {
-            try {
-                const savedData = sessionStorage.getItem('tenantFormData');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    Object.keys(data).forEach(key => {
-                        const field = document.querySelector(`[name="${key}"]`);
-                        if (field && field.type !== 'file') {
-                            field.value = data[key];
-                        }
-                    });
-                }
-            } catch (e) {
-                console.log('Could not load saved form data');
-            }
-        }
-
-        // Clear saved data when form is submitted
-        function clearSavedFormData() {
-            try {
-                sessionStorage.removeItem('tenantFormData');
-            } catch (e) {
-                console.log('Could not clear saved form data');
-            }
-        }
-
-        // Auto-save every 30 seconds
-        setInterval(autoSaveFormData, 30000);
-
-        // Load saved data when modal opens
-        document.getElementById('createAccountModal').addEventListener('transitionend', function(e) {
-            if (this.classList.contains('active')) {
-                loadSavedFormData();
-            }
-        });
+  return `
+    <img src="${avatarSrc}" 
+         alt="${fullName}" 
+         class="tenant-avatar-img"
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+         onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+    <div class="tenant-avatar-initials" style="display: none;">${initials}</div>
+  `;
+}

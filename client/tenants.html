@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/css/tenants.css">
     <title>Tenants</title>
 </head>
+
 <body>
     <div class="overlay" id="overlay"></div>
     <div id="sidebarContainer"></div>
@@ -41,265 +43,349 @@
         <div class="tenants-section">
             <div class="tenants-header">
                 <h3>Manage Tenants</h3>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid" onclick="toggleView('grid')">
+                        <span class="btn-icon">⊞</span> Grid
+                    </button>
+                    <button class="view-btn" data-view="list" onclick="toggleView('list')">
+                        <span class="btn-icon">☰</span> List
+                    </button>
+                </div>
             </div>
-
+            
             <div class="action-bar">
                 <button class="btn btn-primary" onclick="openCreateAccountModal()">
-                    Create Account
-                </button>
-                <button class="btn btn-secondary">
-                    <input type="checkbox" style="margin-right: 8px; width: 14px; height: 14px;">
-                    Select All
+                    <span class="btn-icon">+</span> Add New Account
                 </button>
                 <button class="btn btn-message">
-                    Message
+                    <span class="btn-icon">✉</span> Message
+                </button>
+            
+                <!-- Right side controls -->
+                <div class="action-bar-right">
+                    <button class="btn btn-secondary" onclick="selectAll()">
+                        <input type="checkbox" id="selectAllCheckbox" style="margin-right: 8px; width: 14px; height: 14px;">
+                        Select All
+                    </button>
+                    
+                    <!-- Enhanced search and filter controls -->
+                    <div class="search-filter-wrapper">
+                        <div class="filters-section">
+                            <input type="text" id="searchInput" placeholder="Search tenants..." onkeyup="searchTenants()">
+                            <select id="statusFilter" onchange="filterTenants()">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state" style="display: none;">
+                <div class="loader"></div>
+                <p>Loading tenants...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state" style="display: none;">
+                <p>Failed to load tenants. <button onclick="loadTenants()" class="retry-btn">Retry</button></p>
+            </div>
+
+            <!-- Grid View -->
+            <div id="gridView" class="tenants-grid">
+                <!-- Tenant cards will be populated here -->
+            </div>
+
+
+            <!-- List View -->
+            <div id="listView" class="tenants-list" style="display: none;">
+                <div class="list-header">
+                    <div class="list-col list-col-checkbox">
+                        <input type="checkbox" id="listSelectAll" onchange="toggleSelectAll()">
+                    </div>
+                    <div class="list-col list-col-name">Name</div>
+                    <div class="list-col list-col-email">Email</div>
+                    <div class="list-col list-col-phone">Phone</div>
+                    <div class="list-col list-col-status">Status</div>
+                    <div class="list-col list-col-created">Created</div>
+                    <div class="list-col list-col-actions">Actions</div>
+                </div>
+                <!-- ADD THIS MISSING CONTAINER -->
+                <div id="listContainer">
+                    <!-- Tenant list items will be populated here -->
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="pagination" style="display: none;">
+                <!-- Pagination will be populated here -->
+            </div>
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">👥</div>
+                <h3>No Tenants Found</h3>
+                <p>There are no tenants in the system yet.</p>
+                <button class="btn btn-primary" onclick="openCreateAccountModal()">
+                    Create First Tenant
                 </button>
             </div>
-
-            <!-- Placeholder for existing tenant content -->
-            <div style="padding: 40px; text-align: center; color: #7f8c8d; background: #f8f9fa; border-radius: 8px;">
-                <p>No Tenants as of the moment...</p>
-                <p style="margin-top: 10px; font-size: 14px;">Click "Create Account" to add Tenant's Account</p>
-            </div>
         </div>
-    </div>
+        <!-- Create Account Modal -->
+        <div class="modal-overlay" id="createAccountModal">
+            <div class="modal">
+                <button class="close-modal" onclick="closeCreateAccountModal()">&times;</button>
 
-    <!-- Create Account Modal -->
-    <div class="modal-overlay" id="createAccountModal">
-        <div class="modal">
-            <button class="close-modal" onclick="closeCreateAccountModal()">&times;</button>
-            
-            <div class="modal-header">
-                <h3 class="modal-title">Create Tenant Account</h3>
-                <p class="modal-subtitle">Complete the form to add a new tenant to the system</p>
-            </div>
-
-            <div class="modal-body">
-                <!-- Step Indicator -->
-                <div class="step-indicator">
-                    <div class="step active" id="step1">1</div>
-                    <div class="step-connector" id="connector1"></div>
-                    <div class="step inactive" id="step2">2</div>
-                    <div class="step-connector" id="connector2"></div>
-                    <div class="step inactive" id="step3">3</div>
+                <div class="modal-header">
+                    <h3 class="modal-title">Create Tenant Account</h3>
+                    <p class="modal-subtitle">Complete the form to add a new tenant to the system</p>
                 </div>
 
-                <form id="createAccountForm">
-                    <!-- Step 1: Personal Information -->
-                    <div class="form-step active" id="formStep1">
-                        <div class="form-section">
-                            <h4>Personal Information</h4>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="firstName">First Name *</label>
-                                    <input type="text" id="firstName" name="firstName">
-                                </div>
-                                <div class="form-group">
-                                    <label for="middleName">Middle Name (Optional)</label>
-                                    <input type="text" id="middleName" name="middleName">
-                                </div>
-                                <div class="form-group">
-                                    <label for="lastName">Last Name *</label>
-                                    <input type="text" id="lastName" name="lastName">
-                                </div>
-                            </div>
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="birthDate">Date of Birth (Optional)</label>
-                                    <input type="date" id="birthDate" name="birthDate">
-                                </div>
-                                <div class="form-group">
-                                    <label>Gender</label>
-                                    <div class="radio-group">
-                                        <div class="radio-option">
-                                            <input type="radio" id="male" name="gender" value="male">
-                                            <label for="male">Male</label>
-                                        </div>
-                                        <div class="radio-option">
-                                            <input type="radio" id="female" name="gender" value="female">
-                                            <label for="female">Female</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="modal-body">
+                    <!-- Step Indicator -->
+                    <div class="step-indicator">
+                        <div class="step active" id="step1">1</div>
+                        <div class="step-connector" id="connector1"></div>
+                        <div class="step inactive" id="step2">2</div>
+                        <div class="step-connector" id="connector2"></div>
+                        <div class="step inactive" id="step3">3</div>
+                    </div>
 
-                        <div class="form-section">
-                            <h4>Contact Information</h4>
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="mobileNumber">Mobile Number *</label>
-                                    <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="+63">
-                                </div>
-                                <div class="form-group">
-                                    <label for="altMobileNumber">Alternative Mobile Number (Optional)</label>
-                                    <input type="tel" id="altMobileNumber" name="altMobileNumber" placeholder="+63">
-                                </div>
-                            </div>
+                    <form id="createAccountForm">
+                        <!-- Step 1: Personal Information -->
+                        <div class="form-step active" id="formStep1">
                             <div class="form-section">
-                                <label>Billing Address</label>
-                                <div class="form-row two-col">
-                                    <div class="form-group">
-                                        <input type="text" name="houseNo" placeholder="House No.">
-                                    </div>
-                                    <div class="form-group">
-                                        <input type="text" name="street" placeholder="Street">
-                                    </div>
-                                </div>
+                                <h4>Personal Information</h4>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <input type="text" name="city" placeholder="City">
+                                        <label for="firstName">First Name *</label>
+                                        <input type="text" id="firstName" name="firstName">
                                     </div>
                                     <div class="form-group">
-                                        <input type="text" name="province" placeholder="Province">
+                                        <label for="middleName">Middle Name (Optional)</label>
+                                        <input type="text" id="middleName" name="middleName">
                                     </div>
                                     <div class="form-group">
-                                        <input type="text" name="zipCode" placeholder="ZIP Code">
+                                        <label for="lastName">Last Name *</label>
+                                        <input type="text" id="lastName" name="lastName">
                                     </div>
                                 </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="birthDate">Date of Birth (Optional)</label>
+                                        <input type="date" id="birthDate" name="birthDate">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Gender</label>
+                                        <div class="radio-group">
+                                            <div class="radio-option">
+                                                <input type="radio" id="male" name="gender" value="male">
+                                                <label for="male">Male</label>
+                                            </div>
+                                            <div class="radio-option">
+                                                <input type="radio" id="female" name="gender" value="female">
+                                                <label for="female">Female</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>Contact Information</h4>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="mobileNumber">Mobile Number *</label>
+                                        <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="+63">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="altMobileNumber">Alternative Mobile Number (Optional)</label>
+                                        <input type="tel" id="altMobileNumber" name="altMobileNumber" placeholder="+63">
+                                    </div>
+                                </div>
+                                <div class="form-section">
+                                    <label>Billing Address</label>
+                                    <div class="form-row two-col">
+                                        <div class="form-group">
+                                            <input type="text" name="houseNo" placeholder="House No.">
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="street" placeholder="Street">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <input type="text" name="city" placeholder="City">
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="province" placeholder="Province">
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="zipCode" placeholder="ZIP Code">
+                                        </div>
+                                    </div>
+                                    <div class="form-row full-width">
+                                        <div class="form-group">
+                                            <input type="text" name="country" placeholder="Country">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Rental Details -->
+                        <div class="form-step" id="formStep2">
+                            <div class="form-section">
+                                <h4>Rental Details</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="unit">Unit *</label>
+                                        <input type="text" id="unit" name="unit" placeholder="Unit/Property Assigned">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="monthlyRent">Monthly Rent *</label>
+                                        <input type="text" id="monthlyRent" name="monthlyRent" placeholder="Amount">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="securityDeposit">Security Deposit *</label>
+                                        <input type="text" id="securityDeposit" name="securityDeposit"
+                                            placeholder="Amount">
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="leaseStart">Lease Start Date *</label>
+                                        <input type="date" id="leaseStart" name="leaseStart">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="leaseEnd">Lease End Date</label>
+                                        <input type="date" id="leaseEnd" name="leaseEnd">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>Documentation</h4>
+                                <div class="upload-area" onclick="document.getElementById('documentUpload').click()">
+                                    <div class="upload-icon">📄</div>
+                                    <div class="upload-text">
+                                        <strong>Add Files or Drop Files Here</strong><br>
+                                        ID Proof Upload (e.g., government ID, lease agreement)
+                                    </div>
+                                    <input type="file" id="documentUpload" name="documents" multiple
+                                        accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>Emergency Contact</h4>
                                 <div class="form-row full-width">
                                     <div class="form-group">
-                                        <input type="text" name="country" placeholder="Country">
+                                        <label for="emergencyName">Emergency Contact Name</label>
+                                        <input type="text" id="emergencyName" name="emergencyName"
+                                            placeholder="Full Name">
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Rental Details -->
-                    <div class="form-step" id="formStep2">
-                        <div class="form-section">
-                            <h4>Rental Details</h4>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="unit">Unit *</label>
-                                    <input type="text" id="unit" name="unit" placeholder="Unit/Property Assigned">
-                                </div>
-                                <div class="form-group">
-                                    <label for="monthlyRent">Monthly Rent *</label>
-                                    <input type="text" id="monthlyRent" name="monthlyRent" placeholder="Amount">
-                                </div>
-                                <div class="form-group">
-                                    <label for="securityDeposit">Security Deposit *</label>
-                                    <input type="text" id="securityDeposit" name="securityDeposit" placeholder="Amount">
-                                </div>
-                            </div>
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="leaseStart">Lease Start Date *</label>
-                                    <input type="date" id="leaseStart" name="leaseStart">
-                                </div>
-                                <div class="form-group">
-                                    <label for="leaseEnd">Lease End Date</label>
-                                    <input type="date" id="leaseEnd" name="leaseEnd">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h4>Documentation</h4>
-                            <div class="upload-area" onclick="document.getElementById('documentUpload').click()">
-                                <div class="upload-icon">📄</div>
-                                <div class="upload-text">
-                                    <strong>Add Files or Drop Files Here</strong><br>
-                                    ID Proof Upload (e.g., government ID, lease agreement)
-                                </div>
-                                <input type="file" id="documentUpload" name="documents" multiple accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h4>Emergency Contact</h4>
-                            <div class="form-row full-width">
-                                <div class="form-group">
-                                    <label for="emergencyName">Emergency Contact Name</label>
-                                    <input type="text" id="emergencyName" name="emergencyName" placeholder="Full Name">
-                                </div>
-                            </div>
-                            <div class="form-row two-col">
-                                <div class="form-group">
-                                    <label for="emergencyNumber">Emergency Contact Number</label>
-                                    <input type="tel" id="emergencyNumber" name="emergencyNumber" placeholder="+63">
-                                </div>
-                                <div class="form-group">
-                                    <label for="emergencyRelationship">Emergency Contact Relationship</label>
-                                    <input type="text" id="emergencyRelationship" name="emergencyRelationship" placeholder="(e.g., Mother, Father, Spouse)">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Account Credentials -->
-                    <div class="form-step" id="formStep3">
-                        <div style="display: flex; gap: 30px;">
-                            <div style="flex: 1;">
-                                <div class="form-section">
-                                    <h4>Account Credentials</h4>
+                                <div class="form-row two-col">
                                     <div class="form-group">
-                                        <label for="email">Email Address *</label>
-                                        <input type="email" id="email" name="email" placeholder="example@example.com">
+                                        <label for="emergencyNumber">Emergency Contact Number</label>
+                                        <input type="tel" id="emergencyNumber" name="emergencyNumber" placeholder="+63">
                                     </div>
-                                <div class="form-group">
-                                <label for="defaultPassword">Default Password *</label>
-                                <div class="input-with-icon">
-                                    <input type="password" id="defaultPassword" name="defaultPassword" placeholder="Password">
-                                    <span class="toggle-password" onclick="togglePassword('defaultPassword', this)">👁️</span>
-                                </div>
-                                </div>
-
-                                <div class="form-group">
-                                <label for="confirmPassword">Confirm Default Password *</label>
-                                <div class="input-with-icon">
-                                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Password">
-                                    <span class="toggle-password" onclick="togglePassword('confirmPassword', this)">👁️</span>
-                                </div>
-                                </div>
-
-                                </div>
-                            </div>
-                            <div style="flex: 1;">
-                                <div class="form-section">
-                                    <h4>Profile Picture</h4>
-                                    <div class="profile-upload">
-                                        <div class="profile-preview" onclick="document.getElementById('profileUpload').click()">
-                                            <div class="profile-preview-icon">👤+</div>
-                                        </div>
-                                        <div class="profile-upload-text">
-                                            <h5>Upload your photo</h5>
-                                            <p>Profile picture should be in PNG or JPEG format and no more than 2MB in size</p>
-                                        </div>
-                                        <input type="file" id="profileUpload" name="profilePicture" accept=".jpg,.jpeg,.png" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="emergencyRelationship">Emergency Contact Relationship</label>
+                                        <input type="text" id="emergencyRelationship" name="emergencyRelationship"
+                                            placeholder="(e.g., Mother, Father, Spouse)">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="terms-checkbox">
-                            <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
-                            <label for="agreeTerms">
-                                I agree to all the <a href="#" target="_blank">Terms</a> and 
-                                <a href="#" target="_blank">Privacy Policies</a>
-                            </label>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                        <!-- Step 3: Account Credentials -->
+                        <div class="form-step" id="formStep3">
+                            <div style="display: flex; gap: 30px;">
+                                <div style="flex: 1;">
+                                    <div class="form-section">
+                                        <h4>Account Credentials</h4>
+                                        <div class="form-group">
+                                            <label for="email">Email Address *</label>
+                                            <input type="email" id="email" name="email"
+                                                placeholder="example@example.com">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="defaultPassword">Default Password *</label>
+                                            <div class="input-with-icon">
+                                                <input type="password" id="defaultPassword" name="defaultPassword"
+                                                    placeholder="Password">
+                                                <span class="toggle-password"
+                                                    onclick="togglePassword('defaultPassword', this)">👁️</span>
+                                            </div>
+                                        </div>
 
-            <div class="modal-footer">
-                <button type="button" class="modal-btn modal-btn-secondary" id="prevBtn" onclick="previousStep()" style="display: none;">
-                    Previous
-                </button>
-                <div style="flex: 1;"></div>
-                <button type="button" class="modal-btn modal-btn-primary" id="nextBtn" onclick="nextStep()">
-                    Next
-                </button>
-                <button type="button" class="modal-btn modal-btn-primary" id="confirmBtn" onclick="confirmAccount()" style="display: none;">
-                    Confirm
-                </button>
+                                        <div class="form-group">
+                                            <label for="confirmPassword">Confirm Default Password *</label>
+                                            <div class="input-with-icon">
+                                                <input type="password" id="confirmPassword" name="confirmPassword"
+                                                    placeholder="Password">
+                                                <span class="toggle-password"
+                                                    onclick="togglePassword('confirmPassword', this)">👁️</span>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="form-section">
+                                        <h4>Profile Picture</h4>
+                                        <div class="profile-upload">
+                                            <div class="profile-preview"
+                                                onclick="document.getElementById('profileUpload').click()">
+                                                <div class="profile-preview-icon">👤+</div>
+                                            </div>
+                                            <div class="profile-upload-text">
+                                                <h5>Upload your photo</h5>
+                                                <p>Profile picture should be in PNG or JPEG format and no more than 2MB
+                                                    in size</p>
+                                            </div>
+                                            <input type="file" id="profileUpload" name="profilePicture"
+                                                accept=".jpg,.jpeg,.png" style="display: none;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="terms-checkbox">
+                                <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                                <label for="agreeTerms">
+                                    I agree to all the <a href="#" target="_blank">Terms</a> and
+                                    <a href="#" target="_blank">Privacy Policies</a>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="modal-btn modal-btn-secondary" id="prevBtn" onclick="previousStep()"
+                        style="display: none;">
+                        Previous
+                    </button>
+                    <div style="flex: 1;"></div>
+                    <button type="button" class="modal-btn modal-btn-primary" id="nextBtn" onclick="nextStep()">
+                        Next
+                    </button>
+                    <button type="button" class="modal-btn modal-btn-primary" id="confirmBtn" onclick="confirmAccount()"
+                        style="display: none;">
+                        Confirm
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    <script src="/javascript/tenants.js"></script>
-    <script src="/javascript/sidebar.js"></script>
+
+        <script src="constants/constants.js"></script>
+        <script src="/utils/utils.js"></script>
+        <script src="/javascript/tenants.js"></script>
+        <script src="/javascript/sidebar.js"></script>
 </body>
+
 </html>
