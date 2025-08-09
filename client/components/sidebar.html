@@ -1,87 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      href="https://fonts.googleapis.com/css?family=Poppins"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/css/sidebar.css" />
-  </head>
-  <body>
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <img src="/assets/logo-property.png" alt="Logo" class="logo" />
-        <div class="sidebar-title">Ambulo Properties</div>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
+  <!-- Add Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/sidebar.css" />
+</head>
+
+<body>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="https://res.cloudinary.com/degn0zm6s/image/upload/v1754146538/ambulo_logo_f2rloe.png" alt="Ambulo Logo"
+        class="sidebar-logo" />
+      <div class="sidebar-title">Ambulo PMS</div>
+    </div>
+
+
+    <nav class="sidebar-nav">
+      <div class="nav-item">
+        <a href="/adminDashboard.html" class="nav-link" data-tooltip="Dashboard">
+          <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
+          <span class="nav-text">Dashboard</span>
+        </a>
       </div>
 
-      <button id="sidebarToggle" class="sidebar-toggle">
-        <span>←</span>
+      <div class="nav-section">
+        <div class="nav-section-title">Property Management</div>
+      </div>
+
+      <div class="nav-item">
+        <a href="#" class="nav-link" data-tooltip="Properties">
+          <div class="nav-icon"><i class="fas fa-building"></i></div>
+          <span class="nav-text">Properties</span>
+        </a>
+      </div>
+
+      <div class="nav-item">
+        <a href="/tenants.html" class="nav-link" data-tooltip="Tenants">
+          <div class="nav-icon"><i class="fas fa-users"></i></div>
+          <span class="nav-text">Tenants</span>
+        </a>
+      </div>
+
+      <div class="nav-item">
+        <a href="#" class="nav-link" data-tooltip="Leases">
+          <div class="nav-icon"><i class="fas fa-file-contract"></i></div>
+          <span class="nav-text">Leases</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Operations</div>
+      </div>
+
+      <div class="nav-item">
+        <a href="/maintenance.html" class="nav-link" data-tooltip="Maintenance">
+          <div class="nav-icon"><i class="fas fa-tools"></i></div>
+          <span class="nav-text">Maintenance</span>
+        </a>
+      </div>
+
+      <div class="nav-item">
+        <a href="#" class="nav-link" data-tooltip="Payments">
+          <div class="nav-icon"><i class="fas fa-credit-card"></i></div>
+          <span class="nav-text">Payments</span>
+        </a>
+      </div>
+
+      <div class="nav-item">
+        <a href="#" class="nav-link" data-tooltip="Reports">
+          <div class="nav-icon"><i class="fas fa-chart-bar"></i></div>
+          <span class="nav-text">Reports</span>
+        </a>
+      </div>
+    </nav>
+
+
+    <div class="sidebar-bottom-container">
+      <button id="sidebarToggle" class="sidebar-bottom-toggle" title="Collapse Sidebar">
+        <i class="fas fa-chevron-left"></i> 
       </button>
-
-      <nav class="sidebar-nav">
-        <div class="nav-item">
-          <a href="/adminDashboard.html" class="nav-link">
-            <div class="nav-icon">📊</div>
-            <span class="nav-text">Dashboard</span>
-          </a>
-        </div>
-
-        <div class="nav-section">
-          <div class="nav-section-title">Property Management</div>
-        </div>
-
-        <div class="nav-item">
-          <a href="#" class="nav-link">
-            <div class="nav-icon">🏠</div>
-            <span class="nav-text">Properties</span>
-          </a>
-        </div>
-
-        <div class="nav-item">
-          <a href="/tenants.html" class="nav-link">
-            <div class="nav-icon">👥</div>
-            <span class="nav-text">Tenants</span>
-          </a>
-        </div>
-
-        <div class="nav-item">
-          <a href="#" class="nav-link">
-            <div class="nav-icon">📋</div>
-            <span class="nav-text">Leases</span>
-          </a>
-        </div>
-
-        <div class="nav-section">
-          <div class="nav-section-title">Operations</div>
-        </div>
-
-        <div class="nav-item">
-          <a href="/maintenance.html" class="nav-link">
-            <div class="nav-icon">🔧</div>
-            <span class="nav-text">Maintenance</span>
-          </a>
-        </div>
-
-        <div class="nav-item">
-          <a href="#" class="nav-link">
-            <div class="nav-icon">💰</div>
-            <span class="nav-text">Payments</span>
-          </a>
-        </div>
-
-        <div class="nav-item">
-          <a href="#" class="nav-link">
-            <div class="nav-icon">📊</div>
-            <span class="nav-text">Reports</span>
-          </a>
-        </div>
-      </nav>
     </div>
 
     <div id="overlay" class="overlay"></div>
 
-    <button id="mobileMenuBtn" class="mobile-menu-btn">☰</button>
-  </body>
+    <!-- Also update the mobile menu button: -->
+    <button id="mobileMenuBtn" class="mobile-menu-btn" title="Open Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    </button>
+</body>
+
 </html>
