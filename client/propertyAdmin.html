@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/propertyAdmin.css">
+    <title>Property Module</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div id="sidebarContainer"></div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="header">
+            <div class="title-section">
+                <div>
+                    <h1>Hello, Kei!</h1>
+                    <h2>Property</h2>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search Anything...">
+                </div>
+                <button class="icon notification">🔔</button>
+                <button class="icon inbox">✉️</button>
+                <div class="profile-dropdown">
+                <button class="profile" id="profileBtnIcon">K</button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="#" onclick="alert('Profile clicked')">👤 Profile</a>
+                    <a href="#" onclick="alert('Logout clicked')">🚪 Logout</a>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Management Module -->
+        <div class="property-container">
+            <div class="property-header">
+                <div class="property-header-top">
+                    <button class="new-ticket-btn" onclick="openAddModal()">
+                        <span>+</span>
+                        Add Property
+                    </button>
+                
+                <div class="property-controls">
+                    <div class="property-search-box">
+                        <input type="text" placeholder="Name, location, or tenant" id="searchInput">
+                        <div class="property-search-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="property-dropdown">
+                        <button class="property-dropdown-btn" onclick="toggleDropdown('statusDropdown')">
+                            Status
+                            <span>▼</span>
+                        </button>
+                        <div class="property-dropdown-content" id="statusDropdown">
+                            <a href="#" onclick="filterByStatus('all')">All</a>
+                            <a href="#" onclick="filterByStatus('available')">Available</a>
+                            <a href="#" onclick="filterByStatus('occupied')">Occupied</a>
+                            <a href="#" onclick="filterByStatus('maintenance')">Maintenance</a>
+                        </div>
+                    </div>
+                    
+                    <div class="property-dropdown">
+                        <button class="property-dropdown-btn" onclick="toggleDropdown('typeDropdown')">
+                            Type
+                            <span>▼</span>
+                        </button>
+                        <div class="property-dropdown-content" id="typeDropdown">
+                            <a href="#" onclick="filterByType('all')">All</a>
+                            <a href="#" onclick="filterByType('office')">Commercial</a>
+                            <a href="#" onclick="filterByType('retail')">Residential</a>
+                            <a href="#" onclick="filterByType('residential')">Office</a>
+                        </div>
+                    </div>
+                    
+                    <div class="property-dropdown">
+                        <button class="property-dropdown-btn" onclick="toggleDropdown('locationDropdown')">
+                            Location
+                            <span>▼</span>
+                        </button>
+                        <div class="property-dropdown-content" id="locationDropdown">
+                            <a href="#" onclick="filterByLocation('all')">All</a>
+                            <a href="#" onclick="filterByLocation('silang')">Silang, Cavite</a>
+                            <a href="#" onclick="filterByLocation('tagaytay')">Tagaytay, Cavite</a>
+                        </div>
+                    </div>
+                    <div class="filter-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M7 12h10m-7 6h4"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <div class="properties-grid" id="propertiesGrid">
+                <!-- Properties will be rendered here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Property Modal -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Property</h2>
+                <button class="close-btn" onclick="closeAddModal()">×</button>
+            </div>
+            <form id="addPropertyForm" onsubmit="addProperty(event)">
+                <div class="modal-body">
+                    <div class="form-group full-width">
+                        <label class="form-label">Property Images</label>
+                        <div class="image-upload-container" onclick="document.getElementById('imageInput').click()">
+                            <div class="upload-icon">+</div>
+                            <div class="upload-text">Click to upload images</div>
+                            <div class="upload-hint">Or drag and drop files here (Max 5MB each)</div>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
+                        <div class="image-preview-container" id="imagePreviewContainer"></div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Unit Number *</label>
+                            <input type="text" class="form-input" name="unitNumber" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Building *</label>
+                            <input type="text" class="form-input" name="building" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Location *</label>
+                            <input type="text" class="form-input" name="location" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Type *</label>
+                            <select class="form-select" name="type" required>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Residential">Residential</option>
+                                <option value="Office">Office</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Status *</label>
+                            <select class="form-select" name="status" required>
+                                <option value="available">Available</option>
+                                <option value="occupied">Occupied</option>
+                                <option value="maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Monthly Rent (₱) *</label>
+                            <input type="number" class="form-input" name="price" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Size (sq ft) *</label>
+                            <input type="number" class="form-input" name="size" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Parking Spaces</label>
+                            <input type="number" class="form-input" name="parking" min="0" value="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Bathrooms</label>
+                            <input type="number" class="form-input" name="bathrooms" min="0" value="1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Bedrooms</label>
+                            <input type="number" class="form-input" name="bedrooms" min="0" value="1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Current Tenant</label>
+                            <input type="text" class="form-input" name="tenant" placeholder="Leave empty if vacant">
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-textarea" name="description" placeholder="Property description, amenities, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeAddModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Property</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Property Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Property</h2>
+                <button class="close-btn" onclick="closeEditModal()">×</button>
+            </div>
+            <form id="editPropertyForm" onsubmit="updateProperty(event)">
+                <div class="modal-body">
+                    <div class="form-group full-width">
+                        <label class="form-label">Property Images</label>
+                        <div class="image-upload-container" onclick="document.getElementById('editImageInput').click()">
+                            <div class="upload-icon">+</div>
+                            <div class="upload-text">Click to upload images</div>
+                            <div class="upload-hint">Or drag and drop files here (Max 5MB each)</div>
+                        </div>
+                        <input type="file" id="editImageInput" accept="image/*" multiple class="hidden" onchange="handleEditImageUpload(event)">
+                        <div class="image-preview-container" id="editImagePreviewContainer"></div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Unit Number *</label>
+                            <input type="text" class="form-input" name="unitNumber" id="editUnitNumber" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Building *</label>
+                            <input type="text" class="form-input" name="building" id="editBuilding" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Location *</label>
+                            <input type="text" class="form-input" name="location" id="editLocation" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Type *</label>
+                            <select class="form-select" name="type" id="editType" required>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Residential">Residential</option>
+                                <option value="Office">Office</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Status *</label>
+                            <select class="form-select" name="status" id="editStatus" required>
+                                <option value="available">Available</option>
+                                <option value="occupied">Occupied</option>
+                                <option value="maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Monthly Rent (₱) *</label>
+                            <input type="number" class="form-input" name="price" id="editPrice" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Size (sq ft) *</label>
+                            <input type="number" class="form-input" name="size" id="editSize" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Parking Spaces</label>
+                            <input type="number" class="form-input" name="parking" id="editParking" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Bathrooms</label>
+                            <input type="number" class="form-input" name="bathrooms" id="editBathrooms" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Bedrooms</label>
+                            <input type="number" class="form-input" name="bedrooms" id="editBedrooms" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Current Tenant</label>
+                            <input type="text" class="form-input" name="tenant" id="editTenant" placeholder="Leave empty if vacant">
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-textarea" name="description" id="editDescription" placeholder="Property description, amenities, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Property Details Modal -->
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal details-modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="detailsTitle">Property Details</h2>
+                <button class="close-btn" onclick="closeDetailsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Property Gallery -->
+                <div class="property-gallery">
+                    <button class="nav-arrow prev" onclick="changeDetailImage(-1)">‹</button>
+                    <img id="detailMainImage" class="main-image" src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Property Main View">
+                    <button class="nav-arrow next" onclick="changeDetailImage(1)">›</button>
+                    
+                    <div class="thumbnail-row" id="detailThumbnails">
+                        <!-- Thumbnails will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Property Details Container -->
+                <div class="property-details-container">
+                    <div class="details-left">
+                        <!-- Specifications -->
+                        <div class="property-section">
+                            <div class="property-section-header">Property Space Specifications</div>
+                            <div class="property-section-content" id="specificationsContent">
+                                <!-- Content will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Requirements -->
+                        <div class="property-section">
+                            <div class="property-section-header">Lease Requirements</div>
+                            <div class="property-section-content">
+                                <div class="spec-row">
+                                    <span class="spec-label">Minimum Credit Score:</span>
+                                    <span class="spec-value">650+</span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">Income Requirement:</span>
+                                    <span class="spec-value">3x Monthly Rent</span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">Security Deposit:</span>
+                                    <span class="spec-value">₱30,000</span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">Application Fee:</span>
+                                    <span class="spec-value">₱5,000</span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">Background Check:</span>
+                                    <span class="spec-value">Required</span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">References:</span>
+                                    <span class="spec-value">2 Required</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Property Policies -->
+                        <div class="property-section">
+                            <div class="property-section-header">Property Policies</div>
+                            <div class="property-section-content">
+                                <ul class="policy-list">
+                                    <li>Smoking is strictly prohibited inside the property</li>
+                                    <li>Quiet hours enforced from 10 PM to 8 AM</li>
+                                    <li>Tenant responsible for all utilities except water and trash</li>
+                                    <li>24-hour maintenance request system available</li>
+                                    <li>Late rent payment incurs ₱3,000 fee after 5-day grace period</li>
+                                    <li>Property inspections conducted quarterly with 24-hour notice</li>
+                                    <li>Parking spaces assigned and non-transferable</li>
+                                    <li>Lease renewal offers extended 60 days before expiration</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar -->
+                    <div class="details-right">
+                        <div class="price-section">
+                            <div class="price-main" id="detailPrice">₱35,000</div>
+                            <div class="price-sub">Monthly Rent</div>
+                        </div>
+
+                        <div class="deposit-info">
+                            <strong>Security Deposit:</strong> <span id="detailDeposit">₱30,000</span><br>
+                            <small>Refundable upon lease termination, subject to property condition assessment.</small>
+                        </div>
+
+                        <div class="property-section">
+                            <div class="property-section-header">Property Status</div>
+                            <div class="property-section-content">
+                                <div class="spec-row">
+                                    <span class="spec-label">Occupancy:</span>
+                                    <span class="spec-value"><span class="availability-status occupied" id="detailStatus">Occupied</span></span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">Rent Status:</span>
+                                    <span class="spec-value" style="color: #10b981; font-weight: 700;">Paid</span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">Last Inspection:</span>
+                                    <span class="spec-value">Dec 15, 2024</span>
+                                </div>
+                                <div class="spec-row">
+                                    <span class="spec-label">Maintenance Issues:</span>
+                                    <span class="spec-value" style="color: #10b981; font-weight: 700;">None</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/javascript/propertyAdmin.js"></script>
+    <script src="/javascript/sidebar.js"></script>
+</body>
+</html>
