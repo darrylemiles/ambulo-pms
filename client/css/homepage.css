@@ -57,7 +57,7 @@
             background-repeat: no-repeat;
             background: #C3D2D2;
             text-align: center;
-            padding: 200px 0 150px 0; /* Added top padding for fixed header */
+            padding: 200px 0 150px 0;
             position: relative;
             overflow: hidden;
         }
