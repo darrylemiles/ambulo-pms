@@ -1,3 +1,10 @@
+import formatTime from "../utils/formatTime.js";
+import formatCurrency from "../utils/formatCurrency.js";
+import formatStatus from "../utils/formatStatus.js";
+import formatRequestType from "../utils/formatRequestType.js";
+import formatPriority from "../utils/formatPriority.js";
+import formatDate from "../utils/formatDate.js";
+import formatAttachments from "../utils/formatAttachments.js";
 
 // Global variables
 let tickets = [];
@@ -13,8 +20,6 @@ let currentToDate = null;
 let tenantsList = [];
 let filteredTenants = [];
 let selectedTenantIndex = -1;
-
-
 
 document.addEventListener("DOMContentLoaded", function () {
   const profileBtn = document.getElementById("profileBtnIcon");
@@ -60,7 +65,6 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeFileUpload();
   initializeModal();
   initializeEditModal();
-
 
   const sidebarToggle =
     document.querySelector(".mobile-menu-btn") ||
@@ -119,9 +123,6 @@ function initializeDatePickers() {
     });
   }
 }
-
-
-
 
 // Update date restrictions based on available ticket data
 function updateDateRestrictions() {
@@ -302,8 +303,6 @@ function updateFilterStatus() {
       year: "numeric",
     });
 
-    
-
     // Show tickets that are created, end, or span within the date range
     const activeTickets = tickets.filter(
       (t) => t.ticket_status !== "completed"
@@ -407,39 +406,60 @@ function renderTickets() {
         ? `priority-${ticket.priority.toLowerCase()}`
         : "priority-medium";
 
-      // ✅ Use constants instead of hardcoded strings
-      const isPending = ticket.ticket_status && 
-        ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.PENDING;
+      const isPending =
+        ticket.ticket_status &&
+        ticket.ticket_status.toUpperCase() ===
+          AppConstants.TICKET_STATUSES.PENDING;
 
       return `
         <div class="ticket-item" data-ticket-id="${ticket.ticket_id}">
             <!-- Main row - ensure exact column alignment -->
             <div class="ticket-row">
-                <span class="status-badge ${statusClass}">${AppUtils.formatStatus(ticket.ticket_status)}</span>
-                <span class="ticket-title">${ticket.ticket_title || "N/A"}</span>
+                <span class="status-badge ${statusClass}">${formatStatus(
+        ticket.ticket_status
+      )}</span>
+                <span class="ticket-title">${
+                  ticket.ticket_title || "N/A"
+                }</span>
                 <span>${ticket.unit_no || "N/A"}</span>
-                <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(ticket.priority)}</span>
-                <span>${AppUtils.formatRequestType(ticket.request_type)}</span>
-                <span>${AppUtils.formatDate(ticket.start_date) || "Not set"}</span>
-                <span>${AppUtils.formatDate(ticket.end_date) || "Not set"}</span>
+                <span class="status-badge ${priorityClass}">${formatPriority(
+        ticket.priority
+      )}</span>
+                <span>${formatRequestType(ticket.request_type)}</span>
+                <span>${
+                  formatDate(ticket.start_date) || "Not set"
+                }</span>
+                <span>${
+                  formatDate(ticket.end_date) || "Not set"
+                }</span>
                 
                 <!-- Action buttons - Only show assign button if status is PENDING -->
                 <div class="row-actions">
-                    <button class="action-btn action-btn-edit" onclick="editTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Update">
+                    <button class="action-btn action-btn-edit" onclick="editTicket('${
+                      ticket.ticket_id
+                    }'); event.stopPropagation();" title="Update">
                         ✏️
                     </button>
-                    ${isPending ? `
+                    ${
+                      isPending
+                        ? `
                     <button class="action-btn action-btn-assign" onclick="assignTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Assign">
                         👤
                     </button>
-                    ` : ""}
-                    <button class="action-btn action-btn-delete" onclick="deleteTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Delete">
+                    `
+                        : ""
+                    }
+                    <button class="action-btn action-btn-delete" onclick="deleteTicket('${
+                      ticket.ticket_id
+                    }'); event.stopPropagation();" title="Delete">
                         🗑️
                     </button>
                 </div>
                 
                 <!-- Expand button -->
-                <button class="expand-btn" onclick="toggleTicketDetails('${ticket.ticket_id}')" title="Expand Details">
+                <button class="expand-btn" onclick="toggleTicketDetails('${
+                  ticket.ticket_id
+                }')" title="Expand Details">
                     <span class="expand-icon">▼</span>
                 </button>
             </div>
@@ -454,13 +474,17 @@ function renderTickets() {
                     </div>
                     <div class="detail-item">
                         <strong>Current Status</strong>
-                        <span class="status-badge ${statusClass}">${AppUtils.formatStatus(ticket.ticket_status)}</span>
+                        <span class="status-badge ${statusClass}">${formatStatus(
+        ticket.ticket_status
+      )}</span>
                     </div>
                     
                     <!-- Contact Information -->
                     <div class="detail-item">
                         <strong>Requested By</strong>
-                        <span title="${ticket.requested_by_email || ""}">${ticket.requested_by_name || ticket.user_id || "Unknown"}</span>
+                        <span title="${ticket.requested_by_email || ""}">${
+        ticket.requested_by_name || ticket.user_id || "Unknown"
+      }</span>
                     </div>
                     <div class="detail-item">
                         <strong>Assigned To</strong>
@@ -470,53 +494,80 @@ function renderTickets() {
                     <!-- Schedule Information -->
                     <div class="detail-item">
                         <strong>Start Time</strong>
-                        <span>${AppUtils.formatTime(ticket.start_time) || "Not scheduled"}</span>
+                        <span>${
+                          formatTime(ticket.start_time) ||
+                          "Not scheduled"
+                        }</span>
                     </div>
                     <div class="detail-item">
                         <strong>End Time</strong>
-                        <span>${AppUtils.formatTime(ticket.end_time) || "Not scheduled"}</span>
+                        <span>${
+                          formatTime(ticket.end_time) ||
+                          "Not scheduled"
+                        }</span>
                     </div>
                     
                     <!-- Cost Information -->
                     <div class="detail-item">
                         <strong>Maintenance Cost</strong>
-                        <span class="cost-display">${AppUtils.formatCurrency(ticket.maintenance_cost) || "Not estimated"}</span>
+                        <span class="cost-display">${
+                          formatCurrency(ticket.maintenance_cost) ||
+                          "Not estimated"
+                        }</span>
                     </div>
                     <div class="detail-item">
                         <strong>Priority Level</strong>
-                        <span class="status-badge ${priorityClass}">${AppUtils.formatPriority(ticket.priority)}</span>
+                        <span class="status-badge ${priorityClass}">${formatPriority(
+        ticket.priority
+      )}</span>
                     </div>
                     
-                    ${ticket.description ? `
+                    ${
+                      ticket.description
+                        ? `
                     <div class="detail-item full-width">
                         <strong>Description</strong>
                         <span>${ticket.description}</span>
-                    </div>` : ""}
+                    </div>`
+                        : ""
+                    }
                     
-                    ${ticket.notes ? `
+                    ${
+                      ticket.notes
+                        ? `
                     <div class="detail-item full-width">
                         <strong>Additional Notes</strong>
                         <div class="notes-content">${ticket.notes}</div>
-                    </div>` : ""}
+                    </div>`
+                        : ""
+                    }
                     
-                    ${ticket.attachments ? `
+                    ${
+                      ticket.attachments
+                        ? `
                     <div class="detail-item full-width">
                         <strong>Attachments</strong>
                         <div class="attachments-list">
-                            ${AppUtils.formatAttachments(ticket.attachments)}
+                            ${formatAttachments(ticket.attachments)}
                         </div>
-                    </div>` : ""}
+                    </div>`
+                        : ""
+                    }
                 </div>
                 
                 <!-- Date information as simple text below attachments -->
                 <div class="ticket-dates-info">
                     <div class="date-info-item">
                         <span class="date-label">Created:</span>
-                        <span class="date-value">${AppUtils.formatDateTime(ticket.created_at)}</span>
+                        <span class="date-value">${formatDate(
+                          ticket.created_at, true
+                        )}</span>
                     </div>
                     <div class="date-info-item">
                         <span class="date-label">Last Updated:</span>
-                        <span class="date-value">${AppUtils.formatDateTime(ticket.updated_at)}</span>
+                        <span class="date-value">${formatDate(
+                          ticket.updated_at, true
+                        )}</span>
                     </div>
                 </div>
             </div>
@@ -528,7 +579,6 @@ function renderTickets() {
   container.innerHTML = ticketRows;
   currentlyExpandedTicket = null;
 }
-
 
 function toggleTicketDetails(ticketId) {
   const details = document.getElementById(`details-${ticketId}`);
@@ -583,8 +633,6 @@ function expandTicket(ticketId, details, ticketItem, expandIcon) {
   }, 200);
 }
 
-
-
 // Add a function to periodically check and update ticket statuses
 async function checkAndUpdateTicketStatuses() {
   try {
@@ -607,615 +655,636 @@ async function checkAndUpdateTicketStatuses() {
 }
 
 
-// Filter tickets based on search
-function filterTickets() {
-  const searchInput = document.getElementById("searchInput");
-  if (!searchInput) return;
-
-  const searchTerm = searchInput.value.toLowerCase();
-
-  if (searchTerm === "") {
-    tickets = allTickets;
-  } else {
-    tickets = allTickets.filter((ticket) => {
-      return (
-        ticket.ticket_id?.toLowerCase().includes(searchTerm) ||
-        ticket.ticket_title?.toLowerCase().includes(searchTerm) ||
-        ticket.description?.toLowerCase().includes(searchTerm) ||
-        ticket.assigned_to?.toLowerCase().includes(searchTerm) ||
-        ticket.user_id?.toLowerCase().includes(searchTerm) ||
-        ticket.requested_by_name?.toLowerCase().includes(searchTerm) ||
-        ticket.requested_by_email?.toLowerCase().includes(searchTerm) ||
-        ticket.ticket_status?.toLowerCase().includes(searchTerm) ||
-        ticket.priority?.toLowerCase().includes(searchTerm) ||
-        ticket.request_type?.toLowerCase().includes(searchTerm)
-      );
-    });
-  }
-
-  renderTickets();
-}
-
-// Clear search filters
-function clearFilters() {
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) {
-    searchInput.value = "";
-    tickets = allTickets;
-    renderTickets();
-  }
-}
-
-
 async function editTicket(ticketId) {
-    event.stopPropagation();
-    
-    try {
-        console.log(`Opening edit modal for ticket: ${ticketId}`);
-        
-        // Fetch ticket details
-        const response = await fetch(`/api/v1/tickets/${ticketId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-        });
+  event.stopPropagation();
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch ticket details');
-        }
+  try {
+    console.log(`Opening edit modal for ticket: ${ticketId}`);
 
-        const result = await response.json();
-        const ticket = result.ticket;
-        
-        // ✅ Use constants for status checks
-        const isCompleted = ticket.ticket_status && 
-            ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.COMPLETED;
-        const isCancelled = ticket.ticket_status && 
-            ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.CANCELLED;
-        
-        if (isCompleted || isCancelled) {
-            const statusText = isCompleted ? 'completed' : 'cancelled';
-            const proceedMessage = `This ticket is ${statusText} and cannot be edited.\n\nWould you like to view its details anyway?`;
-            
-            if (!confirm(proceedMessage)) {
-                return;
-            }
-        }
+    // Fetch ticket details
+    const response = await fetch(`/api/v1/tickets/${ticketId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
 
-        // Populate the edit form
-        populateEditForm(ticket);
-        
-        // Show the modal
-        const modal = document.getElementById('editTicketModal');
-        modal.classList.add('active');
-        
-    } catch (error) {
-        console.error('Error opening edit modal:', error);
-        alert('Failed to load ticket details. Please try again.');
+    if (!response.ok) {
+      throw new Error("Failed to fetch ticket details");
     }
-}
 
+    const result = await response.json();
+    const ticket = result.ticket;
+
+    // ✅ Use constants for status checks
+    const isCompleted =
+      ticket.ticket_status &&
+      ticket.ticket_status.toUpperCase() ===
+        AppConstants.TICKET_STATUSES.COMPLETED;
+    const isCancelled =
+      ticket.ticket_status &&
+      ticket.ticket_status.toUpperCase() ===
+        AppConstants.TICKET_STATUSES.CANCELLED;
+
+    if (isCompleted || isCancelled) {
+      const statusText = isCompleted ? "completed" : "cancelled";
+      const proceedMessage = `This ticket is ${statusText} and cannot be edited.\n\nWould you like to view its details anyway?`;
+
+      if (!confirm(proceedMessage)) {
+        return;
+      }
+    }
+
+    // Populate the edit form
+    populateEditForm(ticket);
+
+    // Show the modal
+    const modal = document.getElementById("editTicketModal");
+    modal.classList.add("active");
+  } catch (error) {
+    console.error("Error opening edit modal:", error);
+    alert("Failed to load ticket details. Please try again.");
+  }
+}
 
 function populateEditForm(ticket) {
-    // Hidden ticket ID
-    document.getElementById('editTicketId').value = ticket.ticket_id;
-    
-    // Read-only fields
-    document.getElementById('editTicketIdDisplay').value = ticket.ticket_id;
-    document.getElementById('editUnitNo').value = ticket.unit_no || '';
-    document.getElementById('editStatus').value = AppUtils.formatStatus(ticket.ticket_status);
-    document.getElementById('editRequestedBy').value = ticket.requested_by_name || 'Unknown';
-    document.getElementById('editCreatedAt').value = AppUtils.formatDateTime(ticket.created_at);
-    
-    
-    const isCompleted = ticket.ticket_status && 
-        ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.COMPLETED;
-    const isCancelled = ticket.ticket_status && 
-        ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.CANCELLED;
-    const isNotEditable = isCompleted || isCancelled;
-    const isPendingOrAssigned = ticket.ticket_status && 
-        (ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.PENDING || 
-         ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.ASSIGNED);
-    
-    
-    // Editable fields (NOW INCLUDES start_date and start_time)
-    const editableFields = [
-        'editTicketTitle', 'editRequestType', 'editPriority', 
-        'editStartDate', 'editStartTime', // ✅ ADDED these to editable fields
-        'editEndDate', 'editEndTime', 'editMaintenanceCosts', 
-        'editDescription', 'editNotes'
-    ];
-    
-    editableFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.disabled = isNotEditable;
-            if (isNotEditable) {
-                field.classList.add('readonly-field');
-            } else {
-                field.classList.remove('readonly-field');
-            }
-        }
-    });
-    
-    document.getElementById('editTicketTitle').value = ticket.ticket_title || '';
-    document.getElementById('editRequestType').value = ticket.request_type || '';
-    document.getElementById('editPriority').value = ticket.priority || '';
-    document.getElementById('editMaintenanceCosts').value = ticket.maintenance_cost || '';
-    document.getElementById('editDescription').value = ticket.description || '';
-    document.getElementById('editNotes').value = ticket.notes || '';
-    
-    const startDateField = document.getElementById('editStartDate');
-    if (startDateField) {
-        let formattedStartDate = '';
-        if (ticket.start_date) {
-            if (typeof ticket.start_date === 'string' && ticket.start_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                formattedStartDate = ticket.start_date;
-            } else {
-                const dateObj = new Date(ticket.start_date);
-                if (!isNaN(dateObj.getTime())) {
-                    const year = dateObj.getFullYear();
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    const day = String(dateObj.getDate()).padStart(2, '0');
-                    formattedStartDate = `${year}-${month}-${day}`;
-                }
-            }
-        }
-        
-        console.log('Setting start_date:', ticket.start_date, '-> formatted:', formattedStartDate);
-        startDateField.value = formattedStartDate;
-        
-        // Apply disabled state only if not editable
-        if (isNotEditable) {
-            startDateField.disabled = true;
-            startDateField.classList.add('readonly-field');
-        } else {
-            startDateField.disabled = false;
-            startDateField.classList.remove('readonly-field');
-            // Set minimum date to today for future scheduling
-            const today = new Date().toISOString().split('T')[0];
-            startDateField.min = today;
-        }
+  // Hidden ticket ID
+  document.getElementById("editTicketId").value = ticket.ticket_id;
+
+  // Read-only fields
+  document.getElementById("editTicketIdDisplay").value = ticket.ticket_id;
+  document.getElementById("editUnitNo").value = ticket.unit_no || "";
+  document.getElementById("editStatus").value = formatStatus(
+    ticket.ticket_status
+  );
+  document.getElementById("editRequestedBy").value =
+    ticket.requested_by_name || "Unknown";
+  document.getElementById("editCreatedAt").value = formatDate(
+    ticket.created_at, true
+  );
+
+  const isCompleted =
+    ticket.ticket_status &&
+    ticket.ticket_status.toUpperCase() ===
+      AppConstants.TICKET_STATUSES.COMPLETED;
+  const isCancelled =
+    ticket.ticket_status &&
+    ticket.ticket_status.toUpperCase() ===
+      AppConstants.TICKET_STATUSES.CANCELLED;
+  const isNotEditable = isCompleted || isCancelled;
+  const isPendingOrAssigned =
+    ticket.ticket_status &&
+    (ticket.ticket_status.toUpperCase() ===
+      AppConstants.TICKET_STATUSES.PENDING ||
+      ticket.ticket_status.toUpperCase() ===
+        AppConstants.TICKET_STATUSES.ASSIGNED);
+
+  // Editable fields (NOW INCLUDES start_date and start_time)
+  const editableFields = [
+    "editTicketTitle",
+    "editRequestType",
+    "editPriority",
+    "editStartDate",
+    "editStartTime", // ✅ ADDED these to editable fields
+    "editEndDate",
+    "editEndTime",
+    "editMaintenanceCosts",
+    "editDescription",
+    "editNotes",
+  ];
+
+  editableFields.forEach((fieldId) => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.disabled = isNotEditable;
+      if (isNotEditable) {
+        field.classList.add("readonly-field");
+      } else {
+        field.classList.remove("readonly-field");
+      }
     }
-    
-    // Handle start_time - NOW EDITABLE
-    const startTimeField = document.getElementById('editStartTime');
-    if (startTimeField) {
-        startTimeField.value = ticket.start_time || '';
-        
-        // Apply disabled state only if not editable
-        if (isNotEditable) {
-            startTimeField.disabled = true;
-            startTimeField.classList.add('readonly-field');
-        } else {
-            startTimeField.disabled = false;
-            startTimeField.classList.remove('readonly-field');
+  });
+
+  document.getElementById("editTicketTitle").value = ticket.ticket_title || "";
+  document.getElementById("editRequestType").value = ticket.request_type || "";
+  document.getElementById("editPriority").value = ticket.priority || "";
+  document.getElementById("editMaintenanceCosts").value =
+    ticket.maintenance_cost || "";
+  document.getElementById("editDescription").value = ticket.description || "";
+  document.getElementById("editNotes").value = ticket.notes || "";
+
+  const startDateField = document.getElementById("editStartDate");
+  if (startDateField) {
+    let formattedStartDate = "";
+    if (ticket.start_date) {
+      if (
+        typeof ticket.start_date === "string" &&
+        ticket.start_date.match(/^\d{4}-\d{2}-\d{2}$/)
+      ) {
+        formattedStartDate = ticket.start_date;
+      } else {
+        const dateObj = new Date(ticket.start_date);
+        if (!isNaN(dateObj.getTime())) {
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+          const day = String(dateObj.getDate()).padStart(2, "0");
+          formattedStartDate = `${year}-${month}-${day}`;
         }
+      }
     }
-    
-    // Handle end_date
-    const endDateField = document.getElementById('editEndDate');
-    if (endDateField) {
-        let formattedEndDate = '';
-        if (ticket.end_date) {
-            if (typeof ticket.end_date === 'string' && ticket.end_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                formattedEndDate = ticket.end_date;
-            } else {
-                const dateObj = new Date(ticket.end_date);
-                if (!isNaN(dateObj.getTime())) {
-                    const year = dateObj.getFullYear();
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    const day = String(dateObj.getDate()).padStart(2, '0');
-                    formattedEndDate = `${year}-${month}-${day}`;
-                }
-            }
-        }
-        
-        console.log('Setting end_date:', ticket.end_date, '-> formatted:', formattedEndDate);
-        endDateField.value = formattedEndDate;
-        
-        if (isNotEditable) {
-            endDateField.disabled = true;
-            endDateField.classList.add('readonly-field');
-        } else {
-            endDateField.disabled = false;
-            endDateField.classList.remove('readonly-field');
-        }
-    }
-    
-    // Handle end_time
-    const endTimeField = document.getElementById('editEndTime');
-    if (endTimeField) {
-        endTimeField.value = ticket.end_time || '';
-        
-        if (isNotEditable) {
-            endTimeField.disabled = true;
-            endTimeField.classList.add('readonly-field');
-        } else {
-            endTimeField.disabled = false;
-            endTimeField.classList.remove('readonly-field');
-        }
-    }
-    
-    // Handle manual status editing
-    handleStatusFieldEditing(ticket, isPendingOrAssigned, isNotEditable);
-    
-    // Handle assigned_to field - ALWAYS READ-ONLY
-    const assignedToGroup = document.getElementById('editAssignedToGroup');
-    const assignedToInput = document.getElementById('editAssignedTo');
-    
-    if (ticket.assigned_to && ticket.assigned_to.trim() !== '') {
-        assignedToGroup.style.display = 'flex';
-        assignedToInput.value = ticket.assigned_to;
-        assignedToInput.disabled = true;
-        assignedToInput.classList.add('readonly-field');
+
+    console.log(
+      "Setting start_date:",
+      ticket.start_date,
+      "-> formatted:",
+      formattedStartDate
+    );
+    startDateField.value = formattedStartDate;
+
+    // Apply disabled state only if not editable
+    if (isNotEditable) {
+      startDateField.disabled = true;
+      startDateField.classList.add("readonly-field");
     } else {
-        assignedToGroup.style.display = 'none';
-        assignedToInput.value = '';
+      startDateField.disabled = false;
+      startDateField.classList.remove("readonly-field");
+      // Set minimum date to today for future scheduling
+      const today = new Date().toISOString().split("T")[0];
+      startDateField.min = today;
     }
-    
-    // Handle file upload (disable if not editable)
-    const fileInput = document.getElementById('editFileInput');
-    const attachmentsArea = document.querySelector('#editTicketModal .attachments-area');
-    
-    if (fileInput && attachmentsArea) {
-        fileInput.disabled = isNotEditable;
-        if (isNotEditable) {
-            attachmentsArea.style.opacity = '0.5';
-            attachmentsArea.style.pointerEvents = 'none';
-            attachmentsArea.querySelector('span').textContent = '📎 File upload disabled for this ticket status';
-        } else {
-            attachmentsArea.style.opacity = '1';
-            attachmentsArea.style.pointerEvents = 'auto';
-            resetEditFileUploadDisplay();
+  }
+
+  // Handle start_time - NOW EDITABLE
+  const startTimeField = document.getElementById("editStartTime");
+  if (startTimeField) {
+    startTimeField.value = ticket.start_time || "";
+
+    // Apply disabled state only if not editable
+    if (isNotEditable) {
+      startTimeField.disabled = true;
+      startTimeField.classList.add("readonly-field");
+    } else {
+      startTimeField.disabled = false;
+      startTimeField.classList.remove("readonly-field");
+    }
+  }
+
+  // Handle end_date
+  const endDateField = document.getElementById("editEndDate");
+  if (endDateField) {
+    let formattedEndDate = "";
+    if (ticket.end_date) {
+      if (
+        typeof ticket.end_date === "string" &&
+        ticket.end_date.match(/^\d{4}-\d{2}-\d{2}$/)
+      ) {
+        formattedEndDate = ticket.end_date;
+      } else {
+        const dateObj = new Date(ticket.end_date);
+        if (!isNaN(dateObj.getTime())) {
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+          const day = String(dateObj.getDate()).padStart(2, "0");
+          formattedEndDate = `${year}-${month}-${day}`;
         }
+      }
     }
-    
-    // Handle current attachments
-    displayCurrentAttachments(ticket.attachments);
-    
-    // Reset file input for new attachments
-    if (!isNotEditable) {
-        document.getElementById('editFileInput').value = '';
-        resetEditFileUploadDisplay();
+
+    console.log(
+      "Setting end_date:",
+      ticket.end_date,
+      "-> formatted:",
+      formattedEndDate
+    );
+    endDateField.value = formattedEndDate;
+
+    if (isNotEditable) {
+      endDateField.disabled = true;
+      endDateField.classList.add("readonly-field");
+    } else {
+      endDateField.disabled = false;
+      endDateField.classList.remove("readonly-field");
     }
-    
-    // Update submit button
-    const submitBtn = document.querySelector('#editTicketModal .btn-submit');
-    if (submitBtn) {
-        submitBtn.disabled = isNotEditable;
-        if (isNotEditable) {
-            submitBtn.textContent = isCompleted ? 'Cannot Edit Completed Ticket' : 'Cannot Edit Cancelled Ticket';
-            submitBtn.style.opacity = '0.5';
-        } else {
-            submitBtn.textContent = 'Update Ticket';
-            submitBtn.style.opacity = '1';
-        }
+  }
+
+  // Handle end_time
+  const endTimeField = document.getElementById("editEndTime");
+  if (endTimeField) {
+    endTimeField.value = ticket.end_time || "";
+
+    if (isNotEditable) {
+      endTimeField.disabled = true;
+      endTimeField.classList.add("readonly-field");
+    } else {
+      endTimeField.disabled = false;
+      endTimeField.classList.remove("readonly-field");
     }
+  }
+
+  // Handle manual status editing
+  handleStatusFieldEditing(ticket, isPendingOrAssigned, isNotEditable);
+
+  // Handle assigned_to field - ALWAYS READ-ONLY
+  const assignedToGroup = document.getElementById("editAssignedToGroup");
+  const assignedToInput = document.getElementById("editAssignedTo");
+
+  if (ticket.assigned_to && ticket.assigned_to.trim() !== "") {
+    assignedToGroup.style.display = "flex";
+    assignedToInput.value = ticket.assigned_to;
+    assignedToInput.disabled = true;
+    assignedToInput.classList.add("readonly-field");
+  } else {
+    assignedToGroup.style.display = "none";
+    assignedToInput.value = "";
+  }
+
+  // Handle file upload (disable if not editable)
+  const fileInput = document.getElementById("editFileInput");
+  const attachmentsArea = document.querySelector(
+    "#editTicketModal .attachments-area"
+  );
+
+  if (fileInput && attachmentsArea) {
+    fileInput.disabled = isNotEditable;
+    if (isNotEditable) {
+      attachmentsArea.style.opacity = "0.5";
+      attachmentsArea.style.pointerEvents = "none";
+      attachmentsArea.querySelector("span").textContent =
+        "📎 File upload disabled for this ticket status";
+    } else {
+      attachmentsArea.style.opacity = "1";
+      attachmentsArea.style.pointerEvents = "auto";
+      resetEditFileUploadDisplay();
+    }
+  }
+
+  // Handle current attachments
+  displayCurrentAttachments(ticket.attachments);
+
+  // Reset file input for new attachments
+  if (!isNotEditable) {
+    document.getElementById("editFileInput").value = "";
+    resetEditFileUploadDisplay();
+  }
+
+  // Update submit button
+  const submitBtn = document.querySelector("#editTicketModal .btn-submit");
+  if (submitBtn) {
+    submitBtn.disabled = isNotEditable;
+    if (isNotEditable) {
+      submitBtn.textContent = isCompleted
+        ? "Cannot Edit Completed Ticket"
+        : "Cannot Edit Cancelled Ticket";
+      submitBtn.style.opacity = "0.5";
+    } else {
+      submitBtn.textContent = "Update Ticket";
+      submitBtn.style.opacity = "1";
+    }
+  }
 }
 
-
 function handleStatusFieldEditing(ticket, isPendingOrAssigned, isNotEditable) {
-    const statusGroup = document.getElementById('editStatus').parentElement;
-    const currentStatus = ticket.ticket_status;
-    
-   
-    const existingSelect = document.getElementById('editStatusSelect');
-    if (existingSelect) {
-        existingSelect.remove();
-    }
-    
-    if (isPendingOrAssigned && !isNotEditable) {
-        // Replace the read-only status field with a select
-        const statusSelect = document.createElement('select');
-        statusSelect.id = 'editStatusSelect';
-        statusSelect.name = 'ticket_status';
-        statusSelect.className = 'form-control';
-        
-        // Add current status as default option
-        const currentOption = document.createElement('option');
-        currentOption.value = '';
-        currentOption.textContent = `Keep as ${AppUtils.formatStatus(currentStatus)}`;
-        statusSelect.appendChild(currentOption);
-        
-        // ✅ Use constant for cancelled option
-        const cancelledOption = document.createElement('option');
-        cancelledOption.value = AppConstants.TICKET_STATUSES.CANCELLED;
-        cancelledOption.textContent = 'Cancel Ticket';
-        statusSelect.appendChild(cancelledOption);
-        
-        // Hide the read-only field and show the select
-        document.getElementById('editStatus').style.display = 'none';
-        statusGroup.appendChild(statusSelect);
-        
-        // Update label to indicate it's editable
-        const label = statusGroup.querySelector('label');
-        label.innerHTML = 'Current Status <span style="color: #059669; font-size: 12px;">(Can be cancelled)</span>';
-    } else {
-        // Keep as read-only field
-        document.getElementById('editStatus').style.display = 'block';
-        
-        // Update label
-        const label = statusGroup.querySelector('label');
-        label.innerHTML = 'Current Status';
-    }
+  const statusGroup = document.getElementById("editStatus").parentElement;
+  const currentStatus = ticket.ticket_status;
+
+  const existingSelect = document.getElementById("editStatusSelect");
+  if (existingSelect) {
+    existingSelect.remove();
+  }
+
+  if (isPendingOrAssigned && !isNotEditable) {
+    // Replace the read-only status field with a select
+    const statusSelect = document.createElement("select");
+    statusSelect.id = "editStatusSelect";
+    statusSelect.name = "ticket_status";
+    statusSelect.className = "form-control";
+
+    // Add current status as default option
+    const currentOption = document.createElement("option");
+    currentOption.value = "";
+    currentOption.textContent = `Keep as ${formatStatus(
+      currentStatus
+    )}`;
+    statusSelect.appendChild(currentOption);
+
+    // ✅ Use constant for cancelled option
+    const cancelledOption = document.createElement("option");
+    cancelledOption.value = AppConstants.TICKET_STATUSES.CANCELLED;
+    cancelledOption.textContent = "Cancel Ticket";
+    statusSelect.appendChild(cancelledOption);
+
+    // Hide the read-only field and show the select
+    document.getElementById("editStatus").style.display = "none";
+    statusGroup.appendChild(statusSelect);
+
+    // Update label to indicate it's editable
+    const label = statusGroup.querySelector("label");
+    label.innerHTML =
+      'Current Status <span style="color: #059669; font-size: 12px;">(Can be cancelled)</span>';
+  } else {
+    // Keep as read-only field
+    document.getElementById("editStatus").style.display = "block";
+
+    // Update label
+    const label = statusGroup.querySelector("label");
+    label.innerHTML = "Current Status";
+  }
 }
 
 // Display current attachments
 function displayCurrentAttachments(attachments) {
-    const currentAttachmentsGroup = document.getElementById('currentAttachmentsGroup');
-    const currentAttachmentsList = document.getElementById('currentAttachmentsList');
-    
-    if (attachments && attachments.trim() !== '') {
-        currentAttachmentsGroup.style.display = 'block';
-        currentAttachmentsList.innerHTML = AppUtils.formatAttachments(attachments);
-    } else {
-        currentAttachmentsGroup.style.display = 'none';
-    }
+  const currentAttachmentsGroup = document.getElementById(
+    "currentAttachmentsGroup"
+  );
+  const currentAttachmentsList = document.getElementById(
+    "currentAttachmentsList"
+  );
+
+  if (attachments && attachments.trim() !== "") {
+    currentAttachmentsGroup.style.display = "block";
+    currentAttachmentsList.innerHTML = formatAttachments(attachments);
+  } else {
+    currentAttachmentsGroup.style.display = "none";
+  }
 }
 
 // Close edit ticket modal
 function closeEditTicketModal() {
-    const modal = document.getElementById('editTicketModal');
-    modal.classList.remove('active');
-    
-    // Reset form
-    document.getElementById('editTicketForm').reset();
-    resetEditFileUploadDisplay();
+  const modal = document.getElementById("editTicketModal");
+  modal.classList.remove("active");
+
+  // Reset form
+  document.getElementById("editTicketForm").reset();
+  resetEditFileUploadDisplay();
 }
 
 // Reset file upload display for edit modal
 function resetEditFileUploadDisplay() {
-    const attachmentsArea = document.querySelector('#editTicketModal .attachments-area span');
-    if (attachmentsArea) {
-        attachmentsArea.textContent = '📎 Click here to upload additional files or drag and drop';
-        attachmentsArea.style.color = '#6b7280';
-    }
+  const attachmentsArea = document.querySelector(
+    "#editTicketModal .attachments-area span"
+  );
+  if (attachmentsArea) {
+    attachmentsArea.textContent =
+      "📎 Click here to upload additional files or drag and drop";
+    attachmentsArea.style.color = "#6b7280";
+  }
 }
-
 
 async function submitEditTicket(event) {
-    event.preventDefault();
-    
-    const form = document.getElementById('editTicketForm');
-    const submitBtn = document.querySelector('#editTicketModal .btn-submit');
-    const ticketId = document.getElementById('editTicketId').value;
-    
-    // Check if submit button is disabled (completed/cancelled tickets)
-    if (submitBtn.disabled) {
-        alert('This ticket cannot be edited due to its current status.');
-        return;
-    }
-    
-    // Get form values
-    const formData = new FormData(form);
-    
-    const ticketData = {
-        ticket_title: formData.get('ticket_title').trim(),
-        request_type: formData.get('request_type'),
-        description: formData.get('description').trim(),
-        priority: formData.get('priority'),
-        start_date: formData.get('start_date') || null,
-        start_time: formData.get('start_time') || null,
-        end_date: formData.get('end_date') || null,
-        end_time: formData.get('end_time') || null,
-        maintenance_cost: formData.get('maintenance_cost') || null,
-        notes: formData.get('notes')?.trim() || null
-    };
-    
-    // ✅ Use constant for status check
-    const statusSelect = document.getElementById('editStatusSelect');
-    if (statusSelect && statusSelect.value === AppConstants.TICKET_STATUSES.CANCELLED) {
-        ticketData.ticket_status = AppConstants.TICKET_STATUSES.CANCELLED;
-        console.log('Setting ticket_status to CANCELLED in frontend');
-    }
-    
-    console.log('Frontend ticketData before submission:', ticketData);
+  event.preventDefault();
 
-    // Client-side validation
-    const validationErrors = validateEditTicketForm(ticketData);
-    if (validationErrors.length > 0) {
-        alert('Please fix the following errors:\n\n' + validationErrors.join('\n'));
-        return;
+  const form = document.getElementById("editTicketForm");
+  const submitBtn = document.querySelector("#editTicketModal .btn-submit");
+  const ticketId = document.getElementById("editTicketId").value;
+
+  // Check if submit button is disabled (completed/cancelled tickets)
+  if (submitBtn.disabled) {
+    alert("This ticket cannot be edited due to its current status.");
+    return;
+  }
+
+  // Get form values
+  const formData = new FormData(form);
+
+  const ticketData = {
+    ticket_title: formData.get("ticket_title").trim(),
+    request_type: formData.get("request_type"),
+    description: formData.get("description").trim(),
+    priority: formData.get("priority"),
+    start_date: formData.get("start_date") || null,
+    start_time: formData.get("start_time") || null,
+    end_date: formData.get("end_date") || null,
+    end_time: formData.get("end_time") || null,
+    maintenance_cost: formData.get("maintenance_cost") || null,
+    notes: formData.get("notes")?.trim() || null,
+  };
+
+  const statusSelect = document.getElementById("editStatusSelect");
+  if (
+    statusSelect &&
+    statusSelect.value === AppConstants.TICKET_STATUSES.CANCELLED
+  ) {
+    ticketData.ticket_status = AppConstants.TICKET_STATUSES.CANCELLED;
+    console.log("Setting ticket_status to CANCELLED in frontend");
+  }
+
+  console.log("Frontend ticketData before submission:", ticketData);
+
+  const validationErrors = validateEditTicketForm(ticketData);
+  if (validationErrors.length > 0) {
+    alert("Please fix the following errors:\n\n" + validationErrors.join("\n"));
+    return;
+  }
+
+  let confirmMessage;
+  if (ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED) {
+    confirmMessage = `⚠️ CANCEL TICKET CONFIRMATION ⚠️\n\nAre you sure you want to CANCEL this ticket?\n\nTicket: ${ticketData.ticket_title}\n\n⚠️ Once cancelled, this ticket cannot be edited or reactivated!`;
+  } else {
+    confirmMessage = `Are you sure you want to update this ticket?\n\nTicket: ${ticketData.ticket_title}\nType: ${ticketData.request_type}\nPriority: ${ticketData.priority}`;
+  }
+
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  // Disable submit button during submission
+  submitBtn.disabled = true;
+  submitBtn.textContent =
+    ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED
+      ? "Cancelling..."
+      : "Updating...";
+
+  try {
+    const submitData = new FormData();
+
+    // Add all ticket data
+    Object.keys(ticketData).forEach((key) => {
+      if (ticketData[key] !== null && ticketData[key] !== undefined) {
+        submitData.append(key, ticketData[key]);
+        console.log(`Adding to FormData: ${key} = ${ticketData[key]}`);
+      }
+    });
+
+    // Add new attachments if any (only if not disabled)
+    const fileInput = document.getElementById("editFileInput");
+    if (fileInput.files && fileInput.files.length > 0 && !fileInput.disabled) {
+      for (let i = 0; i < fileInput.files.length; i++) {
+        const file = fileInput.files[i];
+
+        // ✅ Use constant for file size check
+        if (file.size > AppConstants.FILE_UPLOAD.MAX_SIZE) {
+          alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+          return;
+        }
+
+        submitData.append("attachments", file);
+      }
     }
 
-    // ✅ Use constant for confirmation message
-    let confirmMessage;
-    if (ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED) {
-        confirmMessage = `⚠️ CANCEL TICKET CONFIRMATION ⚠️\n\nAre you sure you want to CANCEL this ticket?\n\nTicket: ${ticketData.ticket_title}\n\n⚠️ Once cancelled, this ticket cannot be edited or reactivated!`;
+    console.log("Updating ticket with data:", Object.fromEntries(submitData));
+
+    const response = await fetch(`/api/v1/tickets/${ticketId}`, {
+      method: "PATCH",
+      body: submitData,
+      credentials: "include",
+    });
+
+    const result = await response.json();
+    console.log("Server response:", result);
+
+    if (response.ok) {
+      const statusMessage =
+        ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED
+          ? `❌ Ticket cancelled successfully!\n\nTicket "${ticketData.ticket_title}" has been cancelled.`
+          : `✅ Ticket updated successfully!\n\nTicket "${ticketData.ticket_title}" has been updated.`;
+
+      alert(statusMessage);
+      closeEditTicketModal();
+
+      // Reload tickets to show updated data
+      await loadTickets();
     } else {
-        confirmMessage = `Are you sure you want to update this ticket?\n\nTicket: ${ticketData.ticket_title}\nType: ${ticketData.request_type}\nPriority: ${ticketData.priority}`;
+      throw new Error(result.message || "Failed to update ticket");
     }
-    
-    if (!confirm(confirmMessage)) {
-        return;
-    }
-
-    // Disable submit button during submission
-    submitBtn.disabled = true;
-    submitBtn.textContent = ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED ? 'Cancelling...' : 'Updating...';
-
-    try {
-        const submitData = new FormData();
-        
-        // Add all ticket data
-        Object.keys(ticketData).forEach(key => {
-            if (ticketData[key] !== null && ticketData[key] !== undefined) {
-                submitData.append(key, ticketData[key]);
-                console.log(`Adding to FormData: ${key} = ${ticketData[key]}`);
-            }
-        });
-
-        // Add new attachments if any (only if not disabled)
-        const fileInput = document.getElementById('editFileInput');
-        if (fileInput.files && fileInput.files.length > 0 && !fileInput.disabled) {
-            for (let i = 0; i < fileInput.files.length; i++) {
-                const file = fileInput.files[i];
-                
-                // ✅ Use constant for file size check
-                if (file.size > AppConstants.FILE_UPLOAD.MAX_SIZE) {
-                    alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
-                    return;
-                }
-                
-                submitData.append('attachments', file);
-            }
-        }
-
-        console.log('Updating ticket with data:', Object.fromEntries(submitData));
-
-        const response = await fetch(`/api/v1/tickets/${ticketId}`, {
-            method: 'PATCH',
-            body: submitData,
-            credentials: 'include'
-        });
-
-        const result = await response.json();
-        console.log('Server response:', result);
-
-        if (response.ok) {
-            const statusMessage = ticketData.ticket_status === AppConstants.TICKET_STATUSES.CANCELLED 
-                ? `❌ Ticket cancelled successfully!\n\nTicket "${ticketData.ticket_title}" has been cancelled.`
-                : `✅ Ticket updated successfully!\n\nTicket "${ticketData.ticket_title}" has been updated.`;
-            
-            alert(statusMessage);
-            closeEditTicketModal();
-            
-            // Reload tickets to show updated data
-            await loadTickets();
-        } else {
-            throw new Error(result.message || 'Failed to update ticket');
-        }
-    } catch (error) {
-        console.error('Error updating ticket:', error);
-        alert(`❌ Error updating ticket: ${error.message}\n\nPlease try again or contact support if the problem persists.`);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Update Ticket';
-    }
+  } catch (error) {
+    console.error("Error updating ticket:", error);
+    alert(
+      `❌ Error updating ticket: ${error.message}\n\nPlease try again or contact support if the problem persists.`
+    );
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Update Ticket";
+  }
 }
-
 
 // Initialize edit modal functionality
 function initializeEditModal() {
-    const editModal = document.getElementById('editTicketModal');
-    if (editModal) {
-        editModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeEditTicketModal();
-            }
-        });
-    }
-
-    const editTicketForm = document.getElementById('editTicketForm');
-    if (editTicketForm) {
-        editTicketForm.addEventListener('submit', submitEditTicket);
-    }
-    
-    // Initialize file upload for edit modal
-    initializeEditFileUpload();
-    
-    // Handle escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && editModal && editModal.classList.contains('active')) {
-            closeEditTicketModal();
-        }
+  const editModal = document.getElementById("editTicketModal");
+  if (editModal) {
+    editModal.addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeEditTicketModal();
+      }
     });
+  }
+
+  const editTicketForm = document.getElementById("editTicketForm");
+  if (editTicketForm) {
+    editTicketForm.addEventListener("submit", submitEditTicket);
+  }
+
+  // Initialize file upload for edit modal
+  initializeEditFileUpload();
+
+  // Handle escape key
+  document.addEventListener("keydown", function (e) {
+    if (
+      e.key === "Escape" &&
+      editModal &&
+      editModal.classList.contains("active")
+    ) {
+      closeEditTicketModal();
+    }
+  });
 }
 
 // Initialize file upload for edit modal
 function initializeEditFileUpload() {
-    const fileInput = document.getElementById('editFileInput');
-    const attachmentsArea = document.querySelector('#editTicketModal .attachments-area');
-    
-    if (!fileInput || !attachmentsArea) return;
+  const fileInput = document.getElementById("editFileInput");
+  const attachmentsArea = document.querySelector(
+    "#editTicketModal .attachments-area"
+  );
 
-    // File input change handler
-    fileInput.addEventListener('change', function(e) {
-        handleEditFileSelection(e.target.files);
-    });
+  if (!fileInput || !attachmentsArea) return;
 
-    // Drag and drop functionality
-    attachmentsArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        this.style.borderColor = '#3b82f6';
-        this.style.backgroundColor = '#f0f9ff';
-    });
+  // File input change handler
+  fileInput.addEventListener("change", function (e) {
+    handleEditFileSelection(e.target.files);
+  });
 
-    attachmentsArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        this.style.borderColor = '#d1d5db';
-        this.style.backgroundColor = '#fafafa';
-    });
+  // Drag and drop functionality
+  attachmentsArea.addEventListener("dragover", function (e) {
+    e.preventDefault();
+    this.style.borderColor = "#3b82f6";
+    this.style.backgroundColor = "#f0f9ff";
+  });
 
-    attachmentsArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        this.style.borderColor = '#d1d5db';
-        this.style.backgroundColor = '#fafafa';
-        
-        const files = e.dataTransfer.files;
-        handleEditFileSelection(files);
-        
-        // Update file input
-        fileInput.files = files;
-    });
+  attachmentsArea.addEventListener("dragleave", function (e) {
+    e.preventDefault();
+    this.style.borderColor = "#d1d5db";
+    this.style.backgroundColor = "#fafafa";
+  });
+
+  attachmentsArea.addEventListener("drop", function (e) {
+    e.preventDefault();
+    this.style.borderColor = "#d1d5db";
+    this.style.backgroundColor = "#fafafa";
+
+    const files = e.dataTransfer.files;
+    handleEditFileSelection(files);
+
+    // Update file input
+    fileInput.files = files;
+  });
 }
 
 // Handle file selection for edit modal
 function handleEditFileSelection(files) {
-    const attachmentsArea = document.querySelector('#editTicketModal .attachments-area span');
-    const maxSize = AppConstants.FILE_UPLOAD.MAX_SIZE;
-    const validTypes = AppConstants.FILE_UPLOAD.ALLOWED_TYPES;
-    
-    if (!files || files.length === 0) {
-        resetEditFileUploadDisplay();
-        return;
+  const attachmentsArea = document.querySelector(
+    "#editTicketModal .attachments-area span"
+  );
+  const maxSize = AppConstants.FILE_UPLOAD.MAX_SIZE;
+  const validTypes = AppConstants.FILE_UPLOAD.ALLOWED_TYPES;
+
+  if (!files || files.length === 0) {
+    resetEditFileUploadDisplay();
+    return;
+  }
+
+  let validFiles = 0;
+  let fileNames = [];
+  let errors = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    // Check file size
+    if (file.size > maxSize) {
+      errors.push(`${file.name} is too large (max 10MB)`);
+      continue;
     }
-    
-    let validFiles = 0;
-    let fileNames = [];
-    let errors = [];
-    
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        // Check file size
-        if (file.size > maxSize) {
-            errors.push(`${file.name} is too large (max 10MB)`);
-            continue;
-        }
-        
-        // ✅ Fix the file type validation
-        const isValidType = validTypes.includes(file.type);
-        if (!isValidType) {
-            errors.push(`${file.name} is not a supported file type (${file.type})`);
-            continue;
-        }
-        
-        validFiles++;
-        fileNames.push(file.name);
+
+    // ✅ Fix the file type validation
+    const isValidType = validTypes.includes(file.type);
+    if (!isValidType) {
+      errors.push(`${file.name} is not a supported file type (${file.type})`);
+      continue;
     }
-    
-    if (errors.length > 0) {
-        alert('Some files were not added:\n\n' + errors.join('\n'));
-    }
-    
-    if (validFiles > 0) {
-        const displayText = validFiles === 1 
-            ? `📎 ${fileNames[0]} (will be added)` 
-            : `📎 ${validFiles} new files selected: ${fileNames.join(', ')}`;
-        
-        attachmentsArea.textContent = displayText;
-        attachmentsArea.style.color = '#374151';
-    } else {
-        resetEditFileUploadDisplay();
-    }
+
+    validFiles++;
+    fileNames.push(file.name);
+  }
+
+  if (errors.length > 0) {
+    alert("Some files were not added:\n\n" + errors.join("\n"));
+  }
+
+  if (validFiles > 0) {
+    const displayText =
+      validFiles === 1
+        ? `📎 ${fileNames[0]} (will be added)`
+        : `📎 ${validFiles} new files selected: ${fileNames.join(", ")}`;
+
+    attachmentsArea.textContent = displayText;
+    attachmentsArea.style.color = "#374151";
+  } else {
+    resetEditFileUploadDisplay();
+  }
 }
 
 function showDeleteConfirmationModal(ticket) {
-    const modalHtml = `
+  const modalHtml = `
         <div class="delete-confirmation-modal" id="deleteModal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1227,19 +1296,23 @@ function showDeleteConfirmationModal(ticket) {
                         <strong>Ticket ID:</strong> ${ticket.ticket_id}<br>
                         <strong>Title:</strong> ${ticket.ticket_title}<br>
                         <strong>Unit:</strong> ${ticket.unit_no}<br>
-                        <strong>Status:</strong> ${AppUtils.formatStatus(ticket.ticket_status)}
+                        <strong>Status:</strong> ${formatStatus(
+                          ticket.ticket_status
+                        )}
                     </div>
                     <p class="warning-text">⚠️ This action cannot be undone!</p>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="button" class="btn-danger" onclick="confirmDelete('${ticket.ticket_id}')">Delete Ticket</button>
+                    <button type="button" class="btn-danger" onclick="confirmDelete('${
+                      ticket.ticket_id
+                    }')">Delete Ticket</button>
                 </div>
             </div>
         </div>
     `;
 
-    document.body.insertAdjacentHTML("beforeend", modalHtml);
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
 }
 
 function closeDeleteModal() {
@@ -1278,14 +1351,11 @@ async function confirmDelete(ticketId) {
         `✅ Ticket deleted successfully!\n\nTicket "${ticket.ticket_title}" has been permanently removed.`
       );
 
-      // Remove from local arrays
       allTickets = allTickets.filter((t) => t.ticket_id !== ticketId);
       tickets = tickets.filter((t) => t.ticket_id !== ticketId);
 
-      // Refresh the display
       renderTickets();
 
-      // If the deleted ticket was expanded, reset the tracking
       if (currentlyExpandedTicket === ticketId) {
         currentlyExpandedTicket = null;
       }
@@ -1318,12 +1388,10 @@ async function confirmDelete(ticketId) {
   }
 }
 
-// Also update the deleteTicket function to use the modal instead of prompt
 async function deleteTicket(ticketId) {
   event.stopPropagation();
 
   try {
-    // Find the ticket to get its details for the modal
     const ticket = allTickets.find((t) => t.ticket_id === ticketId);
 
     if (!ticket) {
@@ -1331,15 +1399,12 @@ async function deleteTicket(ticketId) {
       return;
     }
 
-    // Show the delete confirmation modal
     showDeleteConfirmationModal(ticket);
   } catch (error) {
     console.error("Error preparing delete confirmation:", error);
     alert("Error preparing delete confirmation. Please try again.");
   }
 }
-
-
 
 async function openNewTicketModal() {
   const modal = document.getElementById("newTicketModal");
@@ -1393,7 +1458,6 @@ function resetFileUploadDisplay() {
   }
 }
 
-// Update the toggleTimeFields function for smoother transition
 function toggleTimeFields() {
   const startDateInput = document.getElementById("startDate");
   const startTimeGroup = document.getElementById("startTimeGroup");
@@ -1401,7 +1465,7 @@ function toggleTimeFields() {
   if (startDateInput.value) {
     startTimeGroup.style.display = "flex";
     startTimeGroup.classList.add("visible");
-    // Small delay to ensure smooth transition
+
     setTimeout(() => {
       startTimeGroup.style.opacity = "1";
     }, 10);
@@ -1410,7 +1474,6 @@ function toggleTimeFields() {
   }
 }
 
-// Update hideTimeFields function
 function hideTimeFields() {
   const startTimeGroup = document.getElementById("startTimeGroup");
   const startTimeInput = document.getElementById("startTime");
@@ -1425,35 +1488,6 @@ function hideTimeFields() {
   }
   if (startTimeInput) startTimeInput.value = "";
 }
-
-// function validateTicketForm(data) {
-//     const errors = [];
-
-//     if (!data.unit_no) errors.push("• Unit Number is required");
-//     if (!data.ticket_title) errors.push("• Ticket Title is required");
-//     if (!data.request_type) errors.push("• Request Type is required");
-//     if (!data.description) errors.push("• Description is required");
-//     if (!data.priority) errors.push("• Priority is required");
-//     if (!data.start_date) errors.push("• Start Date is required");
-
-//     // Validate start date is not in the past
-//     if (data.start_date) {
-//         const selectedDate = new Date(data.start_date);
-//         const today = new Date();
-//         today.setHours(0, 0, 0, 0);
-
-//         if (selectedDate < today) {
-//             errors.push("• Start Date cannot be in the past");
-//         }
-//     }
-
-//     // ✅ Use constant for unit number validation
-//     if (data.unit_no && !AppConstants.VALIDATION.UNIT_NUMBER_REGEX.test(data.unit_no.replace(/\s/g, ""))) {
-//         errors.push("• Unit Number should be in format like A101, B205, or 123");
-//     }
-
-//     return errors;
-// }
 
 // Enhanced file upload functionality
 function initializeFileUpload() {
@@ -1494,53 +1528,54 @@ function initializeFileUpload() {
 }
 
 function handleFileSelection(files) {
-    const attachmentsArea = document.querySelector(".attachments-area span");
-    const maxSize = AppConstants.FILE_UPLOAD.MAX_SIZE;
-    const validTypes = AppConstants.FILE_UPLOAD.ALLOWED_TYPES;
+  const attachmentsArea = document.querySelector(".attachments-area span");
+  const maxSize = AppConstants.FILE_UPLOAD.MAX_SIZE;
+  const validTypes = AppConstants.FILE_UPLOAD.ALLOWED_TYPES;
 
-    if (!files || files.length === 0) {
-        resetFileUploadDisplay();
-        return;
+  if (!files || files.length === 0) {
+    resetFileUploadDisplay();
+    return;
+  }
+
+  let validFiles = 0;
+  let fileNames = [];
+  let errors = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    // Check file size
+    if (file.size > maxSize) {
+      errors.push(`${file.name} is too large (max 10MB)`);
+      continue;
     }
 
-    let validFiles = 0;
-    let fileNames = [];
-    let errors = [];
-
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
-        // Check file size
-        if (file.size > maxSize) {
-            errors.push(`${file.name} is too large (max 10MB)`);
-            continue;
-        }
-
-        // ✅ Fix the file type validation
-        const isValidType = validTypes.includes(file.type);
-        if (!isValidType) {
-            errors.push(`${file.name} is not a supported file type (${file.type})`);
-            continue;
-        }
-
-        validFiles++;
-        fileNames.push(file.name);
+    // ✅ Fix the file type validation
+    const isValidType = validTypes.includes(file.type);
+    if (!isValidType) {
+      errors.push(`${file.name} is not a supported file type (${file.type})`);
+      continue;
     }
 
-    if (errors.length > 0) {
-        alert("Some files were not added:\n\n" + errors.join("\n"));
-    }
+    validFiles++;
+    fileNames.push(file.name);
+  }
 
-    if (validFiles > 0) {
-        const displayText = validFiles === 1 
-            ? `📎 ${fileNames[0]}` 
-            : `📎 ${validFiles} files selected: ${fileNames.join(", ")}`;
+  if (errors.length > 0) {
+    alert("Some files were not added:\n\n" + errors.join("\n"));
+  }
 
-        attachmentsArea.textContent = displayText;
-        attachmentsArea.style.color = "#374151";
-    } else {
-        resetFileUploadDisplay();
-    }
+  if (validFiles > 0) {
+    const displayText =
+      validFiles === 1
+        ? `📎 ${fileNames[0]}`
+        : `📎 ${validFiles} files selected: ${fileNames.join(", ")}`;
+
+    attachmentsArea.textContent = displayText;
+    attachmentsArea.style.color = "#374151";
+  } else {
+    resetFileUploadDisplay();
+  }
 }
 
 // Load tenants when modal opens
@@ -1729,316 +1764,364 @@ function hideDropdown() {
 }
 
 async function submitNewTicket(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const form = document.getElementById("newTicketForm");
-    const submitBtn = document.querySelector(".btn-submit");
+  const form = document.getElementById("newTicketForm");
+  const submitBtn = document.querySelector(".btn-submit");
 
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Creating...";
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Creating...";
 
-    try {
-        // Get form values
-        const formData = new FormData(form);
-        const requestedByInput = document.getElementById("requestedBy");
+  try {
+    // Get form values
+    const formData = new FormData(form);
+    const requestedByInput = document.getElementById("requestedBy");
 
-        const ticketData = {
-            unit_no: formData.get("unit_no").trim(),
-            ticket_title: formData.get("ticket_title").trim(),
-            request_type: formData.get("request_type"),
-            description: formData.get("description").trim(),
-            priority: formData.get("priority"),
-            start_date: formData.get("start_date"),
-            start_time: formData.get("start_time") || null,
-            assigned_to: formData.get("assigned_to")?.trim() || null,
-            notes: formData.get("notes")?.trim() || null,
-        };
+    const ticketData = {
+      unit_no: formData.get("unit_no").trim(),
+      ticket_title: formData.get("ticket_title").trim(),
+      request_type: formData.get("request_type"),
+      description: formData.get("description").trim(),
+      priority: formData.get("priority"),
+      start_date: formData.get("start_date"),
+      start_time: formData.get("start_time") || null,
+      assigned_to: formData.get("assigned_to")?.trim() || null,
+      notes: formData.get("notes")?.trim() || null,
+    };
 
-        // Handle requested_by field
-        if (requestedByInput && requestedByInput.value.trim()) {
-            const tenantId = requestedByInput.getAttribute("data-tenant-id");
-            if (tenantId) {
-                ticketData.user_id = tenantId; // Use tenant's ID
-                console.log('Ticket requested by tenant:', tenantId);
-            }
-        }
-        // If requestedBy is empty, don't set user_id - let backend use current user
-
-        console.log('Ticket data being submitted:', ticketData);
-
-        // Create FormData for submission (including files)
-        const submitData = new FormData();
-        
-        // Add all text fields
-        Object.keys(ticketData).forEach(key => {
-            if (ticketData[key] !== null && ticketData[key] !== undefined) {
-                submitData.append(key, ticketData[key]);
-            }
-        });
-
-        // Add files
-        const fileInput = document.getElementById("fileInput");
-        if (fileInput.files.length > 0) {
-            Array.from(fileInput.files).forEach(file => {
-                submitData.append("attachments", file);
-            });
-        }
-
-        // Submit the ticket
-        const response = await fetch('/api/v1/tickets/create-ticket', {
-            method: 'POST',
-            body: submitData,
-            credentials: 'include' // Include cookies for authentication
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert(`✅ Ticket created successfully!\n\nTicket ID: ${result.ticket_id}\nTitle: ${ticketData.ticket_title}`);
-            closeNewTicketModal();
-            await loadTickets();
-        } else {
-            throw new Error(result.message || 'Failed to create ticket');
-        }
-
-    } catch (error) {
-        console.error('Error creating ticket:', error);
-        alert(`❌ Error creating ticket: ${error.message}`);
-    } finally {
-        // Re-enable submit button
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Create Ticket";
+    // Handle requested_by field
+    if (requestedByInput && requestedByInput.value.trim()) {
+      const tenantId = requestedByInput.getAttribute("data-tenant-id");
+      if (tenantId) {
+        ticketData.user_id = tenantId; // Use tenant's ID
+        console.log("Ticket requested by tenant:", tenantId);
+      }
     }
+    // If requestedBy is empty, don't set user_id - let backend use current user
+
+    console.log("Ticket data being submitted:", ticketData);
+
+    // Create FormData for submission (including files)
+    const submitData = new FormData();
+
+    // Add all text fields
+    Object.keys(ticketData).forEach((key) => {
+      if (ticketData[key] !== null && ticketData[key] !== undefined) {
+        submitData.append(key, ticketData[key]);
+      }
+    });
+
+    // Add files
+    const fileInput = document.getElementById("fileInput");
+    if (fileInput.files.length > 0) {
+      Array.from(fileInput.files).forEach((file) => {
+        submitData.append("attachments", file);
+      });
+    }
+
+    // Submit the ticket
+    const response = await fetch("/api/v1/tickets/create-ticket", {
+      method: "POST",
+      body: submitData,
+      credentials: "include", // Include cookies for authentication
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      alert(
+        `✅ Ticket created successfully!\n\nTicket ID: ${result.ticket_id}\nTitle: ${ticketData.ticket_title}`
+      );
+      closeNewTicketModal();
+      await loadTickets();
+    } else {
+      throw new Error(result.message || "Failed to create ticket");
+    }
+  } catch (error) {
+    console.error("Error creating ticket:", error);
+    alert(`❌ Error creating ticket: ${error.message}`);
+  } finally {
+    // Re-enable submit button
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Create Ticket";
+  }
 }
 
 async function logout() {
   try {
-    const response = await fetch('/api/v1/users/logout', {
-      method: 'POST',
-      credentials: 'include'
+    const response = await fetch("/api/v1/users/logout", {
+      method: "POST",
+      credentials: "include",
     });
 
     if (response.ok) {
-      // Clear any local storage if you're using it
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Redirect to login page
-      window.location.href = '/login.html';
+
+      window.location.href = "/login.html";
     } else {
-      console.error('Logout failed');
+      console.error("Logout failed");
       // Still redirect to login even if logout call fails
-      window.location.href = '/login.html';
+      window.location.href = "/login.html";
     }
   } catch (error) {
-    console.error('Error during logout:', error);
+    console.error("Error during logout:", error);
     // Still redirect to login even if there's an error
-    window.location.href = '/login.html';
+    window.location.href = "/login.html";
   }
 }
 
 function initializeModal() {
-    const modal = document.getElementById('newTicketModal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeNewTicketModal();
-            }
-        });
-    }
-
-    const newTicketForm = document.getElementById('newTicketForm');
-    if (newTicketForm) {
-        newTicketForm.addEventListener('submit', submitNewTicket);
-    }
-
-    // Initialize assign ticket modal (simplified)
-    initializeAssignModal();
-
-    initializeFileUpload();
-    initializeAutocomplete();
-
-    // ESC key handling
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            if (modal && modal.classList.contains('active')) {
-                closeNewTicketModal();
-            }
-            const assignModal = document.getElementById('assignTicketModal');
-            if (assignModal && assignModal.classList.contains('active')) {
-                closeAssignTicketModal();
-            }
-        }
+  const modal = document.getElementById("newTicketModal");
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeNewTicketModal();
+      }
     });
-}
+  }
 
-// Add these simplified functions to your maintenance.js file
+  const newTicketForm = document.getElementById("newTicketForm");
+  if (newTicketForm) {
+    newTicketForm.addEventListener("submit", submitNewTicket);
+  }
+
+  initializeAssignModal();
+
+  initializeFileUpload();
+  initializeAutocomplete();
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (modal && modal.classList.contains("active")) {
+        closeNewTicketModal();
+      }
+      const assignModal = document.getElementById("assignTicketModal");
+      if (assignModal && assignModal.classList.contains("active")) {
+        closeAssignTicketModal();
+      }
+    }
+  });
+}
 
 async function assignTicket(ticketId) {
-    event.stopPropagation();
-    
-    try {
-        console.log(`Opening assign modal for ticket: ${ticketId}`);
-        
-        // Fetch ticket details
-        const response = await fetch(`/api/v1/tickets/${ticketId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-        });
+  event.stopPropagation();
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch ticket details');
-        }
+  try {
+    console.log(`Opening assign modal for ticket: ${ticketId}`);
 
-        const result = await response.json();
-        const ticket = result.ticket;
-        
-        // ✅ Use constants for status checks
-        const isAssignable = ticket.ticket_status && 
-            (ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.PENDING || 
-             ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.ASSIGNED);
-        
-        if (!isAssignable) {
-            alert(`This ticket cannot be assigned because its status is "${ticket.ticket_status}". Only PENDING or ASSIGNED tickets can be reassigned.`);
-            return;
-        }
+    // Fetch ticket details
+    const response = await fetch(`/api/v1/tickets/${ticketId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
 
-        // Populate the assign form
-        populateAssignForm(ticket);
-        
-        // Show the modal
-        const modal = document.getElementById('assignTicketModal');
-        modal.classList.add('active');
-        
-        // Focus on the assignment input
-        setTimeout(() => {
-            document.getElementById('assignedToInput').focus();
-        }, 100);
-        
-    } catch (error) {
-        console.error('Error opening assign modal:', error);
-        alert('Failed to load ticket details. Please try again.');
+    if (!response.ok) {
+      throw new Error("Failed to fetch ticket details");
     }
+
+    const result = await response.json();
+    const ticket = result.ticket;
+
+    const isAssignable =
+      ticket.ticket_status &&
+      (ticket.ticket_status.toUpperCase() ===
+        AppConstants.TICKET_STATUSES.PENDING ||
+        ticket.ticket_status.toUpperCase() ===
+          AppConstants.TICKET_STATUSES.ASSIGNED);
+
+    if (!isAssignable) {
+      alert(
+        `This ticket cannot be assigned because its status is "${ticket.ticket_status}". Only PENDING or ASSIGNED tickets can be reassigned.`
+      );
+      return;
+    }
+
+    // Populate the assign form
+    populateAssignForm(ticket);
+
+    // Show the modal
+    const modal = document.getElementById("assignTicketModal");
+    modal.classList.add("active");
+
+    // Focus on the assignment input
+    setTimeout(() => {
+      document.getElementById("assignedToInput").focus();
+    }, 100);
+  } catch (error) {
+    console.error("Error opening assign modal:", error);
+    alert("Failed to load ticket details. Please try again.");
+  }
 }
 
-// Populate assign form with ticket data
 function populateAssignForm(ticket) {
-    // Hidden ticket ID
-    document.getElementById('assignTicketId').value = ticket.ticket_id;
-    
-    // Display ticket information
-    document.getElementById('assignTicketIdDisplay').value = ticket.ticket_id;
-    document.getElementById('assignTicketTitle').value = ticket.ticket_title || '';
-    document.getElementById('assignUnitNo').value = ticket.unit_no || '';
-    document.getElementById('assignPriority').value = AppUtils.formatPriority(ticket.priority);
-    
-    // Pre-fill with current assignment if exists
-    document.getElementById('assignedToInput').value = ticket.assigned_to || '';
-    document.getElementById('assignmentNotes').value = '';
+  // Hidden ticket ID
+  document.getElementById("assignTicketId").value = ticket.ticket_id;
+
+  // Display ticket information
+  document.getElementById("assignTicketIdDisplay").value = ticket.ticket_id;
+  document.getElementById("assignTicketTitle").value =
+    ticket.ticket_title || "";
+  document.getElementById("assignUnitNo").value = ticket.unit_no || "";
+  document.getElementById("assignPriority").value = formatPriority(
+    ticket.priority
+  );
+
+  // Pre-fill with current assignment if exists
+  document.getElementById("assignedToInput").value = ticket.assigned_to || "";
+  document.getElementById("assignmentNotes").value = "";
 }
 
 // Close assign ticket modal
 function closeAssignTicketModal() {
-    const modal = document.getElementById('assignTicketModal');
-    modal.classList.remove('active');
-    
-    // Reset form
-    document.getElementById('assignTicketForm').reset();
+  const modal = document.getElementById("assignTicketModal");
+  modal.classList.remove("active");
+
+  // Reset form
+  document.getElementById("assignTicketForm").reset();
 }
 
 // Submit assignment
 async function submitAssignment(event) {
-    event.preventDefault();
-    
-    const form = document.getElementById('assignTicketForm');
-    const submitBtn = document.querySelector('#assignTicketModal .btn-submit');
-    const ticketId = document.getElementById('assignTicketId').value;
-    
-    // Get form values
-    const formData = new FormData(form);
-    const assignedTo = formData.get('assigned_to').trim();
-    const assignmentNotes = formData.get('assignment_notes')?.trim() || '';
-    
-    // Validation
-    if (!assignedTo) {
-        alert('Please specify who to assign this ticket to.');
-        document.getElementById('assignedToInput').focus();
-        return;
+  event.preventDefault();
+
+  const form = document.getElementById("assignTicketForm");
+  const submitBtn = document.querySelector("#assignTicketModal .btn-submit");
+  const ticketId = document.getElementById("assignTicketId").value;
+
+  // Get form values
+  const formData = new FormData(form);
+  const assignedTo = formData.get("assigned_to").trim();
+  const assignmentNotes = formData.get("assignment_notes")?.trim() || "";
+
+  // Validation
+  if (!assignedTo) {
+    alert("Please specify who to assign this ticket to.");
+    document.getElementById("assignedToInput").focus();
+    return;
+  }
+
+  // Confirmation
+  const confirmMessage = `Are you sure you want to assign this ticket to "${assignedTo}"?`;
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  // Disable submit button during submission
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Assigning...";
+
+  try {
+    const ticketData = {
+      assigned_to: assignedTo,
+    };
+    if (assignmentNotes) {
+      const currentDate = new Date().toLocaleString();
+      const assignmentNote = `[${currentDate}] Assigned to ${assignedTo}: ${assignmentNotes}`;
+      ticketData.notes = assignmentNote;
     }
-    
-    // Confirmation
-    const confirmMessage = `Are you sure you want to assign this ticket to "${assignedTo}"?`;
-    if (!confirm(confirmMessage)) {
-        return;
+
+    const response = await fetch(`/api/v1/tickets/${ticketId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(ticketData),
+      credentials: "include",
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      alert(
+        `✅ Ticket assigned successfully!\n\nTicket has been assigned to: ${assignedTo}`
+      );
+      closeAssignTicketModal();
+
+      await loadTickets();
+    } else {
+      throw new Error(result.message || "Failed to assign ticket");
     }
-    
-    // Disable submit button during submission
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Assigning...';
-    
-    try {
-        const ticketData = {
-            assigned_to: assignedTo
-        };
-        
-        // Add assignment notes to the ticket notes if provided
-        if (assignmentNotes) {
-            const currentDate = new Date().toLocaleString();
-            const assignmentNote = `[${currentDate}] Assigned to ${assignedTo}: ${assignmentNotes}`;
-            ticketData.notes = assignmentNote;
-        }
-        
-        console.log('Assigning ticket with data:', ticketData);
-        
-        // Submit the assignment
-        const response = await fetch(`/api/v1/tickets/${ticketId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(ticketData),
-            credentials: 'include'
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            alert(`✅ Ticket assigned successfully!\n\nTicket has been assigned to: ${assignedTo}`);
-            closeAssignTicketModal();
-            
-            // Reload tickets to show updated assignment
-            await loadTickets();
-        } else {
-            throw new Error(result.message || 'Failed to assign ticket');
-        }
-        
-    } catch (error) {
-        console.error('Error assigning ticket:', error);
-        alert(`❌ Error assigning ticket: ${error.message}\n\nPlease try again or contact support if the problem persists.`);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Assign Ticket';
-    }
+  } catch (error) {
+    console.error("Error assigning ticket:", error);
+    alert(
+      `❌ Error assigning ticket: ${error.message}\n\nPlease try again or contact support if the problem persists.`
+    );
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Assign Ticket";
+  }
 }
 
 // Initialize assign modal (simplified version)
 function initializeAssignModal() {
-    const assignModal = document.getElementById('assignTicketModal');
-    if (assignModal) {
-        // Close modal when clicking outside
-        assignModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeAssignTicketModal();
-            }
-        });
-    }
+  const assignModal = document.getElementById("assignTicketModal");
+  if (assignModal) {
+    // Close modal when clicking outside
+    assignModal.addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeAssignTicketModal();
+      }
+    });
+  }
 
-    const assignTicketForm = document.getElementById('assignTicketForm');
-    if (assignTicketForm) {
-        assignTicketForm.addEventListener('submit', submitAssignment);
+  const assignTicketForm = document.getElementById("assignTicketForm");
+  if (assignTicketForm) {
+    assignTicketForm.addEventListener("submit", submitAssignment);
+  }
+}
+
+function canEditTicket(status) {
+  if (!status) return true;
+  const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+  return statusMapping ? statusMapping.canEdit : false;
+}
+
+function canAssignTicket(status) {
+  if (!status) return true;
+  const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+  return statusMapping ? statusMapping.canAssign : false;
+}
+
+function canDeleteTicket(status) {
+  if (!status) return true;
+  const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+  return statusMapping ? statusMapping.canDelete : false;
+}
+
+function getStatusColor(status) {
+  if (!status) return "#6b7280";
+  const statusMapping = AppConstants.STATUS_MAPPINGS[status.toUpperCase()];
+  return statusMapping ? statusMapping.color : "#6b7280";
+}
+
+function getPriorityColor(priority) {
+  if (!priority) return "#f59e0b";
+  const priorityMapping =
+    AppConstants.PRIORITY_MAPPINGS[priority.toUpperCase()];
+  return priorityMapping ? priorityMapping.color : "#f59e0b";
+}
+
+function validateEditTicketForm(data) {
+  const errors = [];
+
+  if (!data.ticket_title) errors.push("• Ticket Title is required");
+  if (!data.request_type) errors.push("• Request Type is required");
+  if (!data.description) errors.push("• Description is required");
+  if (!data.priority) errors.push("• Priority is required");
+
+  if (data.start_date) {
+    const selectedDate = new Date(data.start_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      errors.push("• Start Date cannot be in the past");
     }
+  }
+
+  return errors;
 }

@@ -1,3 +1,7 @@
+import formatDate from "../utils/formatDate.js";
+import formatStatus from "../utils/formatStatus.js"
+
+
 // Global variables
 let tenants = [];
 let allTenants = [];
@@ -180,11 +184,11 @@ function renderGridView() {
                               tenant.status || "active"
                             ).toLowerCase()}">
                                 ${
-                                  AppUtils.formatStatus(tenant.status) ||
+                                  formatStatus(tenant.status) ||
                                   "Active"
                                 }
                             </span>
-                            <span class="created-date">${AppUtils.formatDate(
+                            <span class="created-date">${formatDate(
                               tenant.created_at
                             )}</span>
                         </div>
@@ -261,15 +265,15 @@ function renderListView() {
                   tenant.status || "active"
                 ).toLowerCase()}">
                     ${
-                      AppUtils?.formatStatus
-                        ? AppUtils.formatStatus(tenant.status)
+                      formatStatus
+                        ? formatStatus(tenant.status)
                         : tenant.status || "Active"
                     }
                 </span>
             </div>
             <div class="list-col list-col-created">${
-              AppUtils?.formatDate
-                ? AppUtils.formatDate(tenant.created_at)
+              formatDate
+                ? formatDate(tenant.created_at)
                 : tenant.created_at
             }</div>
             <div class="list-col list-col-actions">
@@ -285,8 +289,6 @@ function renderListView() {
     })
     .join("");
 
-  console.log("Generated HTML length:", rowsHTML.length);
-  console.log("Setting innerHTML...");
 
   container.innerHTML = rowsHTML;
 
@@ -984,43 +986,23 @@ document
     }
   });
 
-// Add this utility function to handle broken images:
 
 function handleAvatarError(imgElement, initials) {
-  // Replace broken image with initials
-  const avatarContainer = imgElement.parentElement;
   imgElement.style.display = "none";
-
-  // Create initials fallback
-  const initialsDiv = document.createElement("div");
-  initialsDiv.className = "tenant-avatar-initials";
-  initialsDiv.textContent = initials;
-
-  avatarContainer.appendChild(initialsDiv);
-}
-
-// Update your avatar HTML generation to include error handling:
-function generateAvatarHTML(tenant, size = "normal") {
-  const initials = getInitials(tenant.first_name, tenant.last_name);
-  const fullName = `${tenant.first_name || ""} ${
-    tenant.last_name || ""
-  }`.trim();
-
-  if (tenant.avatar && tenant.avatar.trim() !== "") {
-    return `
-      <img src="${tenant.avatar}" 
-           alt="${fullName}" 
-           class="tenant-avatar-img"
-           onerror="handleAvatarError(this, '${initials}')"
-           onload="this.style.display='block'">
-      <div class="tenant-avatar-initials" style="display: none;">${initials}</div>
-    `;
-  } else {
-    return `<div class="tenant-avatar-initials">${initials}</div>`;
+  const avatarContainer = imgElement.parentElement;
+  
+  // Create initials fallback if it doesn't exist
+  let initialsDiv = avatarContainer.querySelector('.tenant-avatar-initials');
+  if (!initialsDiv) {
+    initialsDiv = document.createElement("div");
+    initialsDiv.className = "tenant-avatar-initials";
+    initialsDiv.textContent = initials;
+    avatarContainer.appendChild(initialsDiv);
   }
+  
+  initialsDiv.style.display = "flex";
 }
 
-// Add this function to generate placeholder avatars:
 
 function getPlaceholderAvatar(name, size = 48) {
   // Generate a color based on the name
@@ -1052,17 +1034,12 @@ function getPlaceholderAvatar(name, size = 48) {
   )}&color=ffffff&bold=true`;
 }
 
-// Then use it as a fallback:
 function generateAvatarHTML(tenant, size = "normal") {
   const initials = getInitials(tenant.first_name, tenant.last_name);
-  const fullName = `${tenant.first_name || ""} ${
-    tenant.last_name || ""
-  }`.trim();
+  const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""}`.trim();
   const imageSize = size === "small" ? 32 : 48;
 
   let avatarSrc = tenant.avatar;
-
-  // If no avatar, use placeholder service
   if (!avatarSrc || avatarSrc.trim() === "") {
     avatarSrc = getPlaceholderAvatar(fullName, imageSize);
   }
@@ -1076,3 +1053,20 @@ function generateAvatarHTML(tenant, size = "normal") {
     <div class="tenant-avatar-initials" style="display: none;">${initials}</div>
   `;
 }
+
+
+window.toggleView = toggleView;
+window.editTenant = editTenant;
+window.deleteTenant = deleteTenant;
+window.selectAll = selectAll;
+window.toggleSelectAll = toggleSelectAll;
+window.openCreateAccountModal = openCreateAccountModal;
+window.closeCreateAccountModal = closeCreateAccountModal;
+window.nextStep = nextStep;
+window.previousStep = previousStep;
+window.confirmAccount = confirmAccount;
+window.togglePassword = togglePassword;
+window.handleAvatarError = handleAvatarError;
+window.goToPage = goToPage;
+window.formatStatus = formatStatus;
+window.formatDate = formatDate;
