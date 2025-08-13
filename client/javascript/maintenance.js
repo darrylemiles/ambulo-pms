@@ -2125,3 +2125,22 @@ function validateEditTicketForm(data) {
 
   return errors;
 }
+
+//for onclick handlers
+
+window.openNewTicketModal = openNewTicketModal;
+window.closeNewTicketModal = closeNewTicketModal;
+window.clearFilters = clearFilters;
+window.editTicket = editTicket;
+window.deleteTicket = deleteTicket;
+window.assignTicket = assignTicket;
+window.toggleTicketDetails = toggleTicketDetails;
+window.closeEditTicketModal = closeEditTicketModal;
+window.closeAssignTicketModal = closeAssignTicketModal;
+window.closeDeleteModal = closeDeleteModal;
+window.confirmDelete = confirmDelete;
+window.selectTenant = selectTenant;
+window.logout = logout;
+
+
+window.filteredTenants = filteredTenants;

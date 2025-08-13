@@ -45,27 +45,32 @@
         <div class="maintenance-container">
             <div class="header-controls">
                 <button class="new-ticket-btn" onclick="openNewTicketModal()">
-                    + New Ticket
+                    <i class="fas fa-plus"></i> New Maintenance Request
                 </button>
 
                 <div class="date-control">
                     <span>From:</span>
-                    📅
+                    <i class="fas fa-calendar-alt"></i>
                     <input type="date" id="fromDate" class="date-picker">
                 </div>
 
                 <div class="date-control">
                     <span>To:</span>
-                    📅
+                    <i class="fas fa-calendar-alt"></i>
                     <input type="date" id="toDate" class="date-picker">
                 </div>
 
                 <div class="search-container">
-                    <input type="text" class="search-input" placeholder="Search" id="searchInput">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search tickets..." id="searchInput">
                 </div>
 
-                <button class="clear-filters-btn" onclick="clearFilters()">Clear filters</button>
-                <button class="filter-btn">🔽</button>
+                <button class="clear-filters-btn" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
+                <button class="filter-btn">
+                    <i class="fas fa-filter"></i>
+                </button>
             </div>
 
             <div class="tickets-container">
@@ -276,8 +281,8 @@
                         </div>
                     </div>
 
-                                        <!-- Update the labels in your edit modal: -->
-                    
+                    <!-- Update the labels in your edit modal: -->
+
                     <!-- Fourth row - Dates -->
                     <div class="form-grid">
                         <div class="form-group">
@@ -289,7 +294,7 @@
                             <input type="date" id="editEndDate" name="end_date">
                         </div>
                     </div>
-                    
+
                     <!-- Fifth row - Times -->
                     <div class="form-grid">
                         <div class="form-group">
@@ -306,10 +311,12 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="editMaintenanceCosts">Maintenance Costs</label>
-                            <input type="number" id="editMaintenanceCosts" name="maintenance_cost" step="0.01" min="0" placeholder="0.00">
+                            <input type="number" id="editMaintenanceCosts" name="maintenance_cost" step="0.01" min="0"
+                                placeholder="0.00">
                         </div>
                         <div class="form-group" id="editAssignedToGroup">
-                            <label for="editAssignedTo">Assigned To <span style="color: #6b7280; font-size: 12px;">(Read-only)</span></label>
+                            <label for="editAssignedTo">Assigned To <span
+                                    style="color: #6b7280; font-size: 12px;">(Read-only)</span></label>
                             <input type="text" id="editAssignedTo" name="assigned_to" readonly class="readonly-field">
                         </div>
                     </div>
@@ -367,7 +374,7 @@
         </div>
     </div>
 
-    
+
     <!-- Assign Ticket Modal -->
     <div class="modal" id="assignTicketModal">
         <div class="modal-content">
@@ -378,10 +385,10 @@
                 </div>
                 <button class="close-btn" onclick="closeAssignTicketModal()">&times;</button>
             </div>
-    
+
             <form id="assignTicketForm">
                 <input type="hidden" id="assignTicketId" name="ticket_id">
-                
+
                 <div class="modal-body">
                     <!-- Ticket Info Display -->
                     <div class="form-grid">
@@ -394,7 +401,7 @@
                             <input type="text" id="assignTicketTitle" readonly class="readonly-field">
                         </div>
                     </div>
-    
+
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="assignUnitNo">Unit Number</label>
@@ -405,25 +412,23 @@
                             <input type="text" id="assignPriority" readonly class="readonly-field">
                         </div>
                     </div>
-    
+
                     <!-- Assignment Field -->
                     <div class="form-group form-grid-full">
                         <label for="assignedToInput">Assign To <span class="required">*</span></label>
-                        <input type="text" id="assignedToInput" name="assigned_to" 
-                               placeholder="Enter the name of the person to assign this ticket to..." 
-                               required>
+                        <input type="text" id="assignedToInput" name="assigned_to"
+                            placeholder="Enter the name of the person to assign this ticket to..." required>
                         <small class="file-info">Enter the name of the person responsible for this ticket</small>
                     </div>
-    
+
                     <!-- Notes for Assignment -->
                     <div class="form-group form-grid-full">
                         <label for="assignmentNotes">Assignment Notes (Optional)</label>
-                        <textarea id="assignmentNotes" name="assignment_notes" 
-                                  placeholder="Any special instructions or notes for the assignee..." 
-                                  rows="3"></textarea>
+                        <textarea id="assignmentNotes" name="assignment_notes"
+                            placeholder="Any special instructions or notes for the assignee..." rows="3"></textarea>
                     </div>
                 </div>
-    
+
                 <div class="form-actions">
                     <button type="button" class="btn-cancel" onclick="closeAssignTicketModal()">Cancel</button>
                     <button type="submit" class="btn-submit">Assign Ticket</button>
