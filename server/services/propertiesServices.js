@@ -14,14 +14,60 @@ const createProperty = async (propertyData = {}) => {
         property_taxes_quarterly,
         security_deposit_months,
         minimum_lease_term_months,
-        address_id
+        address_id,
+        // New address fields
+        street,
+        barangay,
+        city,
+        province,
+        postal_code,
+        country
     } = propertyData || {};
 
     const property_id = uuidv4();
+    let finalAddressId = address_id;
 
     try {
+        // Check if we need to create a new address
+        if (!address_id && (street || city)) {
+            console.log('Creating new address...');
+            
+            // Prepare address data (no address_id since it's auto-increment)
+            const newAddress = {
+                street: street || null,
+                barangay: barangay || null,
+                city: city || null,
+                province: province || null,
+                postal_code: postal_code || null,
+                country: country || 'Philippines'
+            };
+
+            // Remove undefined values from address
+            Object.keys(newAddress).forEach(
+                (key) => newAddress[key] === undefined && delete newAddress[key]
+            );
+
+            console.log('Creating address with data:', newAddress);
+
+            // Create address first (let MySQL auto-increment the address_id)
+            const addressFields = Object.keys(newAddress).join(", ");
+            const addressPlaceholders = Object.keys(newAddress).map(() => "?").join(", ");
+            const addressValues = Object.values(newAddress);
+
+            const addressQuery = `INSERT INTO addresses (${addressFields}, created_at, updated_at) VALUES (${addressPlaceholders}, NOW(), NOW())`;
+            console.log('Address query:', addressQuery);
+            console.log('Address values:', addressValues);
+            
+            const [addressResult] = await pool.query(addressQuery, addressValues);
+
+            // Get the auto-generated address_id
+            finalAddressId = addressResult.insertId;
+            console.log('Address created successfully with ID:', finalAddressId);
+        }
+
+        // Now create the property
         const newProperty = {
-            property_id,
+            property_id: property_id,
             property_name,
             floor_area_sqm: floor_area_sqm ? parseFloat(floor_area_sqm) : null,
             description,
@@ -29,9 +75,9 @@ const createProperty = async (propertyData = {}) => {
             property_status: property_status || 'Available',
             base_rent: base_rent ? parseFloat(base_rent) : null,
             property_taxes_quarterly: property_taxes_quarterly ? parseFloat(property_taxes_quarterly) : null,
-            security_deposit_months: security_deposit_months ? parseFloat(security_deposit_months) : null,
+            security_deposit_months: security_deposit_months ? parseInt(security_deposit_months) : null,
             minimum_lease_term_months: minimum_lease_term_months ? parseInt(minimum_lease_term_months) : 24,
-            address_id
+            address_id: finalAddressId || null
         };
 
         // Remove undefined values
@@ -39,25 +85,35 @@ const createProperty = async (propertyData = {}) => {
             (key) => newProperty[key] === undefined && delete newProperty[key]
         );
 
-        // Build dynamic query
+        console.log('Creating property with data:', newProperty);
+
+        // Build dynamic query for property
         const fields = Object.keys(newProperty).join(", ");
         const placeholders = Object.keys(newProperty).map(() => "?").join(", ");
         const values = Object.values(newProperty);
 
         const query = `INSERT INTO properties (${fields}, created_at, updated_at) VALUES (${placeholders}, NOW(), NOW())`;
+        console.log('Property query:', query);
+        console.log('Property values:', values);
+        
         const [result] = await pool.query(query, values);
+
+        console.log('Property created successfully:', property_id);
 
         return {
             message: "Property has been successfully created!",
             propertyId: property_id,
+            addressId: finalAddressId,
             propertyData: newProperty,
             insertId: result.insertId
         };
     } catch (error) {
         console.error("Error creating property:", error);
+        console.error("Error details:", error.message);
         throw new Error(error.message || "Failed to create property");
     }
 };
+
 
 const getProperties = async (queryObj = {}) => {
     try {
@@ -76,9 +132,10 @@ const getProperties = async (queryObj = {}) => {
                 p.address_id,
                 p.created_at,
                 p.updated_at,
-                a.street_address,
+                a.street,
+                a.barangay,
                 a.city,
-                a.state_province,
+                a.province,
                 a.postal_code,
                 a.country,
                 JSON_ARRAYAGG(
@@ -86,7 +143,7 @@ const getProperties = async (queryObj = {}) => {
                         WHEN pp.image_url IS NOT NULL 
                         THEN JSON_OBJECT(
                             'image_url', pp.image_url,
-                            'property_desc', pp.property_desc
+                            'image_desc', pp.image_desc
                         )
                         ELSE NULL
                     END
@@ -106,7 +163,7 @@ const getProperties = async (queryObj = {}) => {
         }
         
         if (queryObj.search) {
-            query += ` AND (p.property_name LIKE ? OR a.street_address LIKE ? OR a.city LIKE ?)`;
+            query += ` AND (p.property_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
             const searchTerm = `%${queryObj.search}%`;
             values.push(searchTerm, searchTerm, searchTerm);
         }
@@ -178,7 +235,7 @@ const getProperties = async (queryObj = {}) => {
         }
         
         if (queryObj.search) {
-            countQuery += ` AND (p.property_name LIKE ? OR a.street_address LIKE ? OR a.city LIKE ?)`;
+            countQuery += ` AND (p.property_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
             const searchTerm = `%${queryObj.search}%`;
             countValues.push(searchTerm, searchTerm, searchTerm);
         }
@@ -244,9 +301,10 @@ const getSinglePropertyById = async (property_id = "") => {
                 p.address_id,
                 p.created_at,
                 p.updated_at,
-                a.street_address,
+                a.street,
+                a.barangay,
                 a.city,
-                a.state_province,
+                a.province,
                 a.postal_code,
                 a.country,
                 JSON_ARRAYAGG(
@@ -254,7 +312,7 @@ const getSinglePropertyById = async (property_id = "") => {
                         WHEN pp.image_url IS NOT NULL 
                         THEN JSON_OBJECT(
                             'image_url', pp.image_url,
-                            'property_desc', pp.property_desc
+                            'image_desc', pp.image_desc
                         )
                         ELSE NULL
                     END
@@ -378,7 +436,7 @@ const deletePropertyById = async (property_id = "") => {
         // Check for dependent records
         const dependencyQuery = `
             SELECT COUNT(*) as tenant_count 
-            FROM tenants 
+            FROM users 
             WHERE property_id = ?
         `;
         
