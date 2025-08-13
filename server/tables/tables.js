@@ -5,8 +5,10 @@ import usersTable from './usersTable.js';
 import ticketsTable from './ticketsTable.js';
 
 //properties
+import addresses from './addresses.js';
 import propertiesTable from './propertiesTable.js'
 import propertiesPicturesTable from './propertiesPicturesTable.js';
+
 
 const tables = async (dbConnection) => {
   const queries = [
@@ -17,8 +19,11 @@ const tables = async (dbConnection) => {
     ticketsTable,
 
     // properties
+    addresses,
     propertiesTable,
     propertiesPicturesTable
+    
+    
 
   ];
 
