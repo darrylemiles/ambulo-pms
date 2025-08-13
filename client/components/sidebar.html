@@ -20,14 +20,14 @@
 
     <nav class="sidebar-nav">
       <div class="nav-item">
-        <a href="/adminDashboard.html" class="nav-link" data-tooltip="Dashboard">
+        <a href="/adminDashboard.html" class="nav-link" data-tooltip="Dashboard" data-page="dashboard">
           <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
           <span class="nav-text">Dashboard</span>
         </a>
       </div>
 
-        <div class="nav-item">
-        <a href="/inbox.html" class="nav-link" data-tooltip="Inbox">
+      <div class="nav-item">
+        <a href="/inbox.html" class="nav-link" data-tooltip="Inbox" data-page="inbox">
           <div class="nav-icon"><i class="fa-solid fa-inbox"></i></div>
           <span class="nav-text">Inbox</span>
         </a>
@@ -38,21 +38,21 @@
       </div>
 
       <div class="nav-item">
-        <a href="/propertyAdmin.html" class="nav-link" data-tooltip="Properties">
+        <a href="/propertyAdmin.html" class="nav-link functional" data-tooltip="Properties" data-page="propertyAdmin">
           <div class="nav-icon"><i class="fas fa-building"></i></div>
           <span class="nav-text">Properties</span>
         </a>
       </div>
 
       <div class="nav-item">
-        <a href="/tenants.html" class="nav-link" data-tooltip="Tenants">
+        <a href="/tenants.html" class="nav-link" data-tooltip="Tenants" data-page="tenants">
           <div class="nav-icon"><i class="fas fa-users"></i></div>
           <span class="nav-text">Tenants</span>
         </a>
       </div>
 
       <div class="nav-item">
-        <a href="#" class="nav-link" data-tooltip="Leases">
+        <a href="#" class="nav-link" data-tooltip="Leases" data-page="leases">
           <div class="nav-icon"><i class="fas fa-file-contract"></i></div>
           <span class="nav-text">Leases</span>
         </a>
@@ -63,27 +63,26 @@
       </div>
 
       <div class="nav-item">
-        <a href="/maintenance.html" class="nav-link" data-tooltip="Maintenance">
+        <a href="/maintenance.html" class="nav-link functional" data-tooltip="Maintenance" data-page="maintenance">
           <div class="nav-icon"><i class="fas fa-tools"></i></div>
           <span class="nav-text">Maintenance</span>
         </a>
       </div>
 
       <div class="nav-item">
-        <a href="#" class="nav-link" data-tooltip="Payments">
+        <a href="#" class="nav-link" data-tooltip="Payments" data-page="payments">
           <div class="nav-icon"><i class="fas fa-credit-card"></i></div>
           <span class="nav-text">Payments</span>
         </a>
       </div>
 
       <div class="nav-item">
-        <a href="#" class="nav-link" data-tooltip="Reports">
+        <a href="#" class="nav-link" data-tooltip="Reports" data-page="reports">
           <div class="nav-icon"><i class="fas fa-chart-bar"></i></div>
           <span class="nav-text">Reports</span>
         </a>
       </div>
     </nav>
-
 
     <div class="sidebar-bottom-container">
       <button id="sidebarToggle" class="sidebar-bottom-toggle" title="Collapse Sidebar">
@@ -97,7 +96,24 @@
     <button id="mobileMenuBtn" class="mobile-menu-btn" title="Open Menu">
       <i class="fas fa-bars"></i>
     </button>
-    </button>
+  </div>
+
+  <script>
+    // Auto-detect current page and set active state
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentPage = window.location.pathname.split('/').pop().split('.')[0] || 'adminDashboard';
+      const navLinks = document.querySelectorAll('.nav-link');
+      
+      navLinks.forEach(link => {
+        const linkPage = link.getAttribute('data-page');
+        if (linkPage === currentPage || 
+            (currentPage === 'adminDashboard' && linkPage === 'dashboard') ||
+            (currentPage === 'propertyAdmin' && linkPage === 'propertyAdmin')) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
 </body>
 
 </html>

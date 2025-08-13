@@ -183,23 +183,44 @@ body {
   border-radius: 12px;
   transition: all 0.3s ease;
   font-size: 15px; /* Increased from 14px */
+  position: relative;
+  border: 2px solid transparent;
 }
 
 .nav-link:hover {
   background: #f3f4f6;
   color: #374151;
   transform: translateX(4px);
+  border-color: #e5e7eb;
 }
 
+/* Enhanced active state with stronger visual indicators */
 .nav-link.active {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  border-color: #1d4ed8;
+  font-weight: 600;
+  position: relative;
+}
+
+.nav-link.active::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .nav-link.active:hover {
   transform: translateX(2px);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
 }
 
 /* Enlarged icon styling */
@@ -234,20 +255,24 @@ body {
 
 /* Replace your existing collapsed sidebar styles with these: */
 
+/* Better collapsed navigation handling */
 .sidebar.collapsed .nav-link {
   justify-content: center;
-  padding: 14px 8px; /* Reduced horizontal padding for better centering */
-  margin: 3px 8px; /* Adjusted margins */
+  padding: 12px 10px; /* Optimized padding */
+  margin: 2px 10px; /* Optimized margins */
+  min-height: 44px; /* Ensure consistent height */
+  width: calc(100% - 20px); /* Ensure proper width */
+  box-sizing: border-box;
 }
 
 .sidebar.collapsed .nav-icon {
-  font-size: 20px;
-  width: 24px; /* Explicit width */
-  height: 24px; /* Explicit height */
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0; /* Remove any margins */
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .sidebar.collapsed .nav-icon i {
@@ -257,14 +282,22 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0; /* Remove any margins */
+  margin: 0;
 }
 
 .sidebar.collapsed .nav-text {
   opacity: 0;
   width: 0;
   overflow: hidden;
-  display: none; /* Completely hide to prevent layout issues */
+  display: none;
+}
+
+/* Fix collapsed active state indicator */
+.sidebar.collapsed .nav-link.active::before {
+  left: -10px;
+  width: 3px;
+  height: 50%;
+  border-radius: 0 2px 2px 0;
 }
 
 /* Fix the nav-item margins when collapsed */
@@ -306,16 +339,22 @@ body {
   display: none;
 }
 
-/* Fix hover effects for collapsed state */
 .sidebar.collapsed .nav-link:hover {
-  transform: translateX(0); /* Remove horizontal movement */
-  transform: scale(1.05); /* Add subtle scale instead */
+  transform: scale(1.05);
   background: #f3f4f6;
 }
 
 .sidebar.collapsed .nav-link.active:hover {
   transform: scale(1.02);
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
 }
+
+/* Prevent layout shifts when hovering */
+.sidebar.collapsed .nav-link {
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
 
 /* Ensure icons are perfectly centered */
 .sidebar.collapsed .nav-link {
@@ -331,37 +370,100 @@ body {
   position: relative;
 }
 
+/* Collapsed sidebar active state indicator */
+.sidebar.collapsed .nav-link.active::before {
+  left: -8px;
+  width: 3px;
+  height: 60%;
+}
+
+/* Enhanced active tooltip */
+.sidebar.collapsed .nav-link.active::after {
+  content: attr(data-tooltip) " (Active)";
+  background: #1d4ed8;
+  border-left: 3px solid #10b981;
+}
+
+.sidebar.collapsed .nav-link.active::before {
+  border-right-color: #1d4ed8;
+}
+
+/* Special styling for functional modules in collapsed state */
+.sidebar.collapsed .nav-link.functional {
+  position: relative;
+}
+
+.sidebar.collapsed .nav-link.functional::after {
+  border-left: 3px solid #f59e0b;
+}
+
+.sidebar.collapsed .nav-link.functional[data-page="maintenance"]::after {
+  border-left: 3px solid #ef4444;
+}
+
+/* Fix functional module indicators in collapsed state */
+.sidebar.collapsed .nav-link.functional .nav-icon::after {
+  top: -4px;
+  right: -4px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid white;
+}
+
+/* Add subtle glow effect for functional modules */
+.nav-link.functional {
+  position: relative;
+  overflow: visible;
+}
+
+.nav-link.functional:hover {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.nav-link.functional[data-page="maintenance"]:hover {
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* Active state overrides for functional modules */
+.nav-link.functional.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.nav-link.functional.active:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+
+/* Add tooltips for collapsed state */
+.sidebar.collapsed .nav-link {
+  position: relative;
+}
+
 .sidebar.collapsed .nav-link::after {
   content: attr(data-tooltip);
   position: absolute;
-  left: 100%;
+  left: calc(100% + 15px);
   top: 50%;
   transform: translateY(-50%);
   background: #1f2937;
   color: white;
   padding: 8px 12px;
   border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
-  margin-left: 10px;
-  z-index: 1001;
+  z-index: 1000;
+  pointer-events: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.sidebar.collapsed .nav-link:hover::after {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Arrow for tooltip */
 .sidebar.collapsed .nav-link::before {
   content: '';
   position: absolute;
-  left: 100%;
+  left: calc(100% + 9px);
   top: 50%;
   transform: translateY(-50%);
   border: 6px solid transparent;
@@ -369,10 +471,10 @@ body {
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
-  margin-left: 4px;
-  z-index: 1001;
+  z-index: 1000;
 }
 
+.sidebar.collapsed .nav-link:hover::after,
 .sidebar.collapsed .nav-link:hover::before {
   opacity: 1;
   visibility: visible;
@@ -525,39 +627,84 @@ body {
   z-index: -1;
 }
 
-/* Different icon colors for different sections */
-.nav-link[href*="dashboard"] .nav-icon {
+/* Functional modules get colored icons */
+.nav-link.functional .nav-icon {
+  color: #f59e0b !important; /* Properties - Orange */
+}
+
+.nav-link.functional[data-page="maintenance"] .nav-icon {
+  color: #ef4444 !important; /* Maintenance - Red */
+}
+
+
+/* Enhanced animation for functional modules */
+.nav-link.functional .nav-icon {
+  position: relative;
+}
+
+.nav-link.functional .nav-icon::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  animation: functionalPulse 2s ease-in-out infinite;
+}
+
+/* Keep original icon colors for non-functional modules */
+.nav-link[data-page="dashboard"] .nav-icon {
   color: #10b981;
 }
-.nav-link[href*="properties"] .nav-icon {
-  color: #f59e0b;
-}
-.nav-link[href*="tenants"] .nav-icon {
-  color: #3b82f6;
-}
-.nav-link[href*="leases"] .nav-icon {
+.nav-link[data-page="inbox"] .nav-icon {
   color: #8b5cf6;
 }
-.nav-link[href*="maintenance"] .nav-icon {
-  color: #ef4444;
+.nav-link[data-page="tenants"] .nav-icon {
+  color: #3b82f6;
 }
-.nav-link[href*="payments"] .nav-icon {
+.nav-link[data-page="leases"] .nav-icon {
+  color: #8b5cf6;
+}
+.nav-link[data-page="payments"] .nav-icon {
   color: #06b6d4;
 }
-.nav-link[href*="reports"] .nav-icon {
+.nav-link[data-page="reports"] .nav-icon {
   color: #6b7280;
 }
 
 /* Override colors on hover and active states */
 .nav-link:hover .nav-icon,
 .nav-link.active .nav-icon {
-  color: inherit;
+  color: inherit !important;
 }
 
-/* Add subtle animation to icons */
-@keyframes iconPulse {
-  0%,
-  100% {
+/* Only animate non-functional, non-active icons subtly */
+.nav-link:not(.functional):not(.active) .nav-icon {
+  animation: none;
+}
+
+.nav-link:not(.functional):not(.active):hover .nav-icon {
+  animation: iconPulse 1s ease-in-out 1;
+}
+
+@keyframes functionalPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* Enhanced active state animation */
+@keyframes activeIconPulse {
+  0%, 100% {
     transform: scale(1);
   }
   50% {
@@ -566,39 +713,34 @@ body {
 }
 
 .nav-link.active .nav-icon {
-  animation: iconPulse 2s ease-in-out infinite;
+  animation: activeIconPulse 2s ease-in-out infinite;
 }
 
 
-
-/* Add these styles at the end of the file to create proper spacing: */
-
 /* Main content positioning for proper spacing */
+/* Ensure proper main content positioning */
 .main-content {
-  margin-left: 300px; /* 280px sidebar + 20px gap */
+  margin-left: 280px;
   transition: margin-left 0.3s ease;
 }
 
 .main-content.sidebar-collapsed {
-  margin-left: 100px; /* 80px collapsed sidebar + 20px gap */
+  margin-left: 80px;
 }
 
 .main-content.sidebar-hidden {
   margin-left: 0;
 }
 
-/* Visual separator between sidebar and main content */
+/* Fix the separator positioning */
 .main-content::before {
   content: '';
   position: fixed;
   left: 280px;
   top: 0;
-  width: 20px;
+  width: 1px;
   height: 100vh;
-  background: linear-gradient(to right, 
-    rgba(229, 231, 235, 0.3) 0%, 
-    rgba(229, 231, 235, 0.1) 50%, 
-    transparent 100%);
+  background: #e5e7eb;
   z-index: 999;
   pointer-events: none;
   transition: all 0.3s ease;
@@ -665,36 +807,38 @@ body {
   right: -25px;
 }
 
-/* Keep the collapsed state styles as they are */
+/* Ensure section separators work properly */
 .sidebar.collapsed .nav-section {
-  margin: 16px 0 8px 0; /* Reduced margins */
+  margin: 12px 0 8px 0;
   padding: 0;
   display: flex;
   justify-content: center;
+  height: 1px; /* Minimal height */
 }
 
 .sidebar.collapsed .nav-section-title {
-  opacity: 0;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  display: none; /* Completely hide */
+  display: none !important;
 }
 
-/* Add a visual separator between sections when collapsed */
 .sidebar.collapsed .nav-section::after {
   content: '';
-  width: 32px;
+  width: 30px;
   height: 1px;
   background: #e5e7eb;
   display: block;
   margin: 0 auto;
 }
 
-/* Remove the separator for the first section */
+/* Remove separator for first section */
 .sidebar.collapsed .nav-section:first-of-type::after {
   display: none;
+}
+
+/* Ensure consistent spacing */
+.sidebar.collapsed .nav-item {
+  margin: 1px 8px;
+  display: flex;
+  justify-content: center;
 }
 
 
