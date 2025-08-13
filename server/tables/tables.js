@@ -4,13 +4,21 @@ import usersTable from './usersTable.js';
 // tickets
 import ticketsTable from './ticketsTable.js';
 
+//properties
+import propertiesTable from './propertiesTable.js'
+import propertiesPicturesTable from './propertiesPicturesTable.js';
+
 const tables = async (dbConnection) => {
   const queries = [
     // users
     usersTable,
 
     // tickets
-    ticketsTable
+    ticketsTable,
+
+    // properties
+    propertiesTable,
+    propertiesPicturesTable
 
   ];
 
