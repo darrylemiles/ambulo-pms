@@ -37,6 +37,192 @@
             </div>
         </div>
 
+        <!-- Inbox Navigation -->
+        <div class="inbox-nav">
+            <div class="inbox-nav-left">
+                <div class="inbox-tab">
+                    Inbox <span class="inbox-count" id="inboxCount">12</span>
+                </div>
+            </div>
+            <div class="inbox-nav-right">
+                <button class="new-message-btn" onclick="newMessage()">
+                    <i class="fa-solid fa-message"></i>New Message
+                </button>
+                <button class="clear-btn" onclick="clearSelection()">
+                    <i class="fa-solid fa-trash"></i>Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- Inbox Toolbar -->
+        <div class="inbox-toolbar">
+            <div class="toolbar-left">
+                <div class="search-box">
+                    <input type="text" class="inbox-search-input" placeholder="Search in inbox..." id="searchInput">
+                    <span class="search-icon"><i class="fas fa-search"></i></span>
+                </div>
+                
+                <div class="select-all-section">
+                    <input type="checkbox" class="select-all-checkbox" id="selectAllMain" onchange="toggleSelectAll()">
+                    <label for="selectAllMain" class="select-all-label">Select All</label>
+                    <div class="select-all-dropdown">
+                        <button class="select-all-dropdown-btn" onclick="toggleSelectAllDropdown()">▼</button>
+                        <div class="select-all-dropdown-menu" id="selectAllDropdown">
+                            <div class="dropdown-option" onclick="selectAllMessages()">
+                                All Messages
+                            </div>
+                            <div class="dropdown-option" onclick="selectUnreadMessages()">
+                                Unread Messages
+                            </div>
+                            <div class="dropdown-option" onclick="selectReadMessages()">
+                                Read Messages
+                            </div>
+                            <div class="dropdown-option" onclick="selectStarredMessages()">
+                                Starred Messages
+                            </div>
+                            <div class="dropdown-option" onclick="deselectAll()">
+                                None
+                            </div>
+                        </div>
+                    </div>
+                    <span class="selection-count" id="selectionCount">0</span>
+                </div>
+            </div>
+
+            <div class="toolbar-right">
+                <div class="view-toggle">
+                    <button class="view-btn active" id="listViewBtn" onclick="switchView('list')">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button class="view-btn" id="gridViewBtn" onclick="switchView('grid')">
+                        <i class="fas fa-th"></i>
+                    </button>
+                </div>
+
+                <div class="bulk-actions">
+                    <div class="bulk-action" onclick="markAsRead()">
+                        <i class="fa-solid fa-check"></i>Mark Read
+                    </div>
+                    <div class="bulk-action" onclick="markAsUnread()">
+                        <i class="fa-regular fa-message"></i>Mark Unread
+                    </div>
+                    <div class="bulk-action" onclick="archiveSelected()">
+                        <i class="fa-solid fa-box-archive"></i>Archive
+                    </div>
+                    <div class="bulk-action delete" onclick="deleteSelected()">
+                        <i class="fa-solid fa-trash"></i>Delete
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message List View -->
+        <div class="message-list" id="messageList">
+            <div class="message-header">
+                <div class="header-checkbox-cell">
+                    <input type="checkbox" class="header-select-all" id="headerSelectAll" onchange="toggleSelectAll()">
+                </div>
+                <div>#</div>
+                <div>Sender</div>
+                <div>Subject</div>
+                <div>Date</div>
+                <div>Read</div>
+            </div>
+            
+            <!-- Message rows will be dynamically generated here -->
+        </div>
+
+        <!-- Message Grid View -->
+        <div class="message-grid" id="messageGrid">
+            <!-- Message cards will be dynamically generated here -->
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu" style="display: none;">
+        <div class="context-menu-item" onclick="markAsRead()">
+            ✅ Mark as Read
+        </div>
+        <div class="context-menu-item" onclick="markAsUnread()">
+            🔵 Mark as Unread
+        </div>
+        <div class="context-menu-item" onclick="archiveSelected()">
+            📁 Archive
+        </div>
+        <div class="context-menu-item delete" onclick="deleteSelected()">
+            🗑️ Delete
+        </div>
+    </div>
+
+    <!-- Message Composer Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeComposer()"></div>
+    <div class="message-composer" id="messageComposer">
+        <div class="composer-header">
+            <div class="composer-title">New Message</div>
+            <div class="composer-controls">
+                <button class="composer-btn minimize" onclick="minimizeComposer()">
+                    <i class="fas fa-window-minimize"></i>
+                </button>
+                <button class="composer-btn maximize" onclick="maximizeComposer()">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="composer-btn close" onclick="closeComposer()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="composer-content">
+            <div class="compose-field">
+                <label class="compose-label">To</label>
+                <input type="email" class="compose-input" id="toField" placeholder="Recipients">
+                <a href="#" class="cc-bcc-toggle" onclick="toggleCcBcc()">Cc Bcc</a>
+            </div>
+
+            <div class="cc-bcc-fields" id="ccBccFields">
+                <div class="compose-field">
+                    <label class="compose-label">Cc</label>
+                    <input type="email" class="compose-input" id="ccField" placeholder="Carbon copy">
+                </div>
+                <div class="compose-field">
+                    <label class="compose-label">Bcc</label>
+                    <input type="email" class="compose-input" id="bccField" placeholder="Blind carbon copy">
+                </div>
+            </div>
+
+            <div class="compose-field">
+                <label class="compose-label">Subject</label>
+                <input type="text" class="compose-input" id="subjectField" placeholder="Subject">
+            </div>
+
+            <textarea class="compose-textarea" id="messageBody" placeholder="Compose your message..."></textarea>
+        </div>
+
+        <div class="composer-toolbar">
+            <div class="composer-actions-left">
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                    Send
+                </button>
+            </div>
+
+            <div class="composer-actions-right">
+                <button class="toolbar-btn" onclick="attachFile()" title="Attach file">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <button class="toolbar-btn" onclick="insertLink()" title="Insert link">
+                    <i class="fas fa-link"></i>
+                </button>
+                <button class="toolbar-btn" onclick="saveDraft()" title="Save as draft">
+                    <i class="fas fa-save"></i>
+                </button>
+                <button class="delete-btn" onclick="discardDraft()" title="Discard">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/javascript/inbox.js"></script>
     <script src="/javascript/sidebar.js"></script>
 </body>
