@@ -45,13 +45,24 @@
         <!-- Property Management Module -->
         <div class="property-container">
             <div class="property-header">
-                <div class="property-header-top">
-                    <button class="new-ticket-btn" onclick="openAddModal()">
+                <!-- Breadcrumb Navigation -->
+                <div class="breadcrumb-container" id="breadcrumbContainer">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb" id="breadcrumbNav">
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <i class="fas fa-home me-2"></i>Properties
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <div class="property-header-top" id="propertyHeaderTop">
+                    <button class="new-ticket-btn" onclick="showAddPropertyForm()">
                         <i class="fas fa-plus me-2"></i>
                         Add Property
                     </button>
 
-                    <div class="property-controls">
+                    <div class="property-controls" id="propertyControls">
                         <div class="property-search-box">
                             <input type="text" placeholder="Search by name, location, or description" id="searchInput">
                             <div class="property-search-icon">
@@ -79,96 +90,394 @@
                 </div>
             </div>
 
-            <div class="properties-grid" id="propertiesGrid">
-                <!-- Properties will be rendered here by JavaScript -->
+            <!-- Content Area (Properties Grid or Add Form) -->
+            <div class="content-area">
+                <!-- Properties Grid -->
+                <div class="properties-grid" id="propertiesGrid">
+                    <!-- Properties will be rendered here by JavaScript -->
+                </div>
+
+                <!-- Edit Property Form (Initially Hidden) -->
+                <div class="edit-property-form-container" id="editPropertyFormContainer" style="display: none;">
+                    <div class="edit-property-form">
+                        <div class="form-header">
+                            <h3>Edit Property</h3>
+                            <p>Update the details below to modify the property information</p>
+                        </div>
+
+                        <form id="inlineEditPropertyForm">
+                            <!-- Display Image Upload Section -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-image me-2"></i>Property Display Image</h4>
+                                <div id="editInlineImageUploadContainer" class="image-upload-container">
+                                    <div id="editInlineUploadPrompt">
+                                        <div class="upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="upload-text">Click to upload property image</div>
+                                        <div class="upload-hint">Supports: JPG/JPEG, PNG (Max: 5MB)</div>
+                                    </div>
+                                    <div id="editInlineImagePreview" style="display: none;">
+                                        <img id="editInlinePreviewImage" />
+                                        <div class="image-actions">
+                                            <button type="button" id="editInlineRemoveImageBtn"
+                                                class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-trash me-1"></i> Remove
+                                            </button>
+                                            <button type="button" id="editInlineChangeImageBtn"
+                                                class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-sync-alt me-1"></i> Change
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="file" id="editInlineDisplayImageInput" name="display_image"
+                                    accept="image/*" style="display: none;">
+                            </div>
+
+                            <!-- Property Details -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-info-circle me-2"></i>Property Details</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Property/Unit Name *</label>
+                                        <input type="text" name="property_name" id="editPropertyName" required>
+                                        <div class="error-message" id="editPropertyNameError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Floor Area (m²) *</label>
+                                        <input type="number" step="0.01" name="floor_area_sqm" id="editFloorArea"
+                                            required>
+                                        <div class="error-message" id="editFloorAreaError"></div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Status *</label>
+                                        <select name="property_status" id="editPropertyStatus" required>
+                                            <option value="">Select Status</option>
+                                            <option value="Available">Available</option>
+                                            <option value="Occupied">Occupied</option>
+                                            <option value="Maintenance">Maintenance</option>
+                                        </select>
+                                        <div class="error-message" id="editPropertyStatusError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Monthly Rent (₱) *</label>
+                                        <input type="number" step="0.01" name="base_rent" id="editBaseRent" required>
+                                        <div class="error-message" id="editBaseRentError"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Financial Details -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-dollar-sign me-2"></i>Financial Details</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Property Taxes (Quarterly) *</label>
+                                        <input type="number" step="0.01" name="property_taxes_quarterly"
+                                            id="editPropertyTaxes" required>
+                                        <div class="error-message" id="editPropertyTaxesError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Security Deposit (Months) *</label>
+                                        <input type="number" step="0.1" name="security_deposit_months"
+                                            id="editSecurityDeposit" required>
+                                        <div class="error-message" id="editSecurityDepositError"></div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Minimum Lease Term (Months) *</label>
+                                        <input type="number" name="minimum_lease_term_months" id="editLeaseTerm"
+                                            required>
+                                        <div class="error-message" id="editLeaseTermError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <!-- Empty div for grid alignment -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Address Section -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-map-marker-alt me-2"></i>Address Information</h4>
+                                <div class="address-selection">
+                                    <div class="form-group">
+                                        <label>Select Existing Address</label>
+                                        <select name="address_id" id="editInlineAddressSelect">
+                                            <option value="">Select an existing address (optional)</option>
+                                        </select>
+                                    </div>
+                                    <div class="or-divider">
+                                        <span>OR</span>
+                                    </div>
+                                    <button type="button" id="editInlineAddNewAddressBtn"
+                                        class="btn btn-outline-primary">
+                                        <i class="fas fa-plus me-1"></i> Add New Address
+                                    </button>
+                                </div>
+
+                                <!-- New Address Form -->
+                                <div id="editInlineNewAddressForm" style="display: none;" class="new-address-section">
+                                    <h5>New Address Details</h5>
+                                    <div class="form-row">
+                                        <div class="form-group flex-2">
+                                            <label>Street Address *</label>
+                                            <input type="text" id="editInlineNewStreet" placeholder="Street Address">
+                                        </div>
+                                        <div class="form-group flex-1">
+                                            <label>Barangay</label>
+                                            <input type="text" id="editInlineNewBarangay" placeholder="Barangay">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>City *</label>
+                                            <input type="text" id="editInlineNewCity" placeholder="City">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Province</label>
+                                            <input type="text" id="editInlineNewProvince" placeholder="Province">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Postal Code</label>
+                                            <input type="text" id="editInlineNewPostalCode" placeholder="Postal Code">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Country</label>
+                                            <input type="text" id="editInlineNewCountry" value="Philippines">
+                                        </div>
+                                    </div>
+                                    <div class="address-actions">
+                                        <button type="button" id="editInlineSaveNewAddressBtn" class="btn btn-success">
+                                            <i class="fas fa-save me-1"></i> Save & Use Address
+                                        </button>
+                                        <button type="button" id="editInlineCancelNewAddressBtn"
+                                            class="btn btn-secondary">
+                                            <i class="fas fa-times me-1"></i> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-file-alt me-2"></i>Description</h4>
+                                <div class="form-group full-width">
+                                    <label>Property Description</label>
+                                    <textarea name="description" id="editDescription" rows="4"
+                                        placeholder="Property description, amenities, features, etc."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="form-actions">
+                                <button type="button" onclick="hideEditPropertyForm()" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i> Cancel
+                                </button>
+                                <button type="submit" id="editInlineSubmitBtn" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Update Property
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Add Property Form (Initially Hidden) -->
+                <div class="add-property-form-container" id="addPropertyFormContainer" style="display: none;">
+                    <div class="add-property-form">
+                        <div class="form-header">
+                            <h3>Add New Property</h3>
+                            <p>Fill in the details below to add a new space or property to your portfolio</p>
+                        </div>
+
+                        <form id="inlineAddPropertyForm">
+                            <!-- Display Image Upload Section -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-image me-2"></i>Property Display Image</h4>
+                                <div id="inlineImageUploadContainer" class="image-upload-container">
+                                    <div id="inlineUploadPrompt">
+                                        <div class="upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="upload-text">Click to upload property image</div>
+                                        <div class="upload-hint">Supports: JPG/JPEG, PNG (Max: 5MB)</div>
+                                    </div>
+                                    <div id="inlineImagePreview" style="display: none;">
+                                        <img id="inlinePreviewImage" />
+                                        <div class="image-actions">
+                                            <button type="button" id="inlineRemoveImageBtn"
+                                                class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-trash me-1"></i> Remove
+                                            </button>
+                                            <button type="button" id="inlineChangeImageBtn"
+                                                class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-sync-alt me-1"></i> Change
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="file" id="inlineDisplayImageInput" name="display_image" accept="image/*"
+                                    style="display: none;">
+                            </div>
+
+                            <!-- Property Details -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-info-circle me-2"></i>Property Details</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Property/Unit Name *</label>
+                                        <input type="text" name="property_name" id="propertyName" required>
+                                        <div class="error-message" id="propertyNameError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Floor Area (m²) *</label>
+                                        <input type="number" step="0.01" name="floor_area_sqm" id="floorArea" required>
+                                        <div class="error-message" id="floorAreaError"></div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Status *</label>
+                                        <select name="property_status" id="propertyStatus" required>
+                                            <option value="">Select Status</option>
+                                            <option value="Available">Available</option>
+                                            <option value="Occupied">Occupied</option>
+                                            <option value="Maintenance">Maintenance</option>
+                                        </select>
+                                        <div class="error-message" id="propertyStatusError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Monthly Rent (₱) *</label>
+                                        <input type="number" step="0.01" name="base_rent" id="baseRent" required>
+                                        <div class="error-message" id="baseRentError"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Financial Details -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-dollar-sign me-2"></i>Financial Details</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Property Taxes (Quarterly) *</label>
+                                        <input type="number" step="0.01" name="property_taxes_quarterly"
+                                            id="propertyTaxes" required>
+                                        <div class="error-message" id="propertyTaxesError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Security Deposit (Months) *</label>
+                                        <input type="number" step="0.1" name="security_deposit_months"
+                                            id="securityDeposit" value="2" required>
+                                        <div class="error-message" id="securityDepositError"></div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Minimum Lease Term (Months) *</label>
+                                        <input type="number" name="minimum_lease_term_months" id="leaseTerm" value="24"
+                                            required>
+                                        <div class="error-message" id="leaseTermError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <!-- Empty div for grid alignment -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Address Section -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-map-marker-alt me-2"></i>Address Information</h4>
+                                <div class="address-selection">
+                                    <div class="form-group">
+                                        <label>Select Existing Address</label>
+                                        <select name="address_id" id="inlineAddressSelect">
+                                            <option value="">Select an existing address (optional)</option>
+                                        </select>
+                                    </div>
+                                    <div class="or-divider">
+                                        <span>OR</span>
+                                    </div>
+                                    <button type="button" id="inlineAddNewAddressBtn" class="btn btn-outline-primary">
+                                        <i class="fas fa-plus me-1"></i> Add New Address
+                                    </button>
+                                </div>
+
+                                <!-- New Address Form -->
+                                <div id="inlineNewAddressForm" style="display: none;" class="new-address-section">
+                                    <h5>New Address Details</h5>
+                                    <div class="form-row">
+                                        <div class="form-group flex-2">
+                                            <label>Street Address *</label>
+                                            <input type="text" id="inlineNewStreet" placeholder="Street Address">
+                                        </div>
+                                        <div class="form-group flex-1">
+                                            <label>Barangay</label>
+                                            <input type="text" id="inlineNewBarangay" placeholder="Barangay">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>City *</label>
+                                            <input type="text" id="inlineNewCity" placeholder="City">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Province</label>
+                                            <input type="text" id="inlineNewProvince" placeholder="Province">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Postal Code</label>
+                                            <input type="text" id="inlineNewPostalCode" placeholder="Postal Code">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Country</label>
+                                            <input type="text" id="inlineNewCountry" value="Philippines">
+                                        </div>
+                                    </div>
+                                    <div class="address-actions">
+                                        <button type="button" id="inlineSaveNewAddressBtn" class="btn btn-success">
+                                            <i class="fas fa-save me-1"></i> Save & Use Address
+                                        </button>
+                                        <button type="button" id="inlineCancelNewAddressBtn" class="btn btn-secondary">
+                                            <i class="fas fa-times me-1"></i> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-file-alt me-2"></i>Description</h4>
+                                <div class="form-group full-width">
+                                    <label>Property Description</label>
+                                    <textarea name="description" rows="4"
+                                        placeholder="Property description, amenities, features, etc."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="form-actions">
+                                <button type="button" onclick="hideAddPropertyForm()" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i> Cancel
+                                </button>
+                                <button type="submit" id="inlineSubmitBtn" class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i> Add Property
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Property Modal -->
-    <div class="modal-overlay" id="addModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title">Add New Property</h2>
-                <button class="close-btn" onclick="closeAddModal()">×</button>
-            </div>
-            <form id="addPropertyForm" onsubmit="addProperty(event)">
-                <div class="modal-body">
-                    <div class="form-group full-width">
-                        <label class="form-label">Property Images</label>
-                        <div class="image-upload-container" onclick="document.getElementById('imageInput').click()">
-                            <div class="upload-icon">📁</div>
-                            <div class="upload-text">Click to upload images</div>
-                            <div class="upload-hint">Or drag and drop files here (Max 5MB each)</div>
-                        </div>
-                        <input type="file" id="imageInput" name="property_image" accept="image/*" multiple
-                            class="hidden" onchange="handleImageUpload(event)">
-                        <div class="image-preview-container" id="imagePreviewContainer"></div>
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Property Name *</label>
-                            <input type="text" class="form-input" name="property_name" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Floor Area (m²) *</label>
-                            <input type="number" step="0.01" class="form-input" name="floor_area_sqm" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Status *</label>
-                            <select class="form-select" name="property_status" required>
-                                <option value="Available">Available</option>
-                                <option value="Occupied">Occupied</option>
-                                <option value="Maintenance">Maintenance</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Monthly Rent (₱) *</label>
-                            <input type="number" step="0.01" class="form-input" name="base_rent" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Property Taxes (Quarterly) *</label>
-                            <input type="number" step="0.01" class="form-input" name="property_taxes_quarterly"
-                                required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Security Deposit (Months) *</label>
-                            <input type="number" step="0.1" class="form-input" name="security_deposit_months" value="2"
-                                required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Minimum Lease Term (Months) *</label>
-                            <input type="number" class="form-input" name="minimum_lease_term_months" value="12"
-                                required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Address ID</label>
-                            <input type="text" class="form-input" name="address_id" placeholder="Leave empty for now">
-                        </div>
-
-                        <div class="form-group full-width">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-textarea" name="description"
-                                placeholder="Property description, amenities, etc."></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="closeAddModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Add Property</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    <!-- Keep existing modals for edit and details -->
     <!-- Edit Property Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal">
