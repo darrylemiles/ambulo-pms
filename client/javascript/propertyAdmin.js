@@ -14,6 +14,11 @@ let isEditingProperty = false;
 let currentEditPropertyId = null;
 let editInlineFormHandler = null;
 
+// Image showcase management for edit form
+let editShowcaseImages = [];
+const MAX_SHOWCASE_IMAGES = 10;
+let deletedShowcaseImages = [];
+
 // API Configuration
 const API_BASE_URL = "/api/v1/properties";
 
@@ -1881,160 +1886,627 @@ function showPropertiesGrid() {
   }
 }
 
-// Setup edit inline form
-function setupEditInlineForm() {
-  if (editInlineFormHandler) return; // Already setup
-  
-  // Setup image upload
-  setupEditInlineImageUpload();
-  
-  // Setup address handlers
-  setupEditInlineAddressHandlers();
-  
-  // Setup real-time validation for edit form
-  setupEditRealTimeValidation();
-  
-  // Setup form submission
-  const form = document.getElementById('inlineEditPropertyForm');
-  form.addEventListener('submit', handleEditInlineFormSubmit);
-  
-  // Load existing addresses
-  loadEditInlineAddresses();
-  
-  editInlineFormHandler = true;
+
+function setupEditImageShowcase() {
+    const showcaseContainer = document.getElementById('editImageShowcaseContainer');
+    const uploadPrompt = document.getElementById('editShowcaseUploadPrompt');
+    const fileInput = document.getElementById('editShowcaseImageInput');
+    const addMoreBtn = document.getElementById('editAddMoreImagesBtn');
+
+    // Click handlers
+    uploadPrompt.addEventListener('click', () => {
+        if (editShowcaseImages.length < MAX_SHOWCASE_IMAGES) {
+            fileInput.click();
+        }
+    });
+
+    addMoreBtn.addEventListener('click', () => {
+        if (editShowcaseImages.length < MAX_SHOWCASE_IMAGES) {
+            fileInput.click();
+        }
+    });
+
+    // File input change handler
+    fileInput.addEventListener('change', handleEditShowcaseImageFiles);
+
+    // Drag and drop
+    showcaseContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        showcaseContainer.style.borderColor = '#f59e0b';
+        showcaseContainer.style.background = '#fffbeb';
+    });
+
+    showcaseContainer.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        showcaseContainer.style.borderColor = '#cbd5e0';
+        showcaseContainer.style.background = '#f9fafb';
+    });
+
+    showcaseContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        showcaseContainer.style.borderColor = '#cbd5e0';
+        showcaseContainer.style.background = '#f9fafb';
+        
+        const files = Array.from(e.dataTransfer.files);
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        
+        if (imageFiles.length > 0) {
+            handleEditShowcaseImageFiles({ target: { files: imageFiles } });
+        }
+    });
 }
 
-// Populate edit form with property data
-function populateEditForm(propertyId) {
-  const property = properties.find(p => p.id === propertyId);
-  if (!property) {
-    console.error('Property not found:', propertyId);
-    return;
-  }
-
-  // Populate basic fields
-  document.getElementById('editPropertyName').value = property.property_name || '';
-  document.getElementById('editFloorArea').value = property.floor_area_sqm || '';
-  document.getElementById('editPropertyStatus').value = mapStatusToBackend(property.status) || '';
-  document.getElementById('editBaseRent').value = property.base_rent || '';
-  document.getElementById('editPropertyTaxes').value = property.property_taxes_quarterly || '';
-  document.getElementById('editSecurityDeposit').value = property.security_deposit_months || '';
-  document.getElementById('editLeaseTerm').value = property.minimum_lease_term_months || '';
-  document.getElementById('editDescription').value = property.description || '';
-
-  // Handle address selection
-  const addressSelect = document.getElementById('editInlineAddressSelect');
-  if (property.address_id) {
-    addressSelect.value = property.address_id;
-  }
-
-  // Handle existing image
-  if (property.display_image) {
-    const uploadPrompt = document.getElementById('editInlineUploadPrompt');
-    const imagePreview = document.getElementById('editInlineImagePreview');
-    const previewImage = document.getElementById('editInlinePreviewImage');
+function handleEditShowcaseImageFiles(event) {
+    const files = Array.from(event.target.files);
+    const remainingSlots = MAX_SHOWCASE_IMAGES - editShowcaseImages.length;
     
-    if (uploadPrompt && imagePreview && previewImage) {
-      previewImage.src = property.display_image;
-      uploadPrompt.style.display = 'none';
-      imagePreview.style.display = 'block';
+    if (files.length > remainingSlots) {
+        showInlineErrorMessage(`You can only add ${remainingSlots} more images. Maximum ${MAX_SHOWCASE_IMAGES} images allowed.`);
+        return;
     }
-  }
+
+    files.forEach(file => {
+        if (validateEditShowcaseImage(file)) {
+            addEditShowcaseImage(file);
+        }
+    });
+
+    // Clear the input
+    event.target.value = '';
 }
 
-// Setup edit image upload
-function setupEditInlineImageUpload() {
-  const uploadContainer = document.getElementById('editInlineImageUploadContainer');
-  const fileInput = document.getElementById('editInlineDisplayImageInput');
-  const uploadPrompt = document.getElementById('editInlineUploadPrompt');
-  const imagePreview = document.getElementById('editInlineImagePreview');
-  const previewImage = document.getElementById('editInlinePreviewImage');
-  const removeImageBtn = document.getElementById('editInlineRemoveImageBtn');
-  const changeImageBtn = document.getElementById('editInlineChangeImageBtn');
-
-  let uploadedImage = null;
-
-  // Click to upload
-  uploadContainer.addEventListener('click', (e) => {
-    if (e.target === uploadContainer || e.target.closest('#editInlineUploadPrompt')) {
-      fileInput.click();
-    }
-  });
-
-  // Drag and drop
-  uploadContainer.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadContainer.style.borderColor = '#f59e0b';
-    uploadContainer.style.background = '#fffbeb';
-  });
-
-  uploadContainer.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    uploadContainer.style.borderColor = '#cbd5e0';
-    uploadContainer.style.background = '#f9fafb';
-  });
-
-  uploadContainer.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadContainer.style.borderColor = '#cbd5e0';
-    uploadContainer.style.background = '#f9fafb';
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleEditInlineImageFile(files[0]);
-    }
-  });
-
-  // File input change
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      handleEditInlineImageFile(e.target.files[0]);
-    }
-  });
-
-  // Remove image
-  removeImageBtn.addEventListener('click', () => {
-    uploadedImage = null;
-    fileInput.value = '';
-    uploadPrompt.style.display = 'block';
-    imagePreview.style.display = 'none';
-  });
-
-  // Change image
-  changeImageBtn.addEventListener('click', () => {
-    fileInput.click();
-  });
-
-  function handleEditInlineImageFile(file) {
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please select a valid image file (JPG, PNG)');
-      return;
+function validateEditShowcaseImage(file) {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+        showInlineErrorMessage(`${file.name} is not a valid image file.`);
+        return false;
     }
 
-    // Validate file size (5MB)
+    // Check file size (5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('Image size must be less than 5MB');
-      return;
+        showInlineErrorMessage(`${file.name} is too large. Maximum file size is 5MB.`);
+        return false;
     }
 
-    uploadedImage = file;
+    // Check if we've reached the limit
+    if (editShowcaseImages.length >= MAX_SHOWCASE_IMAGES) {
+        showInlineErrorMessage(`Maximum ${MAX_SHOWCASE_IMAGES} images allowed.`);
+        return false;
+    }
+
+    return true;
+}
+
+function addEditShowcaseImage(file, existingData = null) {
+    const imageId = Date.now() + Math.random();
+    const imageData = {
+        id: imageId,
+        file: file,
+        description: existingData?.image_desc || '',
+        isExisting: !!existingData,
+        existingId: existingData?.id || null
+    };
+
+    editShowcaseImages.push(imageData);
 
     // Create preview
     const reader = new FileReader();
     reader.onload = (e) => {
-      previewImage.src = e.target.result;
-      uploadPrompt.style.display = 'none';
-      imagePreview.style.display = 'block';
+        imageData.dataUrl = e.target.result;
+        renderEditShowcasePreview();
     };
     reader.readAsDataURL(file);
-  }
-
-  // Store reference for form submission
-  uploadContainer.getUploadedImage = () => uploadedImage;
 }
+
+
+function loadExistingShowcaseImages(property) {
+    editShowcaseImages = [];
+    
+    if (property.property_pictures && property.property_pictures.length > 0) {
+        property.property_pictures.forEach((picture, index) => {
+            // Create a mock file object for existing images
+            const mockFile = new File([''], `existing-image-${index}.jpg`, { type: 'image/jpeg' });
+            
+            const imageData = {
+                id: Date.now() + index, // Local ID for frontend tracking
+                file: mockFile,
+                description: picture.image_desc || '',
+                isExisting: true,
+                existingId: picture.id, // This should be the actual database ID
+                dataUrl: picture.image_url
+            };
+            
+            // Debug log to check the ID
+            console.log('Loading existing image:', {
+                id: picture.id,
+                imageId: picture.image_id,
+                url: picture.image_url
+            });
+            
+            editShowcaseImages.push(imageData);
+        });
+    }
+    
+    renderEditShowcasePreview();
+}
+
+function renderEditShowcasePreview() {
+    const previewGrid = document.getElementById('editShowcasePreviewGrid');
+    const uploadPrompt = document.getElementById('editShowcaseUploadPrompt');
+    const addMoreSection = document.getElementById('editShowcaseAddMore');
+    const currentCount = document.getElementById('editCurrentImageCount');
+
+    // Update count
+    if (currentCount) {
+        currentCount.textContent = editShowcaseImages.length;
+    }
+
+    if (editShowcaseImages.length === 0) {
+        uploadPrompt.style.display = 'block';
+        addMoreSection.style.display = 'none';
+        previewGrid.innerHTML = '';
+        previewGrid.className = 'showcase-preview-grid';
+        return;
+    }
+
+    uploadPrompt.style.display = 'none';
+    addMoreSection.style.display = editShowcaseImages.length < MAX_SHOWCASE_IMAGES ? 'flex' : 'none';
+
+    // Update grid class based on count
+    previewGrid.className = `showcase-preview-grid count-${editShowcaseImages.length}`;
+
+    // Render images
+    previewGrid.innerHTML = editShowcaseImages.map((imageData, index) => `
+        <div class="showcase-image-card ${imageData.isNew ? 'new' : ''}" data-image-id="${imageData.id}">
+            <div class="showcase-image-number">${index + 1}</div>
+            <img src="${imageData.dataUrl}" class="showcase-image-preview" alt="Showcase image ${index + 1}">
+            <div class="showcase-image-info">
+                <textarea 
+                    class="showcase-image-description" 
+                    placeholder="Add a description for this image..."
+                    data-image-id="${imageData.id}"
+                >${imageData.description}</textarea>
+                <div class="showcase-image-actions">
+                    <button type="button" class="showcase-remove-btn" onclick="removeEditShowcaseImage('${imageData.id}')">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    // Add event listeners for description changes
+    previewGrid.querySelectorAll('.showcase-image-description').forEach(textarea => {
+        textarea.addEventListener('input', (e) => {
+            const imageId = e.target.dataset.imageId;
+            const imageData = editShowcaseImages.find(img => img.id == imageId);
+            if (imageData) {
+                imageData.description = e.target.value;
+            }
+        });
+    });
+
+    // Remove new class after animation
+    setTimeout(() => {
+        previewGrid.querySelectorAll('.showcase-image-card.new').forEach(card => {
+            card.classList.remove('new');
+        });
+    }, 300);
+}
+
+
+function removeEditShowcaseImage(imageId) {
+    const imageToRemove = editShowcaseImages.find(img => img.id == imageId);
+    
+    if (imageToRemove && imageToRemove.isExisting && imageToRemove.existingId) {
+        
+        const validId = parseInt(imageToRemove.existingId);
+        if (!isNaN(validId) && validId > 0) {
+            deletedShowcaseImages.push(validId);
+            console.log('Added image to deletion list:', validId);
+        } else {
+            console.warn('Invalid existing image ID:', imageToRemove.existingId);
+        }
+    }
+    
+    
+    editShowcaseImages = editShowcaseImages.filter(img => img.id != imageId);
+    renderEditShowcasePreview();
+}
+
+
+function getEditShowcaseImagesForSubmission() {
+    const newImages = editShowcaseImages.filter(img => !img.isExisting);
+    const updatedImages = editShowcaseImages.filter(img => img.isExisting && img.existingId);
+    const deletedImages = deletedShowcaseImages.filter(id => id && id !== 'undefined' && !isNaN(id));
+    
+    console.log('Getting showcase data:', {
+        totalImages: editShowcaseImages.length,
+        newImages: newImages.length,
+        updatedImages: updatedImages.length,
+        deletedImages: deletedImages.length,
+        deletedImageIds: deletedImages
+    });
+    
+    return {
+        newImages: newImages.map(imageData => ({
+            file: imageData.file,
+            description: imageData.description
+        })),
+        updatedImages: updatedImages.map(imageData => ({
+            existingId: imageData.existingId,
+            description: imageData.description
+        })),
+        deletedImages: deletedImages
+    };
+}
+
+
+
+
+// Setup edit inline form
+function setupEditInlineForm() {
+    if (editInlineFormHandler) return; // Already setup
+    
+    // Setup image upload
+    setupEditInlineImageUpload();
+    
+    // Setup image showcase
+    setupEditImageShowcase();
+    
+    // Setup address handlers
+    setupEditInlineAddressHandlers();
+    
+    // Setup real-time validation for edit form
+    setupEditRealTimeValidation();
+    
+    // Setup form submission
+    const form = document.getElementById('inlineEditPropertyForm');
+    form.addEventListener('submit', handleEditInlineFormSubmit);
+    
+    // Load existing addresses
+    loadEditInlineAddresses();
+    
+    editInlineFormHandler = true;
+}
+
+
+// Populate edit form with property data
+function populateEditForm(propertyId) {
+    // Clear deleted images list when starting to edit a property
+    deletedShowcaseImages = [];
+    
+    const property = properties.find(p => p.id === propertyId);
+    if (!property) {
+        console.error('Property not found:', propertyId);
+        return;
+    }
+
+    console.log('Populating edit form with property:', property);
+
+    // Populate basic property fields
+    const fieldMappings = {
+        'editPropertyName': property.property_name,
+        'editFloorArea': property.floor_area_sqm,
+        'editPropertyStatus': mapStatusToBackend(property.status),
+        'editBaseRent': property.base_rent,
+        'editPropertyTaxes': property.property_taxes_quarterly,
+        'editSecurityDeposit': property.security_deposit_months,
+        'editLeaseTerm': property.minimum_lease_term_months,
+        'editDescription': property.description || ''
+    };
+
+    // Populate each field
+    Object.entries(fieldMappings).forEach(([fieldId, value]) => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.value = value || '';
+            console.log(`Set ${fieldId} to:`, value);
+        } else {
+            console.warn(`Field ${fieldId} not found`);
+        }
+    });
+
+    // Populate address field
+    const addressSelect = document.getElementById('editInlineAddressSelect');
+    if (addressSelect && property.address_id) {
+        addressSelect.value = property.address_id;
+        console.log('Set address to:', property.address_id);
+    }
+
+    // Set existing display image
+    const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+    if (uploadContainer && uploadContainer.setExistingImage) {
+        uploadContainer.setExistingImage(property.display_image);
+        console.log('Set display image to:', property.display_image);
+    }
+
+    // Load existing showcase images
+    loadExistingShowcaseImages(property);
+    
+    console.log('Edit form populated successfully');
+}
+
+// Update resetEditInlineForm to properly reset display image
+function resetEditInlineForm() {
+    const form = document.getElementById('inlineEditPropertyForm');
+    if (form) {
+        form.reset();
+    }
+    
+    // Clear all validation errors
+    clearAllEditErrors();
+    
+    // Reset display image upload
+    const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+    if (uploadContainer && uploadContainer.reset) {
+        uploadContainer.reset();
+    }
+    
+    // Reset showcase images
+    editShowcaseImages = [];
+    deletedShowcaseImages = [];
+    renderEditShowcasePreview();
+    
+    // Reset address form
+    clearEditInlineAddressForm();
+    const newAddressForm = document.getElementById('editInlineNewAddressForm');
+    const addNewAddressBtn = document.getElementById('editInlineAddNewAddressBtn');
+    if (newAddressForm) newAddressForm.style.display = 'none';
+    if (addNewAddressBtn) addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+}
+
+function validateImage(file) {
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+        showInlineErrorMessage(`${file.name} is not a valid image file (JPG, PNG, GIF)`);
+        return false;
+    }
+
+    // Check file size (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showInlineErrorMessage(`${file.name} is too large. Maximum file size is 5MB`);
+        return false;
+    }
+
+    return true;
+}
+
+
+// Setup edit image upload
+function setupEditInlineImageUpload() {
+    const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+    const uploadPrompt = document.getElementById('editInlineUploadPrompt');
+    const imagePreview = document.getElementById('editInlineImagePreview');
+    const previewImage = document.getElementById('editInlinePreviewImage');
+    const fileInput = document.getElementById('editInlineDisplayImageInput');
+    const removeBtn = document.getElementById('editInlineRemoveImageBtn');
+    const changeBtn = document.getElementById('editInlineChangeImageBtn');
+
+    if (!uploadContainer || !uploadPrompt || !imagePreview || !previewImage || !fileInput) {
+        console.warn('Edit inline image upload elements not found');
+        return;
+    }
+
+    let uploadedFile = null;
+    let shouldRemoveExistingImage = false; // Flag to track if existing image should be removed
+
+    // Click handlers
+    uploadPrompt.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    if (changeBtn) {
+        changeBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+    }
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+            // Clear uploaded file
+            uploadedFile = null;
+            fileInput.value = '';
+            
+            // Mark existing image for removal
+            shouldRemoveExistingImage = true;
+            
+            // Hide preview and show upload prompt
+            imagePreview.style.display = 'none';
+            uploadPrompt.style.display = 'block';
+            
+            console.log('Display image marked for removal');
+        });
+    }
+
+    // File input change handler
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Reset removal flag when new image is selected
+            shouldRemoveExistingImage = false;
+            
+            if (validateImage(file)) {
+                uploadedFile = file;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                    uploadPrompt.style.display = 'none';
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+
+    // Expose functions for form submission
+    uploadContainer.getUploadedImage = () => uploadedFile;
+    uploadContainer.shouldRemoveImage = () => shouldRemoveExistingImage;
+    
+    // Function to reset the upload container
+    uploadContainer.reset = () => {
+        uploadedFile = null;
+        shouldRemoveExistingImage = false;
+        fileInput.value = '';
+        imagePreview.style.display = 'none';
+        uploadPrompt.style.display = 'block';
+    };
+    
+    // Function to set existing image for editing
+    uploadContainer.setExistingImage = (imageUrl) => {
+        if (imageUrl) {
+            shouldRemoveExistingImage = false;
+            previewImage.src = imageUrl;
+            uploadPrompt.style.display = 'none';
+            imagePreview.style.display = 'block';
+        } else {
+            uploadPrompt.style.display = 'block';
+            imagePreview.style.display = 'none';
+        }
+    };
+}
+function setupEditInlineImageUpload() {
+    const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+    const uploadPrompt = document.getElementById('editInlineUploadPrompt');
+    const imagePreview = document.getElementById('editInlineImagePreview');
+    const previewImage = document.getElementById('editInlinePreviewImage');
+    const fileInput = document.getElementById('editInlineDisplayImageInput');
+    const removeBtn = document.getElementById('editInlineRemoveImageBtn');
+    const changeBtn = document.getElementById('editInlineChangeImageBtn');
+
+    if (!uploadContainer || !uploadPrompt || !imagePreview || !previewImage || !fileInput) {
+        console.warn('Edit inline image upload elements not found');
+        return;
+    }
+
+    let uploadedFile = null;
+    let shouldRemoveExistingImage = false; // Flag to track if existing image should be removed
+
+    // Click handlers
+    uploadPrompt.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    if (changeBtn) {
+        changeBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+    }
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+            // Clear uploaded file
+            uploadedFile = null;
+            fileInput.value = '';
+            
+            // Mark existing image for removal
+            shouldRemoveExistingImage = true;
+            
+            // Hide preview and show upload prompt
+            imagePreview.style.display = 'none';
+            uploadPrompt.style.display = 'block';
+            
+            console.log('Display image marked for removal');
+        });
+    }
+
+    // Drag and drop handlers
+    uploadContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadContainer.style.borderColor = '#3b82f6';
+        uploadContainer.style.background = '#eff6ff';
+    });
+
+    uploadContainer.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadContainer.style.borderColor = '#cbd5e0';
+        uploadContainer.style.background = '#f9fafb';
+    });
+
+    uploadContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadContainer.style.borderColor = '#cbd5e0';
+        uploadContainer.style.background = '#f9fafb';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleEditImageFile(files[0]);
+        }
+    });
+
+    // File input change handler
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleEditImageFile(file);
+        }
+    });
+
+    // Function to handle image file processing
+    function handleEditImageFile(file) {
+        console.log('Processing edit image file:', file.name);
+        
+        // Reset removal flag when new image is selected
+        shouldRemoveExistingImage = false;
+        
+        if (validateImage(file)) {
+            uploadedFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                console.log('Image loaded, updating preview');
+                previewImage.src = e.target.result;
+                uploadPrompt.style.display = 'none';
+                imagePreview.style.display = 'block';
+            };
+            reader.onerror = (e) => {
+                console.error('Error reading file:', e);
+                showInlineErrorMessage('Error reading image file');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // Clear the input if validation fails
+            fileInput.value = '';
+            uploadedFile = null;
+        }
+    }
+
+    // Expose functions for form submission
+    uploadContainer.getUploadedImage = () => uploadedFile;
+    uploadContainer.shouldRemoveImage = () => shouldRemoveExistingImage;
+    
+    // Function to reset the upload container
+    uploadContainer.reset = () => {
+        uploadedFile = null;
+        shouldRemoveExistingImage = false;
+        fileInput.value = '';
+        imagePreview.style.display = 'none';
+        uploadPrompt.style.display = 'block';
+        console.log('Edit image upload container reset');
+    };
+    
+    // Function to set existing image for editing
+    uploadContainer.setExistingImage = (imageUrl) => {
+        console.log('Setting existing image:', imageUrl);
+        if (imageUrl) {
+            shouldRemoveExistingImage = false;
+            uploadedFile = null; // Clear any uploaded file
+            previewImage.src = imageUrl;
+            uploadPrompt.style.display = 'none';
+            imagePreview.style.display = 'block';
+        } else {
+            uploadPrompt.style.display = 'block';
+            imagePreview.style.display = 'none';
+        }
+    };
+
+    console.log('Edit inline image upload setup completed');
+}
+
 
 // Setup edit address handlers (similar to add form)
 function setupEditInlineAddressHandlers() {
@@ -2182,95 +2654,154 @@ function loadEditInlineAddresses() {
 
 
 async function handleEditInlineFormSubmit(event) {
-  event.preventDefault();
-  
-  // Validate form before submission
-  if (!validateEditForm()) {
+    event.preventDefault();
+    
+    // Validate form before submission
+    if (!validateEditForm()) {
+        const submitBtn = document.getElementById('editInlineSubmitBtn');
+        submitBtn.style.animation = 'shake 0.5s ease-in-out';
+        setTimeout(() => {
+            submitBtn.style.animation = '';
+        }, 500);
+        
+        showInlineErrorMessage('Please fix the validation errors before submitting.');
+        return;
+    }
+    
     const submitBtn = document.getElementById('editInlineSubmitBtn');
-    submitBtn.style.animation = 'shake 0.5s ease-in-out';
-    setTimeout(() => {
-      submitBtn.style.animation = '';
-    }, 500);
+    const originalText = submitBtn.innerHTML;
     
-    showInlineErrorMessage('Please fix the validation errors before submitting.');
-    return;
-  }
-  
-  const submitBtn = document.getElementById('editInlineSubmitBtn');
-  const originalText = submitBtn.innerHTML;
-  
-  try {
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Updating Property...';
+    try {
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Updating Property...';
 
-    // Create FormData
-    const formData = new FormData(event.target);
-    
-    // Handle address data
-    const addressSelect = document.getElementById('editInlineAddressSelect');
-    if (addressSelect.value && addressSelect.value !== '') {
-      if (addressSelect.value.startsWith('temp_')) {
-        // New address
-        const selectedOption = addressSelect.options[addressSelect.selectedIndex];
-        const addressData = JSON.parse(selectedOption.dataset.addressData);
+        // Create FormData
+        const formData = new FormData(event.target);
         
-        // Remove temp data
-        delete addressData.address_id;
-        delete addressData.is_new;
+        // Handle address data (existing logic)
+        const addressSelect = document.getElementById('editInlineAddressSelect');
+        if (addressSelect.value && addressSelect.value !== '') {
+            if (addressSelect.value.startsWith('temp_')) {
+                // New address
+                const selectedOption = addressSelect.options[addressSelect.selectedIndex];
+                const addressData = JSON.parse(selectedOption.dataset.addressData);
+                
+                // Remove temp data
+                delete addressData.address_id;
+                delete addressData.is_new;
+                
+                // Add address fields to form data
+                Object.entries(addressData).forEach(([key, value]) => {
+                    if (value && value.trim()) {
+                        formData.append(key, value);
+                    }
+                });
+                
+                formData.delete('address_id');
+            } else {
+                // Existing address
+                formData.set('address_id', addressSelect.value);
+            }
+        } else {
+            formData.delete('address_id');
+        }
         
-        // Add address fields to form data
-        Object.entries(addressData).forEach(([key, value]) => {
-          if (value && value.trim()) {
-            formData.append(key, value);
-          }
+        // Handle display image
+        const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+        const uploadedImage = uploadContainer.getUploadedImage();
+        const shouldRemoveImage = uploadContainer.shouldRemoveImage();
+        
+        if (uploadedImage) {
+            // New image uploaded
+            formData.set('display_image', uploadedImage);
+        } else if (shouldRemoveImage) {
+            // Mark existing image for removal
+            formData.set('remove_display_image', 'true');
+        }
+
+        console.log('Display image handling:', {
+            hasNewImage: !!uploadedImage,
+            shouldRemove: shouldRemoveImage
         });
+
+        // Add showcase images data with validation
+        const showcaseData = getEditShowcaseImagesForSubmission();
         
-        formData.delete('address_id');
-      } else {
-        // Existing address
-        formData.set('address_id', addressSelect.value);
-      }
-    } else {
-      formData.delete('address_id');
-    }
-    
-    // Add uploaded image
-    const uploadContainer = document.getElementById('editInlineImageUploadContainer');
-    const uploadedImage = uploadContainer.getUploadedImage();
-    if (uploadedImage) {
-      formData.set('display_image', uploadedImage);
-    }
+        console.log('Showcase data being sent:', showcaseData);
+        
+        // Add new images
+        if (showcaseData.newImages && showcaseData.newImages.length > 0) {
+            showcaseData.newImages.forEach((imageData) => {
+                formData.append('showcase_images', imageData.file);
+                formData.append('showcase_descriptions', imageData.description);
+            });
+        }
+        
+        // Add updated existing images - only if we have valid IDs
+        if (showcaseData.updatedImages && showcaseData.updatedImages.length > 0) {
+            showcaseData.updatedImages.forEach((imageData) => {
+                const validId = parseInt(imageData.existingId);
+                if (!isNaN(validId) && validId > 0) {
+                    formData.append('existing_image_ids', validId);
+                    formData.append('existing_descriptions', imageData.description);
+                } else {
+                    console.warn('Skipping invalid existing image ID:', imageData.existingId);
+                }
+            });
+        }
+        
+        // Add deleted images - only valid numeric IDs
+        if (showcaseData.deletedImages && showcaseData.deletedImages.length > 0) {
+            showcaseData.deletedImages.forEach((deletedId) => {
+                const validId = parseInt(deletedId);
+                if (!isNaN(validId) && validId > 0) {
+                    formData.append('deleted_image_ids', validId);
+                } else {
+                    console.warn('Skipping invalid deleted image ID:', deletedId);
+                }
+            });
+        }
 
-    const response = await fetch(`${API_BASE_URL}/${currentEditPropertyId}`, {
-      method: "PATCH",
-      body: formData,
-    });
+        // Debug: Log what's being sent
+        console.log('Form data entries being sent:');
+        for (let [key, value] of formData.entries()) {
+            if (key.includes('image') || key.includes('description')) {
+                console.log(key, typeof value === 'object' ? '[File Object]' : value);
+            } else {
+                console.log(key, value);
+            }
+        }
 
-    if (response.ok) {
-      const result = await response.json();
-      console.log("Property updated successfully:", result);
-      
-      showInlineSuccessMessage("Property updated successfully!");
-      
-      // Navigate directly to properties list without confirmation
-      setTimeout(() => {
-        navigateToPropertiesListDirectly();
-        loadProperties();
-      }, 1500);
-      
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Server error: ${response.status}`);
+        const response = await fetch(`${API_BASE_URL}/${currentEditPropertyId}`, {
+            method: "PATCH",
+            body: formData,
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log("Property updated successfully:", result);
+            
+            showInlineSuccessMessage("Property updated successfully!");
+            
+            // Navigate directly to properties list without confirmation
+            setTimeout(() => {
+                navigateToPropertiesListDirectly();
+                loadProperties();
+            }, 1500);
+            
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+    } catch (error) {
+        console.error("Error updating property:", error);
+        showInlineErrorMessage(error.message || "Failed to update property. Please try again.");
+    } finally {
+        // Restore button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     }
-  } catch (error) {
-    console.error("Error updating property:", error);
-    showInlineErrorMessage(error.message || "Failed to update property. Please try again.");
-  } finally {
-    // Restore button state
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = originalText;
-  }
 }
 
 
@@ -2357,35 +2888,29 @@ function setupInlineImageUpload() {
   });
 
   function handleInlineImageFile(file) {
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please select a valid image file (JPG, PNG)');
-      return;
+    // Use the shared validateImage function
+    if (validateImage(file)) {
+      uploadedImage = file;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        uploadPrompt.style.display = 'none';
+        imagePreview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Clear the input if validation fails
+      fileInput.value = '';
+      uploadedImage = null;
     }
-
-    // Validate file size (5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert('Image size must be less than 5MB');
-      return;
-    }
-
-    uploadedImage = file;
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      previewImage.src = e.target.result;
-      uploadPrompt.style.display = 'none';
-      imagePreview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
   }
 
   // Store reference for form submission
   uploadContainer.getUploadedImage = () => uploadedImage;
 }
+
 
 function setupInlineAddressHandlers() {
   const addNewAddressBtn = document.getElementById('inlineAddNewAddressBtn');
@@ -2598,7 +3123,6 @@ async function handleInlineFormSubmit(event) {
 
     if (response.ok) {
       const result = await response.json();
-      console.log("Property created successfully:", result);
       
       showInlineSuccessMessage("Property added successfully!");
       
@@ -2671,6 +3195,10 @@ function resetInlineFormSilently() {
   if (newAddressForm) newAddressForm.style.display = 'none';
   if (addNewAddressBtn) addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
 }
+
+
+
+
 
 
 
@@ -3128,32 +3656,40 @@ function setupEditRealTimeValidation() {
   });
 }
 
+
 function resetEditInlineForm() {
-  const form = document.getElementById('inlineEditPropertyForm');
-  if (form) {
-    form.reset();
-  }
-  
-  // Clear all validation errors
-  clearAllEditErrors();
-  
-  // Reset image upload
-  const uploadContainer = document.getElementById('editInlineImageUploadContainer');
-  const uploadPrompt = document.getElementById('editInlineUploadPrompt');
-  const imagePreview = document.getElementById('editInlineImagePreview');
-  const fileInput = document.getElementById('editInlineDisplayImageInput');
-  
-  if (fileInput) fileInput.value = '';
-  if (uploadPrompt) uploadPrompt.style.display = 'block';
-  if (imagePreview) imagePreview.style.display = 'none';
-  
-  // Reset address form
-  clearEditInlineAddressForm();
-  const newAddressForm = document.getElementById('editInlineNewAddressForm');
-  const addNewAddressBtn = document.getElementById('editInlineAddNewAddressBtn');
-  if (newAddressForm) newAddressForm.style.display = 'none';
-  if (addNewAddressBtn) addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+    const form = document.getElementById('inlineEditPropertyForm');
+    if (form) {
+        form.reset();
+    }
+    
+    // Clear all validation errors
+    clearAllEditErrors();
+    
+    // Reset display image upload
+    const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+    const uploadPrompt = document.getElementById('editInlineUploadPrompt');
+    const imagePreview = document.getElementById('editInlineImagePreview');
+    const fileInput = document.getElementById('editInlineDisplayImageInput');
+    
+    if (fileInput) fileInput.value = '';
+    if (uploadPrompt) uploadPrompt.style.display = 'block';
+    if (imagePreview) imagePreview.style.display = 'none';
+    
+    // Reset showcase images
+    editShowcaseImages = [];
+    deletedShowcaseImages = []; // Clear deleted images list
+    renderEditShowcasePreview();
+    
+    // Reset address form
+    clearEditInlineAddressForm();
+    const newAddressForm = document.getElementById('editInlineNewAddressForm');
+    const addNewAddressBtn = document.getElementById('editInlineAddNewAddressBtn');
+    if (newAddressForm) newAddressForm.style.display = 'none';
+    if (addNewAddressBtn) addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
 }
+
+
 
 // Update navigateToPropertiesListDirectly to handle edit state
 function navigateToPropertiesListDirectly() {

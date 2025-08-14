@@ -135,6 +135,42 @@
                                     accept="image/*" style="display: none;">
                             </div>
 
+                            <!-- Image Showcase Section for Edit Form -->
+                            <div class="form-section">
+                                <h4><i class="fas fa-images me-2"></i>Property Image Showcase</h4>
+                                <p class="section-description">Add up to 10 additional images to showcase your property
+                                    (separate from the main display image)</p>
+
+                                <div id="editImageShowcaseContainer" class="image-showcase-container">
+                                    <div id="editShowcaseUploadPrompt" class="showcase-upload-prompt">
+                                        <div class="upload-icon">
+                                            <i class="fas fa-camera-retro"></i>
+                                        </div>
+                                        <div class="upload-text">Click to add showcase images</div>
+                                        <div class="upload-hint">Upload multiple images to create an attractive property
+                                            gallery</div>
+                                        <div class="upload-limit">Maximum 10 images • JPG, PNG • Max 5MB each</div>
+                                    </div>
+
+                                    <input type="file" id="editShowcaseImageInput" accept="image/*" multiple
+                                        style="display: none;">
+
+                                    <div id="editShowcasePreviewGrid" class="showcase-preview-grid">
+                                        <!-- Existing and new images will be displayed here -->
+                                    </div>
+
+                                    <div id="editShowcaseAddMore" class="showcase-add-more" style="display: none;">
+                                        <button type="button" id="editAddMoreImagesBtn"
+                                            class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-plus me-1"></i> Add More Images
+                                        </button>
+                                        <span class="image-count-info">
+                                            <span id="editCurrentImageCount">0</span> / 10 images
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Property Details -->
                             <div class="form-section">
                                 <h4><i class="fas fa-info-circle me-2"></i>Property Details</h4>
@@ -324,6 +360,8 @@
                                 <input type="file" id="inlineDisplayImageInput" name="display_image" accept="image/*"
                                     style="display: none;">
                             </div>
+
+
 
                             <!-- Property Details -->
                             <div class="form-section">
