@@ -347,6 +347,7 @@ const getSinglePropertyById = async (property_id = "") => {
     }
 };
 
+
 const editPropertyById = async (property_id = "", propertyData = {}) => {
     try {
         if (!property_id) {
@@ -356,7 +357,58 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
         // First check if property exists
         await getSinglePropertyById(property_id);
         
-        // Build dynamic update query
+        // Extract address fields from propertyData
+        const {
+            street,
+            barangay,
+            city,
+            province,
+            postal_code,
+            country,
+            address_id,
+            ...otherPropertyData
+        } = propertyData;
+        
+        let finalAddressId = address_id;
+        
+        // Check if we need to create a new address (same logic as createProperty)
+        if (!address_id && (street || city)) {
+            console.log('Creating new address during property edit...');
+            
+            // Prepare address data (no address_id since it's auto-increment)
+            const newAddress = {
+                street: street || null,
+                barangay: barangay || null,
+                city: city || null,
+                province: province || null,
+                postal_code: postal_code || null,
+                country: country || 'Philippines'
+            };
+
+            // Remove undefined values from address
+            Object.keys(newAddress).forEach(
+                (key) => newAddress[key] === undefined && delete newAddress[key]
+            );
+
+            console.log('Creating address with data:', newAddress);
+
+            // Create address first (let MySQL auto-increment the address_id)
+            const addressFields = Object.keys(newAddress).join(", ");
+            const addressPlaceholders = Object.keys(newAddress).map(() => "?").join(", ");
+            const addressValues = Object.values(newAddress);
+
+            const addressQuery = `INSERT INTO addresses (${addressFields}, created_at, updated_at) VALUES (${addressPlaceholders}, NOW(), NOW())`;
+            console.log('Address query:', addressQuery);
+            console.log('Address values:', addressValues);
+            
+            const [addressResult] = await pool.query(addressQuery, addressValues);
+
+            // Get the auto-generated address_id
+            finalAddressId = addressResult.insertId;
+            console.log('Address created successfully with ID:', finalAddressId);
+        }
+        
+        // Build dynamic update query for property
         const updateFields = [];
         const values = [];
         
@@ -369,25 +421,31 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
             'base_rent',
             'property_taxes_quarterly',
             'security_deposit_months',
-            'minimum_lease_term_months',
-            'address_id'
+            'minimum_lease_term_months'
         ];
         
+        // Process regular property fields
         allowedFields.forEach(field => {
-            if (propertyData[field] !== undefined) {
+            if (otherPropertyData[field] !== undefined) {
                 updateFields.push(`${field} = ?`);
                 
                 // Convert numeric fields appropriately
                 if (field === 'base_rent' || field === 'property_taxes_quarterly' || 
                     field === 'security_deposit_months' || field === 'floor_area_sqm') {
-                    values.push(propertyData[field] ? parseFloat(propertyData[field]) : null);
+                    values.push(otherPropertyData[field] ? parseFloat(otherPropertyData[field]) : null);
                 } else if (field === 'minimum_lease_term_months') {
-                    values.push(propertyData[field] ? parseInt(propertyData[field]) : null);
+                    values.push(otherPropertyData[field] ? parseInt(otherPropertyData[field]) : null);
                 } else {
-                    values.push(propertyData[field]);
+                    values.push(otherPropertyData[field]);
                 }
             }
         });
+        
+        // Add address_id to update (whether it's new or existing)
+        if (finalAddressId !== undefined) {
+            updateFields.push('address_id = ?');
+            values.push(finalAddressId);
+        }
         
         if (updateFields.length === 0) {
             throw new Error("No valid fields to update");
@@ -404,6 +462,9 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
         
         values.push(property_id);
         
+        console.log('Property update query:', query);
+        console.log('Property update values:', values);
+        
         const [result] = await pool.query(query, values);
         
         if (result.affectedRows === 0) {
@@ -416,13 +477,16 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
         return {
             message: `Property ${property_id} has been successfully updated!`,
             property: updatedProperty.property,
-            changedRows: result.changedRows
+            changedRows: result.changedRows,
+            newAddressCreated: finalAddressId && !address_id ? true : false,
+            newAddressId: finalAddressId && !address_id ? finalAddressId : null
         };
     } catch (error) {
         console.error("Error updating property:", error);
         throw new Error(error.message || "Failed to update property");
     }
 };
+
 
 const deletePropertyById = async (property_id = "") => {
     try {

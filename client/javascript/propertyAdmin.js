@@ -6,6 +6,14 @@ let editUploadedImages = [];
 let currentDetailImageIndex = 0;
 let currentPropertyImages = [];
 
+// Global state for form management
+let isAddingProperty = false;
+let inlineFormHandler = null;
+
+let isEditingProperty = false;
+let currentEditPropertyId = null;
+let editInlineFormHandler = null;
+
 // API Configuration
 const API_BASE_URL = "/api/v1/properties";
 
@@ -1544,21 +1552,15 @@ function hideLoadingState() {
   // Properties will be rendered by renderProperties()
 }
 
-// Updated modal functions using the new system
 function openAddModal() {
-  console.log("openAddModal called");
-  if (!addPropertyModal) {
-    addPropertyModal = new AddPropertyModal();
-  }
-  addPropertyModal.show();
+  showAddPropertyForm();
 }
 
 function closeAddModal() {
-  if (addPropertyModal) {
-    addPropertyModal.close();
-  }
+  hideAddPropertyForm();
 }
 
+// Update openEditModal to use inline form instead
 function openEditModal(id) {
   console.log("openEditModal called with id:", id);
   const property = properties.find((p) => p.id === id);
@@ -1567,17 +1569,15 @@ function openEditModal(id) {
     return;
   }
 
-  if (!editPropertyModal) {
-    editPropertyModal = new EditPropertyModal();
-  }
-  editPropertyModal.show(property);
+  // Use inline form instead of modal
+  showEditPropertyForm(id);
 }
 
+
 function closeEditModal() {
-  if (editPropertyModal) {
-    editPropertyModal.close();
-  }
+  hideEditPropertyForm();
 }
+
 
 function showPropertyDetails(id) {
   console.log("showPropertyDetails called with id:", id);
@@ -1736,11 +1736,1451 @@ async function filterByStatus(status) {
   closeAllDropdowns();
 }
 
-// Test functions
-window.testSimpleModal = function () {
-  console.log("Testing simple modal...");
-  openAddModal();
+
+// Navigation functions
+function showAddPropertyForm() {
+  isAddingProperty = true;
+  updateBreadcrumb();
+  showFormContainer();
+  setupInlineForm();
+}
+
+// Update the hideAddPropertyForm function to ensure proper reset
+function hideAddPropertyForm() {
+  if (confirm('Are you sure you want to cancel? All entered data will be lost.')) {
+    isAddingProperty = false;
+    updateBreadcrumb();
+    showPropertiesGrid();
+    resetInlineForm();
+    
+    // Ensure proper visibility reset
+    const addPropertyBtn = document.querySelector('.new-ticket-btn');
+    const propertyControls = document.getElementById('propertyControls');
+    
+    if (addPropertyBtn) addPropertyBtn.style.display = 'flex';
+    if (propertyControls) propertyControls.style.display = 'flex';
+  }
+}
+
+function updateBreadcrumb() {
+  const breadcrumbNav = document.getElementById('breadcrumbNav');
+  const propertyControls = document.getElementById('propertyControls');
+  const addPropertyBtn = document.querySelector('.new-ticket-btn');
+  
+  if (isAddingProperty) {
+    breadcrumbNav.innerHTML = `
+      <li class="breadcrumb-item">
+        <a href="#" onclick="hideAddPropertyForm()">
+          <i class="fas fa-home me-2"></i>Properties
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="fas fa-plus me-2"></i>Add New Property
+      </li>
+    `;
+    propertyControls.style.display = 'none';
+    addPropertyBtn.style.display = 'none';
+  } else if (isEditingProperty) {
+    const property = properties.find(p => p.id === currentEditPropertyId);
+    const propertyName = property ? property.property_name : 'Property';
+    
+    breadcrumbNav.innerHTML = `
+      <li class="breadcrumb-item">
+        <a href="#" onclick="hideEditPropertyForm()">
+          <i class="fas fa-home me-2"></i>Properties
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="fas fa-edit me-2"></i>Edit ${propertyName}
+      </li>
+    `;
+    propertyControls.style.display = 'none';
+    addPropertyBtn.style.display = 'none';
+  } else {
+    breadcrumbNav.innerHTML = `
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="fas fa-home me-2"></i>Properties
+      </li>
+    `;
+    propertyControls.style.display = 'flex';
+    addPropertyBtn.style.display = 'flex';
+  }
+}
+
+// Add new functions for edit form management
+function showEditPropertyForm(propertyId) {
+  isEditingProperty = true;
+  currentEditPropertyId = propertyId;
+  updateBreadcrumb();
+  showEditFormContainer();
+  setupEditInlineForm();
+  populateEditForm(propertyId);
+}
+
+function hideEditPropertyForm() {
+  if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
+    isEditingProperty = false;
+    currentEditPropertyId = null;
+    updateBreadcrumb();
+    showPropertiesGrid();
+    resetEditInlineForm();
+    
+    // Ensure proper visibility reset
+    const addPropertyBtn = document.querySelector('.new-ticket-btn');
+    const propertyControls = document.getElementById('propertyControls');
+    
+    if (addPropertyBtn) addPropertyBtn.style.display = 'flex';
+    if (propertyControls) propertyControls.style.display = 'flex';
+  }
+}
+
+function showEditFormContainer() {
+  document.getElementById('propertiesGrid').style.display = 'none';
+  document.getElementById('addPropertyFormContainer').style.display = 'none';
+  document.getElementById('editPropertyFormContainer').style.display = 'block';
+  
+  // Ensure Add Property button is hidden
+  const addPropertyBtn = document.querySelector('.new-ticket-btn');
+  if (addPropertyBtn) {
+    addPropertyBtn.style.display = 'none';
+  }
+}
+
+function showFormContainer() {
+  document.getElementById('propertiesGrid').style.display = 'none';
+  document.getElementById('addPropertyFormContainer').style.display = 'block';
+  
+  // Ensure Add Property button is hidden
+  const addPropertyBtn = document.querySelector('.new-ticket-btn');
+  if (addPropertyBtn) {
+    addPropertyBtn.style.display = 'none';
+  }
+}
+
+function showPropertiesGrid() {
+  document.getElementById('addPropertyFormContainer').style.display = 'none';
+  document.getElementById('propertiesGrid').style.display = 'grid';
+  
+  // Show Add Property button
+  const addPropertyBtn = document.querySelector('.new-ticket-btn');
+  if (addPropertyBtn) {
+    addPropertyBtn.style.display = 'flex';
+  }
+}
+
+
+function showPropertiesGrid() {
+  document.getElementById('addPropertyFormContainer').style.display = 'none';
+  document.getElementById('editPropertyFormContainer').style.display = 'none';
+  document.getElementById('propertiesGrid').style.display = 'grid';
+  
+  // Show Add Property button
+  const addPropertyBtn = document.querySelector('.new-ticket-btn');
+  if (addPropertyBtn) {
+    addPropertyBtn.style.display = 'flex';
+  }
+}
+
+// Setup edit inline form
+function setupEditInlineForm() {
+  if (editInlineFormHandler) return; // Already setup
+  
+  // Setup image upload
+  setupEditInlineImageUpload();
+  
+  // Setup address handlers
+  setupEditInlineAddressHandlers();
+  
+  // Setup real-time validation for edit form
+  setupEditRealTimeValidation();
+  
+  // Setup form submission
+  const form = document.getElementById('inlineEditPropertyForm');
+  form.addEventListener('submit', handleEditInlineFormSubmit);
+  
+  // Load existing addresses
+  loadEditInlineAddresses();
+  
+  editInlineFormHandler = true;
+}
+
+// Populate edit form with property data
+function populateEditForm(propertyId) {
+  const property = properties.find(p => p.id === propertyId);
+  if (!property) {
+    console.error('Property not found:', propertyId);
+    return;
+  }
+
+  // Populate basic fields
+  document.getElementById('editPropertyName').value = property.property_name || '';
+  document.getElementById('editFloorArea').value = property.floor_area_sqm || '';
+  document.getElementById('editPropertyStatus').value = mapStatusToBackend(property.status) || '';
+  document.getElementById('editBaseRent').value = property.base_rent || '';
+  document.getElementById('editPropertyTaxes').value = property.property_taxes_quarterly || '';
+  document.getElementById('editSecurityDeposit').value = property.security_deposit_months || '';
+  document.getElementById('editLeaseTerm').value = property.minimum_lease_term_months || '';
+  document.getElementById('editDescription').value = property.description || '';
+
+  // Handle address selection
+  const addressSelect = document.getElementById('editInlineAddressSelect');
+  if (property.address_id) {
+    addressSelect.value = property.address_id;
+  }
+
+  // Handle existing image
+  if (property.display_image) {
+    const uploadPrompt = document.getElementById('editInlineUploadPrompt');
+    const imagePreview = document.getElementById('editInlineImagePreview');
+    const previewImage = document.getElementById('editInlinePreviewImage');
+    
+    if (uploadPrompt && imagePreview && previewImage) {
+      previewImage.src = property.display_image;
+      uploadPrompt.style.display = 'none';
+      imagePreview.style.display = 'block';
+    }
+  }
+}
+
+// Setup edit image upload
+function setupEditInlineImageUpload() {
+  const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+  const fileInput = document.getElementById('editInlineDisplayImageInput');
+  const uploadPrompt = document.getElementById('editInlineUploadPrompt');
+  const imagePreview = document.getElementById('editInlineImagePreview');
+  const previewImage = document.getElementById('editInlinePreviewImage');
+  const removeImageBtn = document.getElementById('editInlineRemoveImageBtn');
+  const changeImageBtn = document.getElementById('editInlineChangeImageBtn');
+
+  let uploadedImage = null;
+
+  // Click to upload
+  uploadContainer.addEventListener('click', (e) => {
+    if (e.target === uploadContainer || e.target.closest('#editInlineUploadPrompt')) {
+      fileInput.click();
+    }
+  });
+
+  // Drag and drop
+  uploadContainer.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadContainer.style.borderColor = '#f59e0b';
+    uploadContainer.style.background = '#fffbeb';
+  });
+
+  uploadContainer.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    uploadContainer.style.borderColor = '#cbd5e0';
+    uploadContainer.style.background = '#f9fafb';
+  });
+
+  uploadContainer.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadContainer.style.borderColor = '#cbd5e0';
+    uploadContainer.style.background = '#f9fafb';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleEditInlineImageFile(files[0]);
+    }
+  });
+
+  // File input change
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      handleEditInlineImageFile(e.target.files[0]);
+    }
+  });
+
+  // Remove image
+  removeImageBtn.addEventListener('click', () => {
+    uploadedImage = null;
+    fileInput.value = '';
+    uploadPrompt.style.display = 'block';
+    imagePreview.style.display = 'none';
+  });
+
+  // Change image
+  changeImageBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  function handleEditInlineImageFile(file) {
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPG, PNG)');
+      return;
+    }
+
+    // Validate file size (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    uploadedImage = file;
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImage.src = e.target.result;
+      uploadPrompt.style.display = 'none';
+      imagePreview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Store reference for form submission
+  uploadContainer.getUploadedImage = () => uploadedImage;
+}
+
+// Setup edit address handlers (similar to add form)
+function setupEditInlineAddressHandlers() {
+  const addNewAddressBtn = document.getElementById('editInlineAddNewAddressBtn');
+  const newAddressForm = document.getElementById('editInlineNewAddressForm');
+  const saveNewAddressBtn = document.getElementById('editInlineSaveNewAddressBtn');
+  const cancelNewAddressBtn = document.getElementById('editInlineCancelNewAddressBtn');
+  const addressSelect = document.getElementById('editInlineAddressSelect');
+
+  // Show/hide new address form
+  addNewAddressBtn.addEventListener('click', () => {
+    const isVisible = newAddressForm.style.display !== 'none';
+    newAddressForm.style.display = isVisible ? 'none' : 'block';
+    addNewAddressBtn.innerHTML = isVisible ? 
+      '<i class="fas fa-plus me-1"></i> Add New Address' : 
+      '<i class="fas fa-minus me-1"></i> Cancel New Address';
+  });
+
+  // Cancel new address
+  cancelNewAddressBtn.addEventListener('click', () => {
+    clearEditInlineAddressForm();
+    newAddressForm.style.display = 'none';
+    addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+  });
+
+  // Save new address
+  saveNewAddressBtn.addEventListener('click', () => {
+    const newAddress = collectEditInlineAddressData();
+    if (validateEditInlineAddress(newAddress)) {
+      addEditInlineAddressToSelect(newAddress);
+      clearEditInlineAddressForm();
+      newAddressForm.style.display = 'none';
+      addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+      showInlineSuccessMessage('Address prepared! It will be saved when you update the property.');
+    }
+  });
+
+  // When existing address is selected, clear new address form
+  addressSelect.addEventListener('change', () => {
+    if (addressSelect.value) {
+      clearEditInlineAddressForm();
+      newAddressForm.style.display = 'none';
+      addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+    }
+  });
+}
+
+// Helper functions for edit address handling
+function collectEditInlineAddressData() {
+  return {
+    street: document.getElementById('editInlineNewStreet').value.trim(),
+    barangay: document.getElementById('editInlineNewBarangay').value.trim(),
+    city: document.getElementById('editInlineNewCity').value.trim(),
+    province: document.getElementById('editInlineNewProvince').value.trim(),
+    postal_code: document.getElementById('editInlineNewPostalCode').value.trim(),
+    country: document.getElementById('editInlineNewCountry').value.trim()
+  };
+}
+
+function validateEditInlineAddress(address) {
+  const requiredFields = ['street', 'city'];
+  const missingFields = requiredFields.filter(field => !address[field]);
+  
+  if (missingFields.length > 0) {
+    alert(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+    return false;
+  }
+  
+  return true;
+}
+
+function addEditInlineAddressToSelect(newAddress) {
+  const addressSelect = document.getElementById('editInlineAddressSelect');
+  const tempId = 'temp_' + Date.now();
+  
+  const addressWithTempId = {
+    ...newAddress,
+    address_id: tempId,
+    is_new: true
+  };
+
+  const formatted = [
+    newAddress.street,
+    newAddress.barangay,
+    newAddress.city,
+    newAddress.province,
+    newAddress.country
+  ].filter(part => part && part.trim()).join(', ');
+
+  const option = document.createElement('option');
+  option.value = tempId;
+  option.textContent = `${formatted} (New - will be created)`;
+  option.dataset.addressData = JSON.stringify(addressWithTempId);
+  option.selected = true;
+  
+  addressSelect.appendChild(option);
+}
+
+function clearEditInlineAddressForm() {
+  document.getElementById('editInlineNewStreet').value = '';
+  document.getElementById('editInlineNewBarangay').value = '';
+  document.getElementById('editInlineNewCity').value = '';
+  document.getElementById('editInlineNewProvince').value = '';
+  document.getElementById('editInlineNewPostalCode').value = '';
+  document.getElementById('editInlineNewCountry').value = 'Philippines';
+}
+
+function loadEditInlineAddresses() {
+  const addressSelect = document.getElementById('editInlineAddressSelect');
+  addressSelect.innerHTML = '<option value="">Select an existing address (optional)</option>';
+
+  // Extract unique addresses from existing properties
+  const uniqueAddresses = new Map();
+  
+  properties.forEach(property => {
+    const addressKey = [
+      property.street,
+      property.barangay,
+      property.city,
+      property.province,
+      property.country
+    ].filter(part => part && part.trim()).join('|');
+
+    if (addressKey && !uniqueAddresses.has(addressKey)) {
+      uniqueAddresses.set(addressKey, {
+        address_id: property.address_id,
+        formatted: [
+          property.street,
+          property.barangay,
+          property.city,
+          property.province,
+          property.country
+        ].filter(part => part && part.trim()).join(', ')
+      });
+    }
+  });
+
+  uniqueAddresses.forEach(address => {
+    const option = document.createElement('option');
+    option.value = address.address_id || '';
+    option.textContent = address.formatted;
+    addressSelect.appendChild(option);
+  });
+}
+
+
+async function handleEditInlineFormSubmit(event) {
+  event.preventDefault();
+  
+  // Validate form before submission
+  if (!validateEditForm()) {
+    const submitBtn = document.getElementById('editInlineSubmitBtn');
+    submitBtn.style.animation = 'shake 0.5s ease-in-out';
+    setTimeout(() => {
+      submitBtn.style.animation = '';
+    }, 500);
+    
+    showInlineErrorMessage('Please fix the validation errors before submitting.');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('editInlineSubmitBtn');
+  const originalText = submitBtn.innerHTML;
+  
+  try {
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Updating Property...';
+
+    // Create FormData
+    const formData = new FormData(event.target);
+    
+    // Handle address data
+    const addressSelect = document.getElementById('editInlineAddressSelect');
+    if (addressSelect.value && addressSelect.value !== '') {
+      if (addressSelect.value.startsWith('temp_')) {
+        // New address
+        const selectedOption = addressSelect.options[addressSelect.selectedIndex];
+        const addressData = JSON.parse(selectedOption.dataset.addressData);
+        
+        // Remove temp data
+        delete addressData.address_id;
+        delete addressData.is_new;
+        
+        // Add address fields to form data
+        Object.entries(addressData).forEach(([key, value]) => {
+          if (value && value.trim()) {
+            formData.append(key, value);
+          }
+        });
+        
+        formData.delete('address_id');
+      } else {
+        // Existing address
+        formData.set('address_id', addressSelect.value);
+      }
+    } else {
+      formData.delete('address_id');
+    }
+    
+    // Add uploaded image
+    const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+    const uploadedImage = uploadContainer.getUploadedImage();
+    if (uploadedImage) {
+      formData.set('display_image', uploadedImage);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/${currentEditPropertyId}`, {
+      method: "PATCH",
+      body: formData,
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Property updated successfully:", result);
+      
+      showInlineSuccessMessage("Property updated successfully!");
+      
+      // Navigate directly to properties list without confirmation
+      setTimeout(() => {
+        navigateToPropertiesListDirectly();
+        loadProperties();
+      }, 1500);
+      
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Server error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Error updating property:", error);
+    showInlineErrorMessage(error.message || "Failed to update property. Please try again.");
+  } finally {
+    // Restore button state
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+  }
+}
+
+
+// Inline form setup
+function setupInlineForm() {
+  if (inlineFormHandler) return; // Already setup
+  
+  // Setup image upload
+  setupInlineImageUpload();
+  
+  // Setup address handlers
+  setupInlineAddressHandlers();
+  
+  // Setup form submission
+  const form = document.getElementById('inlineAddPropertyForm');
+  form.addEventListener('submit', handleInlineFormSubmit);
+  
+  // Load existing addresses
+  loadInlineAddresses();
+  
+  inlineFormHandler = true;
+}
+
+function setupInlineImageUpload() {
+  const uploadContainer = document.getElementById('inlineImageUploadContainer');
+  const fileInput = document.getElementById('inlineDisplayImageInput');
+  const uploadPrompt = document.getElementById('inlineUploadPrompt');
+  const imagePreview = document.getElementById('inlineImagePreview');
+  const previewImage = document.getElementById('inlinePreviewImage');
+  const removeImageBtn = document.getElementById('inlineRemoveImageBtn');
+  const changeImageBtn = document.getElementById('inlineChangeImageBtn');
+
+  let uploadedImage = null;
+
+  // Click to upload
+  uploadContainer.addEventListener('click', (e) => {
+    if (e.target === uploadContainer || e.target.closest('#inlineUploadPrompt')) {
+      fileInput.click();
+    }
+  });
+
+  // Drag and drop
+  uploadContainer.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadContainer.style.borderColor = '#3b82f6';
+    uploadContainer.style.background = '#eff6ff';
+  });
+
+  uploadContainer.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    uploadContainer.style.borderColor = '#cbd5e0';
+    uploadContainer.style.background = '#f9fafb';
+  });
+
+  uploadContainer.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadContainer.style.borderColor = '#cbd5e0';
+    uploadContainer.style.background = '#f9fafb';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleInlineImageFile(files[0]);
+    }
+  });
+
+  // File input change
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      handleInlineImageFile(e.target.files[0]);
+    }
+  });
+
+  // Remove image
+  removeImageBtn.addEventListener('click', () => {
+    uploadedImage = null;
+    fileInput.value = '';
+    uploadPrompt.style.display = 'block';
+    imagePreview.style.display = 'none';
+  });
+
+  // Change image
+  changeImageBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  function handleInlineImageFile(file) {
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPG, PNG)');
+      return;
+    }
+
+    // Validate file size (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    uploadedImage = file;
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImage.src = e.target.result;
+      uploadPrompt.style.display = 'none';
+      imagePreview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Store reference for form submission
+  uploadContainer.getUploadedImage = () => uploadedImage;
+}
+
+function setupInlineAddressHandlers() {
+  const addNewAddressBtn = document.getElementById('inlineAddNewAddressBtn');
+  const newAddressForm = document.getElementById('inlineNewAddressForm');
+  const saveNewAddressBtn = document.getElementById('inlineSaveNewAddressBtn');
+  const cancelNewAddressBtn = document.getElementById('inlineCancelNewAddressBtn');
+  const addressSelect = document.getElementById('inlineAddressSelect');
+
+  // Show/hide new address form
+  addNewAddressBtn.addEventListener('click', () => {
+    const isVisible = newAddressForm.style.display !== 'none';
+    newAddressForm.style.display = isVisible ? 'none' : 'block';
+    addNewAddressBtn.innerHTML = isVisible ? 
+      '<i class="fas fa-plus me-1"></i> Add New Address' : 
+      '<i class="fas fa-minus me-1"></i> Cancel New Address';
+  });
+
+  // Cancel new address
+  cancelNewAddressBtn.addEventListener('click', () => {
+    clearInlineAddressForm();
+    newAddressForm.style.display = 'none';
+    addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+  });
+
+  // Save new address
+  saveNewAddressBtn.addEventListener('click', () => {
+    const newAddress = collectInlineAddressData();
+    if (validateInlineAddress(newAddress)) {
+      addInlineAddressToSelect(newAddress);
+      clearInlineAddressForm();
+      newAddressForm.style.display = 'none';
+      addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+      showInlineSuccessMessage('Address prepared! It will be saved when you create the property.');
+    }
+  });
+
+  // When existing address is selected, clear new address form
+  addressSelect.addEventListener('change', () => {
+    if (addressSelect.value) {
+      clearInlineAddressForm();
+      newAddressForm.style.display = 'none';
+      addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+    }
+  });
+}
+
+function collectInlineAddressData() {
+  return {
+    street: document.getElementById('inlineNewStreet').value.trim(),
+    barangay: document.getElementById('inlineNewBarangay').value.trim(),
+    city: document.getElementById('inlineNewCity').value.trim(),
+    province: document.getElementById('inlineNewProvince').value.trim(),
+    postal_code: document.getElementById('inlineNewPostalCode').value.trim(),
+    country: document.getElementById('inlineNewCountry').value.trim()
+  };
+}
+
+function validateInlineAddress(address) {
+  const requiredFields = ['street', 'city'];
+  const missingFields = requiredFields.filter(field => !address[field]);
+  
+  if (missingFields.length > 0) {
+    alert(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+    return false;
+  }
+  
+  return true;
+}
+
+function addInlineAddressToSelect(newAddress) {
+  const addressSelect = document.getElementById('inlineAddressSelect');
+  const tempId = 'temp_' + Date.now();
+  
+  const addressWithTempId = {
+    ...newAddress,
+    address_id: tempId,
+    is_new: true
+  };
+
+  const formatted = [
+    newAddress.street,
+    newAddress.barangay,
+    newAddress.city,
+    newAddress.province,
+    newAddress.country
+  ].filter(part => part && part.trim()).join(', ');
+
+  const option = document.createElement('option');
+  option.value = tempId;
+  option.textContent = `${formatted} (New - will be created)`;
+  option.dataset.addressData = JSON.stringify(addressWithTempId);
+  option.selected = true;
+  
+  addressSelect.appendChild(option);
+}
+
+function clearInlineAddressForm() {
+  document.getElementById('inlineNewStreet').value = '';
+  document.getElementById('inlineNewBarangay').value = '';
+  document.getElementById('inlineNewCity').value = '';
+  document.getElementById('inlineNewProvince').value = '';
+  document.getElementById('inlineNewPostalCode').value = '';
+  document.getElementById('inlineNewCountry').value = 'Philippines';
+}
+
+function loadInlineAddresses() {
+  const addressSelect = document.getElementById('inlineAddressSelect');
+  addressSelect.innerHTML = '<option value="">Select an existing address (optional)</option>';
+
+  // Extract unique addresses from existing properties
+  const uniqueAddresses = new Map();
+  
+  properties.forEach(property => {
+    const addressKey = [
+      property.street,
+      property.barangay,
+      property.city,
+      property.province,
+      property.country
+    ].filter(part => part && part.trim()).join('|');
+
+    if (addressKey && !uniqueAddresses.has(addressKey)) {
+      uniqueAddresses.set(addressKey, {
+        address_id: property.address_id,
+        formatted: [
+          property.street,
+          property.barangay,
+          property.city,
+          property.province,
+          property.country
+        ].filter(part => part && part.trim()).join(', ')
+      });
+    }
+  });
+
+  uniqueAddresses.forEach(address => {
+    const option = document.createElement('option');
+    option.value = address.address_id || '';
+    option.textContent = address.formatted;
+    addressSelect.appendChild(option);
+  });
+}
+
+async function handleInlineFormSubmit(event) {
+  event.preventDefault();
+  
+  // Validate form before submission
+  if (!validateForm()) {
+    // Show shake animation on submit button
+    const submitBtn = document.getElementById('inlineSubmitBtn');
+    submitBtn.style.animation = 'shake 0.5s ease-in-out';
+    setTimeout(() => {
+      submitBtn.style.animation = '';
+    }, 500);
+    
+    showInlineErrorMessage('Please fix the validation errors before submitting.');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('inlineSubmitBtn');
+  const originalText = submitBtn.innerHTML;
+  
+  try {
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding Property...';
+
+    // Create FormData
+    const formData = new FormData(event.target);
+    
+    // Handle address data
+    const addressSelect = document.getElementById('inlineAddressSelect');
+    if (addressSelect.value && addressSelect.value !== '') {
+      if (addressSelect.value.startsWith('temp_')) {
+        // New address
+        const selectedOption = addressSelect.options[addressSelect.selectedIndex];
+        const addressData = JSON.parse(selectedOption.dataset.addressData);
+        
+        // Remove temp data
+        delete addressData.address_id;
+        delete addressData.is_new;
+        
+        // Add address fields to form data
+        Object.entries(addressData).forEach(([key, value]) => {
+          if (value && value.trim()) {
+            formData.append(key, value);
+          }
+        });
+        
+        formData.delete('address_id');
+      } else {
+        // Existing address
+        formData.set('address_id', addressSelect.value);
+      }
+    } else {
+      formData.delete('address_id');
+    }
+    
+    // Add uploaded image
+    const uploadContainer = document.getElementById('inlineImageUploadContainer');
+    const uploadedImage = uploadContainer.getUploadedImage();
+    if (uploadedImage) {
+      formData.set('display_image', uploadedImage);
+    }
+
+    const response = await fetch(API_BASE_URL + "/create-property", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Property created successfully:", result);
+      
+      showInlineSuccessMessage("Property added successfully!");
+      
+      // Navigate directly to properties list without confirmation
+      setTimeout(() => {
+        navigateToPropertiesListDirectly(); // New function to avoid confirmation dialog
+        loadProperties();
+      }, 1500);
+      
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Server error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Error creating property:", error);
+    showInlineErrorMessage(error.message || "Failed to add property. Please try again.");
+  } finally {
+    // Restore button state
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+  }
+}
+
+// Add this new function to navigate without confirmation
+function navigateToPropertiesListDirectly() {
+  // Set state to indicate we're no longer adding a property
+  isAddingProperty = false;
+  
+  // Update breadcrumb without confirmation
+  updateBreadcrumb();
+  
+  // Show properties grid and hide form
+  showPropertiesGrid();
+  
+  // Reset form silently
+  resetInlineFormSilently();
+  
+  // Ensure proper visibility reset
+  const addPropertyBtn = document.querySelector('.new-ticket-btn');
+  const propertyControls = document.getElementById('propertyControls');
+  
+  if (addPropertyBtn) addPropertyBtn.style.display = 'flex';
+  if (propertyControls) propertyControls.style.display = 'flex';
+}
+
+// Add this new function to reset form without user interaction
+function resetInlineFormSilently() {
+  const form = document.getElementById('inlineAddPropertyForm');
+  if (form) {
+    form.reset();
+  }
+  
+  // Clear all validation errors
+  clearAllErrors();
+  
+  // Reset image upload
+  const uploadContainer = document.getElementById('inlineImageUploadContainer');
+  const uploadPrompt = document.getElementById('inlineUploadPrompt');
+  const imagePreview = document.getElementById('inlineImagePreview');
+  const fileInput = document.getElementById('inlineDisplayImageInput');
+  
+  if (fileInput) fileInput.value = '';
+  if (uploadPrompt) uploadPrompt.style.display = 'block';
+  if (imagePreview) imagePreview.style.display = 'none';
+  
+  // Reset address form
+  clearInlineAddressForm();
+  const newAddressForm = document.getElementById('inlineNewAddressForm');
+  const addNewAddressBtn = document.getElementById('inlineAddNewAddressBtn');
+  if (newAddressForm) newAddressForm.style.display = 'none';
+  if (addNewAddressBtn) addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+}
+
+
+
+// Update the setupInlineForm function to include validation setup
+function setupInlineForm() {
+  if (inlineFormHandler) return; // Already setup
+  
+  // Setup image upload
+  setupInlineImageUpload();
+  
+  // Setup address handlers
+  setupInlineAddressHandlers();
+  
+  // Setup real-time validation
+  setupRealTimeValidation();
+  
+  // Setup form submission
+  const form = document.getElementById('inlineAddPropertyForm');
+  form.addEventListener('submit', handleInlineFormSubmit);
+  
+  // Load existing addresses
+  loadInlineAddresses();
+  
+  inlineFormHandler = true;
+}
+
+// Update resetInlineForm to clear validation errors
+function resetInlineForm() {
+  const form = document.getElementById('inlineAddPropertyForm');
+  if (form) {
+    form.reset();
+  }
+  
+  // Clear all validation errors
+  clearAllErrors();
+  
+  // Reset image upload
+  const uploadContainer = document.getElementById('inlineImageUploadContainer');
+  const uploadPrompt = document.getElementById('inlineUploadPrompt');
+  const imagePreview = document.getElementById('inlineImagePreview');
+  const fileInput = document.getElementById('inlineDisplayImageInput');
+  
+  if (fileInput) fileInput.value = '';
+  if (uploadPrompt) uploadPrompt.style.display = 'block';
+  if (imagePreview) imagePreview.style.display = 'none';
+  
+  // Reset address form
+  clearInlineAddressForm();
+  const newAddressForm = document.getElementById('inlineNewAddressForm');
+  const addNewAddressBtn = document.getElementById('inlineAddNewAddressBtn');
+  if (newAddressForm) newAddressForm.style.display = 'none';
+  if (addNewAddressBtn) addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+}
+
+function showInlineSuccessMessage(message) {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    z-index: 1000000;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  `;
+  notification.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+
+function showInlineErrorMessage(message) {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    z-index: 1000000;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  `;
+  notification.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 5000);
+}
+
+
+// Form validation configuration
+const VALIDATION_RULES = {
+  propertyName: {
+    id: 'propertyName',
+    errorId: 'propertyNameError',
+    required: true,
+    message: 'Property name is required'
+  },
+  floorArea: {
+    id: 'floorArea',
+    errorId: 'floorAreaError',
+    required: true,
+    min: 0.01,
+    message: 'Floor area must be greater than 0'
+  },
+  propertyStatus: {
+    id: 'propertyStatus',
+    errorId: 'propertyStatusError',
+    required: true,
+    message: 'Property status is required'
+  },
+  baseRent: {
+    id: 'baseRent',
+    errorId: 'baseRentError',
+    required: true,
+    min: 0,
+    message: 'Monthly rent must be greater than or equal to 0'
+  },
+  propertyTaxes: {
+    id: 'propertyTaxes',
+    errorId: 'propertyTaxesError',
+    required: true,
+    min: 0,
+    message: 'Property taxes must be greater than or equal to 0'
+  },
+  securityDeposit: {
+    id: 'securityDeposit',
+    errorId: 'securityDepositError',
+    required: true,
+    min: 0,
+    message: 'Security deposit must be greater than or equal to 0'
+  },
+  leaseTerm: {
+    id: 'leaseTerm',
+    errorId: 'leaseTermError',
+    required: true,
+    min: 1,
+    message: 'Minimum lease term must be at least 1 month'
+  }
 };
+
+// Add validation for edit form
+const EDIT_VALIDATION_RULES = {
+  editPropertyName: {
+    id: 'editPropertyName',
+    errorId: 'editPropertyNameError',
+    required: true,
+    message: 'Property name is required'
+  },
+  editFloorArea: {
+    id: 'editFloorArea',
+    errorId: 'editFloorAreaError',
+    required: true,
+    min: 0.01,
+    message: 'Floor area must be greater than 0'
+  },
+  editPropertyStatus: {
+    id: 'editPropertyStatus',
+    errorId: 'editPropertyStatusError',
+    required: true,
+    message: 'Property status is required'
+  },
+  editBaseRent: {
+    id: 'editBaseRent',
+    errorId: 'editBaseRentError',
+    required: true,
+    min: 0,
+    message: 'Monthly rent must be greater than or equal to 0'
+  },
+  editPropertyTaxes: {
+    id: 'editPropertyTaxes',
+    errorId: 'editPropertyTaxesError',
+    required: true,
+    min: 0,
+    message: 'Property taxes must be greater than or equal to 0'
+  },
+  editSecurityDeposit: {
+    id: 'editSecurityDeposit',
+    errorId: 'editSecurityDepositError',
+    required: true,
+    min: 0,
+    message: 'Security deposit must be greater than or equal to 0'
+  },
+  editLeaseTerm: {
+    id: 'editLeaseTerm',
+    errorId: 'editLeaseTermError',
+    required: true,
+    min: 1,
+    message: 'Minimum lease term must be at least 1 month'
+  }
+};
+
+
+// Validation functions
+function validateField(fieldConfig) {
+  const field = document.getElementById(fieldConfig.id);
+  const errorElement = document.getElementById(fieldConfig.errorId);
+  const value = field.value.trim();
+  
+  // Clear previous error state
+  clearFieldError(field, errorElement);
+  
+  // Check if required field is empty
+  if (fieldConfig.required && !value) {
+    showFieldError(field, errorElement, fieldConfig.message);
+    return false;
+  }
+  
+  // Check minimum value for numeric fields
+  if (fieldConfig.min !== undefined && value) {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || numValue < fieldConfig.min) {
+      showFieldError(field, errorElement, fieldConfig.message);
+      return false;
+    }
+  }
+  
+  // If validation passes, show success state
+  showFieldSuccess(field);
+  return true;
+}
+
+function showFieldError(field, errorElement, message) {
+  field.classList.add('error');
+  field.classList.remove('success');
+  errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i>${message}`;
+  errorElement.classList.add('show');
+  
+  // Add pulse animation to label
+  const label = field.closest('.form-group').querySelector('label');
+  if (label) {
+    label.classList.add('required-highlight');
+    setTimeout(() => label.classList.remove('required-highlight'), 500);
+  }
+}
+
+function showFieldSuccess(field) {
+  field.classList.remove('error');
+  field.classList.add('success');
+}
+
+function clearFieldError(field, errorElement) {
+  field.classList.remove('error', 'success');
+  errorElement.classList.remove('show');
+  errorElement.innerHTML = '';
+}
+
+function clearAllErrors() {
+  Object.values(VALIDATION_RULES).forEach(fieldConfig => {
+    const field = document.getElementById(fieldConfig.id);
+    const errorElement = document.getElementById(fieldConfig.errorId);
+    if (field && errorElement) {
+      clearFieldError(field, errorElement);
+    }
+  });
+  
+  // Hide validation summary
+  const validationSummary = document.getElementById('validationSummary');
+  if (validationSummary) {
+    validationSummary.classList.remove('show');
+  }
+}
+
+function validateForm() {
+  clearAllErrors();
+  
+  const errors = [];
+  let isValid = true;
+  
+  // Validate each field
+  Object.entries(VALIDATION_RULES).forEach(([fieldName, fieldConfig]) => {
+    if (!validateField(fieldConfig)) {
+      errors.push(fieldConfig.message);
+      isValid = false;
+    }
+  });
+  
+  // Show validation summary if there are errors
+  if (errors.length > 0) {
+    showValidationSummary(errors);
+    
+    // Scroll to first error
+    const firstErrorField = document.querySelector('.form-group input.error, .form-group select.error');
+    if (firstErrorField) {
+      firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstErrorField.focus();
+    }
+  }
+  
+  return isValid;
+}
+
+function showValidationSummary(errors) {
+  // Create validation summary if it doesn't exist
+  let validationSummary = document.getElementById('validationSummary');
+  if (!validationSummary) {
+    validationSummary = document.createElement('div');
+    validationSummary.id = 'validationSummary';
+    validationSummary.className = 'validation-summary';
+    
+    // Insert at the beginning of the first form section
+    const firstFormSection = document.querySelector('.form-section');
+    firstFormSection.insertBefore(validationSummary, firstFormSection.firstChild);
+  }
+  
+  const errorList = errors.map(error => `<li>${error}</li>`).join('');
+  validationSummary.innerHTML = `
+    <h5><i class="fas fa-exclamation-triangle me-2"></i>Please fix the following errors:</h5>
+    <ul>${errorList}</ul>
+  `;
+  
+  validationSummary.classList.add('show');
+  validationSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Real-time validation
+function setupRealTimeValidation() {
+  Object.values(VALIDATION_RULES).forEach(fieldConfig => {
+    const field = document.getElementById(fieldConfig.id);
+    if (field) {
+      // Validate on blur (when user leaves the field)
+      field.addEventListener('blur', () => {
+        validateField(fieldConfig);
+      });
+      
+      // Clear error on input (when user starts typing)
+      field.addEventListener('input', () => {
+        if (field.classList.contains('error')) {
+          const errorElement = document.getElementById(fieldConfig.errorId);
+          clearFieldError(field, errorElement);
+          
+          // Hide validation summary if all errors are cleared
+          const remainingErrors = document.querySelectorAll('.error-message.show');
+          if (remainingErrors.length === 0) {
+            const validationSummary = document.getElementById('validationSummary');
+            if (validationSummary) {
+              validationSummary.classList.remove('show');
+            }
+          }
+        }
+      });
+    }
+  });
+}
+
+function validateEditForm() {
+  clearAllEditErrors();
+  
+  const errors = [];
+  let isValid = true;
+  
+  // Validate each field
+  Object.entries(EDIT_VALIDATION_RULES).forEach(([fieldName, fieldConfig]) => {
+    if (!validateField(fieldConfig)) {
+      errors.push(fieldConfig.message);
+      isValid = false;
+    }
+  });
+  
+  // Show validation summary if there are errors
+  if (errors.length > 0) {
+    showEditValidationSummary(errors);
+    
+    // Scroll to first error
+    const firstErrorField = document.querySelector('#editPropertyFormContainer .form-group input.error, #editPropertyFormContainer .form-group select.error');
+    if (firstErrorField) {
+      firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstErrorField.focus();
+    }
+  }
+  
+  return isValid;
+}
+
+function clearAllEditErrors() {
+  Object.values(EDIT_VALIDATION_RULES).forEach(fieldConfig => {
+    const field = document.getElementById(fieldConfig.id);
+    const errorElement = document.getElementById(fieldConfig.errorId);
+    if (field && errorElement) {
+      clearFieldError(field, errorElement);
+    }
+  });
+  
+  // Hide validation summary
+  const validationSummary = document.getElementById('editValidationSummary');
+  if (validationSummary) {
+    validationSummary.classList.remove('show');
+  }
+}
+
+function showEditValidationSummary(errors) {
+  // Create validation summary if it doesn't exist
+  let validationSummary = document.getElementById('editValidationSummary');
+  if (!validationSummary) {
+    validationSummary = document.createElement('div');
+    validationSummary.id = 'editValidationSummary';
+    validationSummary.className = 'validation-summary';
+    
+    // Insert at the beginning of the first form section in edit form
+    const firstFormSection = document.querySelector('#editPropertyFormContainer .form-section');
+    firstFormSection.insertBefore(validationSummary, firstFormSection.firstChild);
+  }
+  
+  const errorList = errors.map(error => `<li>${error}</li>`).join('');
+  validationSummary.innerHTML = `
+    <h5><i class="fas fa-exclamation-triangle me-2"></i>Please fix the following errors:</h5>
+    <ul>${errorList}</ul>
+  `;
+  
+  validationSummary.classList.add('show');
+  validationSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setupEditRealTimeValidation() {
+  Object.values(EDIT_VALIDATION_RULES).forEach(fieldConfig => {
+    const field = document.getElementById(fieldConfig.id);
+    if (field) {
+      // Validate on blur (when user leaves the field)
+      field.addEventListener('blur', () => {
+        validateField(fieldConfig);
+      });
+      
+      // Clear error on input (when user starts typing)
+      field.addEventListener('input', () => {
+        if (field.classList.contains('error')) {
+          const errorElement = document.getElementById(fieldConfig.errorId);
+          clearFieldError(field, errorElement);
+          
+          // Hide validation summary if all errors are cleared
+          const remainingErrors = document.querySelectorAll('#editPropertyFormContainer .error-message.show');
+          if (remainingErrors.length === 0) {
+            const validationSummary = document.getElementById('editValidationSummary');
+            if (validationSummary) {
+              validationSummary.classList.remove('show');
+            }
+          }
+        }
+      });
+    }
+  });
+}
+
+function resetEditInlineForm() {
+  const form = document.getElementById('inlineEditPropertyForm');
+  if (form) {
+    form.reset();
+  }
+  
+  // Clear all validation errors
+  clearAllEditErrors();
+  
+  // Reset image upload
+  const uploadContainer = document.getElementById('editInlineImageUploadContainer');
+  const uploadPrompt = document.getElementById('editInlineUploadPrompt');
+  const imagePreview = document.getElementById('editInlineImagePreview');
+  const fileInput = document.getElementById('editInlineDisplayImageInput');
+  
+  if (fileInput) fileInput.value = '';
+  if (uploadPrompt) uploadPrompt.style.display = 'block';
+  if (imagePreview) imagePreview.style.display = 'none';
+  
+  // Reset address form
+  clearEditInlineAddressForm();
+  const newAddressForm = document.getElementById('editInlineNewAddressForm');
+  const addNewAddressBtn = document.getElementById('editInlineAddNewAddressBtn');
+  if (newAddressForm) newAddressForm.style.display = 'none';
+  if (addNewAddressBtn) addNewAddressBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add New Address';
+}
+
+// Update navigateToPropertiesListDirectly to handle edit state
+function navigateToPropertiesListDirectly() {
+  // Reset all states
+  isAddingProperty = false;
+  isEditingProperty = false;
+  currentEditPropertyId = null;
+  
+  // Update breadcrumb without confirmation
+  updateBreadcrumb();
+  
+  // Show properties grid and hide forms
+  showPropertiesGrid();
+  
+  // Reset forms silently
+  resetInlineFormSilently();
+  resetEditInlineForm();
+  
+  // Ensure proper visibility reset
+  const addPropertyBtn = document.querySelector('.new-ticket-btn');
+  const propertyControls = document.getElementById('propertyControls');
+  
+  if (addPropertyBtn) addPropertyBtn.style.display = 'flex';
+  if (propertyControls) propertyControls.style.display = 'flex';
+}
+
+
 
 // Make functions globally available
 window.openAddModal = openAddModal;
@@ -1749,6 +3189,11 @@ window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
 window.showPropertyDetails = showPropertyDetails;
 window.closeDetailsModal = closeDetailsModal;
+// Make sure the functions are globally available
+window.showAddPropertyForm = showAddPropertyForm;
+window.hideAddPropertyForm = hideAddPropertyForm;
+window.showEditPropertyForm = showEditPropertyForm;
+window.hideEditPropertyForm = hideEditPropertyForm;
 
 // Add CSS animation for loading spinner
 const style = document.createElement("style");
