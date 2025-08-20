@@ -148,6 +148,42 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Contact Form -->
+                    <div class="section contact-form-section">
+                        <div class="section-header">Contact Us</div>
+                        <div class="section-content">
+                            <form class="contact-form" onsubmit="handleContactSubmit(event)">
+                                <div class="form-group">
+                                    <label for="contactName">Full Name</label>
+                                    <input type="text" id="contactName" name="name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="contactEmail">Email Address</label>
+                                    <input type="email" id="contactEmail" name="email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="contactPhone">Phone Number</label>
+                                    <input type="tel" id="contactPhone" name="phone">
+                                </div>
+                                <div class="form-group">
+                                    <label for="inquiryType">Inquiry Type</label>
+                                    <select id="inquiryType" name="inquiryType" required>
+                                        <option value="">Select inquiry type</option>
+                                        <option value="viewing">Schedule a Viewing</option>
+                                        <option value="lease">Lease Information</option>
+                                        <option value="general">General Inquiry</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="contactMessage">Message</label>
+                                    <textarea id="contactMessage" name="message" rows="4" placeholder="Please provide details about your inquiry..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary contact-submit-btn">
+                                    Send Message
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
