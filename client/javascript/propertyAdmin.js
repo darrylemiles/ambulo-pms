@@ -145,10 +145,10 @@ function renderPagination() {
   if (currentPage <= 3) end = Math.min(5, totalPages);
   if (currentPage > totalPages - 2) start = Math.max(1, totalPages - 4);
 
-  for (let i = start; i <= end; i++) {
-    html += `<li class="page-item${i === currentPage ? " active" : ""}">
-      <a class="page-link" href="#" onclick="goToPage(${i});return false;">${i}</a>
-    </li>`;
+for (let i = start; i <= end; i++) {
+  html += `<li class="page-item${i === parseInt(currentPage) ? " active" : ""}">  
+    <a class="page-link" href="#" onclick="goToPage(${i});return false;">${i}</a>
+  </li>`;
   }
 
   // Next button
@@ -447,23 +447,7 @@ function closeEditModal() {
   hideEditPropertyForm();
 }
 
-function showPropertyDetails(id) {
-  console.log("showPropertyDetails called with id:", id);
-  const property = properties.find((p) => p.id === id);
-  if (!property) {
-    console.error("Property not found:", id);
-    return;
-  }
 
-  // Show the modal
-  const detailsModal = document.getElementById("detailsModal");
-  detailsModal.classList.add("show");
-  detailsModal.style.display = "flex";
-  document.body.classList.add("modal-open");
-
-  // Populate modal content
-  populatePropertyDetails(property);
-}
 
 function closeDetailsModal() {
   if (detailsModal) {
@@ -845,6 +829,7 @@ function hideEditPropertyForm(skipConfirmation = false) {
 
 function showFormContainer() {
   document.getElementById("propertiesGrid").style.display = "none";
+  document.getElementById("editPropertyFormContainer").style.display = "none";
   document.getElementById("addPropertyFormContainer").style.display = "block";
 
   // Ensure Add Property button is hidden
@@ -2879,8 +2864,9 @@ window.openAddModal = openAddModal;
 window.closeAddModal = closeAddModal;
 window.openEditPropertyForm = openEditPropertyForm;
 window.closeEditModal = closeEditModal;
-window.showPropertyDetails = showPropertyDetails;
 window.closeDetailsModal = closeDetailsModal;
+window.toggleDropdown = toggleDropdown;
+window.filterByStatus = filterByStatus;
 // Make sure the functions are globally available
 window.showAddPropertyForm = showAddPropertyForm;
 window.hideAddPropertyForm = hideAddPropertyForm;
