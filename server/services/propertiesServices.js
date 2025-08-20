@@ -90,6 +90,13 @@ const createProperty = async (propertyData = {}) => {
  
 
     const [result] = await pool.query(query, values);
+    return {
+      message: "Property has been successfully created!",
+      propertyId: property_id,
+      addressId: finalAddressId,
+      propertyData: newProperty,
+      insertId: result.insertId,
+    };
 
   } catch (error) {
     console.error("Error creating property:", error);
@@ -135,7 +142,7 @@ const getProperties = async (queryObj = {}) => {
             FROM properties p
             LEFT JOIN addresses a ON p.address_id = a.address_id
             LEFT JOIN properties_pictures pp ON p.property_id = pp.property_id
-            WHERE 1=1
+            WHERE p.property_status != 'deleted'
         `;
 
     const values = [];
@@ -212,12 +219,12 @@ const getProperties = async (queryObj = {}) => {
         : [],
     }));
 
-    // Get total count for pagination
+    // Get total count for pagination - also exclude deleted properties
     let countQuery = `
             SELECT COUNT(DISTINCT p.property_id) as total 
             FROM properties p
             LEFT JOIN addresses a ON p.address_id = a.address_id
-            WHERE 1=1
+            WHERE p.property_status != 'deleted'
         `;
     const countValues = [];
 
@@ -290,7 +297,7 @@ const getSinglePropertyById = async (property_id = "") => {
                 a.country
             FROM properties p
             LEFT JOIN addresses a ON p.address_id = a.address_id
-            WHERE p.property_id = ?
+            WHERE p.property_id = ? AND p.property_status != 'deleted'
         `;
 
     const [propertyRows] = await pool.query(propertyQuery, [property_id]);
@@ -308,8 +315,6 @@ const getSinglePropertyById = async (property_id = "") => {
         `;
 
     const [pictureRows] = await pool.query(picturesQuery, [property_id]);
-
-    console.log("Pictures query result:", pictureRows); // Debug log
 
     const property = {
       ...propertyRows[0],
@@ -594,33 +599,27 @@ const deletePropertyById = async (property_id = "") => {
       throw new Error("Property ID is required");
     }
 
-    // First get the property to return in response
+    // First get the property to return in response and check its status
     const property = await getSinglePropertyById(property_id);
 
-    // Check for dependent records
-    const dependencyQuery = `
-            SELECT COUNT(*) as tenant_count 
-            FROM users 
-            WHERE property_id = ?
-        `;
-
-    const [dependencyResult] = await pool.query(dependencyQuery, [property_id]);
-
-    if (dependencyResult[0].tenant_count > 0) {
-      throw new Error("Cannot delete property with active tenants");
+    // Check if property status is Available
+    if (property.property.property_status !== "Available") {
+      throw new Error("Only properties with 'Available' status can be deleted");
     }
+
+   
 
     // Soft delete - update status instead of actual deletion
     const softDeleteQuery = `
             UPDATE properties 
             SET property_status = 'deleted', updated_at = NOW() 
-            WHERE property_id = ?
+            WHERE property_id = ? AND property_status = 'Available'
         `;
 
     const [result] = await pool.query(softDeleteQuery, [property_id]);
 
     if (result.affectedRows === 0) {
-      throw new Error("Property not found");
+      throw new Error("Property not found or not available for deletion");
     }
 
     return {
@@ -629,10 +628,10 @@ const deletePropertyById = async (property_id = "") => {
       deletedRows: result.affectedRows,
     };
   } catch (error) {
-    console.error("Error deleting property:", error);
     throw new Error(error.message || "Failed to delete property");
   }
 };
+
 
 export default {
   createProperty,

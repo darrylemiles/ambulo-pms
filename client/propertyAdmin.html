@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/all.min.css">
     <link rel="stylesheet" href="/css/sidebar.css">
     <link rel="stylesheet" href="/css/propertyAdmin.css">
     <title>Properties</title>
@@ -603,92 +603,9 @@
         </div>
     </div>
 
-    <!-- Property Details Modal -->
-    <div class="modal-overlay" id="detailsModal">
-        <div class="modal details-modal">
-            <div class="modal-header">
-                <h2 class="modal-title" id="detailsTitle">Property Details</h2>
-                <button class="close-btn" onclick="closeDetailsModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <!-- Property Gallery -->
-                <div class="property-gallery">
-                    <button class="nav-arrow prev" onclick="changeDetailImage(-1)">‹</button>
-                    <img id="detailMainImage" class="main-image"
-                        src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                        alt="Property Main View">
-                    <button class="nav-arrow next" onclick="changeDetailImage(1)">›</button>
-
-                    <div class="thumbnail-row" id="detailThumbnails">
-                        <!-- Thumbnails will be populated here -->
-                    </div>
-                </div>
-
-                <!-- Property Details Container -->
-                <div class="property-details-container">
-                    <div class="details-left">
-                        <!-- Specifications -->
-                        <div class="property-section">
-                            <div class="property-section-header">Property Specifications</div>
-                            <div class="property-section-content" id="specificationsContent">
-                                <!-- Content will be populated by JavaScript -->
-                            </div>
-                        </div>
-
-                        <!-- Requirements -->
-                        <div class="property-section">
-                            <div class="property-section-header">Lease Information</div>
-                            <div class="property-section-content">
-                                <div class="spec-row">
-                                    <span class="spec-label">Minimum Lease Term:</span>
-                                    <span class="spec-value" id="detailLeaseTerm">12 months</span>
-                                </div>
-                                <div class="spec-row">
-                                    <span class="spec-label">Security Deposit:</span>
-                                    <span class="spec-value" id="detailSecurityDeposit">2 months</span>
-                                </div>
-                                <div class="spec-row">
-                                    <span class="spec-label">Property Taxes:</span>
-                                    <span class="spec-value" id="detailPropertyTaxes">₱5,000/quarter</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Sidebar -->
-                    <div class="details-right">
-                        <div class="price-section">
-                            <div class="price-main" id="detailPrice">₱35,000</div>
-                            <div class="price-sub">Monthly Rent</div>
-                        </div>
-
-                        <div class="deposit-info">
-                            <strong>Security Deposit:</strong> <span id="detailDeposit">2 months deposit</span><br>
-                            <small>Refundable upon lease termination, subject to property condition assessment.</small>
-                        </div>
-
-                        <div class="property-section">
-                            <div class="property-section-header">Property Status</div>
-                            <div class="property-section-content">
-                                <div class="spec-row">
-                                    <span class="spec-label">Occupancy:</span>
-                                    <span class="spec-value"><span class="availability-status occupied"
-                                            id="detailStatus">Available</span></span>
-                                </div>
-                                <div class="spec-row">
-                                    <span class="spec-label">Last Updated:</span>
-                                    <span class="spec-value" id="detailLastUpdated">Recently</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/javascript/propertyAdmin.js"></script>
+    <script src="/javascript/bootstrap.bundle.min.js"></script>
+    <script src="constants/constants.js"></script>
+    <script type="module" src="/javascript/propertyAdmin.js"></script>
     <script src="/javascript/sidebar.js"></script>
 </body>
 

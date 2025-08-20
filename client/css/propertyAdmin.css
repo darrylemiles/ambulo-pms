@@ -3347,3 +3347,409 @@ body.modal-open {
 .showcase-image-card.new {
     animation: slideInImage 0.3s ease;
 }
+
+/* Property Details View Styling */
+.property-details-view-container {
+    width: 100%;
+    padding: 0;
+}
+
+.property-details-view {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.details-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.details-header h3 {
+    color: #1e293b;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.details-header p {
+    color: #64748b;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Property Gallery Section */
+.property-gallery-section {
+    margin-bottom: 40px;
+}
+
+.property-gallery-section h4 {
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.property-gallery {
+    position: relative;
+    background: #f8fafc;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.main-image-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    overflow: hidden;
+}
+
+.property-gallery .main-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.property-gallery .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    color: #2d3748;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.property-gallery .nav-arrow:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+}
+
+.property-gallery .nav-arrow.prev {
+    left: 20px;
+}
+
+.property-gallery .nav-arrow.next {
+    right: 20px;
+}
+
+.property-gallery .thumbnail-row {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    background: white;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow-x: auto;
+    max-height: 120px;
+}
+
+.property-gallery .thumbnail {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.property-gallery .thumbnail:hover,
+.property-gallery .thumbnail.active {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+/* Property Information Grid */
+.property-info-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.property-info-left {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.property-info-right {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Information Sections */
+.info-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 25px;
+    border-left: 4px solid #3b82f6;
+}
+
+.info-section h4 {
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #475569;
+    min-width: 120px;
+}
+
+.info-value {
+    color: #1e293b;
+    font-weight: 500;
+    text-align: right;
+    flex: 1;
+}
+
+/* Pricing Card */
+.pricing-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.price-main {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.price-sub {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 20px;
+}
+
+.pricing-details {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 20px;
+}
+
+.pricing-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.pricing-row:last-child {
+    margin-bottom: 0;
+}
+
+/* Status Card */
+.status-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.status-card h4 {
+    color: #1e293b;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.status-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-label {
+    font-weight: 500;
+    color: #64748b;
+}
+
+/* Availability Status Badges */
+.availability-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.availability-status.available {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.availability-status.occupied {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.availability-status.maintenance {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Action Buttons */
+.details-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.details-actions .btn {
+    padding: 12px 20px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+/* Description Section */
+.description-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 25px;
+    border-left: 4px solid #10b981;
+}
+
+.description-section h4 {
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.description-content {
+    color: #475569;
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+/* Hide arrows when only one image */
+.property-gallery[data-image-count="1"] .nav-arrow {
+    display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .property-info-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .property-info-right {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .property-details-view {
+        padding: 20px;
+    }
+    
+    .main-image-container {
+        height: 250px;
+    }
+    
+    .property-gallery .thumbnail {
+        width: 60px;
+        height: 45px;
+    }
+    
+    .property-gallery .nav-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+    
+    .price-main {
+        font-size: 28px;
+    }
+    
+    .details-actions {
+        flex-direction: row;
+    }
+    
+    .details-actions .btn {
+        flex: 1;
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .info-value {
+        text-align: left;
+    }
+    
+    .pricing-row {
+        font-size: 13px;
+    }
+    
+    .details-actions {
+        flex-direction: column;
+    }
+}
