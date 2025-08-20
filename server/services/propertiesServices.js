@@ -28,7 +28,6 @@ const createProperty = async (propertyData = {}) => {
 
   try {
     if (!address_id && (street || city)) {
-
       const newAddress = {
         street: street || null,
         barangay: barangay || null,
@@ -79,7 +78,6 @@ const createProperty = async (propertyData = {}) => {
       (key) => newProperty[key] === undefined && delete newProperty[key]
     );
 
-
     const fields = Object.keys(newProperty).join(", ");
     const placeholders = Object.keys(newProperty)
       .map(() => "?")
@@ -87,7 +85,6 @@ const createProperty = async (propertyData = {}) => {
     const values = Object.values(newProperty);
 
     const query = `INSERT INTO properties (${fields}, created_at, updated_at) VALUES (${placeholders}, NOW(), NOW())`;
- 
 
     const [result] = await pool.query(query, values);
     return {
@@ -97,7 +94,6 @@ const createProperty = async (propertyData = {}) => {
       propertyData: newProperty,
       insertId: result.insertId,
     };
-
   } catch (error) {
     console.error("Error creating property:", error);
     console.error("Error details:", error.message);
@@ -204,7 +200,14 @@ const getProperties = async (queryObj = {}) => {
     // Add pagination
     if (queryObj.limit) {
       const limit = parseInt(queryObj.limit);
-      const offset = parseInt(queryObj.offset || 0);
+      // Calculate offset from page if not provided
+      let offset = 0;
+      if (queryObj.page) {
+        const page = parseInt(queryObj.page);
+        offset = (page - 1) * limit;
+      } else if (queryObj.offset) {
+        offset = parseInt(queryObj.offset);
+      }
       query += ` LIMIT ? OFFSET ?`;
       values.push(limit, offset);
     }
@@ -389,7 +392,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       const addressValues = Object.values(newAddress);
 
       const addressQuery = `INSERT INTO addresses (${addressFields}, created_at, updated_at) VALUES (${addressPlaceholders}, NOW(), NOW())`;
- 
 
       const [addressResult] = await pool.query(addressQuery, addressValues);
 
@@ -497,7 +499,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
           continue;
         }
 
-
         const deleteImageQuery = `
         DELETE FROM properties_pictures 
         WHERE image_id = ? AND property_id = ?
@@ -540,7 +541,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
 
     // Process existing image description updates
     if (hasImageUpdates) {
-
       for (let i = 0; i < existing_image_ids.length; i++) {
         const imageId = existing_image_ids[i];
         const description = existing_descriptions[i] || "";
@@ -551,7 +551,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
           console.warn(`Skipping invalid image ID: ${imageId}`);
           continue;
         }
-
 
         const updateImageQuery = `
         UPDATE properties_pictures 
@@ -607,8 +606,6 @@ const deletePropertyById = async (property_id = "") => {
       throw new Error("Only properties with 'Available' status can be deleted");
     }
 
-   
-
     // Soft delete - update status instead of actual deletion
     const softDeleteQuery = `
             UPDATE properties 
@@ -631,7 +628,6 @@ const deletePropertyById = async (property_id = "") => {
     throw new Error(error.message || "Failed to delete property");
   }
 };
-
 
 export default {
   createProperty,

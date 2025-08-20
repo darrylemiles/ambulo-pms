@@ -21,42 +21,49 @@ let editShowcaseImages = [];
 const MAX_SHOWCASE_IMAGES = 10;
 let deletedShowcaseImages = [];
 
+//Pagination
+let currentPage = 1;
+let pageSize = 6;
+let totalProperties = 0;
+
 // API Configuration
 const API_BASE_URL = "/api/v1/properties";
-
-
 
 // Initialize the application
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, initializing...");
-  loadProperties();
+  loadProperties(1, pageSize);
   setupEventListeners();
 });
 
 // Load properties from backend
-async function loadProperties() {
+async function loadProperties(page = 1, limit = pageSize) {
   try {
     showLoadingState();
 
-    const response = await fetch(API_BASE_URL, {
+    const params = new URLSearchParams({
+      page,
+      limit,
+    });
+
+    const response = await fetch(`${API_BASE_URL}?${params.toString()}`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const result = await response.json();
-    console.log("Properties loaded:", result);
 
     if (result.properties) {
       properties = result.properties.map(transformPropertyData);
       filteredProperties = [...properties];
+      totalProperties = result.total;
+      currentPage = result.page || 1;
+      pageSize = result.limit || pageSize;
       renderProperties();
+      renderPagination();
       hideLoadingState();
     } else {
       throw new Error("Invalid response format");
@@ -66,9 +73,6 @@ async function loadProperties() {
     showErrorState();
   }
 }
-
-// Transform backend property data to frontend format
-// Replace the transformPropertyData function:
 
 function transformPropertyData(backendProperty) {
   return {
@@ -97,7 +101,65 @@ function transformPropertyData(backendProperty) {
   };
 }
 
+function renderPagination() {
+  const paginationContainerId = "paginationContainer";
+  let container = document.getElementById(paginationContainerId);
 
+  // Hide pagination if add/edit forms are active
+  if (isAddingProperty || isEditingProperty) {
+    if (container) {
+      container.innerHTML = ""; // Clear pagination controls
+      container.style.display = "none";
+    }
+    return;
+  }
+
+  // Create container if not exists
+  if (!container) {
+    container = document.createElement("div");
+    container.id = paginationContainerId;
+    container.style.textAlign = "center";
+    container.style.margin = "20px 0";
+    document.getElementById("propertiesGrid").after(container);
+  }
+
+  container.style.display = "block"; // Ensure visible when not in form mode
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalProperties / pageSize);
+  if (totalPages <= 1) {
+    container.innerHTML = "";
+    return;
+  }
+
+  let html = `<nav aria-label="Property pagination"><ul class="pagination justify-content-center">`;
+
+  // Previous button
+  html += `<li class="page-item${currentPage === 1 ? " disabled" : ""}">
+    <a class="page-link" href="#" onclick="goToPage(${currentPage - 1});return false;">Previous</a>
+  </li>`;
+
+  // Page numbers (show up to 5 pages for brevity)
+  let start = Math.max(1, currentPage - 2);
+  let end = Math.min(totalPages, currentPage + 2);
+  if (currentPage <= 3) end = Math.min(5, totalPages);
+  if (currentPage > totalPages - 2) start = Math.max(1, totalPages - 4);
+
+  for (let i = start; i <= end; i++) {
+    html += `<li class="page-item${i === currentPage ? " active" : ""}">
+      <a class="page-link" href="#" onclick="goToPage(${i});return false;">${i}</a>
+    </li>`;
+  }
+
+  // Next button
+  html += `<li class="page-item${currentPage === totalPages ? " disabled" : ""}">
+    <a class="page-link" href="#" onclick="goToPage(${currentPage + 1});return false;">Next</a>
+  </li>`;
+
+  html += `</ul></nav>`;
+
+  container.innerHTML = html;
+}
 
 // Map backend property status to frontend status
 function mapPropertyStatus(backendStatus) {
@@ -369,7 +431,6 @@ function closeAddModal() {
   hideAddPropertyForm();
 }
 
-
 function openEditPropertyForm(id) {
   console.log("openEditPropertyForm called with id:", id);
   const property = properties.find((p) => p.id === id);
@@ -410,7 +471,6 @@ function closeDetailsModal() {
   }
 }
 
-
 function populatePropertyDetails(property) {
   // Set title
   const titleElement = document.getElementById("detailsTitle");
@@ -420,21 +480,21 @@ function populatePropertyDetails(property) {
 
   // Prepare all images (display image + showcase images)
   const allImages = [];
-  
+
   // Add display image if it exists
   if (property.display_image) {
     allImages.push({
       url: property.display_image,
-      description: "Main Display Image"
+      description: "Main Display Image",
     });
   }
-  
+
   // Add showcase images
   if (property.property_pictures && property.property_pictures.length > 0) {
     property.property_pictures.forEach((picture, index) => {
       allImages.push({
         url: picture.image_url,
-        description: picture.image_desc || `Showcase Image ${index + 1}`
+        description: picture.image_desc || `Showcase Image ${index + 1}`,
       });
     });
   }
@@ -443,7 +503,7 @@ function populatePropertyDetails(property) {
   if (allImages.length === 0) {
     allImages.push({
       url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      description: "No Image Available"
+      description: "No Image Available",
     });
   }
 
@@ -462,24 +522,26 @@ function populatePropertyDetails(property) {
   const thumbnailContainer = document.getElementById("detailThumbnails");
   if (thumbnailContainer) {
     thumbnailContainer.innerHTML = "";
-    
+
     allImages.forEach((image, index) => {
       const thumbnail = document.createElement("img");
       thumbnail.src = image.url;
       thumbnail.alt = image.description;
-      thumbnail.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+      thumbnail.className = `thumbnail ${index === 0 ? "active" : ""}`;
       thumbnail.onclick = () => changeDetailImage(index, true);
       thumbnailContainer.appendChild(thumbnail);
     });
   }
 
   // Populate specifications
-  const specificationsContent = document.getElementById("specificationsContent");
+  const specificationsContent = document.getElementById(
+    "specificationsContent"
+  );
   if (specificationsContent) {
     specificationsContent.innerHTML = `
       <div class="spec-row">
         <span class="spec-label">Property Name:</span>
-        <span class="spec-value">${property.property_name || 'N/A'}</span>
+        <span class="spec-value">${property.property_name || "N/A"}</span>
       </div>
       <div class="spec-row">
         <span class="spec-label">Floor Area:</span>
@@ -487,31 +549,45 @@ function populatePropertyDetails(property) {
       </div>
       <div class="spec-row">
         <span class="spec-label">Location:</span>
-        <span class="spec-value">${property.location || 'N/A'}</span>
+        <span class="spec-value">${property.location || "N/A"}</span>
       </div>
       <div class="spec-row">
         <span class="spec-label">Description:</span>
-        <span class="spec-value">${property.description || 'No description available'}</span>
+        <span class="spec-value">${
+          property.description || "No description available"
+        }</span>
       </div>
     `;
   }
 
   // Populate other details
-  document.getElementById("detailPrice").textContent = `₱${property.base_rent.toLocaleString()}`;
-  document.getElementById("detailLeaseTerm").textContent = `${property.minimum_lease_term_months} months`;
-  document.getElementById("detailSecurityDeposit").textContent = `${property.security_deposit_months} months`;
-  document.getElementById("detailPropertyTaxes").textContent = `₱${property.property_taxes_quarterly.toLocaleString()}/quarter`;
-  document.getElementById("detailDeposit").textContent = `${property.security_deposit_months} months deposit`;
-  
+  document.getElementById(
+    "detailPrice"
+  ).textContent = `₱${property.base_rent.toLocaleString()}`;
+  document.getElementById(
+    "detailLeaseTerm"
+  ).textContent = `${property.minimum_lease_term_months} months`;
+  document.getElementById(
+    "detailSecurityDeposit"
+  ).textContent = `${property.security_deposit_months} months`;
+  document.getElementById(
+    "detailPropertyTaxes"
+  ).textContent = `₱${property.property_taxes_quarterly.toLocaleString()}/quarter`;
+  document.getElementById(
+    "detailDeposit"
+  ).textContent = `${property.security_deposit_months} months deposit`;
+
   // Update status
   const statusElement = document.getElementById("detailStatus");
-  statusElement.textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
+  statusElement.textContent =
+    property.status.charAt(0).toUpperCase() + property.status.slice(1);
   statusElement.className = `availability-status ${property.status}`;
-  
-  // Update last updated
-  document.getElementById("detailLastUpdated").textContent = formatDate(property.updated_at);
-}
 
+  // Update last updated
+  document.getElementById("detailLastUpdated").textContent = formatDate(
+    property.updated_at
+  );
+}
 
 // Search and filter functions
 async function searchProperties(query) {
@@ -663,26 +739,27 @@ function updateBreadcrumb(customBreadcrumbs = null) {
 
   if (customBreadcrumbs) {
     // Custom breadcrumbs for property details view
-    const breadcrumbItems = customBreadcrumbs.map(item => {
-      if (item.active) {
-        return `<li class="breadcrumb-item active" aria-current="page">
+    const breadcrumbItems = customBreadcrumbs
+      .map((item) => {
+        if (item.active) {
+          return `<li class="breadcrumb-item active" aria-current="page">
           ${item.text}
         </li>`;
-      } else {
-        return `<li class="breadcrumb-item">
+        } else {
+          return `<li class="breadcrumb-item">
           <a href="#" onclick="${item.onclick}">
             ${item.text}
           </a>
         </li>`;
-      }
-    }).join('');
-    
+        }
+      })
+      .join("");
+
     breadcrumbNav.innerHTML = breadcrumbItems;
-    
+
     // Hide controls when showing custom breadcrumbs
     if (propertyControls) propertyControls.style.display = "none";
     if (addPropertyBtn) addPropertyBtn.style.display = "none";
-    
   } else if (isAddingProperty) {
     breadcrumbNav.innerHTML = `
       <li class="breadcrumb-item">
@@ -696,7 +773,6 @@ function updateBreadcrumb(customBreadcrumbs = null) {
     `;
     if (propertyControls) propertyControls.style.display = "none";
     if (addPropertyBtn) addPropertyBtn.style.display = "none";
-    
   } else if (isEditingProperty) {
     const property = properties.find((p) => p.id === currentEditPropertyId);
     const propertyName = property ? property.property_name : "Property";
@@ -713,7 +789,6 @@ function updateBreadcrumb(customBreadcrumbs = null) {
     `;
     if (propertyControls) propertyControls.style.display = "none";
     if (addPropertyBtn) addPropertyBtn.style.display = "none";
-    
   } else {
     breadcrumbNav.innerHTML = `
       <li class="breadcrumb-item active" aria-current="page">
@@ -739,7 +814,9 @@ function showEditPropertyForm(propertyId) {
 function hideEditPropertyForm(skipConfirmation = false) {
   // Only show confirmation if we're actually in edit mode and user initiated the action
   if (!skipConfirmation && isEditingProperty) {
-    if (!confirm("Are you sure you want to cancel? All changes will be lost.")) {
+    if (
+      !confirm("Are you sure you want to cancel? All changes will be lost.")
+    ) {
       return; // User clicked "Cancel" in the confirmation dialog, so don't proceed
     }
   }
@@ -747,13 +824,13 @@ function hideEditPropertyForm(skipConfirmation = false) {
   // User confirmed or we're skipping confirmation, proceed with hiding the form
   isEditingProperty = false;
   currentEditPropertyId = null;
-  
+
   // Hide the edit form container
   const editContainer = document.getElementById("editPropertyFormContainer");
   if (editContainer) {
     editContainer.style.display = "none";
   }
-  
+
   updateBreadcrumb();
   showPropertiesGrid();
   resetEditInlineForm();
@@ -766,6 +843,26 @@ function hideEditPropertyForm(skipConfirmation = false) {
   if (propertyControls) propertyControls.style.display = "flex";
 }
 
+function showFormContainer() {
+  document.getElementById("propertiesGrid").style.display = "none";
+  document.getElementById("addPropertyFormContainer").style.display = "block";
+
+  // Ensure Add Property button is hidden
+  const addPropertyBtn = document.querySelector(".new-ticket-btn");
+  if (addPropertyBtn) {
+    addPropertyBtn.style.display = "none";
+  }
+
+  // Hide pagination controls when form is shown
+  const paginationContainer = document.getElementById("paginationContainer");
+  if (paginationContainer) {
+    paginationContainer.style.display = "none";
+  }
+
+  // Enable floating actions for add form
+  handleFloatingFormActions("addPropertyFormContainer");
+}
+
 function showEditFormContainer() {
   document.getElementById("propertiesGrid").style.display = "none";
   document.getElementById("addPropertyFormContainer").style.display = "none";
@@ -776,30 +873,53 @@ function showEditFormContainer() {
   if (addPropertyBtn) {
     addPropertyBtn.style.display = "none";
   }
-}
 
-function showFormContainer() {
-  document.getElementById("propertiesGrid").style.display = "none";
-  document.getElementById("addPropertyFormContainer").style.display = "block";
-
-  // Ensure Add Property button is hidden
-  const addPropertyBtn = document.querySelector(".new-ticket-btn");
-  if (addPropertyBtn) {
-    addPropertyBtn.style.display = "none";
+  // Hide pagination controls when edit form is shown
+  const paginationContainer = document.getElementById("paginationContainer");
+  if (paginationContainer) {
+    paginationContainer.style.display = "none";
   }
+
+  // Enable floating actions for edit form
+  handleFloatingFormActions("editPropertyFormContainer");
 }
 
-// Replace your existing showPropertiesGrid function
+function handleFloatingFormActions(formContainerId, actionsClass = ".form-actions") {
+  const formContainer = document.getElementById(formContainerId);
+  if (!formContainer) return;
+
+  const actions = formContainer.querySelector(actionsClass);
+  if (!actions) return;
+
+  function checkFloating() {
+    const rect = actions.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    // If the bottom of the actions is below the viewport, float it
+    if (rect.bottom > windowHeight - 10) {
+      actions.classList.add("floating-actions");
+    } else {
+      actions.classList.remove("floating-actions");
+    }
+  }
+
+  // Initial check and on scroll/resize
+  checkFloating();
+  window.addEventListener("scroll", checkFloating, { passive: true });
+  window.addEventListener("resize", checkFloating);
+
+}
+
 function showPropertiesGrid() {
   // Hide all form containers
   const addContainer = document.getElementById("addPropertyFormContainer");
   const editContainer = document.getElementById("editPropertyFormContainer");
   // const detailsContainer = document.getElementById("propertyDetailsViewContainer");
-  
+
   if (addContainer) addContainer.style.display = "none";
   if (editContainer) editContainer.style.display = "none";
   // if (detailsContainer) detailsContainer.style.display = "none";
-  
+
   // Show properties grid
   const propertiesGrid = document.getElementById("propertiesGrid");
   if (propertiesGrid) {
@@ -809,11 +929,16 @@ function showPropertiesGrid() {
   // Show controls and Add Property button
   const propertyControls = document.getElementById("propertyControls");
   const addPropertyBtn = document.querySelector(".new-ticket-btn");
-  
+
   if (propertyControls) propertyControls.style.display = "flex";
   if (addPropertyBtn) addPropertyBtn.style.display = "flex";
-}
 
+  // Show pagination controls when grid is shown
+  const paginationContainer = document.getElementById("paginationContainer");
+  if (paginationContainer) {
+    paginationContainer.style.display = "block";
+  }
+}
 
 function setupEditImageShowcase() {
   const showcaseContainer = document.getElementById(
@@ -1090,7 +1215,6 @@ function getEditShowcaseImagesForSubmission() {
   };
 }
 
-
 // Setup edit inline form
 function setupEditInlineForm() {
   if (editInlineFormHandler) return; // Already setup
@@ -1116,7 +1240,6 @@ function setupEditInlineForm() {
 
   editInlineFormHandler = true;
 }
-
 
 function populateEditForm(propertyId) {
   // Clear deleted images list when starting to edit a property
@@ -1174,7 +1297,6 @@ function populateEditForm(propertyId) {
 
   console.log("Edit form populated successfully");
 }
-
 
 function validateImage(file) {
   // Check file type
@@ -1425,7 +1547,6 @@ function clearEditInlineAddressForm() {
   document.getElementById("editInlineNewCountry").value = "Philippines";
 }
 
-
 // Add this helper function for consistent address formatting
 function formatAddressForSelect(address) {
   const parts = [
@@ -1441,8 +1562,12 @@ function formatAddressForSelect(address) {
 }
 
 // Add this fallback function for cached properties
-function populateAddressSelectFromCachedProperties(selectElement, propertiesData) {
-  selectElement.innerHTML = '<option value="">Select an existing address (optional)</option>';
+function populateAddressSelectFromCachedProperties(
+  selectElement,
+  propertiesData
+) {
+  selectElement.innerHTML =
+    '<option value="">Select an existing address (optional)</option>';
 
   // Extract unique addresses from properties
   const uniqueAddresses = new Map();
@@ -1498,9 +1623,10 @@ function populateAddressSelectFromCachedProperties(selectElement, propertiesData
     selectElement.appendChild(option);
   });
 
-  console.log(`FALLBACK: Loaded ${uniqueAddresses.size} unique addresses from ${propertiesData.length} cached properties`);
+  console.log(
+    `FALLBACK: Loaded ${uniqueAddresses.size} unique addresses from ${propertiesData.length} cached properties`
+  );
 }
-
 
 // Replace your existing loadEditInlineAddresses function
 async function loadEditInlineAddresses() {
@@ -1532,7 +1658,8 @@ async function loadEditInlineAddresses() {
         properties = freshProperties;
 
         // Clear existing options
-        addressSelect.innerHTML = '<option value="">Select an existing address (optional)</option>';
+        addressSelect.innerHTML =
+          '<option value="">Select an existing address (optional)</option>';
 
         // Extract unique addresses from fresh properties
         const uniqueAddresses = new Map();
@@ -1573,8 +1700,8 @@ async function loadEditInlineAddresses() {
         });
 
         // Sort addresses alphabetically
-        const sortedAddresses = Array.from(uniqueAddresses.values()).sort((a, b) =>
-          a.formatted.localeCompare(b.formatted)
+        const sortedAddresses = Array.from(uniqueAddresses.values()).sort(
+          (a, b) => a.formatted.localeCompare(b.formatted)
         );
 
         // Populate the select with unique addresses
@@ -1586,7 +1713,9 @@ async function loadEditInlineAddresses() {
           addressSelect.appendChild(option);
         });
 
-        console.log(`EDIT FORM: Loaded ${uniqueAddresses.size} unique addresses from ${freshProperties.length} fresh properties`);
+        console.log(
+          `EDIT FORM: Loaded ${uniqueAddresses.size} unique addresses from ${freshProperties.length} fresh properties`
+        );
       } else {
         throw new Error("Invalid response format");
       }
@@ -1595,7 +1724,7 @@ async function loadEditInlineAddresses() {
     }
   } catch (error) {
     console.error("Error fetching fresh addresses for EDIT form:", error);
-    
+
     // Fallback to cached properties
     console.warn("Falling back to cached properties data");
     populateAddressSelectFromCachedProperties(addressSelect, properties);
@@ -1605,7 +1734,7 @@ async function loadEditInlineAddresses() {
 async function handleEditInlineFormSubmit(event) {
   event.preventDefault();
 
-    if (!validateForm(true)) {
+  if (!validateForm(true)) {
     const submitBtn = document.getElementById("editInlineSubmitBtn");
     submitBtn.style.animation = "shake 0.5s ease-in-out";
     setTimeout(() => {
@@ -1735,41 +1864,42 @@ async function handleEditInlineFormSubmit(event) {
       body: formData,
     });
 
-        // In your handleEditInlineFormSubmit function, find this section and update it:
-    
+    // In your handleEditInlineFormSubmit function, find this section and update it:
+
     if (response.ok) {
       const result = await response.json();
       console.log("Property updated successfully:", result);
-    
+
       // Reload properties to get fresh data including new addresses
       await loadProperties();
-    
+
       showInlineSuccessMessage("Property updated successfully!");
-    
+
       // Navigate directly to properties list without confirmation - UPDATED
       setTimeout(() => {
         // Reset edit state and hide form WITHOUT confirmation
         isEditingProperty = false;
         currentEditPropertyId = null;
-        
+
         // Hide edit form container immediately
-        const editContainer = document.getElementById("editPropertyFormContainer");
+        const editContainer = document.getElementById(
+          "editPropertyFormContainer"
+        );
         if (editContainer) {
           editContainer.style.display = "none";
         }
-        
+
         // Show properties grid and update UI
         showPropertiesGrid();
         updateBreadcrumb();
         resetEditInlineForm();
-        
+
         // Ensure proper visibility reset
         const addPropertyBtn = document.querySelector(".new-ticket-btn");
         const propertyControls = document.getElementById("propertyControls");
-    
+
         if (addPropertyBtn) addPropertyBtn.style.display = "flex";
         if (propertyControls) propertyControls.style.display = "flex";
-        
       }, 1500);
     } else {
       const errorData = await response.json().catch(() => ({}));
@@ -1786,7 +1916,6 @@ async function handleEditInlineFormSubmit(event) {
     submitBtn.innerHTML = originalText;
   }
 }
-
 
 function setupInlineImageUpload() {
   const uploadContainer = document.getElementById("inlineImageUploadContainer");
@@ -2024,7 +2153,8 @@ async function loadInlineAddresses() {
         properties = freshProperties;
 
         // Clear existing options
-        addressSelect.innerHTML = '<option value="">Select an existing address (optional)</option>';
+        addressSelect.innerHTML =
+          '<option value="">Select an existing address (optional)</option>';
 
         // Extract unique addresses from fresh properties
         const uniqueAddresses = new Map();
@@ -2065,8 +2195,8 @@ async function loadInlineAddresses() {
         });
 
         // Sort addresses alphabetically
-        const sortedAddresses = Array.from(uniqueAddresses.values()).sort((a, b) =>
-          a.formatted.localeCompare(b.formatted)
+        const sortedAddresses = Array.from(uniqueAddresses.values()).sort(
+          (a, b) => a.formatted.localeCompare(b.formatted)
         );
 
         // Populate the select with unique addresses
@@ -2078,7 +2208,9 @@ async function loadInlineAddresses() {
           addressSelect.appendChild(option);
         });
 
-        console.log(`CREATE FORM: Loaded ${uniqueAddresses.size} unique addresses from ${freshProperties.length} fresh properties`);
+        console.log(
+          `CREATE FORM: Loaded ${uniqueAddresses.size} unique addresses from ${freshProperties.length} fresh properties`
+        );
       } else {
         throw new Error("Invalid response format");
       }
@@ -2087,7 +2219,7 @@ async function loadInlineAddresses() {
     }
   } catch (error) {
     console.error("Error fetching fresh addresses for CREATE form:", error);
-    
+
     // Fallback to cached properties
     console.warn("Falling back to cached properties data");
     populateAddressSelectFromCachedProperties(addressSelect, properties);
@@ -2097,7 +2229,7 @@ async function loadInlineAddresses() {
 async function handleInlineFormSubmit(event) {
   event.preventDefault();
 
-    if (!validateForm(false)) {
+  if (!validateForm(false)) {
     const submitBtn = document.getElementById("inlineSubmitBtn");
     submitBtn.style.animation = "shake 0.5s ease-in-out";
     setTimeout(() => {
@@ -2425,12 +2557,15 @@ const FIELD_VALIDATION_RULES = {
 function getFieldConfig(fieldName, isEditForm = false) {
   const baseConfig = FIELD_VALIDATION_RULES[fieldName];
   const prefix = isEditForm ? "edit" : "";
-  const capitalizedFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
-  
+  const capitalizedFieldName =
+    fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+
   return {
     id: isEditForm ? `edit${capitalizedFieldName}` : fieldName,
-    errorId: isEditForm ? `edit${capitalizedFieldName}Error` : `${fieldName}Error`,
-    ...baseConfig
+    errorId: isEditForm
+      ? `edit${capitalizedFieldName}Error`
+      : `${fieldName}Error`,
+    ...baseConfig,
   };
 }
 
@@ -2438,12 +2573,12 @@ function getFieldConfig(fieldName, isEditForm = false) {
 function validateField(fieldConfig) {
   const field = document.getElementById(fieldConfig.id);
   const errorElement = document.getElementById(fieldConfig.errorId);
-  
+
   if (!field || !errorElement) {
     console.warn(`Field or error element not found: ${fieldConfig.id}`);
     return true; // Skip validation if elements don't exist
   }
-  
+
   const value = field.value.trim();
 
   // Clear previous error state
@@ -2496,8 +2631,10 @@ function clearFieldError(field, errorElement) {
 
 // Unified form validation function
 function validateForm(isEditForm = false) {
-  const formContainer = isEditForm ? "#editPropertyFormContainer" : "#addPropertyFormContainer";
-  
+  const formContainer = isEditForm
+    ? "#editPropertyFormContainer"
+    : "#addPropertyFormContainer";
+
   // Clear all errors for the specific form
   clearAllErrors(isEditForm);
 
@@ -2550,8 +2687,10 @@ function clearAllErrors(isEditForm = false) {
 
 function showValidationSummary(errors, isEditForm = false) {
   const summaryId = isEditForm ? "editValidationSummary" : "validationSummary";
-  const formContainer = isEditForm ? "#editPropertyFormContainer" : "#addPropertyFormContainer";
-  
+  const formContainer = isEditForm
+    ? "#editPropertyFormContainer"
+    : "#addPropertyFormContainer";
+
   // Create validation summary if it doesn't exist
   let validationSummary = document.getElementById(summaryId);
   if (!validationSummary) {
@@ -2560,9 +2699,14 @@ function showValidationSummary(errors, isEditForm = false) {
     validationSummary.className = "validation-summary";
 
     // Insert at the beginning of the first form section
-    const firstFormSection = document.querySelector(`${formContainer} .form-section`);
+    const firstFormSection = document.querySelector(
+      `${formContainer} .form-section`
+    );
     if (firstFormSection) {
-      firstFormSection.insertBefore(validationSummary, firstFormSection.firstChild);
+      firstFormSection.insertBefore(
+        validationSummary,
+        firstFormSection.firstChild
+      );
     }
   }
 
@@ -2578,17 +2722,19 @@ function showValidationSummary(errors, isEditForm = false) {
 
 // Unified real-time validation setup
 function setupRealTimeValidation(isEditForm = false) {
-  const formContainer = isEditForm ? "#editPropertyFormContainer" : "#addPropertyFormContainer";
-  
+  const formContainer = isEditForm
+    ? "#editPropertyFormContainer"
+    : "#addPropertyFormContainer";
+
   Object.keys(FIELD_VALIDATION_RULES).forEach((fieldName) => {
     const fieldConfig = getFieldConfig(fieldName, isEditForm);
     const field = document.getElementById(fieldConfig.id);
-    
+
     if (field) {
       // Remove existing listeners to prevent duplicates
       field.removeEventListener("blur", field._validateOnBlur);
       field.removeEventListener("input", field._clearErrorOnInput);
-      
+
       // Validate on blur (when user leaves the field)
       field._validateOnBlur = () => validateField(fieldConfig);
       field.addEventListener("blur", field._validateOnBlur);
@@ -2604,7 +2750,9 @@ function setupRealTimeValidation(isEditForm = false) {
             `${formContainer} .error-message.show`
           );
           if (remainingErrors.length === 0) {
-            const summaryId = isEditForm ? "editValidationSummary" : "validationSummary";
+            const summaryId = isEditForm
+              ? "editValidationSummary"
+              : "validationSummary";
             const validationSummary = document.getElementById(summaryId);
             if (validationSummary) {
               validationSummary.classList.remove("show");
@@ -2616,8 +2764,6 @@ function setupRealTimeValidation(isEditForm = false) {
     }
   });
 }
-
-
 
 function resetEditInlineForm() {
   const form = document.getElementById("inlineEditPropertyForm");
@@ -2657,10 +2803,9 @@ function resetEditInlineForm() {
       '<i class="fas fa-plus me-1"></i> Add New Address';
 }
 
-
 function navigateToPropertiesListDirectly() {
   console.log("Navigating directly to properties list");
-  
+
   // Reset all states without confirmation
   isAddingProperty = false;
   isEditingProperty = false;
@@ -2669,8 +2814,10 @@ function navigateToPropertiesListDirectly() {
   // Hide all forms and views without confirmation
   const addContainer = document.getElementById("addPropertyFormContainer");
   const editContainer = document.getElementById("editPropertyFormContainer");
-  const detailsContainer = document.getElementById("propertyDetailsViewContainer");
-  
+  const detailsContainer = document.getElementById(
+    "propertyDetailsViewContainer"
+  );
+
   if (addContainer) addContainer.style.display = "none";
   if (editContainer) editContainer.style.display = "none";
   if (detailsContainer) detailsContainer.style.display = "none";
@@ -2695,38 +2842,36 @@ function navigateToPropertiesListDirectly() {
   console.log("Navigation completed");
 }
 
-
 // Update your delete function to reload properties after successful deletion
 async function removeProperty(propertyId) {
   try {
     const response = await fetch(`${API_BASE_URL}/${propertyId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      credentials: 'include',
+      credentials: "include",
     });
 
     if (response.ok) {
       const result = await response.json();
-      
+
       // Show success message
-      showSuccessMessage(result.message || 'Property deleted successfully!');
-      
+      showSuccessMessage(result.message || "Property deleted successfully!");
+
       // 🔥 Reload properties to update the UI
       await loadProperties();
-      
     } else {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to delete property: ${response.status}`);
+      throw new Error(
+        errorData.message || `Failed to delete property: ${response.status}`
+      );
     }
   } catch (error) {
-    console.error('Error deleting property:', error);
-    showErrorMessage(error.message || 'Failed to delete property');
+    console.error("Error deleting property:", error);
+    showErrorMessage(error.message || "Failed to delete property");
   }
 }
-
-
 
 // Make functions globally available
 window.removeEditShowcaseImage = removeEditShowcaseImage;
@@ -2743,6 +2888,18 @@ window.showEditPropertyForm = showEditPropertyForm;
 window.hideEditPropertyForm = hideEditPropertyForm;
 window.navigateToPropertiesListDirectly = navigateToPropertiesListDirectly;
 
+window.goToPage = async function (page) {
+  if (page < 1) page = 1;
+  currentPage = page; // Update the global currentPage
+  await loadProperties(page, pageSize);
+  renderPagination();
+
+  const grid = document.getElementById("propertiesGrid");
+  if (grid) {
+    grid.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
 // Add CSS animation for loading spinner
 const style = document.createElement("style");
 style.textContent = `
@@ -2752,3 +2909,4 @@ style.textContent = `
             }
         `;
 document.head.appendChild(style);
+
