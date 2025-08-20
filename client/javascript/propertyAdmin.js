@@ -1,4 +1,5 @@
 import formatAddress from "../utils/formatAddress.js";
+import formatDate from "../utils/formatDate.js";
 
 let properties = [];
 let filteredProperties = [];
@@ -85,7 +86,7 @@ function transformPropertyData(backendProperty) {
     description: backendProperty.description || "",
     display_image: backendProperty.display_image,
     property_pictures: backendProperty.property_pictures || [],
-    property_taxes_quarterly: backendProperty.property_taxes_quarterly || 0,
+    advance_months: backendProperty.advance_months || 0,
     security_deposit_months: backendProperty.security_deposit_months || 2,
     minimum_lease_term_months: backendProperty.minimum_lease_term_months || 24,
     address_id: backendProperty.address_id,
@@ -136,7 +137,9 @@ function renderPagination() {
 
   // Previous button
   html += `<li class="page-item${currentPage === 1 ? " disabled" : ""}">
-    <a class="page-link" href="#" onclick="goToPage(${currentPage - 1});return false;">Previous</a>
+    <a class="page-link" href="#" onclick="goToPage(${
+      currentPage - 1
+    });return false;">Previous</a>
   </li>`;
 
   // Page numbers (show up to 5 pages for brevity)
@@ -145,15 +148,21 @@ function renderPagination() {
   if (currentPage <= 3) end = Math.min(5, totalPages);
   if (currentPage > totalPages - 2) start = Math.max(1, totalPages - 4);
 
-for (let i = start; i <= end; i++) {
-  html += `<li class="page-item${i === parseInt(currentPage) ? " active" : ""}">  
+  for (let i = start; i <= end; i++) {
+    html += `<li class="page-item${
+      i === parseInt(currentPage) ? " active" : ""
+    }">  
     <a class="page-link" href="#" onclick="goToPage(${i});return false;">${i}</a>
   </li>`;
   }
 
   // Next button
-  html += `<li class="page-item${currentPage === totalPages ? " disabled" : ""}">
-    <a class="page-link" href="#" onclick="goToPage(${currentPage + 1});return false;">Next</a>
+  html += `<li class="page-item${
+    currentPage === totalPages ? " disabled" : ""
+  }">
+    <a class="page-link" href="#" onclick="goToPage(${
+      currentPage + 1
+    });return false;">Next</a>
   </li>`;
 
   html += `</ul></nav>`;
@@ -208,7 +217,6 @@ function setupEventListeners() {
 }
 
 function renderProperties() {
-  console.log("Rendering properties:", filteredProperties.length);
   const grid = document.getElementById("propertiesGrid");
 
   if (!grid) {
@@ -314,8 +322,8 @@ function renderProperties() {
                             <div class="detail-content">
                                 <div class="detail-value">${
                                   property.minimum_lease_term_months
-                                }</div>
-                                <div class="detail-label">Months Lease</div>
+                                } MONTHS</div>
+                                <div class="detail-label">Minimum Lease Time</div>
                             </div>
                         </div>
                         
@@ -333,11 +341,13 @@ function renderProperties() {
                         
                         <div class="detail-card">
                             <div class="detail-icon">
-                                <i class="fas fa-file-invoice-dollar"></i>
+                                <i class="fa-sharp fa-solid fa-money-bill-wave"></i>
                             </div>
                             <div class="detail-content">
-                                <div class="detail-value">₱${property.property_taxes_quarterly.toLocaleString()}</div>
-                                <div class="detail-label">Quarterly Tax</div>
+                                <div class="detail-value">${
+                                  property.advance_months
+                                } MONTHS </div>
+                                <div class="detail-label">Advance Payment</div>
                             </div>
                         </div>
                     </div>
@@ -369,7 +379,6 @@ function renderProperties() {
     )
     .join("");
 
-  console.log("Properties rendered successfully");
 }
 
 // Helper function to get status icon
@@ -432,7 +441,6 @@ function closeAddModal() {
 }
 
 function openEditPropertyForm(id) {
-  console.log("openEditPropertyForm called with id:", id);
   const property = properties.find((p) => p.id === id);
   if (!property) {
     console.error("Property not found:", id);
@@ -447,130 +455,10 @@ function closeEditModal() {
   hideEditPropertyForm();
 }
 
-
-
 function closeDetailsModal() {
   if (detailsModal) {
     detailsModal.close();
   }
-}
-
-function populatePropertyDetails(property) {
-  // Set title
-  const titleElement = document.getElementById("detailsTitle");
-  if (titleElement) {
-    titleElement.textContent = property.property_name || "Property Details";
-  }
-
-  // Prepare all images (display image + showcase images)
-  const allImages = [];
-
-  // Add display image if it exists
-  if (property.display_image) {
-    allImages.push({
-      url: property.display_image,
-      description: "Main Display Image",
-    });
-  }
-
-  // Add showcase images
-  if (property.property_pictures && property.property_pictures.length > 0) {
-    property.property_pictures.forEach((picture, index) => {
-      allImages.push({
-        url: picture.image_url,
-        description: picture.image_desc || `Showcase Image ${index + 1}`,
-      });
-    });
-  }
-
-  // If no images, use placeholder
-  if (allImages.length === 0) {
-    allImages.push({
-      url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      description: "No Image Available",
-    });
-  }
-
-  // Store current property images globally for navigation
-  currentPropertyImages = allImages;
-  currentDetailImageIndex = 0;
-
-  // Set main image
-  const mainImage = document.getElementById("detailMainImage");
-  if (mainImage) {
-    mainImage.src = allImages[0].url;
-    mainImage.alt = allImages[0].description;
-  }
-
-  // Populate thumbnails
-  const thumbnailContainer = document.getElementById("detailThumbnails");
-  if (thumbnailContainer) {
-    thumbnailContainer.innerHTML = "";
-
-    allImages.forEach((image, index) => {
-      const thumbnail = document.createElement("img");
-      thumbnail.src = image.url;
-      thumbnail.alt = image.description;
-      thumbnail.className = `thumbnail ${index === 0 ? "active" : ""}`;
-      thumbnail.onclick = () => changeDetailImage(index, true);
-      thumbnailContainer.appendChild(thumbnail);
-    });
-  }
-
-  // Populate specifications
-  const specificationsContent = document.getElementById(
-    "specificationsContent"
-  );
-  if (specificationsContent) {
-    specificationsContent.innerHTML = `
-      <div class="spec-row">
-        <span class="spec-label">Property Name:</span>
-        <span class="spec-value">${property.property_name || "N/A"}</span>
-      </div>
-      <div class="spec-row">
-        <span class="spec-label">Floor Area:</span>
-        <span class="spec-value">${property.floor_area_sqm} m²</span>
-      </div>
-      <div class="spec-row">
-        <span class="spec-label">Location:</span>
-        <span class="spec-value">${property.location || "N/A"}</span>
-      </div>
-      <div class="spec-row">
-        <span class="spec-label">Description:</span>
-        <span class="spec-value">${
-          property.description || "No description available"
-        }</span>
-      </div>
-    `;
-  }
-
-  // Populate other details
-  document.getElementById(
-    "detailPrice"
-  ).textContent = `₱${property.base_rent.toLocaleString()}`;
-  document.getElementById(
-    "detailLeaseTerm"
-  ).textContent = `${property.minimum_lease_term_months} months`;
-  document.getElementById(
-    "detailSecurityDeposit"
-  ).textContent = `${property.security_deposit_months} months`;
-  document.getElementById(
-    "detailPropertyTaxes"
-  ).textContent = `₱${property.property_taxes_quarterly.toLocaleString()}/quarter`;
-  document.getElementById(
-    "detailDeposit"
-  ).textContent = `${property.security_deposit_months} months deposit`;
-
-  // Update status
-  const statusElement = document.getElementById("detailStatus");
-  statusElement.textContent =
-    property.status.charAt(0).toUpperCase() + property.status.slice(1);
-  statusElement.className = `availability-status ${property.status}`;
-
-  // Update last updated
-  document.getElementById("detailLastUpdated").textContent = formatDate(
-    property.updated_at
-  );
 }
 
 // Search and filter functions
@@ -694,6 +582,7 @@ function showAddPropertyForm() {
   updateBreadcrumb();
   showFormContainer();
   setupInlineForm();
+  hidePropertyDetails();
 }
 
 // Update the hideAddPropertyForm function to ensure proper reset
@@ -852,6 +741,7 @@ function showEditFormContainer() {
   document.getElementById("propertiesGrid").style.display = "none";
   document.getElementById("addPropertyFormContainer").style.display = "none";
   document.getElementById("editPropertyFormContainer").style.display = "block";
+  hidePropertyDetails();
 
   // Ensure Add Property button is hidden
   const addPropertyBtn = document.querySelector(".new-ticket-btn");
@@ -869,7 +759,10 @@ function showEditFormContainer() {
   handleFloatingFormActions("editPropertyFormContainer");
 }
 
-function handleFloatingFormActions(formContainerId, actionsClass = ".form-actions") {
+function handleFloatingFormActions(
+  formContainerId,
+  actionsClass = ".form-actions"
+) {
   const formContainer = document.getElementById(formContainerId);
   if (!formContainer) return;
 
@@ -878,7 +771,8 @@ function handleFloatingFormActions(formContainerId, actionsClass = ".form-action
 
   function checkFloating() {
     const rect = actions.getBoundingClientRect();
-    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+    const windowHeight =
+      window.innerHeight || document.documentElement.clientHeight;
 
     // If the bottom of the actions is below the viewport, float it
     if (rect.bottom > windowHeight - 10) {
@@ -892,18 +786,19 @@ function handleFloatingFormActions(formContainerId, actionsClass = ".form-action
   checkFloating();
   window.addEventListener("scroll", checkFloating, { passive: true });
   window.addEventListener("resize", checkFloating);
-
 }
 
 function showPropertiesGrid() {
   // Hide all form containers
   const addContainer = document.getElementById("addPropertyFormContainer");
   const editContainer = document.getElementById("editPropertyFormContainer");
-  // const detailsContainer = document.getElementById("propertyDetailsViewContainer");
+  const detailsContainer = document.getElementById(
+    "propertyDetailsViewContainer"
+  );
 
   if (addContainer) addContainer.style.display = "none";
   if (editContainer) editContainer.style.display = "none";
-  // if (detailsContainer) detailsContainer.style.display = "none";
+  if (detailsContainer) detailsContainer.style.display = "none";
 
   // Show properties grid
   const propertiesGrid = document.getElementById("propertiesGrid");
@@ -1062,13 +957,6 @@ function loadExistingShowcaseImages(property) {
         dataUrl: picture.image_url,
       };
 
-      // Debug log to check the ID
-      console.log("Loading existing image:", {
-        id: picture.id,
-        imageId: picture.image_id,
-        url: picture.image_url,
-      });
-
       editShowcaseImages.push(imageData);
     });
   }
@@ -1179,13 +1067,6 @@ function getEditShowcaseImagesForSubmission() {
     (id) => id && id !== "undefined" && !isNaN(id)
   );
 
-  console.log("Getting showcase data:", {
-    totalImages: editShowcaseImages.length,
-    newImages: newImages.length,
-    updatedImages: updatedImages.length,
-    deletedImages: deletedImages.length,
-    deletedImageIds: deletedImages,
-  });
 
   return {
     newImages: newImages.map((imageData) => ({
@@ -1236,15 +1117,13 @@ function populateEditForm(propertyId) {
     return;
   }
 
-  console.log("Populating edit form with property:", property);
-
   // Populate basic property fields
   const fieldMappings = {
     editPropertyName: property.property_name,
     editFloorArea: property.floor_area_sqm,
     editPropertyStatus: mapStatusToBackend(property.status),
     editBaseRent: property.base_rent,
-    editPropertyTaxes: property.property_taxes_quarterly,
+    editAdvanceMonths: property.advance_months,
     editSecurityDeposit: property.security_deposit_months,
     editLeaseTerm: property.minimum_lease_term_months,
     editDescription: property.description || "",
@@ -1255,7 +1134,6 @@ function populateEditForm(propertyId) {
     const field = document.getElementById(fieldId);
     if (field) {
       field.value = value || "";
-      console.log(`Set ${fieldId} to:`, value);
     } else {
       console.warn(`Field ${fieldId} not found`);
     }
@@ -1265,7 +1143,6 @@ function populateEditForm(propertyId) {
   const addressSelect = document.getElementById("editInlineAddressSelect");
   if (addressSelect && property.address_id) {
     addressSelect.value = property.address_id;
-    console.log("Set address to:", property.address_id);
   }
 
   // Set existing display image
@@ -1274,13 +1151,10 @@ function populateEditForm(propertyId) {
   );
   if (uploadContainer && uploadContainer.setExistingImage) {
     uploadContainer.setExistingImage(property.display_image);
-    console.log("Set display image to:", property.display_image);
   }
 
   // Load existing showcase images
   loadExistingShowcaseImages(property);
-
-  console.log("Edit form populated successfully");
 }
 
 function validateImage(file) {
@@ -1354,8 +1228,6 @@ function setupEditInlineImageUpload() {
       // Hide preview and show upload prompt
       imagePreview.style.display = "none";
       uploadPrompt.style.display = "block";
-
-      console.log("Display image marked for removal");
     });
   }
 
@@ -1592,7 +1464,6 @@ function populateAddressSelectFromCachedProperties(
     option.textContent = "No addresses available";
     option.disabled = true;
     selectElement.appendChild(option);
-    console.log("No addresses found in cached properties");
     return;
   }
 
@@ -1608,9 +1479,7 @@ function populateAddressSelectFromCachedProperties(
     selectElement.appendChild(option);
   });
 
-  console.log(
-    `FALLBACK: Loaded ${uniqueAddresses.size} unique addresses from ${propertiesData.length} cached properties`
-  );
+
 }
 
 // Replace your existing loadEditInlineAddresses function
@@ -1697,10 +1566,6 @@ async function loadEditInlineAddresses() {
           option.dataset.addressData = JSON.stringify(address);
           addressSelect.appendChild(option);
         });
-
-        console.log(
-          `EDIT FORM: Loaded ${uniqueAddresses.size} unique addresses from ${freshProperties.length} fresh properties`
-        );
       } else {
         throw new Error("Invalid response format");
       }
@@ -1788,15 +1653,8 @@ async function handleEditInlineFormSubmit(event) {
       formData.set("remove_display_image", "true");
     }
 
-    console.log("Display image handling:", {
-      hasNewImage: !!uploadedImage,
-      shouldRemove: shouldRemoveImage,
-    });
-
     // Add showcase images data with validation
     const showcaseData = getEditShowcaseImagesForSubmission();
-
-    console.log("Showcase data being sent:", showcaseData);
 
     // Add new images
     if (showcaseData.newImages && showcaseData.newImages.length > 0) {
@@ -1834,26 +1692,13 @@ async function handleEditInlineFormSubmit(event) {
       });
     }
 
-    // Debug: Log what's being sent
-    console.log("Form data entries being sent:");
-    for (let [key, value] of formData.entries()) {
-      if (key.includes("image") || key.includes("description")) {
-        console.log(key, typeof value === "object" ? "[File Object]" : value);
-      } else {
-        console.log(key, value);
-      }
-    }
-
     const response = await fetch(`${API_BASE_URL}/${currentEditPropertyId}`, {
       method: "PATCH",
       body: formData,
     });
 
-    // In your handleEditInlineFormSubmit function, find this section and update it:
-
     if (response.ok) {
       const result = await response.json();
-      console.log("Property updated successfully:", result);
 
       // Reload properties to get fresh data including new addresses
       await loadProperties();
@@ -2192,10 +2037,6 @@ async function loadInlineAddresses() {
           option.dataset.addressData = JSON.stringify(address);
           addressSelect.appendChild(option);
         });
-
-        console.log(
-          `CREATE FORM: Loaded ${uniqueAddresses.size} unique addresses from ${freshProperties.length} fresh properties`
-        );
       } else {
         throw new Error("Invalid response format");
       }
@@ -2248,9 +2089,6 @@ async function handleInlineFormSubmit(event) {
           addressSelect.options[addressSelect.selectedIndex];
         const addressData = JSON.parse(selectedOption.dataset.addressData);
 
-        console.log("Creating property with new address:", addressData);
-
-        // Remove temp data
         delete addressData.address_id;
         delete addressData.is_new;
 
@@ -2279,23 +2117,11 @@ async function handleInlineFormSubmit(event) {
       formData.set("display_image", uploadedImage);
     }
 
-    // Debug: Log what's being sent
-    console.log("Form data being sent:");
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(key, "[File]", value.name, value.size + " bytes");
-      } else {
-        console.log(key, value);
-      }
-    }
 
     const response = await fetch(API_BASE_URL + "/create-property", {
       method: "POST",
       body: formData,
     });
-
-    console.log("Response status:", response.status);
-    console.log("Response headers:", [...response.headers.entries()]);
 
     // Check if response is ok
     if (!response.ok) {
@@ -2335,7 +2161,6 @@ async function handleInlineFormSubmit(event) {
     let result;
     try {
       const responseText = await response.text();
-      console.log("Raw response:", responseText);
 
       if (!responseText.trim()) {
         throw new Error("Server returned empty response");
@@ -2521,10 +2346,10 @@ const FIELD_VALIDATION_RULES = {
     min: 0,
     message: "Monthly rent must be greater than or equal to 0",
   },
-  propertyTaxes: {
+  advanceMonths: {
     required: true,
     min: 0,
-    message: "Property taxes must be greater than or equal to 0",
+    message: "Advance payment must be greater than or equal to 0",
   },
   securityDeposit: {
     required: true,
@@ -2789,9 +2614,6 @@ function resetEditInlineForm() {
 }
 
 function navigateToPropertiesListDirectly() {
-  console.log("Navigating directly to properties list");
-
-  // Reset all states without confirmation
   isAddingProperty = false;
   isEditingProperty = false;
   currentEditPropertyId = null;
@@ -2823,8 +2645,51 @@ function navigateToPropertiesListDirectly() {
 
   if (addPropertyBtn) addPropertyBtn.style.display = "flex";
   if (propertyControls) propertyControls.style.display = "flex";
+}
 
-  console.log("Navigation completed");
+function showPropertyDetails(propertyId) {
+  // Hide all other views
+  document.getElementById("propertiesGrid").style.display = "none";
+  const addContainer = document.getElementById("addPropertyFormContainer");
+  const editContainer = document.getElementById("editPropertyFormContainer");
+  const paginationContainer = document.getElementById("paginationContainer");
+
+  if (paginationContainer) paginationContainer.style.display = "none";
+  if (addContainer) addContainer.style.display = "none";
+  if (editContainer) editContainer.style.display = "none";
+
+  // Show details view
+  const detailsContainer = document.getElementById(
+    "propertyDetailsViewContainer"
+  );
+  if (detailsContainer) detailsContainer.style.display = "block";
+
+  // Update breadcrumb
+  const property = properties.find((p) => p.id === propertyId);
+  updateBreadcrumb([
+    {
+      text: '<i class="fas fa-home me-2"></i>Properties',
+      onclick: "navigateToPropertiesListDirectly()",
+    },
+    {
+      text: `<i class="fas fa-eye me-2"></i>${
+        property ? property.property_name : "Property Details"
+      }`,
+      active: true,
+    },
+  ]);
+
+  // Populate details
+  if (property) {
+    populatePropertyDetails(property);
+  }
+}
+
+function hidePropertyDetails() {
+  const detailsContainer = document.getElementById(
+    "propertyDetailsViewContainer"
+  );
+  if (detailsContainer) detailsContainer.style.display = "none";
 }
 
 // Update your delete function to reload properties after successful deletion
@@ -2858,6 +2723,136 @@ async function removeProperty(propertyId) {
   }
 }
 
+function populatePropertyDetails(property) {
+  // Set title
+  const titleElement = document.getElementById("detailsTitle");
+  if (titleElement) {
+    titleElement.textContent = property.property_name || "Property Details";
+  }
+
+  // Prepare all images (display image + showcase images)
+  const allImages = [];
+  if (property.display_image) {
+    allImages.push({
+      url: property.display_image,
+      description: "Main Display Image",
+    });
+  }
+  if (property.property_pictures && property.property_pictures.length > 0) {
+    property.property_pictures.forEach((picture, index) => {
+      allImages.push({
+        url: picture.image_url,
+        description: picture.image_desc || `Showcase Image ${index + 1}`,
+      });
+    });
+  }
+  if (allImages.length === 0) {
+    allImages.push({
+      url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      description: "No Image Available",
+    });
+  }
+
+  // Carousel state
+  let currentIndex = 0;
+
+  // DOM elements
+  const mainImg = document.getElementById("carouselMainImage");
+  const desc = document.getElementById("carouselImageDescription");
+  const prevBtn = document.getElementById("carouselPrevBtn");
+  const nextBtn = document.getElementById("carouselNextBtn");
+  const thumbs = document.getElementById("carouselThumbnails");
+  const zoomBtn = document.getElementById("zoomImageBtn");
+
+  function updateCarousel(idx) {
+    currentIndex = idx;
+    mainImg.src = allImages[idx].url;
+    mainImg.alt = allImages[idx].description;
+    desc.textContent = allImages[idx].description || "";
+    // Highlight thumbnail
+    thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
+      thumb.classList.toggle("active", i === idx);
+    });
+    // Show/hide arrows
+    prevBtn.style.display = allImages.length > 1 ? "" : "none";
+    nextBtn.style.display = allImages.length > 1 ? "" : "none";
+    zoomBtn.style.display = "block";
+  }
+
+  // Thumbnails
+  thumbs.innerHTML = allImages
+    .map(
+      (img, i) =>
+        `<img src="${img.url}" alt="Thumb ${i + 1}" class="carousel-thumbnail${
+          i === 0 ? " active" : ""
+        }" data-idx="${i}">`
+    )
+    .join("");
+  thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
+    thumb.onclick = () => updateCarousel(i);
+  });
+
+  // Arrows
+  prevBtn.onclick = () =>
+    updateCarousel((currentIndex - 1 + allImages.length) % allImages.length);
+  nextBtn.onclick = () => updateCarousel((currentIndex + 1) % allImages.length);
+
+  // Zoom
+  zoomBtn.onclick = () => openZoomModal(allImages[currentIndex].url);
+
+  // Initial load
+  updateCarousel(0);  
+
+  // --- NEW: Populate Property Description Card ---
+  document.getElementById("detailPropertyName").textContent =
+    property.property_name || "N/A";
+  document.getElementById("detailFloorArea").textContent =
+    property.floor_area_sqm ? `${property.floor_area_sqm} m²` : "N/A";
+  document.getElementById("detailLocation").textContent =
+    property.location || "N/A";
+  document.getElementById("detailDescription").textContent =
+    property.description || "No description available";
+  document.getElementById("detailStatus").textContent =
+    property.status.charAt(0).toUpperCase() + property.status.slice(1);
+  document.getElementById("detailStatus").className =
+    "details-value status " + property.status;
+
+  // --- Lease Requirements Card ---
+  document.getElementById(
+    "detailPrice"
+  ).textContent = `₱${property.base_rent.toLocaleString()}`;
+  document.getElementById(
+    "detailLeaseTerm"
+  ).textContent = `${property.minimum_lease_term_months} months`;
+  document.getElementById(
+    "detailSecurityDeposit"
+  ).textContent = `${property.security_deposit_months} months`;
+  document.getElementById(
+    "detailAdvanceMonths"
+  ).textContent = `${property.advance_months} months`;
+  document.getElementById("detailLastUpdated").textContent = formatDate(
+    property.updated_at
+  );
+}
+
+function openZoomModal(imgSrc) {
+  const modal = document.getElementById("zoomImageModal");
+  const img = document.getElementById("zoomedImage");
+  if (modal && img) {
+    img.src = imgSrc;
+    modal.style.display = "flex";
+    document.body.classList.add("modal-open");
+  }
+}
+
+function closeZoomModal() {
+  const modal = document.getElementById("zoomImageModal");
+  if (modal) {
+    modal.style.display = "none";
+    document.body.classList.remove("modal-open");
+  }
+}
+
 // Make functions globally available
 window.removeEditShowcaseImage = removeEditShowcaseImage;
 window.openAddModal = openAddModal;
@@ -2865,8 +2860,10 @@ window.closeAddModal = closeAddModal;
 window.openEditPropertyForm = openEditPropertyForm;
 window.closeEditModal = closeEditModal;
 window.closeDetailsModal = closeDetailsModal;
+window.showPropertyDetails = showPropertyDetails;
 window.toggleDropdown = toggleDropdown;
 window.filterByStatus = filterByStatus;
+window.closeZoomModal = closeZoomModal;
 // Make sure the functions are globally available
 window.showAddPropertyForm = showAddPropertyForm;
 window.hideAddPropertyForm = hideAddPropertyForm;
@@ -2895,4 +2892,3 @@ style.textContent = `
             }
         `;
 document.head.appendChild(style);
-

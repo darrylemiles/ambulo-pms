@@ -11,7 +11,7 @@ const createProperty = async (propertyData = {}) => {
     display_image,
     property_status,
     base_rent,
-    property_taxes_quarterly,
+    advance_months,
     security_deposit_months,
     minimum_lease_term_months,
     address_id,
@@ -62,8 +62,8 @@ const createProperty = async (propertyData = {}) => {
       display_image,
       property_status: property_status || "Available",
       base_rent: base_rent ? parseFloat(base_rent) : null,
-      property_taxes_quarterly: property_taxes_quarterly
-        ? parseFloat(property_taxes_quarterly)
+      advance_months: advance_months
+        ? parseInt(advance_months)
         : null,
       security_deposit_months: security_deposit_months
         ? parseInt(security_deposit_months)
@@ -112,7 +112,7 @@ const getProperties = async (queryObj = {}) => {
                 p.display_image,
                 p.property_status,
                 p.base_rent,
-                p.property_taxes_quarterly,
+                p.advance_months,
                 p.security_deposit_months,
                 p.minimum_lease_term_months,
                 p.address_id,
@@ -409,7 +409,7 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       "display_image",
       "property_status",
       "base_rent",
-      "property_taxes_quarterly",
+      "advance_months",
       "security_deposit_months",
       "minimum_lease_term_months",
     ];
@@ -420,7 +420,7 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
 
         if (
           field === "base_rent" ||
-          field === "property_taxes_quarterly" ||
+          field === "advance_months" ||
           field === "security_deposit_months" ||
           field === "floor_area_sqm"
         ) {

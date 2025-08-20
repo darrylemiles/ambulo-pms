@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            <!-- Content Area (Properties Grid or Add Form) -->
+            <!-- Content Area (Properties Grid or Forms) -->
             <div class="content-area">
                 <!-- Properties Grid -->
                 <div class="properties-grid" id="propertiesGrid">
@@ -212,10 +212,10 @@
                                 <h4><i class="fas fa-dollar-sign me-2"></i>Financial Details</h4>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label>Property Taxes (Quarterly) *</label>
-                                        <input type="number" step="0.01" name="property_taxes_quarterly"
-                                            id="editPropertyTaxes" required>
-                                        <div class="error-message" id="editPropertyTaxesError"></div>
+                                        <label>Advance Payment (Months) *</label>
+                                        <input type="number" step="1" name="advance_months" id="editAdvanceMonths"
+                                            required>
+                                        <div class="error-message" id="editAdvanceMonthsError"></div>
                                     </div>
                                     <div class="form-group">
                                         <label>Security Deposit (Months) *</label>
@@ -403,10 +403,9 @@
                                 <h4><i class="fas fa-dollar-sign me-2"></i>Financial Details</h4>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label>Property Taxes (Quarterly) *</label>
-                                        <input type="number" step="0.01" name="property_taxes_quarterly"
-                                            id="propertyTaxes" required>
-                                        <div class="error-message" id="propertyTaxesError"></div>
+                                        <label>Advance Payment (Months) *</label>
+                                        <input type="number" step="1" name="advance_months" id="advanceMonths" required>
+                                        <div class="error-message" id="advanceMonthsError"></div>
                                     </div>
                                     <div class="form-group">
                                         <label>Security Deposit (Months) *</label>
@@ -512,6 +511,113 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Property Details View -->
+                <div class="property-details-view-container" id="propertyDetailsViewContainer" style="display: none;">
+                    <div class="property-details-view">
+                        <div class="details-header d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <h3 id="detailsTitle" class="mb-0">Property Details</h3>
+                            <button type="button" class="btn btn-back-to-list"
+                                onclick="navigateToPropertiesListDirectly()">
+                                <i class="fas fa-arrow-left me-1"></i> Back to List
+                            </button>
+                        </div>
+                        <div class="details-content">
+                            <!-- Carousel Section -->
+                            <div class="details-carousel-full-wrapper">
+                                <div class="details-carousel-full" id="detailsCarouselFull">
+                                    <div class="carousel-image-area">
+                                        <div class="carousel-image-description" id="carouselImageDescription"></div>
+                                        <img id="carouselMainImage" src="" alt="Property Image" />
+                                        <button class="btn btn-zoom-image" id="zoomImageBtn" title="Zoom Image"
+                                            style="display:none;">
+                                            <i class="fas fa-search-plus"></i>
+                                        </button>
+                                        <button class="carousel-arrow left" id="carouselPrevBtn"><i
+                                                class="fas fa-chevron-left"></i></button>
+                                        <button class="carousel-arrow right" id="carouselNextBtn"><i
+                                                class="fas fa-chevron-right"></i></button>
+                                    </div>
+                                    <div class="carousel-thumbnails" id="carouselThumbnails"></div>
+                                </div>
+                            </div>
+                            <div class="details-cards-row">
+                                <!-- Description Card (NEW, above the two cards) -->
+                            </div>
+                            <div class="description-card mb-4">
+                                <div class="description-card-header">Property Description</div>
+                                <div class="description-card-body">
+                                    <span class="description-text" id="detailDescription"></span>
+                                </div>
+                            </div>
+
+                            <!-- Cards Side by Side -->
+                            <div class="details-cards-row">
+                                <div class="property-details-card property-info-card mb-4">
+                                    <div class="property-details-card-header">Property Details</div>
+                                    <div class="property-details-card-body">
+                                        <div class="details-row">
+                                            <span class="details-label">Property Name:</span>
+                                            <span class="details-value" id="detailPropertyName"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Floor Area:</span>
+                                            <span class="details-value highlight" id="detailFloorArea"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Location:</span>
+                                            <span class="details-value" id="detailLocation"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Description:</span>
+                                            <span class="details-value" id="detailDescription"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Status:</span>
+                                            <span class="details-value status" id="detailStatus"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="property-details-card lease-requirements-card mb-4">
+                                    <div class="property-details-card-header">Lease Requirements</div>
+                                    <div class="property-details-card-body">
+                                        <div class="details-row">
+                                            <span class="details-label">Monthly Rent:</span>
+                                            <span class="details-value highlight" id="detailPrice"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Security Deposit:</span>
+                                            <span class="details-value" id="detailSecurityDeposit"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Lease Term:</span>
+                                            <span class="details-value" id="detailLeaseTerm"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Advance:</span>
+                                            <span class="details-value" id="detailAdvanceMonths"></span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Last Updated:</span>
+                                            <span class="details-value" id="detailLastUpdated"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Zoom Modal (unchanged) -->
+                        <div class="zoom-modal" id="zoomImageModal" style="display:none;">
+                            <div class="zoom-modal-backdrop" onclick="closeZoomModal()"></div>
+                            <div class="zoom-modal-content">
+                                <button class="zoom-modal-close" onclick="closeZoomModal()"
+                                    aria-label="Close">&times;</button>
+                                <img id="zoomedImage" src="" alt="Zoomed Property Image"
+                                    class="img-fluid rounded shadow">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
