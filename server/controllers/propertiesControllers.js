@@ -16,6 +16,7 @@ const createProperty = expressAsync(async (req, res) => {
     const response = await propertiesServices.createProperty(payload);
     res.json(response);
   } catch (error) {
+    console.error("Error creating property:", error);
     res.status(500).json({ 
       message: error.message || "Failed to create property"
     });
@@ -27,6 +28,7 @@ const getProperties = expressAsync(async (req, res) => {
     const response = await propertiesServices.getProperties(req.query);
     res.json(response);
   } catch (error) {
+    console.error("Error getting properties:", error);
     res.status(500).json({ 
       message: error.message || "Failed to get properties"
     });
@@ -38,6 +40,8 @@ const getSinglePropertyById = expressAsync(async (req, res) => {
         const response = await propertiesServices.getSinglePropertyById(req.params.property_id);
         res.json(response);
     } catch (error) {
+        console.error("Error getting property:", error);
+        
         if (error.message === "Property not found") {
             res.status(404).json({
                 message: "Property not found",
@@ -51,6 +55,8 @@ const getSinglePropertyById = expressAsync(async (req, res) => {
         }
     }
 });
+
+
 
 const editPropertyById = expressAsync(async (req, res) => {
     try {
@@ -122,9 +128,13 @@ const editPropertyById = expressAsync(async (req, res) => {
             payload.deleted_image_ids = [];
         }
 
+        
+
         const response = await propertiesServices.editPropertyById(req.params.property_id, payload);
         res.json(response);
     } catch (error) {
+        console.error("Error updating property:", error);
+        
         if (error.message === "Property not found") {
             res.status(404).json({
                 message: "Property not found",
@@ -149,6 +159,8 @@ const deletePropertyById = expressAsync(async (req, res) => {
         const response = await propertiesServices.deletePropertyById(req.params.property_id);
         res.json(response);
     } catch (error) {
+        console.error("Error deleting property:", error);
+        
         if (error.message === "Property not found") {
             res.status(404).json({
                 message: "Property not found",
