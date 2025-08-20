@@ -9,14 +9,8 @@ fetch("/components/sidebar.html")
     const overlay = document.getElementById("overlay");
     const mobileMenuBtn = document.getElementById("mobileMenuBtn");
 
-    // Check if elements exist
-    if (
-      !sidebar ||
-      !sidebarToggle ||
-      !mainContent ||
-      !overlay ||
-      !mobileMenuBtn
-    ) {
+    // Check if elements exist (make mobileMenuBtn optional)
+    if (!sidebar || !sidebarToggle || !mainContent || !overlay) {
       console.error("Required sidebar elements not found in DOM");
       return;
     }
@@ -54,6 +48,20 @@ fetch("/components/sidebar.html")
       }
     }
 
+    function updateMobileToggleIcon() {
+      const icon = sidebarToggle.querySelector("i");
+      if (icon && isMobile) {
+        // On mobile, always show hamburger/bars icon when sidebar is hidden
+        if (sidebar.classList.contains("mobile-open")) {
+          icon.className = "fas fa-times"; // X icon when sidebar is open
+          sidebarToggle.title = "Close Menu";
+        } else {
+          icon.className = "fas fa-bars"; // Hamburger icon when sidebar is closed
+          sidebarToggle.title = "Open Menu";
+        }
+      }
+    }
+
     // Add active state function here
     function setActiveNavItem() {
       // Get current page name from URL
@@ -81,9 +89,15 @@ fetch("/components/sidebar.html")
         sidebar.classList.remove("collapsed");
         mainContent.classList.remove("sidebar-collapsed");
         mainContent.classList.add("sidebar-hidden");
+        
+        // Reset mobile state
+        sidebar.classList.remove("mobile-open");
+        overlay.classList.remove("active");
+        
         isCollapsed = false; // Reset collapsed state on mobile
+        updateMobileToggleIcon(); // Update icon for mobile
       } else {
-        sidebar.classList.remove("open");
+        sidebar.classList.remove("open", "mobile-open");
         overlay.classList.remove("active");
         mainContent.classList.remove("sidebar-hidden");
 
@@ -94,8 +108,8 @@ fetch("/components/sidebar.html")
           sidebar.classList.remove("collapsed");
           mainContent.classList.remove("sidebar-collapsed");
         }
+        updateToggleIcon(); // Update icon for desktop
       }
-      updateToggleIcon();
     }
 
     function handleResize() {
@@ -108,13 +122,20 @@ fetch("/components/sidebar.html")
       }
     }
 
+    // Enhanced toggle button click handler
     sidebarToggle.addEventListener("click", function () {
-      if (!isMobile) {
+      if (isMobile) {
+        // Mobile behavior: toggle sidebar open/close
+        sidebar.classList.toggle("mobile-open");
+        overlay.classList.toggle("active");
+        updateMobileToggleIcon();
+      } else {
+        // Desktop behavior: toggle sidebar collapsed/expanded
         isCollapsed = !isCollapsed;
         sidebar.classList.toggle("collapsed");
         mainContent.classList.toggle("sidebar-collapsed");
         updateToggleIcon();
-        saveCollapsedState(); // Save state when toggling
+        saveCollapsedState();
       }
     });
 
@@ -126,21 +147,26 @@ fetch("/components/sidebar.html")
       this.classList.remove("hover-effect");
     });
 
-    mobileMenuBtn.addEventListener("click", function () {
-      if (isMobile) {
-        sidebar.classList.toggle("open");
-        overlay.classList.toggle("active");
-      }
-    });
+    // Legacy mobile menu button support (if it exists)
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener("click", function () {
+        if (isMobile) {
+          sidebar.classList.toggle("mobile-open");
+          overlay.classList.toggle("active");
+          updateMobileToggleIcon();
+        }
+      });
+    }
 
     overlay.addEventListener("click", function () {
       if (isMobile) {
-        sidebar.classList.remove("open");
+        sidebar.classList.remove("open", "mobile-open");
         overlay.classList.remove("active");
+        updateMobileToggleIcon();
       }
     });
 
-    // Updated nav-link click handler - PRESERVE COLLAPSED STATE
+    // Updated nav-link click handler
     document.querySelectorAll(".nav-link").forEach((link) => {
       link.addEventListener("click", function (e) {
         // Only prevent default for non-functional links (those with href="#")
@@ -150,8 +176,9 @@ fetch("/components/sidebar.html")
 
         // Close mobile menu if open
         if (isMobile) {
-          sidebar.classList.remove("open");
+          sidebar.classList.remove("open", "mobile-open");
           overlay.classList.remove("active");
+          updateMobileToggleIcon();
         }
 
         // DON'T manually update active state here - let the page load handle it

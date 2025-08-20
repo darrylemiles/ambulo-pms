@@ -4,9 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
-  <!-- Add Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+  <link rel="stylesheet" href="/css/fonts.css" />
   <link rel="stylesheet" href="/css/sidebar.css" />
 </head>
 
@@ -84,19 +83,14 @@
       </div>
     </nav>
 
-    <div class="sidebar-bottom-container">
+    <div id="overlay" class="overlay"></div>
+  </div>
+
+  <div class="sidebar-bottom-container">
       <button id="sidebarToggle" class="sidebar-bottom-toggle" title="Collapse Sidebar">
         <i class="fas fa-chevron-left"></i> 
       </button>
     </div>
-
-    <div id="overlay" class="overlay"></div>
-
-    <!-- Also update the mobile menu button: -->
-    <button id="mobileMenuBtn" class="mobile-menu-btn" title="Open Menu">
-      <i class="fas fa-bars"></i>
-    </button>
-  </div>
 
   <script>
     // Auto-detect current page and set active state
