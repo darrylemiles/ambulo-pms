@@ -15,12 +15,15 @@ const createProperty = async (propertyData = {}) => {
     security_deposit_months,
     minimum_lease_term_months,
     address_id,
+    building_name,
     street,
     barangay,
     city,
     province,
     postal_code,
     country,
+    latitude,
+    longitude
   } = propertyData || {};
 
   const property_id = uuidv4();
@@ -29,12 +32,15 @@ const createProperty = async (propertyData = {}) => {
   try {
     if (!address_id && (street || city)) {
       const newAddress = {
+        building_name: building_name || null,
         street: street || null,
         barangay: barangay || null,
         city: city || null,
         province: province || null,
         postal_code: postal_code || null,
         country: country || "Philippines",
+        latitude: latitude || null,
+        longitude: longitude || null
       };
 
       Object.keys(newAddress).forEach(
@@ -118,12 +124,15 @@ const getProperties = async (queryObj = {}) => {
                 p.address_id,
                 p.created_at,
                 p.updated_at,
+                a.building_name,
                 a.street,
                 a.barangay,
                 a.city,
                 a.province,
                 a.postal_code,
                 a.country,
+                a.latitude,
+                a.longitude,
                 JSON_ARRAYAGG(
                     CASE 
                         WHEN pp.image_url IS NOT NULL 
@@ -150,9 +159,9 @@ const getProperties = async (queryObj = {}) => {
     }
 
     if (queryObj.search) {
-      query += ` AND (p.property_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
+      query += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
       const searchTerm = `%${queryObj.search}%`;
-      values.push(searchTerm, searchTerm, searchTerm);
+      values.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (queryObj.min_rent) {
@@ -185,6 +194,7 @@ const getProperties = async (queryObj = {}) => {
 
     // Add sorting
     const allowedSortFields = [
+      "building_name",
       "property_name",
       "base_rent",
       "floor_area_sqm",
@@ -238,9 +248,9 @@ const getProperties = async (queryObj = {}) => {
     }
 
     if (queryObj.search) {
-      countQuery += ` AND (p.property_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
+      countQuery += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
       const searchTerm = `%${queryObj.search}%`;
-      countValues.push(searchTerm, searchTerm, searchTerm);
+      countValues.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (queryObj.min_rent) {
@@ -292,12 +302,15 @@ const getSinglePropertyById = async (property_id = "") => {
     const propertyQuery = `
             SELECT 
                 p.*,
+                a.building_name,
                 a.street,
                 a.barangay,
                 a.city,
                 a.province,
                 a.postal_code,
-                a.country
+                a.country,
+                a.latitude,
+                a.longitude
             FROM properties p
             LEFT JOIN addresses a ON p.address_id = a.address_id
             WHERE p.property_id = ? AND p.property_status != 'deleted'
@@ -324,12 +337,15 @@ const getSinglePropertyById = async (property_id = "") => {
       property_pictures: pictureRows,
       address: propertyRows[0].street
         ? {
+            building_name: propertyRows[0].building_name,
             street: propertyRows[0].street,
             barangay: propertyRows[0].barangay,
             city: propertyRows[0].city,
             province: propertyRows[0].province,
             postal_code: propertyRows[0].postal_code,
             country: propertyRows[0].country,
+            latitude: propertyRows[0].latitude,
+            longitude: propertyRows[0].longitude
           }
         : null,
     };
@@ -353,12 +369,15 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
     await getSinglePropertyById(property_id);
 
     const {
+      building_name,
       street,
       barangay,
       city,
       province,
       postal_code,
       country,
+      latitude,
+      longitude,
       address_id,
       showcase_images = [],
       showcase_descriptions = [],
@@ -373,12 +392,15 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
     // Address creation logic (existing)
     if (!address_id && (street || city)) {
       const newAddress = {
+        building_name: building_name || null,
         street: street || null,
         barangay: barangay || null,
         city: city || null,
         province: province || null,
         postal_code: postal_code || null,
         country: country || "Philippines",
+        latitude: latitude || null,
+        longitude: longitude || null
       };
 
       Object.keys(newAddress).forEach(
@@ -629,10 +651,37 @@ const deletePropertyById = async (property_id = "") => {
   }
 };
 
+
+const getAddresses = async () => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        address_id,
+        building_name,
+        street,
+        barangay,
+        city,
+        province,
+        postal_code,
+        country,
+        latitude,
+        longitude,
+        created_at,
+        updated_at
+      FROM addresses
+    `);
+    return rows;
+  } catch (error) {
+    console.error("Error fetching addresses:", error);
+    throw new Error(error.message || "Failed to fetch addresses");
+  }
+};
+
 export default {
   createProperty,
   getProperties,
   getSinglePropertyById,
   editPropertyById,
   deletePropertyById,
+  getAddresses,
 };

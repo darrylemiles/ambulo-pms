@@ -5,7 +5,9 @@ import {
   getSinglePropertyById,
   editPropertyById,
   deletePropertyById,
+  getAddresses
 } from "../controllers/propertiesControllers.js";
+
 import createUploadMiddleware from "../middlewares/multer/uploadMiddleware.js";
 
 const router = express.Router();
@@ -21,6 +23,7 @@ router.post("/create-property", createUploadMiddleware({
   },
 }), createProperty);
 router.get("/", getProperties);
+router.get("/addresses", getAddresses);
 router.get("/:property_id", getSinglePropertyById);
 router.patch("/:property_id", createUploadMiddleware({
   fields: [
@@ -33,5 +36,6 @@ router.patch("/:property_id", createUploadMiddleware({
   },
 }), editPropertyById);
 router.delete("/:property_id", deletePropertyById);
+
 
 export default router;

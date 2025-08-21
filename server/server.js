@@ -53,7 +53,6 @@ app.use(express.static(path.join(__dirname, '../client')));
 app.use(`/api/${API_VERSION}/users`, usersRoutes);
 app.use(`/api/${API_VERSION}/properties`, propertiesRoutes);
 app.use(`/api/${API_VERSION}/tickets`, ticketsRoutes);
-
 // Serve login page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../client', 'login.html'));

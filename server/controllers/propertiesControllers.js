@@ -180,10 +180,24 @@ const deletePropertyById = expressAsync(async (req, res) => {
     }
 });
 
+const getAddresses = expressAsync(async (req, res) => {
+    try {
+        const response = await propertiesServices.getAddresses(req.query);
+        res.json(response);
+    } catch (error) {
+        console.error("Error fetching addresses:", error);
+        res.status(500).json({
+            message: "Failed to fetch addresses",
+            error: error.message
+        });
+    }
+});
+
 export {
   createProperty,
   getProperties,
   getSinglePropertyById,
   editPropertyById,
-  deletePropertyById
+  deletePropertyById,
+  getAddresses
 }

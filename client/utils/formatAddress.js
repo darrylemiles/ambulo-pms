@@ -1,6 +1,7 @@
 // Format address from backend data
 function formatAddress(property) {
   const parts = [
+    property.building_name,
     property.street,
     property.barangay,
     property.city,
