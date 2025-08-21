@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS properties (
     display_image VARCHAR(255),
     property_status VARCHAR(50) DEFAULT 'Available',
     base_rent DECIMAL(10,2),
-    property_taxes_quarterly DECIMAL(10,2),
+    advance_months INT,
     security_deposit_months INT,
     minimum_lease_term_months INT DEFAULT 24,
     address_id INT,

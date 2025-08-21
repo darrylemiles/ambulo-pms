@@ -1,6 +1,7 @@
 const addressesTable = `
 CREATE TABLE IF NOT EXISTS addresses (
     address_id INT AUTO_INCREMENT PRIMARY KEY,
+    building_name VARCHAR(100),
     street VARCHAR(255),
     barangay VARCHAR(100),
     city VARCHAR(100),
