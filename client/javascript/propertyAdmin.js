@@ -79,7 +79,7 @@ function transformPropertyData(backendProperty) {
   return {
     id: backendProperty.property_id,
     property_name: backendProperty.property_name || "Unnamed Property",
-    location: formatAddress(backendProperty),
+    location: formatAddress(backendProperty, false),
     status: mapPropertyStatus(backendProperty.property_status),
     base_rent: backendProperty.base_rent || 0,
     floor_area_sqm: backendProperty.floor_area_sqm || 0,
@@ -91,6 +91,7 @@ function transformPropertyData(backendProperty) {
     minimum_lease_term_months: backendProperty.minimum_lease_term_months || 24,
     address_id: backendProperty.address_id,
     // Include individual address fields for extraction
+    building_name: backendProperty.building_name,
     street: backendProperty.street,
     barangay: backendProperty.barangay,
     city: backendProperty.city,
@@ -215,6 +216,9 @@ function setupEventListeners() {
     closeAllDropdowns();
   });
 }
+
+
+
 
 function renderProperties() {
   const grid = document.getElementById("propertiesGrid");
@@ -378,7 +382,6 @@ function renderProperties() {
     `
     )
     .join("");
-
 }
 
 // Helper function to get status icon
@@ -492,6 +495,7 @@ async function searchProperties(query) {
       const searchTerm = query.toLowerCase();
       filteredProperties = properties.filter(
         (property) =>
+          property.building_name.toLowerCase().includes(searchTerm) ||
           property.property_name.toLowerCase().includes(searchTerm) ||
           property.location.toLowerCase().includes(searchTerm) ||
           property.description.toLowerCase().includes(searchTerm)
@@ -504,6 +508,7 @@ async function searchProperties(query) {
     const searchTerm = query.toLowerCase();
     filteredProperties = properties.filter(
       (property) =>
+        property.building_name.toLowerCase().includes(searchTerm) ||
         property.property_name.toLowerCase().includes(searchTerm) ||
         property.location.toLowerCase().includes(searchTerm) ||
         property.description.toLowerCase().includes(searchTerm)
@@ -1067,7 +1072,6 @@ function getEditShowcaseImagesForSubmission() {
     (id) => id && id !== "undefined" && !isNaN(id)
   );
 
-
   return {
     newImages: newImages.map((imageData) => ({
       file: imageData.file,
@@ -1143,6 +1147,15 @@ function populateEditForm(propertyId) {
   const addressSelect = document.getElementById("editInlineAddressSelect");
   if (addressSelect && property.address_id) {
     addressSelect.value = property.address_id;
+    // Update Tom Select value as well
+    if (window.editInlineAddressTomSelect) {
+      window.editInlineAddressTomSelect.setValue(property.address_id, true);
+    }
+  } else if (addressSelect) {
+    addressSelect.value = "";
+    if (window.editInlineAddressTomSelect) {
+      window.editInlineAddressTomSelect.clear(true);
+    }
   }
 
   // Set existing display image
@@ -1376,15 +1389,7 @@ function addEditInlineAddressToSelect(newAddress) {
     is_new: true,
   };
 
-  const formatted = [
-    newAddress.street,
-    newAddress.barangay,
-    newAddress.city,
-    newAddress.province,
-    newAddress.country,
-  ]
-    .filter((part) => part && part.trim())
-    .join(", ");
+  const formatted = formatAddress(newAddress, false);
 
   const option = document.createElement("option");
   option.value = tempId;
@@ -1396,26 +1401,13 @@ function addEditInlineAddressToSelect(newAddress) {
 }
 
 function clearEditInlineAddressForm() {
+
   document.getElementById("editInlineNewStreet").value = "";
   document.getElementById("editInlineNewBarangay").value = "";
   document.getElementById("editInlineNewCity").value = "";
   document.getElementById("editInlineNewProvince").value = "";
   document.getElementById("editInlineNewPostalCode").value = "";
   document.getElementById("editInlineNewCountry").value = "Philippines";
-}
-
-// Add this helper function for consistent address formatting
-function formatAddressForSelect(address) {
-  const parts = [
-    address.street,
-    address.barangay,
-    address.city,
-    address.province,
-    address.postal_code,
-    address.country,
-  ].filter((part) => part && part.trim());
-
-  return parts.length > 0 ? parts.join(", ") : "Incomplete Address";
 }
 
 // Add this fallback function for cached properties
@@ -1431,8 +1423,12 @@ function populateAddressSelectFromCachedProperties(
 
   propertiesData.forEach((property) => {
     // Only process properties that have address data and address_id
-    if (property.address_id && (property.street || property.city)) {
+    if (
+      property.address_id &&
+      (property.building_name || property.street || property.city)
+    ) {
       const addressKey = [
+        property.building_name,
         property.street,
         property.barangay,
         property.city,
@@ -1445,14 +1441,7 @@ function populateAddressSelectFromCachedProperties(
       if (addressKey && !uniqueAddresses.has(addressKey)) {
         uniqueAddresses.set(addressKey, {
           address_id: property.address_id,
-          formatted: formatAddressForSelect({
-            street: property.street,
-            barangay: property.barangay,
-            city: property.city,
-            province: property.province,
-            postal_code: property.postal_code,
-            country: property.country,
-          }),
+          formatted: formatAddress(addressKey, false),
         });
       }
     }
@@ -1478,11 +1467,8 @@ function populateAddressSelectFromCachedProperties(
     option.textContent = address.formatted;
     selectElement.appendChild(option);
   });
-
-
 }
 
-// Replace your existing loadEditInlineAddresses function
 async function loadEditInlineAddresses() {
   const addressSelect = document.getElementById("editInlineAddressSelect");
   if (!addressSelect) {
@@ -1490,93 +1476,76 @@ async function loadEditInlineAddresses() {
     return;
   }
 
+  // Remove any previous Tom Select instance
+  if (window.editInlineAddressTomSelect) {
+    window.editInlineAddressTomSelect.destroy();
+    window.editInlineAddressTomSelect = null;
+  }
+
   addressSelect.innerHTML = '<option value="">Loading addresses...</option>';
 
   try {
-    // Always fetch fresh properties data to get the latest addresses
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(`${API_BASE_URL}/addresses`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
 
     if (response.ok) {
       const result = await response.json();
-      if (result.properties) {
-        // Transform fresh properties data
-        const freshProperties = result.properties.map(transformPropertyData);
-
-        // Update global properties array
-        properties = freshProperties;
-
-        // Clear existing options
+      if (result.addresses && Array.isArray(result.addresses)) {
         addressSelect.innerHTML =
           '<option value="">Select an existing address (optional)</option>';
 
-        // Extract unique addresses from fresh properties
-        const uniqueAddresses = new Map();
-
-        freshProperties.forEach((property) => {
-          // Only process properties that have address data and address_id
-          if (property.address_id && (property.street || property.city)) {
-            const addressKey = [
-              property.street,
-              property.barangay,
-              property.city,
-              property.province,
-              property.country,
-            ]
-              .filter((part) => part && part.trim())
-              .join("|");
-
-            if (addressKey && !uniqueAddresses.has(addressKey)) {
-              uniqueAddresses.set(addressKey, {
-                address_id: property.address_id,
-                street: property.street,
-                barangay: property.barangay,
-                city: property.city,
-                province: property.province,
-                postal_code: property.postal_code,
-                country: property.country,
-                formatted: formatAddressForSelect({
-                  street: property.street,
-                  barangay: property.barangay,
-                  city: property.city,
-                  province: property.province,
-                  postal_code: property.postal_code,
-                  country: property.country,
-                }),
-              });
-            }
-          }
-        });
-
-        // Sort addresses alphabetically
-        const sortedAddresses = Array.from(uniqueAddresses.values()).sort(
-          (a, b) => a.formatted.localeCompare(b.formatted)
-        );
-
-        // Populate the select with unique addresses
-        sortedAddresses.forEach((address) => {
+        // Populate options...
+        result.addresses.forEach((address) => {
+          const lines = formatAddress(address, true);
           const option = document.createElement("option");
           option.value = address.address_id;
-          option.textContent = address.formatted;
-          option.dataset.addressData = JSON.stringify(address);
+          option.textContent = `${lines.line1} — ${lines.line2}`;
           addressSelect.appendChild(option);
         });
-      } else {
-        throw new Error("Invalid response format");
+
+        // Initialize Tom Select
+        window.editInlineAddressTomSelect = new TomSelect(addressSelect, {
+          create: false,
+          sortField: {
+            field: "text",
+            direction: "asc",
+          },
+          render: {
+            option: function (data, escape) {
+              let [line1, line2] = (data.text || "").split(" — ");
+              return `<div>
+                <span style="font-weight:600;">${escape(line1 || "")}</span><br>
+                <span style="font-size:0.92em;color:#64748b;">${escape(
+                  line2 || ""
+                )}</span>
+              </div>`;
+            },
+            item: function (data, escape) {
+              let [line1, line2] = (data.text || "").split(" — ");
+              return `<div>
+                <span style="font-weight:600;">${escape(line1 || "")}</span>
+                <span style="font-size:0.92em;color:#64748b;">${escape(
+                  line2 || ""
+                )}</span>
+              </div>`;
+            },
+          },
+          placeholder: "Select an existing address (optional)",
+          dropdownInput:
+            '<input type="text" autocomplete="off" class="ts-dropdown-input" placeholder="Type to search addresses...">',
+        });
+
+        return;
       }
+      throw new Error("Invalid response format");
     } else {
       throw new Error(`Server error: ${response.status}`);
     }
   } catch (error) {
-    console.error("Error fetching fresh addresses for EDIT form:", error);
-
-    // Fallback to cached properties
-    console.warn("Falling back to cached properties data");
+    console.error("Error fetching addresses for EDIT form:", error);
     populateAddressSelectFromCachedProperties(addressSelect, properties);
   }
 }
@@ -1925,15 +1894,7 @@ function addInlineAddressToSelect(newAddress) {
     is_new: true,
   };
 
-  const formatted = [
-    newAddress.street,
-    newAddress.barangay,
-    newAddress.city,
-    newAddress.province,
-    newAddress.country,
-  ]
-    .filter((part) => part && part.trim())
-    .join(", ");
+  const formatted = formatAddress(addressWithTempId, true);
 
   const option = document.createElement("option");
   option.value = tempId;
@@ -1953,101 +1914,75 @@ function clearInlineAddressForm() {
   document.getElementById("inlineNewCountry").value = "Philippines";
 }
 
-// Replace your existing loadInlineAddresses function
 async function loadInlineAddresses() {
   const addressSelect = document.getElementById("inlineAddressSelect");
-  if (!addressSelect) {
-    console.error("Address select element not found");
-    return;
+  if (!addressSelect) return;
+
+  // Remove any previous Tom Select instance
+  if (window.inlineAddressTomSelect) {
+    window.inlineAddressTomSelect.destroy();
+    window.inlineAddressTomSelect = null;
   }
 
-  addressSelect.innerHTML = '<option value="">Loading addresses...</option>';
-
   try {
-    // Always fetch fresh properties data to get the latest addresses
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(`${API_BASE_URL}/addresses`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
 
     if (response.ok) {
       const result = await response.json();
-      if (result.properties) {
-        // Transform fresh properties data
-        const freshProperties = result.properties.map(transformPropertyData);
-
-        // Update global properties array
-        properties = freshProperties;
-
-        // Clear existing options
+      if (result.addresses && Array.isArray(result.addresses)) {
         addressSelect.innerHTML =
           '<option value="">Select an existing address (optional)</option>';
 
-        // Extract unique addresses from fresh properties
-        const uniqueAddresses = new Map();
-
-        freshProperties.forEach((property) => {
-          // Only process properties that have address data and address_id
-          if (property.address_id && (property.street || property.city)) {
-            const addressKey = [
-              property.street,
-              property.barangay,
-              property.city,
-              property.province,
-              property.country,
-            ]
-              .filter((part) => part && part.trim())
-              .join("|");
-
-            if (addressKey && !uniqueAddresses.has(addressKey)) {
-              uniqueAddresses.set(addressKey, {
-                address_id: property.address_id,
-                street: property.street,
-                barangay: property.barangay,
-                city: property.city,
-                province: property.province,
-                postal_code: property.postal_code,
-                country: property.country,
-                formatted: formatAddressForSelect({
-                  street: property.street,
-                  barangay: property.barangay,
-                  city: property.city,
-                  province: property.province,
-                  postal_code: property.postal_code,
-                  country: property.country,
-                }),
-              });
-            }
-          }
-        });
-
-        // Sort addresses alphabetically
-        const sortedAddresses = Array.from(uniqueAddresses.values()).sort(
-          (a, b) => a.formatted.localeCompare(b.formatted)
-        );
-
-        // Populate the select with unique addresses
-        sortedAddresses.forEach((address) => {
+        result.addresses.forEach((address) => {
+          const lines = formatAddress(address, true);
           const option = document.createElement("option");
           option.value = address.address_id;
-          option.textContent = address.formatted;
-          option.dataset.addressData = JSON.stringify(address);
+          option.textContent = `${lines.line1} — ${lines.line2}`;
           addressSelect.appendChild(option);
         });
-      } else {
-        throw new Error("Invalid response format");
+
+        // Initialize Tom Select
+        window.inlineAddressTomSelect = new TomSelect(addressSelect, {
+          create: false,
+          sortField: {
+            field: "text",
+            direction: "asc",
+          },
+          render: {
+            option: function (data, escape) {
+              let [line1, line2] = (data.text || "").split(" — ");
+              return `<div>
+                <span style="font-weight:600;">${escape(line1 || "")}</span><br>
+                <span style="font-size:0.92em;color:#64748b;">${escape(
+                  line2 || ""
+                )}</span>
+              </div>`;
+            },
+            item: function (data, escape) {
+              let [line1, line2] = (data.text || "").split(" — ");
+              return `<div>
+                <span style="font-weight:600;">${escape(line1 || "")}</span>
+                <span style="font-size:0.92em;color:#64748b;">${escape(
+                  line2 || ""
+                )}</span>
+              </div>`;
+            },
+          },
+          placeholder: "Select an existing address (optional)",
+        });
+
+        return;
       }
+      throw new Error("Invalid response format");
     } else {
       throw new Error(`Server error: ${response.status}`);
     }
   } catch (error) {
-    console.error("Error fetching fresh addresses for CREATE form:", error);
-
-    // Fallback to cached properties
-    console.warn("Falling back to cached properties data");
+    console.error("Error fetching addresses for CREATE form:", error);
     populateAddressSelectFromCachedProperties(addressSelect, properties);
   }
 }
@@ -2117,7 +2052,6 @@ async function handleInlineFormSubmit(event) {
       formData.set("display_image", uploadedImage);
     }
 
-
     const response = await fetch(API_BASE_URL + "/create-property", {
       method: "POST",
       body: formData,
@@ -2173,7 +2107,6 @@ async function handleInlineFormSubmit(event) {
       throw new Error("Server returned invalid response format");
     }
 
-    // 🔥 ADD THIS: Reload properties to get fresh data including new addresses
     await loadProperties();
 
     showInlineSuccessMessage("Property added successfully!");
@@ -2269,12 +2202,23 @@ function resetInlineForm() {
 
   // Reset address form
   clearInlineAddressForm();
+  resetEditInlineForm();
   const newAddressForm = document.getElementById("inlineNewAddressForm");
   const addNewAddressBtn = document.getElementById("inlineAddNewAddressBtn");
   if (newAddressForm) newAddressForm.style.display = "none";
   if (addNewAddressBtn)
     addNewAddressBtn.innerHTML =
       '<i class="fas fa-plus me-1"></i> Add New Address';
+
+  if (inlineAddressChoices) {
+    inlineAddressChoices.destroy();
+    inlineAddressChoices = null;
+  }
+
+  if (editInlineAddressChoices) {
+    editInlineAddressChoices.destroy();
+    editInlineAddressChoices = null;
+  }
 }
 
 function showInlineSuccessMessage(message) {
@@ -2645,6 +2589,8 @@ function navigateToPropertiesListDirectly() {
 
   if (addPropertyBtn) addPropertyBtn.style.display = "flex";
   if (propertyControls) propertyControls.style.display = "flex";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function showPropertyDetails(propertyId) {
@@ -2801,7 +2747,7 @@ function populatePropertyDetails(property) {
   zoomBtn.onclick = () => openZoomModal(allImages[currentIndex].url);
 
   // Initial load
-  updateCarousel(0);  
+  updateCarousel(0);
 
   // --- NEW: Populate Property Description Card ---
   document.getElementById("detailPropertyName").textContent =

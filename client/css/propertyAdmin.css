@@ -2269,7 +2269,6 @@ body.modal-open {
   font-size: 14px;
   font-family: "Poppins", sans-serif;
   transition: all 0.3s ease;
-  background: white;
 }
 
 .form-group input:focus,
@@ -2309,7 +2308,6 @@ body.modal-open {
   font-size: 14px;
   font-family: "Poppins", sans-serif;
   transition: all 0.3s ease;
-  background: white;
 }
 
 .address-selection .form-group label {
@@ -4405,4 +4403,73 @@ body.modal-open {
 
 .btn-back-to-list:hover i {
   color: #fff;
+}
+
+.choices__inner,
+.choices__list--single,
+.choices__item--selectable,
+.choices__item--choice {
+  color: #334155 !important;
+  background: #fff !important;
+  font-size: 1rem !important;
+  font-family: "Poppins", sans-serif !important;
+  line-height: 1.4 !important;
+}
+
+.choices__item--selectable span {
+  font-size: 0.92em !important;
+  color: #64748b !important;
+}
+
+/* Style Tom Select search input placeholder */
+.ts-dropdown-input::placeholder {
+  color: #94a3b8;
+  font-style: italic;
+  opacity: 1;
+}
+
+/* Address Filter Dropdown Styles */
+.address-filter-dropdown {
+  min-width: 180px;
+  display: inline-block;
+}
+
+.address-filter-select {
+  background: linear-gradient(90deg, #f8fafc 60%, #e0e7ef 100%);
+  border: 2px solid #10b981;
+  color: #10b981;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+}
+
+.address-filter-select:focus {
+  border-color: #059669;
+  outline: none;
+  box-shadow: 0 0 0 2px #bbf7d0;
+}/* Address Filter Dropdown Styles */
+.address-filter-dropdown {
+  min-width: 180px;
+  display: inline-block;
+}
+
+.address-filter-select {
+  background: linear-gradient(90deg, #f8fafc 60%, #e0e7ef 100%);
+  border: 2px solid #10b981;
+  color: #10b981;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+}
+
+.address-filter-select:focus {
+  border-color: #059669;
+  outline: none;
+  box-shadow: 0 0 0 2px #bbf7d0;
 }

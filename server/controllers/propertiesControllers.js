@@ -183,7 +183,7 @@ const deletePropertyById = expressAsync(async (req, res) => {
 const getAddresses = expressAsync(async (req, res) => {
     try {
         const response = await propertiesServices.getAddresses(req.query);
-        res.json(response);
+        res.json({ addresses: response });
     } catch (error) {
         console.error("Error fetching addresses:", error);
         res.status(500).json({
