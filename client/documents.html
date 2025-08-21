@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+    <link rel="stylesheet" href="/css/font.css">
     <link rel="stylesheet" href="/css/documents.css">
-    <title>Documents</title>
+    <title>Inbox</title>
 </head>
 <body>
     <div class="overlay" id="overlay"></div>
@@ -17,7 +17,7 @@
             <div class="title-section">
                 <div>
                     <h1>Hello, Kei!</h1>
-                    <h2>Documents</h2>
+                    <h2>Leases</h2>
                 </div>
             </div>
 
@@ -36,10 +36,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Document Management Section -->
-    <div class="overlay" id="overlay"></div>
-    <div id="sidebarContainer"></div>
 
         <!-- Document Management Section -->
         <div class="documents-section">
@@ -234,6 +230,39 @@
         </div>
     </div>
 
+        <div class="modal" id="renameModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Rename</h3>
+            </div>
+            <div class="input-group">
+                <label for="newName">New Name</label>
+                <input type="text" id="newName" placeholder="Enter new name">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('renameModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmRename()">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Confirmation</h3>
+            </div>
+            <p>Are you sure you want to delete "<span id="deleteItemName"></span>"?</p>
+            <div id="deleteWarning" style="display: none; color: #dc2626; font-size: 14px; margin-top: 10px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> This folder contains files. All contents will be permanently deleted.
+            </div>
+            <br>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="uploadModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -269,6 +298,7 @@
             </div>
         </div>
     </div>
+
 
     <script src="/javascript/sidebar.js"></script>
     <script src="/javascript/documents.js"></script>
