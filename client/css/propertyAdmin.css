@@ -3938,6 +3938,7 @@ body.modal-open {
   box-shadow: 0 0 0 2px #bbf7d0;
 }
 
+
 #statusDropdown a {
   font-weight: 600;
   color: #64748b;
@@ -3982,4 +3983,15 @@ body.modal-open {
   background: #f1f5f9;
   border-color: #3b82f6;
   color: #3b82f6;
+}
+
+.rich-text-box {
+  min-height: 120px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
 }

@@ -65,14 +65,14 @@
                         Add Property
                     </button>
 
-                                        <div class="property-controls" id="propertyControls" style="justify-content: flex-end;">
+                    <div class="property-controls" id="propertyControls" style="justify-content: flex-end;">
                         <div class="property-search-box">
                             <input type="text" placeholder="Search by name, location, or description" id="searchInput">
                             <div class="property-search-icon">
                                 <i class="fas fa-search"></i>
                             </div>
                         </div>
-                    
+
                         <div class="property-dropdown">
                             <button class="property-dropdown-btn" onclick="toggleDropdown('statusDropdown')"
                                 id="statusDropdownBtn">
@@ -91,14 +91,16 @@
                                         class="fas fa-tools me-2"></i>Maintenance</a>
                             </div>
                         </div>
-                    
+
                         <!-- Clear Filters Button -->
-                        <button class="btn btn-outline-secondary clear-filters-btn" id="clearFiltersBtn" style="margin-left: 8px;">
+                        <button class="btn btn-outline-secondary clear-filters-btn" id="clearFiltersBtn"
+                            style="margin-left: 8px;">
                             <i class="fas fa-times me-1"></i> Clear Filters
                         </button>
-                    
+
                         <!-- Address Filter (rightmost) -->
-                        <div class="address-filter-dropdown" id="addressFilterDropdownContainer" style="margin-left: 12px;">
+                        <div class="address-filter-dropdown" id="addressFilterDropdownContainer"
+                            style="margin-left: 12px;">
                             <select id="addressFilterDropdown" class="form-select address-filter-select">
                                 <option value="all">All Properties</option>
                                 <!-- Address options will be populated by JS -->
@@ -278,6 +280,11 @@
                                     <h5>New Address Details</h5>
                                     <div class="form-row">
                                         <div class="form-group flex-2">
+                                            <label>Building Name *</label>
+                                            <input type="text" id="editInlineNewBuildingName"
+                                                placeholder="Building Name" >
+                                        </div>
+                                        <div class="form-group flex-2">
                                             <label>Street Address *</label>
                                             <input type="text" id="editInlineNewStreet" placeholder="Street Address">
                                         </div>
@@ -323,8 +330,11 @@
                                 <h4><i class="fas fa-file-alt me-2"></i>Description</h4>
                                 <div class="form-group full-width">
                                     <label>Property Description</label>
+                                    <div id="editDescriptionEditor" contenteditable="true" class="rich-text-box"
+                                        style="min-height:120px; border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fff;">
+                                    </div>
                                     <textarea name="description" id="editDescription" rows="4"
-                                        placeholder="Property description, amenities, features, etc."></textarea>
+                                        style="display:none;"></textarea>
                                 </div>
                             </div>
 
@@ -467,8 +477,14 @@
                                     <h5>New Address Details</h5>
                                     <div class="form-row">
                                         <div class="form-group flex-2">
+                                            <label>Building Name *</label>
+                                            <input type="text" id="inlineNewBuildingName" placeholder="Building Name"
+                                                >
+                                        </div>
+                                        <div class="form-group flex-2">
                                             <label>Street Address *</label>
-                                            <input type="text" id="inlineNewStreet" placeholder="Street Address">
+                                            <input type="text" id="inlineNewStreet" placeholder="Street Address"
+                                                >
                                         </div>
                                         <div class="form-group flex-1">
                                             <label>Barangay</label>
@@ -511,8 +527,11 @@
                                 <h4><i class="fas fa-file-alt me-2"></i>Description</h4>
                                 <div class="form-group full-width">
                                     <label>Property Description</label>
-                                    <textarea name="description" rows="4"
-                                        placeholder="Property description, amenities, features, etc."></textarea>
+                                    <div id="addDescriptionEditor" contenteditable="true" class="rich-text-box"
+                                        style="min-height:120px; border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fff;">
+                                    </div>
+                                    <textarea name="description" id="addDescription" rows="4"
+                                        style="display:none;"></textarea>
                                 </div>
                             </div>
 

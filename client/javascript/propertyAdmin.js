@@ -34,7 +34,9 @@ document.addEventListener("DOMContentLoaded", function () {
   loadProperties(1, pageSize);
   setupEventListeners();
 
-  const addressFilterDropdown = document.getElementById("addressFilterDropdown");
+  const addressFilterDropdown = document.getElementById(
+    "addressFilterDropdown"
+  );
   if (addressFilterDropdown) {
     addressFilterDropdown.addEventListener("change", handleAddressFilterChange);
   }
@@ -74,7 +76,11 @@ async function loadProperties(page = 1, limit = pageSize) {
 
     // Always send status filter
     if (currentStatusFilter && currentStatusFilter !== "all") {
-      params.push(`property_status=${encodeURIComponent(mapStatusToBackend(currentStatusFilter))}`);
+      params.push(
+        `property_status=${encodeURIComponent(
+          mapStatusToBackend(currentStatusFilter)
+        )}`
+      );
     }
 
     // Always send search filter
@@ -185,11 +191,15 @@ function renderPagination() {
   let html = `<nav aria-label="Property pagination"><ul class="pagination justify-content-center">`;
 
   // Previous button
-  html += `<li class="page-item${currentPage === 1 ? " disabled" : ""}">
-    <a class="page-link" href="#" onclick="goToPage(${
-      currentPage - 1
-    });return false;">Previous</a>
-  </li>`;
+  if (currentPage === 1) {
+    html += `<li class="page-item disabled">
+      <span class="page-link" tabindex="-1" aria-disabled="true">Previous</span>
+    </li>`;
+  } else {
+    html += `<li class="page-item">
+      <a class="page-link" href="#" onclick="goToPage(${currentPage - 1});return false;">Previous</a>
+    </li>`;
+  }
 
   // Page numbers (show up to 5 pages for brevity)
   let start = Math.max(1, currentPage - 2);
@@ -198,28 +208,27 @@ function renderPagination() {
   if (currentPage > totalPages - 2) start = Math.max(1, totalPages - 4);
 
   for (let i = start; i <= end; i++) {
-    html += `<li class="page-item${
-      i === parseInt(currentPage) ? " active" : ""
-    }">  
-    <a class="page-link" href="#" onclick="goToPage(${i});return false;">${i}</a>
-  </li>`;
+    html += `<li class="page-item${i === parseInt(currentPage) ? " active" : ""}">
+      <a class="page-link" href="#" onclick="goToPage(${i});return false;">${i}</a>
+    </li>`;
   }
 
   // Next button
-  html += `<li class="page-item${
-    currentPage === totalPages ? " disabled" : ""
-  }">
-    <a class="page-link" href="#" onclick="goToPage(${
-      currentPage + 1
-    });return false;">Next</a>
-  </li>`;
+  if (currentPage === totalPages) {
+    html += `<li class="page-item disabled">
+      <span class="page-link" tabindex="-1" aria-disabled="true">Next</span>
+    </li>`;
+  } else {
+    html += `<li class="page-item">
+      <a class="page-link" href="#" onclick="goToPage(${currentPage + 1});return false;">Next</a>
+    </li>`;
+  }
 
   html += `</ul></nav>`;
 
   container.innerHTML = html;
 }
 
-// Map backend property status to frontend status
 function mapPropertyStatus(backendStatus) {
   const statusMap = {
     Available: "available",
@@ -621,8 +630,7 @@ function showErrorState() {
             `;
 }
 
-function hideLoadingState() {
-}
+function hideLoadingState() {}
 
 function openAddModal() {
   hideEditPropertyForm();
@@ -979,7 +987,7 @@ function showPropertiesGrid() {
   if (propertyControls) propertyControls.style.display = "flex";
   if (addPropertyBtn) addPropertyBtn.style.display = "flex";
 
-  // Show pagination controls when grid is shown
+  renderPagination();
   const paginationContainer = document.getElementById("paginationContainer");
   if (paginationContainer) {
     paginationContainer.style.display = "block";
@@ -1246,34 +1254,20 @@ function getEditShowcaseImagesForSubmission() {
   };
 }
 
-// Setup edit inline form
 function setupEditInlineForm() {
-  if (editInlineFormHandler) return; // Already setup
-
-  // Setup image upload
+  if (editInlineFormHandler) return;
   setupEditInlineImageUpload();
-
-  // Setup image showcase
   setupEditImageShowcase();
-
-  // Setup address handlers
   setupEditInlineAddressHandlers();
-
-  // Setup real-time validation for edit form
   setupRealTimeValidation(true);
-
-  // Setup form submission
-  const form = document.getElementById("inlineEditPropertyForm");
-  form.addEventListener("submit", handleEditInlineFormSubmit);
-
-  // Load existing addresses
+  document
+    .getElementById("inlineEditPropertyForm")
+    .addEventListener("submit", handleEditInlineFormSubmit);
   loadEditInlineAddresses();
-
   editInlineFormHandler = true;
 }
 
 function populateEditForm(propertyId) {
-  // Clear deleted images list when starting to edit a property
   deletedShowcaseImages = [];
 
   const property = properties.find((p) => p.id === propertyId);
@@ -1304,11 +1298,15 @@ function populateEditForm(propertyId) {
     }
   });
 
-  // Populate address field
+  // Populate rich text editor for description (if present)
+  const descEditor = document.getElementById("editDescriptionEditor");
+  if (descEditor) {
+    descEditor.innerHTML = property.description || "";
+  }
+
   const addressSelect = document.getElementById("editInlineAddressSelect");
   if (addressSelect && property.address_id) {
     addressSelect.value = property.address_id;
-    // Update Tom Select value as well
     if (window.editInlineAddressTomSelect) {
       window.editInlineAddressTomSelect.setValue(property.address_id, true);
     }
@@ -1319,7 +1317,6 @@ function populateEditForm(propertyId) {
     }
   }
 
-  // Set existing display image
   const uploadContainer = document.getElementById(
     "editInlineImageUploadContainer"
   );
@@ -1327,7 +1324,6 @@ function populateEditForm(propertyId) {
     uploadContainer.setExistingImage(property.display_image);
   }
 
-  // Load existing showcase images
   loadExistingShowcaseImages(property);
 }
 
@@ -1453,7 +1449,6 @@ function setupEditInlineImageUpload() {
   };
 }
 
-// Setup edit address handlers (similar to add form)
 function setupEditInlineAddressHandlers() {
   const addNewAddressBtn = document.getElementById(
     "editInlineAddNewAddressBtn"
@@ -1474,6 +1469,9 @@ function setupEditInlineAddressHandlers() {
     addNewAddressBtn.innerHTML = isVisible
       ? '<i class="fas fa-plus me-1"></i> Add New Address'
       : '<i class="fas fa-minus me-1"></i> Cancel New Address';
+
+    // Dynamically set required attributes
+    setEditNewAddressRequired(!isVisible);
   });
 
   // Cancel new address
@@ -1482,6 +1480,7 @@ function setupEditInlineAddressHandlers() {
     newAddressForm.style.display = "none";
     addNewAddressBtn.innerHTML =
       '<i class="fas fa-plus me-1"></i> Add New Address';
+    setEditNewAddressRequired(false);
   });
 
   // Save new address
@@ -1493,26 +1492,35 @@ function setupEditInlineAddressHandlers() {
       newAddressForm.style.display = "none";
       addNewAddressBtn.innerHTML =
         '<i class="fas fa-plus me-1"></i> Add New Address';
+      setEditNewAddressRequired(false);
       showInlineSuccessMessage(
         "Address prepared! It will be saved when you update the property."
       );
     }
   });
 
-  // When existing address is selected, clear new address form
   addressSelect.addEventListener("change", () => {
     if (addressSelect.value) {
       clearEditInlineAddressForm();
       newAddressForm.style.display = "none";
       addNewAddressBtn.innerHTML =
         '<i class="fas fa-plus me-1"></i> Add New Address';
+      setEditNewAddressRequired(false);
     }
   });
 }
 
-// Helper functions for edit address handling
+function setEditNewAddressRequired(isRequired) {
+  document.getElementById("editInlineNewBuildingName").required = isRequired;
+  document.getElementById("editInlineNewStreet").required = isRequired;
+  document.getElementById("editInlineNewCity").required = isRequired;
+}
+
 function collectEditInlineAddressData() {
   return {
+    building_name: document
+      .getElementById("editInlineNewBuildingName")
+      .value.trim(),
     street: document.getElementById("editInlineNewStreet").value.trim(),
     barangay: document.getElementById("editInlineNewBarangay").value.trim(),
     city: document.getElementById("editInlineNewCity").value.trim(),
@@ -1525,7 +1533,7 @@ function collectEditInlineAddressData() {
 }
 
 function validateEditInlineAddress(address) {
-  const requiredFields = ["street", "city"];
+  const requiredFields = ["building_name", "street", "city"];
   const missingFields = requiredFields.filter((field) => !address[field]);
 
   if (missingFields.length > 0) {
@@ -1557,11 +1565,20 @@ function addEditInlineAddressToSelect(newAddress) {
   option.textContent = `${formatted} (New - will be created)`;
   option.dataset.addressData = JSON.stringify(addressWithTempId);
   option.selected = true;
-
   addressSelect.appendChild(option);
+
+  if (window.editInlineAddressTomSelect) {
+    window.editInlineAddressTomSelect.addOption({
+      value: tempId,
+      text: `${formatted} (New - will be created)`,
+      addressData: JSON.stringify(addressWithTempId),
+    });
+    window.editInlineAddressTomSelect.addItem(tempId, true);
+  }
 }
 
 function clearEditInlineAddressForm() {
+  document.getElementById("editInlineNewBuildingName").value = "";
   document.getElementById("editInlineNewStreet").value = "";
   document.getElementById("editInlineNewBarangay").value = "";
   document.getElementById("editInlineNewCity").value = "";
@@ -1713,6 +1730,11 @@ async function loadEditInlineAddresses() {
 async function handleEditInlineFormSubmit(event) {
   event.preventDefault();
 
+  const descEditor = document.getElementById("editDescriptionEditor");
+  const descTextarea = document.getElementById("editDescription");
+  if (descEditor && descTextarea) {
+    descTextarea.value = descEditor.innerHTML;
+  }
   if (!validateForm(true)) {
     const submitBtn = document.getElementById("editInlineSubmitBtn");
     submitBtn.style.animation = "shake 0.5s ease-in-out";
@@ -1742,23 +1764,42 @@ async function handleEditInlineFormSubmit(event) {
     const addressSelect = document.getElementById("editInlineAddressSelect");
     if (addressSelect.value && addressSelect.value !== "") {
       if (addressSelect.value.startsWith("temp_")) {
-        // New address
-        const selectedOption =
-          addressSelect.options[addressSelect.selectedIndex];
-        const addressData = JSON.parse(selectedOption.dataset.addressData);
+        let addressData = null;
 
-        // Remove temp data
-        delete addressData.address_id;
-        delete addressData.is_new;
-
-        // Add address fields to form data
-        Object.entries(addressData).forEach(([key, value]) => {
-          if (value && value.trim()) {
-            formData.append(key, value);
+        // Try to get from Tom Select first
+        if (window.editInlineAddressTomSelect) {
+          const optionData =
+            window.editInlineAddressTomSelect.options[addressSelect.value];
+          if (optionData && optionData.addressData) {
+            addressData = JSON.parse(optionData.addressData);
           }
-        });
+        }
 
-        formData.delete("address_id");
+        // Fallback to DOM option
+        if (!addressData) {
+          const selectedOption =
+            addressSelect.options[addressSelect.selectedIndex];
+          if (selectedOption && selectedOption.dataset.addressData) {
+            addressData = JSON.parse(selectedOption.dataset.addressData);
+          }
+        }
+
+        if (addressData) {
+          delete addressData.address_id;
+          delete addressData.is_new;
+          Object.entries(addressData).forEach(([key, value]) => {
+            if (value && value.trim()) {
+              formData.append(key, value);
+            }
+          });
+          formData.delete("address_id");
+        } else {
+          // Defensive: fallback or error
+          showInlineErrorMessage("Could not retrieve new address data.");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+          return;
+        }
       } else {
         // Existing address
         formData.set("address_id", addressSelect.value);
@@ -1809,7 +1850,6 @@ async function handleEditInlineFormSubmit(event) {
       });
     }
 
-    // Add deleted images - only valid numeric IDs
     if (showcaseData.deletedImages && showcaseData.deletedImages.length > 0) {
       showcaseData.deletedImages.forEach((deletedId) => {
         const validId = parseInt(deletedId);
@@ -1829,18 +1869,14 @@ async function handleEditInlineFormSubmit(event) {
     if (response.ok) {
       const result = await response.json();
 
-      // Reload properties to get fresh data including new addresses
       await loadProperties();
 
       showInlineSuccessMessage("Property updated successfully!");
 
-      // Navigate directly to properties list without confirmation - UPDATED
       setTimeout(() => {
-        // Reset edit state and hide form WITHOUT confirmation
         isEditingProperty = false;
         currentEditPropertyId = null;
 
-        // Hide edit form container immediately
         const editContainer = document.getElementById(
           "editPropertyFormContainer"
         );
@@ -1848,12 +1884,10 @@ async function handleEditInlineFormSubmit(event) {
           editContainer.style.display = "none";
         }
 
-        // Show properties grid and update UI
         showPropertiesGrid();
         updateBreadcrumb();
         resetEditInlineForm();
 
-        // Ensure proper visibility reset
         const addPropertyBtn = document.querySelector(".new-ticket-btn");
         const propertyControls = document.getElementById("propertyControls");
 
@@ -1870,7 +1904,6 @@ async function handleEditInlineFormSubmit(event) {
       error.message || "Failed to update property. Please try again."
     );
   } finally {
-    // Restore button state
     submitBtn.disabled = false;
     submitBtn.innerHTML = originalText;
   }
@@ -1974,24 +2007,23 @@ function setupInlineAddressHandlers() {
   );
   const addressSelect = document.getElementById("inlineAddressSelect");
 
-  // Show/hide new address form
   addNewAddressBtn.addEventListener("click", () => {
     const isVisible = newAddressForm.style.display !== "none";
     newAddressForm.style.display = isVisible ? "none" : "block";
     addNewAddressBtn.innerHTML = isVisible
       ? '<i class="fas fa-plus me-1"></i> Add New Address'
       : '<i class="fas fa-minus me-1"></i> Cancel New Address';
+    setNewAddressRequired(!isVisible);
   });
 
-  // Cancel new address
   cancelNewAddressBtn.addEventListener("click", () => {
     clearInlineAddressForm();
     newAddressForm.style.display = "none";
     addNewAddressBtn.innerHTML =
       '<i class="fas fa-plus me-1"></i> Add New Address';
+    setNewAddressRequired(false);
   });
 
-  // Save new address
   saveNewAddressBtn.addEventListener("click", () => {
     const newAddress = collectInlineAddressData();
     if (validateInlineAddress(newAddress)) {
@@ -2000,25 +2032,35 @@ function setupInlineAddressHandlers() {
       newAddressForm.style.display = "none";
       addNewAddressBtn.innerHTML =
         '<i class="fas fa-plus me-1"></i> Add New Address';
+      setNewAddressRequired(false);
       showInlineSuccessMessage(
         "Address prepared! It will be saved when you create the property."
       );
     }
   });
 
-  // When existing address is selected, clear new address form
   addressSelect.addEventListener("change", () => {
     if (addressSelect.value) {
       clearInlineAddressForm();
       newAddressForm.style.display = "none";
       addNewAddressBtn.innerHTML =
         '<i class="fas fa-plus me-1"></i> Add New Address';
+      setNewAddressRequired(false);
     }
   });
 }
 
+function setNewAddressRequired(isRequired) {
+  document.getElementById("inlineNewBuildingName").required = isRequired;
+  document.getElementById("inlineNewStreet").required = isRequired;
+  document.getElementById("inlineNewCity").required = isRequired;
+}
+
 function collectInlineAddressData() {
   return {
+    building_name: document
+      .getElementById("inlineNewBuildingName")
+      .value.trim(),
     street: document.getElementById("inlineNewStreet").value.trim(),
     barangay: document.getElementById("inlineNewBarangay").value.trim(),
     city: document.getElementById("inlineNewCity").value.trim(),
@@ -2029,7 +2071,7 @@ function collectInlineAddressData() {
 }
 
 function validateInlineAddress(address) {
-  const requiredFields = ["street", "city"];
+  const requiredFields = ["building_name", "street", "city"];
   const missingFields = requiredFields.filter((field) => !address[field]);
 
   if (missingFields.length > 0) {
@@ -2056,16 +2098,27 @@ function addInlineAddressToSelect(newAddress) {
 
   const formatted = formatAddress(addressWithTempId, true);
 
+  // Add option to the select
   const option = document.createElement("option");
   option.value = tempId;
   option.textContent = `${formatted} (New - will be created)`;
   option.dataset.addressData = JSON.stringify(addressWithTempId);
   option.selected = true;
-
   addressSelect.appendChild(option);
+
+  // --- Add to Tom Select if initialized ---
+  if (window.inlineAddressTomSelect) {
+    window.inlineAddressTomSelect.addOption({
+      value: tempId,
+      text: `${formatted} (New - will be created)`,
+      addressData: JSON.stringify(addressWithTempId),
+    });
+    window.inlineAddressTomSelect.addItem(tempId, true);
+  }
 }
 
 function clearInlineAddressForm() {
+  document.getElementById("inlineNewBuildingName").value = "";
   document.getElementById("inlineNewStreet").value = "";
   document.getElementById("inlineNewBarangay").value = "";
   document.getElementById("inlineNewCity").value = "";
@@ -2149,6 +2202,12 @@ async function loadInlineAddresses() {
 
 async function handleInlineFormSubmit(event) {
   event.preventDefault();
+
+  const descEditor = document.getElementById("addDescriptionEditor");
+  const descTextarea = document.getElementById("addDescription");
+  if (descEditor && descTextarea) {
+    descTextarea.value = descEditor.innerHTML;
+  }
 
   if (!validateForm(false)) {
     const submitBtn = document.getElementById("inlineSubmitBtn");
@@ -2317,40 +2376,26 @@ function resetInlineFormSilently() {
       '<i class="fas fa-plus me-1"></i> Add New Address';
 }
 
-// Update the setupInlineForm function to include validation setup
 function setupInlineForm() {
-  if (inlineFormHandler) return; // Already setup
-
-  // Setup image upload
+  if (inlineFormHandler) return;
   setupInlineImageUpload();
-
-  // Setup address handlers
   setupInlineAddressHandlers();
-
-  // Setup real-time validation
   setupRealTimeValidation(false);
-
-  // Setup form submission
-  const form = document.getElementById("inlineAddPropertyForm");
-  form.addEventListener("submit", handleInlineFormSubmit);
-
-  // Load existing addresses
+  document
+    .getElementById("inlineAddPropertyForm")
+    .addEventListener("submit", handleInlineFormSubmit);
   loadInlineAddresses();
-
   inlineFormHandler = true;
 }
 
-// Update resetInlineForm to clear validation errors
 function resetInlineForm() {
   const form = document.getElementById("inlineAddPropertyForm");
   if (form) {
     form.reset();
   }
 
-  // Clear all validation errors
   clearAllErrors(false);
 
-  // Reset image upload
   const uploadContainer = document.getElementById("inlineImageUploadContainer");
   const uploadPrompt = document.getElementById("inlineUploadPrompt");
   const imagePreview = document.getElementById("inlineImagePreview");
@@ -2360,7 +2405,6 @@ function resetInlineForm() {
   if (uploadPrompt) uploadPrompt.style.display = "block";
   if (imagePreview) imagePreview.style.display = "none";
 
-  // Reset address form
   clearInlineAddressForm();
   resetEditInlineForm();
   const newAddressForm = document.getElementById("inlineNewAddressForm");
@@ -2370,7 +2414,6 @@ function resetInlineForm() {
     addNewAddressBtn.innerHTML =
       '<i class="fas fa-plus me-1"></i> Add New Address';
 
-  // Remove Tom Select instances if they exist
   if (window.inlineAddressTomSelect) {
     window.inlineAddressTomSelect.destroy();
     window.inlineAddressTomSelect = null;
@@ -2835,13 +2878,11 @@ async function removeProperty(propertyId) {
 }
 
 function populatePropertyDetails(property) {
-  // Set title
   const titleElement = document.getElementById("detailsTitle");
   if (titleElement) {
     titleElement.textContent = property.property_name || "Property Details";
   }
 
-  // Prepare all images (display image + showcase images)
   const allImages = [];
   if (property.display_image) {
     allImages.push({
@@ -2864,10 +2905,8 @@ function populatePropertyDetails(property) {
     });
   }
 
-  // Carousel state
   let currentIndex = 0;
 
-  // DOM elements
   const mainImg = document.getElementById("carouselMainImage");
   const desc = document.getElementById("carouselImageDescription");
   const prevBtn = document.getElementById("carouselPrevBtn");
@@ -2880,11 +2919,9 @@ function populatePropertyDetails(property) {
     mainImg.src = allImages[idx].url;
     mainImg.alt = allImages[idx].description;
     desc.textContent = allImages[idx].description || "";
-    // Highlight thumbnail
     thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
       thumb.classList.toggle("active", i === idx);
     });
-    // Show/hide arrows
     prevBtn.style.display = allImages.length > 1 ? "" : "none";
     nextBtn.style.display = allImages.length > 1 ? "" : "none";
     zoomBtn.style.display = "block";
@@ -2921,8 +2958,9 @@ function populatePropertyDetails(property) {
     property.floor_area_sqm ? `${property.floor_area_sqm} m²` : "N/A";
   document.getElementById("detailLocation").textContent =
     property.location || "N/A";
-  document.getElementById("detailDescription").textContent =
-    property.description || "No description available";
+  // Display as rich text (HTML)
+  document.getElementById("detailDescription").innerHTML =
+    property.description || "<em>No description available</em>";
   document.getElementById("detailStatus").textContent =
     property.status.charAt(0).toUpperCase() + property.status.slice(1);
   document.getElementById("detailStatus").className =
@@ -2981,9 +3019,12 @@ window.hideEditPropertyForm = hideEditPropertyForm;
 window.navigateToPropertiesListDirectly = navigateToPropertiesListDirectly;
 
 window.goToPage = function (page) {
+  const totalPages = Math.ceil(totalProperties / pageSize);
   if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  if (page === currentPage) return; // Don't reload same page
   currentPage = page;
-  loadProperties(page, pageSize); 
+  loadProperties(page, pageSize);
   const grid = document.getElementById("propertiesGrid");
   if (grid) {
     grid.scrollIntoView({ behavior: "smooth" });
