@@ -65,38 +65,45 @@
                         Add Property
                     </button>
 
-                    <div class="property-controls" id="propertyControls">
+                                        <div class="property-controls" id="propertyControls" style="justify-content: flex-end;">
                         <div class="property-search-box">
                             <input type="text" placeholder="Search by name, location, or description" id="searchInput">
                             <div class="property-search-icon">
                                 <i class="fas fa-search"></i>
                             </div>
                         </div>
-
+                    
                         <div class="property-dropdown">
-                            <button class="property-dropdown-btn" onclick="toggleDropdown('statusDropdown')">
+                            <button class="property-dropdown-btn" onclick="toggleDropdown('statusDropdown')"
+                                id="statusDropdownBtn">
                                 <i class="fas fa-filter me-2"></i>
-                                Status
+                                <span id="currentStatusLabel">Status</span>
                                 <i class="fas fa-chevron-down ms-2"></i>
                             </button>
                             <div class="property-dropdown-content" id="statusDropdown">
-                                <a href="#" onclick="filterByStatus('all')"><i class="fas fa-list me-2"></i>All</a>
-                                <a href="#" onclick="filterByStatus('available')"><i
+                                <a href="#" class="all" onclick="filterByStatus('all')"><i
+                                        class="fas fa-list me-2"></i>All</a>
+                                <a href="#" class="available" onclick="filterByStatus('available')"><i
                                         class="fas fa-check-circle me-2"></i>Available</a>
-                                <a href="#" onclick="filterByStatus('occupied')"><i
+                                <a href="#" class="occupied" onclick="filterByStatus('occupied')"><i
                                         class="fas fa-user me-2"></i>Occupied</a>
-                                <a href="#" onclick="filterByStatus('maintenance')"><i
+                                <a href="#" class="maintenance" onclick="filterByStatus('maintenance')"><i
                                         class="fas fa-tools me-2"></i>Maintenance</a>
                             </div>
                         </div>
-                        <!-- Adddress Filter -->
+                    
+                        <!-- Clear Filters Button -->
+                        <button class="btn btn-outline-secondary clear-filters-btn" id="clearFiltersBtn" style="margin-left: 8px;">
+                            <i class="fas fa-times me-1"></i> Clear Filters
+                        </button>
+                    
+                        <!-- Address Filter (rightmost) -->
                         <div class="address-filter-dropdown" id="addressFilterDropdownContainer" style="margin-left: 12px;">
-                          <select id="addressFilterDropdown" class="form-select address-filter-select">
-                            <option value="all">All Properties</option>
-                            <!-- Address options will be populated by JS -->
-                          </select>
+                            <select id="addressFilterDropdown" class="form-select address-filter-select">
+                                <option value="all">All Properties</option>
+                                <!-- Address options will be populated by JS -->
+                            </select>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -253,8 +260,8 @@
                                 <div class="address-selection">
                                     <div class="form-group">
                                         <label>Select Existing Address</label>
-                                        <select name="address_id" id="editInlineAddressSelect" class="form-select tom-select"
-                                            data-choices></select>
+                                        <select name="address_id" id="editInlineAddressSelect"
+                                            class="form-select tom-select" data-choices></select>
                                         </select>
                                     </div>
                                     <div class="or-divider">
@@ -443,8 +450,8 @@
                                 <div class="address-selection">
                                     <div class="form-group">
                                         <label>Select Existing Address</label>
-                                        <select name="address_id" id="inlineAddressSelect" class="form-select tom-select"
-                                            data-choices></select>
+                                        <select name="address_id" id="inlineAddressSelect"
+                                            class="form-select tom-select" data-choices></select>
                                         </select>
                                     </div>
                                     <div class="or-divider">

@@ -3,13 +3,7 @@ import formatDate from "../utils/formatDate.js";
 
 let properties = [];
 let filteredProperties = [];
-let currentEditingId = null;
-let uploadedImages = [];
-let editUploadedImages = [];
-let currentDetailImageIndex = 0;
-let currentPropertyImages = [];
 
-// Global state for form management
 let isAddingProperty = false;
 let inlineFormHandler = null;
 
@@ -17,15 +11,18 @@ let isEditingProperty = false;
 let currentEditPropertyId = null;
 let editInlineFormHandler = null;
 
-// Image showcase management for edit form
 let editShowcaseImages = [];
 const MAX_SHOWCASE_IMAGES = 10;
 let deletedShowcaseImages = [];
 
-//Pagination
 let currentPage = 1;
-let pageSize = 6;
+let pageSize = 8;
 let totalProperties = 0;
+
+let currentStatusFilter = "all";
+let currentAddressFilter = "all";
+let currentSearchQuery = "";
+window.currentStatusFilter = "all";
 
 // API Configuration
 const API_BASE_URL = "/api/v1/properties";
@@ -33,8 +30,32 @@ const API_BASE_URL = "/api/v1/properties";
 // Initialize the application
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, initializing...");
+  populateAddressFilterDropdown(); // <-- Add this line
   loadProperties(1, pageSize);
   setupEventListeners();
+
+  const addressFilterDropdown = document.getElementById("addressFilterDropdown");
+  if (addressFilterDropdown) {
+    addressFilterDropdown.addEventListener("change", handleAddressFilterChange);
+  }
+
+  const clearBtn = document.getElementById("clearFiltersBtn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", function () {
+      // Reset search
+      const searchInput = document.getElementById("searchInput");
+      if (searchInput) searchInput.value = "";
+      currentSearchQuery = "";
+
+      // Reset status filter
+      currentStatusFilter = "all";
+      updateStatusDropdownLabel("all");
+      highlightActiveStatus("all");
+
+      // Reload properties
+      loadProperties(1, pageSize);
+    });
+  }
 });
 
 // Load properties from backend
@@ -42,12 +63,33 @@ async function loadProperties(page = 1, limit = pageSize) {
   try {
     showLoadingState();
 
-    const params = new URLSearchParams({
-      page,
-      limit,
-    });
+    const addressFilter = getAddressFilterValue();
+    let url = API_BASE_URL;
+    let params = [];
 
-    const response = await fetch(`${API_BASE_URL}?${params.toString()}`, {
+    // Always send address filter (base)
+    if (addressFilter !== "all") {
+      params.push(`address_id=${encodeURIComponent(addressFilter)}`);
+    }
+
+    // Always send status filter
+    if (currentStatusFilter && currentStatusFilter !== "all") {
+      params.push(`property_status=${encodeURIComponent(mapStatusToBackend(currentStatusFilter))}`);
+    }
+
+    // Always send search filter
+    if (currentSearchQuery && currentSearchQuery.trim() !== "") {
+      params.push(`search=${encodeURIComponent(currentSearchQuery.trim())}`);
+    }
+
+    params.push(`page=${page}`);
+    params.push(`limit=${limit}`);
+
+    if (params.length) {
+      url += "?" + params.join("&");
+    }
+
+    const response = await fetch(url, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -59,10 +101,11 @@ async function loadProperties(page = 1, limit = pageSize) {
 
     if (result.properties) {
       properties = result.properties.map(transformPropertyData);
-      filteredProperties = [...properties];
-      totalProperties = result.total;
+      totalProperties = result.total || result.properties.length;
       currentPage = result.page || 1;
       pageSize = result.limit || pageSize;
+
+      filteredProperties = properties;
       renderProperties();
       renderPagination();
       hideLoadingState();
@@ -107,16 +150,14 @@ function renderPagination() {
   const paginationContainerId = "paginationContainer";
   let container = document.getElementById(paginationContainerId);
 
-  // Hide pagination if add/edit forms are active
   if (isAddingProperty || isEditingProperty) {
     if (container) {
-      container.innerHTML = ""; // Clear pagination controls
+      container.innerHTML = "";
       container.style.display = "none";
     }
     return;
   }
 
-  // Create container if not exists
   if (!container) {
     container = document.createElement("div");
     container.id = paginationContainerId;
@@ -125,7 +166,14 @@ function renderPagination() {
     document.getElementById("propertiesGrid").after(container);
   }
 
-  container.style.display = "block"; // Ensure visible when not in form mode
+  // Hide pagination if less than a full page
+  if (totalProperties <= pageSize) {
+    container.innerHTML = "";
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "block";
 
   // Calculate total pages
   const totalPages = Math.ceil(totalProperties / pageSize);
@@ -217,8 +265,152 @@ function setupEventListeners() {
   });
 }
 
+function getAddressFilterValue() {
+  return localStorage.getItem("addressFilter") || "all";
+}
+function setAddressFilterValue(val) {
+  localStorage.setItem("addressFilter", val);
+}
 
+// Populate the address filter dropdown
+async function populateAddressFilterDropdown() {
+  const dropdown = document.getElementById("addressFilterDropdown");
+  if (!dropdown) return;
 
+  // Save current value to restore after repopulating
+  const prevValue = getAddressFilterValue();
+
+  // Clear and add "All Addresses"
+  dropdown.innerHTML = `<option value="all">All Addresses</option>`;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/addresses`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to fetch addresses");
+    const result = await response.json();
+
+    // Use unique address_id/building_name pairs
+    const uniqueAddresses = new Map();
+    result.addresses.forEach((address) => {
+      if (address.address_id) {
+        // Use building_name if available, else fallback to formatted address
+        let label = address.building_name?.trim();
+        if (!label) {
+          label = formatAddress(address, false);
+        }
+        uniqueAddresses.set(address.address_id, label);
+      }
+    });
+
+    // Sort by label
+    const sorted = Array.from(uniqueAddresses.entries()).sort((a, b) =>
+      a[1].localeCompare(b[1])
+    );
+
+    sorted.forEach(([address_id, label]) => {
+      const option = document.createElement("option");
+      option.value = address_id;
+      option.textContent = label;
+      dropdown.appendChild(option);
+    });
+
+    // Restore previous value (or default to "all")
+    dropdown.value = prevValue;
+  } catch (error) {
+    console.error("Error populating address filter:", error);
+  }
+}
+
+async function filterByAddress(addressId, page = 1, limit = pageSize) {
+  try {
+    let url = API_BASE_URL;
+    let params = [];
+    if (addressId !== "all") {
+      params.push(`address_id=${encodeURIComponent(addressId)}`);
+    }
+    params.push(`page=${page}`);
+    params.push(`limit=${limit}`);
+    if (params.length) {
+      url += "?" + params.join("&");
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.properties) {
+        properties = result.properties.map(transformPropertyData);
+        filteredProperties = [...properties];
+        totalProperties = result.total || result.properties.length;
+        currentPage = result.page || 1;
+        renderProperties();
+        renderPagination();
+      }
+    } else {
+      // fallback to client-side filtering
+      filterPropertiesByAddress(addressId);
+    }
+  } catch (error) {
+    console.error("Address filter error:", error);
+    filterPropertiesByAddress(addressId);
+  }
+  closeAllDropdowns();
+}
+
+async function fetchPropertiesForAddress(addressId) {
+  let url = API_BASE_URL;
+  let params = [];
+  if (addressId !== "all") {
+    params.push(`address_id=${encodeURIComponent(addressId)}`);
+  }
+  if (params.length) {
+    url += "?" + params.join("&");
+  }
+  try {
+    showLoadingState();
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    if (response.ok) {
+      const result = await response.json();
+      properties = result.properties.map(transformPropertyData);
+      totalProperties = result.total || result.properties.length;
+    } else {
+      properties = [];
+      totalProperties = 0;
+    }
+  } catch (error) {
+    properties = [];
+    totalProperties = 0;
+  }
+  hideLoadingState();
+}
+
+async function handleAddressFilterChange() {
+  const dropdown = document.getElementById("addressFilterDropdown");
+  if (!dropdown) return;
+  const value = dropdown.value;
+  currentAddressFilter = value;
+  setAddressFilterValue(value);
+
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) searchInput.value = "";
+  currentSearchQuery = "";
+  currentStatusFilter = "all";
+  updateStatusDropdownLabel("all");
+  highlightActiveStatus("all");
+
+  loadProperties(1, pageSize);
+}
 
 function renderProperties() {
   const grid = document.getElementById("propertiesGrid");
@@ -429,9 +621,7 @@ function showErrorState() {
             `;
 }
 
-// Hide loading state
 function hideLoadingState() {
-  // Properties will be rendered by renderProperties()
 }
 
 function openAddModal() {
@@ -450,7 +640,6 @@ function openEditPropertyForm(id) {
     return;
   }
 
-  // Use inline form instead of modal
   showEditPropertyForm(id);
 }
 
@@ -465,56 +654,9 @@ function closeDetailsModal() {
 }
 
 // Search and filter functions
-async function searchProperties(query) {
-  if (!query.trim()) {
-    loadProperties();
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}?search=${encodeURIComponent(query)}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      }
-    );
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.properties) {
-        properties = result.properties.map(transformPropertyData);
-        filteredProperties = [...properties];
-        renderProperties();
-      }
-    } else {
-      // Fallback to client-side filtering
-      const searchTerm = query.toLowerCase();
-      filteredProperties = properties.filter(
-        (property) =>
-          property.building_name.toLowerCase().includes(searchTerm) ||
-          property.property_name.toLowerCase().includes(searchTerm) ||
-          property.location.toLowerCase().includes(searchTerm) ||
-          property.description.toLowerCase().includes(searchTerm)
-      );
-      renderProperties();
-    }
-  } catch (error) {
-    console.error("Search error:", error);
-    // Fallback to client-side filtering
-    const searchTerm = query.toLowerCase();
-    filteredProperties = properties.filter(
-      (property) =>
-        property.building_name.toLowerCase().includes(searchTerm) ||
-        property.property_name.toLowerCase().includes(searchTerm) ||
-        property.location.toLowerCase().includes(searchTerm) ||
-        property.description.toLowerCase().includes(searchTerm)
-    );
-    renderProperties();
-  }
+function searchProperties(query) {
+  currentSearchQuery = query;
+  loadProperties(1, pageSize);
 }
 
 function toggleDropdown(dropdownId) {
@@ -532,65 +674,68 @@ function closeAllDropdowns() {
     });
 }
 
-async function filterByStatus(status) {
-  try {
-    let url = API_BASE_URL;
-    if (status !== "all") {
-      const backendStatus = mapStatusToBackend(status);
-      url += `?property_status=${encodeURIComponent(backendStatus)}`;
-    }
+function updateStatusDropdownLabel(status) {
+  const label = document.getElementById("currentStatusLabel");
+  if (!label) return;
+  let text = "Status";
+  let color = "#64748b";
+  let icon = '<i class="fas fa-list me-2"></i>';
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.properties) {
-        properties = result.properties.map(transformPropertyData);
-        filteredProperties = [...properties];
-        renderProperties();
-      }
-    } else {
-      // Fallback to client-side filtering
-      if (status === "all") {
-        filteredProperties = [...properties];
-      } else {
-        filteredProperties = properties.filter(
-          (property) => property.status === status
-        );
-      }
-      renderProperties();
-    }
-  } catch (error) {
-    console.error("Filter error:", error);
-    // Fallback to client-side filtering
-    if (status === "all") {
-      filteredProperties = [...properties];
-    } else {
-      filteredProperties = properties.filter(
-        (property) => property.status === status
-      );
-    }
-    renderProperties();
+  switch (status) {
+    case "available":
+      text = "Available";
+      color = "#059669";
+      icon = '<i class="fas fa-check-circle me-2"></i>';
+      break;
+    case "occupied":
+      text = "Occupied";
+      color = "#2563eb";
+      icon = '<i class="fas fa-user me-2"></i>';
+      break;
+    case "maintenance":
+      text = "Maintenance";
+      color = "#d97706";
+      icon = '<i class="fas fa-tools me-2"></i>';
+      break;
+    case "all":
+    default:
+      text = "All";
+      color = "#64748b";
+      icon = '<i class="fas fa-list me-2"></i>';
+      break;
   }
+  label.innerHTML =
+    icon + `<span style="color:${color};font-weight:600;">${text}</span>`;
+}
+
+function highlightActiveStatus(status) {
+  document.querySelectorAll("#statusDropdown a").forEach((a) => {
+    a.classList.remove("active");
+    if (a.classList.contains(status)) a.classList.add("active");
+  });
+}
+
+function filterByStatus(status) {
+  currentStatusFilter = status;
+  updateStatusDropdownLabel(status);
+  highlightActiveStatus(status);
+  loadProperties(1, pageSize);
   closeAllDropdowns();
 }
 
-// Navigation functions
 function showAddPropertyForm() {
   isAddingProperty = true;
   updateBreadcrumb();
   showFormContainer();
   setupInlineForm();
   hidePropertyDetails();
+
+  const addressFilterDropdown = document.getElementById(
+    "addressFilterDropdownContainer"
+  );
+  if (addressFilterDropdown) addressFilterDropdown.style.display = "none";
 }
 
-// Update the hideAddPropertyForm function to ensure proper reset
 function hideAddPropertyForm() {
   if (
     confirm("Are you sure you want to cancel? All entered data will be lost.")
@@ -686,6 +831,11 @@ function showEditPropertyForm(propertyId) {
   showEditFormContainer();
   setupEditInlineForm();
   populateEditForm(propertyId);
+
+  const addressFilterDropdown = document.getElementById(
+    "addressFilterDropdownContainer"
+  );
+  if (addressFilterDropdown) addressFilterDropdown.style.display = "none";
 }
 
 // Replace your existing hideEditPropertyForm function
@@ -754,6 +904,11 @@ function showEditFormContainer() {
     addPropertyBtn.style.display = "none";
   }
 
+  const addressFilterDropdown = document.getElementById(
+    "addressFilterDropdownContainer"
+  );
+  if (addressFilterDropdown) addressFilterDropdown.style.display = "none";
+
   // Hide pagination controls when edit form is shown
   const paginationContainer = document.getElementById("paginationContainer");
   if (paginationContainer) {
@@ -810,6 +965,12 @@ function showPropertiesGrid() {
   if (propertiesGrid) {
     propertiesGrid.style.display = "grid";
   }
+
+  const addressFilterDropdown = document.getElementById(
+    "addressFilterDropdownContainer"
+  );
+  if (addressFilterDropdown)
+    addressFilterDropdown.style.display = "inline-block";
 
   // Show controls and Add Property button
   const propertyControls = document.getElementById("propertyControls");
@@ -1401,7 +1562,6 @@ function addEditInlineAddressToSelect(newAddress) {
 }
 
 function clearEditInlineAddressForm() {
-
   document.getElementById("editInlineNewStreet").value = "";
   document.getElementById("editInlineNewBarangay").value = "";
   document.getElementById("editInlineNewCity").value = "";
@@ -2210,14 +2370,14 @@ function resetInlineForm() {
     addNewAddressBtn.innerHTML =
       '<i class="fas fa-plus me-1"></i> Add New Address';
 
-  if (inlineAddressChoices) {
-    inlineAddressChoices.destroy();
-    inlineAddressChoices = null;
+  // Remove Tom Select instances if they exist
+  if (window.inlineAddressTomSelect) {
+    window.inlineAddressTomSelect.destroy();
+    window.inlineAddressTomSelect = null;
   }
-
-  if (editInlineAddressChoices) {
-    editInlineAddressChoices.destroy();
-    editInlineAddressChoices = null;
+  if (window.editInlineAddressTomSelect) {
+    window.editInlineAddressTomSelect.destroy();
+    window.editInlineAddressTomSelect = null;
   }
 }
 
@@ -2636,6 +2796,11 @@ function hidePropertyDetails() {
     "propertyDetailsViewContainer"
   );
   if (detailsContainer) detailsContainer.style.display = "none";
+
+  const addressFilterDropdown = document.getElementById(
+    "addressFilterDropdownContainer"
+  );
+  if (addressFilterDropdown) addressFilterDropdown.style.display = "none";
 }
 
 // Update your delete function to reload properties after successful deletion
@@ -2799,7 +2964,6 @@ function closeZoomModal() {
   }
 }
 
-// Make functions globally available
 window.removeEditShowcaseImage = removeEditShowcaseImage;
 window.openAddModal = openAddModal;
 window.closeAddModal = closeAddModal;
@@ -2810,19 +2974,16 @@ window.showPropertyDetails = showPropertyDetails;
 window.toggleDropdown = toggleDropdown;
 window.filterByStatus = filterByStatus;
 window.closeZoomModal = closeZoomModal;
-// Make sure the functions are globally available
 window.showAddPropertyForm = showAddPropertyForm;
 window.hideAddPropertyForm = hideAddPropertyForm;
 window.showEditPropertyForm = showEditPropertyForm;
 window.hideEditPropertyForm = hideEditPropertyForm;
 window.navigateToPropertiesListDirectly = navigateToPropertiesListDirectly;
 
-window.goToPage = async function (page) {
+window.goToPage = function (page) {
   if (page < 1) page = 1;
-  currentPage = page; // Update the global currentPage
-  await loadProperties(page, pageSize);
-  renderPagination();
-
+  currentPage = page;
+  loadProperties(page, pageSize); 
   const grid = document.getElementById("propertiesGrid");
   if (grid) {
     grid.scrollIntoView({ behavior: "smooth" });

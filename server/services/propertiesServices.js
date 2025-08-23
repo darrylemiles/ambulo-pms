@@ -110,147 +110,133 @@ const createProperty = async (propertyData = {}) => {
 const getProperties = async (queryObj = {}) => {
   try {
     let query = `
-            SELECT 
-                p.property_id,
-                p.property_name,
-                p.floor_area_sqm,
-                p.description,
-                p.display_image,
-                p.property_status,
-                p.base_rent,
-                p.advance_months,
-                p.security_deposit_months,
-                p.minimum_lease_term_months,
-                p.address_id,
-                p.created_at,
-                p.updated_at,
-                a.building_name,
-                a.street,
-                a.barangay,
-                a.city,
-                a.province,
-                a.postal_code,
-                a.country,
-                a.latitude,
-                a.longitude,
-                JSON_ARRAYAGG(
-                    CASE 
-                        WHEN pp.image_url IS NOT NULL 
-                        THEN JSON_OBJECT(
-                            'id', pp.image_id,
-                            'image_url', pp.image_url,
-                            'image_desc', pp.image_desc
-                        )
-                        ELSE NULL
-                    END
-                ) as property_pictures
-            FROM properties p
-            LEFT JOIN addresses a ON p.address_id = a.address_id
-            LEFT JOIN properties_pictures pp ON p.property_id = pp.property_id
-            WHERE p.property_status != 'deleted'
-        `;
+      SELECT 
+        p.property_id,
+        p.property_name,
+        p.floor_area_sqm,
+        p.description,
+        p.display_image,
+        p.property_status,
+        p.base_rent,
+        p.advance_months,
+        p.security_deposit_months,
+        p.minimum_lease_term_months,
+        p.address_id,
+        p.created_at,
+        p.updated_at,
+        a.building_name,
+        a.street,
+        a.barangay,
+        a.city,
+        a.province,
+        a.postal_code,
+        a.country,
+        a.latitude,
+        a.longitude,
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN pp.image_url IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', pp.image_id,
+              'image_url', pp.image_url,
+              'image_desc', pp.image_desc
+            )
+            ELSE NULL
+          END
+        ) as property_pictures
+      FROM properties p
+      LEFT JOIN addresses a ON p.address_id = a.address_id
+      LEFT JOIN properties_pictures pp ON p.property_id = pp.property_id
+      WHERE p.property_status != 'deleted'
+    `;
 
     const values = [];
 
-    // Add filters with parameterized queries
-    if (queryObj.property_status) {
+    // --- Address filter (always base) ---
+    if (queryObj.address_id && queryObj.address_id !== "all") {
+      query += ` AND p.address_id = ?`;
+      values.push(queryObj.address_id);
+    }
+
+    // --- Status filter ---
+    if (queryObj.property_status && queryObj.property_status !== "all") {
       query += ` AND p.property_status = ?`;
       values.push(queryObj.property_status);
     }
 
+    // --- Search filter ---
     if (queryObj.search) {
-      query += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
+      query += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ? OR p.description LIKE ?)`;
       const searchTerm = `%${queryObj.search}%`;
-      values.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
+    // ...other filters (min/max rent/area/city)...
     if (queryObj.min_rent) {
       query += ` AND p.base_rent >= ?`;
       values.push(parseFloat(queryObj.min_rent));
     }
-
     if (queryObj.max_rent) {
       query += ` AND p.base_rent <= ?`;
       values.push(parseFloat(queryObj.max_rent));
     }
-
     if (queryObj.min_area) {
       query += ` AND p.floor_area_sqm >= ?`;
       values.push(parseFloat(queryObj.min_area));
     }
-
     if (queryObj.max_area) {
       query += ` AND p.floor_area_sqm <= ?`;
       values.push(parseFloat(queryObj.max_area));
     }
-
     if (queryObj.city) {
       query += ` AND a.city = ?`;
       values.push(queryObj.city);
     }
 
-    // Add GROUP BY before sorting (required for JSON_ARRAYAGG)
     query += ` GROUP BY p.property_id`;
 
-    // Add sorting
-    const allowedSortFields = [
-      "building_name",
-      "property_name",
-      "base_rent",
-      "floor_area_sqm",
-      "created_at",
-      "updated_at",
-    ];
-    const sortField = allowedSortFields.includes(queryObj.sort_by)
-      ? `p.${queryObj.sort_by}`
-      : "p.created_at";
-    const sortOrder = queryObj.sort_order === "ASC" ? "ASC" : "DESC";
-    query += ` ORDER BY ${sortField} ${sortOrder}`;
+    const page = parseInt(queryObj.page) > 0 ? parseInt(queryObj.page) : 1;
+    const limit = parseInt(queryObj.limit) > 0 ? parseInt(queryObj.limit) : 6;
+    const offset = (page - 1) * limit;
 
-    // Add pagination
-    if (queryObj.limit) {
-      const limit = parseInt(queryObj.limit);
-      // Calculate offset from page if not provided
-      let offset = 0;
-      if (queryObj.page) {
-        const page = parseInt(queryObj.page);
-        offset = (page - 1) * limit;
-      } else if (queryObj.offset) {
-        offset = parseInt(queryObj.offset);
-      }
-      query += ` LIMIT ? OFFSET ?`;
-      values.push(limit, offset);
-    }
+    query += ` LIMIT ? OFFSET ?`;
+    values.push(limit, offset);
 
     const [rows] = await pool.query(query, values);
 
-    // Process property_pictures to remove null values
-    const processedRows = rows.map((row) => ({
-      ...row,
-      property_pictures: row.property_pictures
-        ? row.property_pictures.filter((pic) => pic !== null)
-        : [],
-    }));
+    const processedRows = rows.map(row => {
+      let pictures = [];
+      try {
+        pictures = JSON.parse(row.property_pictures).filter(Boolean);
+      } catch {
+        pictures = [];
+      }
+      return {
+        ...row,
+        property_pictures: pictures
+      };
+    });
 
-    // Get total count for pagination - also exclude deleted properties
+    // --- Count query (for pagination) ---
     let countQuery = `
-            SELECT COUNT(DISTINCT p.property_id) as total 
-            FROM properties p
-            LEFT JOIN addresses a ON p.address_id = a.address_id
-            WHERE p.property_status != 'deleted'
-        `;
+      SELECT COUNT(DISTINCT p.property_id) as total 
+      FROM properties p
+      LEFT JOIN addresses a ON p.address_id = a.address_id
+      WHERE p.property_status != 'deleted'
+    `;
     const countValues = [];
-
-    // Rebuild count query with same filters
-    if (queryObj.property_status) {
+    if (queryObj.address_id && queryObj.address_id !== "all") {
+      countQuery += ` AND p.address_id = ?`;
+      countValues.push(queryObj.address_id);
+    }
+    if (queryObj.property_status && queryObj.property_status !== "all") {
       countQuery += ` AND p.property_status = ?`;
       countValues.push(queryObj.property_status);
     }
-
     if (queryObj.search) {
-      countQuery += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ?)`;
+      countQuery += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ? OR p.description LIKE ?)`;
       const searchTerm = `%${queryObj.search}%`;
-      countValues.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      countValues.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (queryObj.min_rent) {
