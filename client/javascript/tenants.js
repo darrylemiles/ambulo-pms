@@ -17,7 +17,6 @@ const API_BASE_URL = "/api/v1";
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, checking elements...");
 
-  // Check if required elements exist - UPDATED element IDs
   const requiredElements = [
     "gridView",
     "listView", 
@@ -52,9 +51,6 @@ async function loadTenants(page = 1, filters = {}) {
       ...filters,
     });
 
-    console.log("Loading tenants with params:", queryParams.toString());
-    console.log("Full URL:", `${API_BASE_URL}/users?${queryParams}`);
-
     const response = await fetch(`${API_BASE_URL}/users?${queryParams}`, {
       method: "GET",
       headers: {
@@ -79,13 +75,9 @@ async function loadTenants(page = 1, filters = {}) {
       tenants = result.users;
       allTenants = [...tenants];
 
-      console.log("Loaded tenants:", tenants.length);
-
-      // Update pagination info
       if (result.pagination) {
         currentPage = result.pagination.currentPage;
         totalPages = result.pagination.totalPages;
-        console.log("Pagination:", result.pagination);
       }
 
       renderTenants();
@@ -108,8 +100,6 @@ async function loadTenants(page = 1, filters = {}) {
 }
 
 function renderTenants() {
-  console.log("Rendering tenants, view:", currentView, "count:", tenants.length);
-
   if (currentView === "grid") {
     renderGridView();
   } else {
@@ -183,7 +173,6 @@ function renderGridView() {
 // Render list view
 function renderListView() {
   const container = document.getElementById("listContainer");
-  console.log("listContainer element:", container);
 
   if (!container) {
     console.error("❌ listContainer not found in DOM!");
@@ -196,16 +185,11 @@ function renderListView() {
     return;
   }
 
-  console.log("Generating HTML for", tenants.length, "tenants");
-
   const rowsHTML = tenants
     .map((tenant) => {
       const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""}`.trim();
       const isSelected = selectedTenants.has(tenant.user_id);
       const avatarHTML = generateAvatarHTML(tenant, "small");
-
-      console.log("Processing tenant:", tenant.user_id, fullName);
-
       return `
         <div class="tenant-list-item ${isSelected ? "selected" : ""}" data-tenant="${tenant.user_id}">
           <div class="list-col list-col-checkbox">
@@ -244,12 +228,9 @@ function renderListView() {
     .join("");
 
   container.innerHTML = rowsHTML;
-  console.log("HTML set, calling setupListEventListeners...");
   setupListEventListeners();
-  console.log("List view rendering complete");
 }
 
-// NEW: Update bulk actions bar visibility and selected count
 function updateBulkActionsBar() {
   const bulkActionsBar = document.getElementById("bulkActionsBar");
   const selectedCount = document.getElementById("selectedCount");
@@ -290,12 +271,9 @@ function messageSelected() {
   }
   
   const selectedIds = Array.from(selectedTenants);
-  console.log("Messaging tenants:", selectedIds);
-  // Implement messaging functionality
   alert(`Messaging ${selectedTenants.size} selected tenant(s)`);
 }
 
-// NEW: Export selected tenants
 function exportSelected() {
   if (selectedTenants.size === 0) {
     alert("Please select tenants to export.");
@@ -303,12 +281,9 @@ function exportSelected() {
   }
   
   const selectedIds = Array.from(selectedTenants);
-  console.log("Exporting tenants:", selectedIds);
-  // Implement export functionality
   alert(`Exporting ${selectedTenants.size} selected tenant(s)`);
 }
 
-// UPDATED: Enhanced search with better input handling
 function searchTenants() {
   const searchInput = document.getElementById("searchInput");
   const statusFilter = document.getElementById("statusFilter");
@@ -321,22 +296,18 @@ function searchTenants() {
   const searchTerm = searchInput.value.trim();
   const statusValue = statusFilter.value;
 
-  console.log("Searching with term:", searchTerm, "status:", statusValue);
-
   const filters = {};
   if (searchTerm) filters.search = searchTerm;
   if (statusValue) filters.status = statusValue;
 
-  // Reset to page 1 when searching
   currentPage = 1;
   loadTenants(1, filters);
 }
 
 function filterTenants() {
-  searchTenants(); // Reuse search function
+  searchTenants();
 }
 
-// State management functions
 function showLoadingState() {
   document.getElementById("loadingState").style.display = "flex";
   document.getElementById("errorState").style.display = "none";
@@ -375,13 +346,10 @@ function showEmptyState() {
 
 // View toggle function
 function toggleView(viewType) {
-  console.log("Toggling to view:", viewType);
-
   const buttons = document.querySelectorAll(".view-btn");
   const gridView = document.getElementById("gridView");
   const listView = document.getElementById("listView");
 
-  // Update button states
   buttons.forEach((btn) => btn.classList.remove("active"));
   const targetBtn = document.querySelector(`[data-view="${viewType}"]`);
   if (targetBtn) targetBtn.classList.add("active");
@@ -389,25 +357,19 @@ function toggleView(viewType) {
   // Update global view state
   currentView = viewType;
 
-  // Force re-render in the new view
   if (viewType === "list") {
     gridView.style.display = "none";
     listView.style.display = "flex";
-    console.log("Switching to list view, re-rendering...");
     renderListView();
   } else {
     gridView.style.display = "grid";
     listView.style.display = "none";
-    console.log("Switching to grid view, re-rendering...");
     renderGridView();
   }
 
-  console.log("View toggle complete, current view:", currentView);
 }
 
-// UPDATED: Enhanced event listeners setup
 function setupEventListeners() {
-  // Search input with debounce
   let searchTimeout;
   const searchInput = document.getElementById("searchInput");
 
@@ -431,7 +393,6 @@ function setupEventListeners() {
     statusFilter.addEventListener("change", searchTenants);
   }
 
-  // UPDATED: Profile dropdown toggle
   const profileBtn = document.getElementById("profileBtnIcon");
   const dropdownMenu = document.getElementById("dropdownMenu");
   
@@ -441,14 +402,12 @@ function setupEventListeners() {
       dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
     });
 
-    // Close dropdown when clicking outside
     document.addEventListener("click", function() {
       dropdownMenu.style.display = "none";
     });
   }
 }
 
-// UPDATED: Enhanced list event listeners with better error handling
 function setupListEventListeners() {
   const listItems = document.querySelectorAll(".tenant-list-item");
   listItems.forEach((item) => {
@@ -468,7 +427,7 @@ function setupListEventListeners() {
 
         updateSelectAllButton();
         updateListSelectAll();
-        updateBulkActionsBar(); // Added this
+        updateBulkActionsBar(); 
       });
     }
 
@@ -484,12 +443,11 @@ function setupListEventListeners() {
 
       toggleTenantSelection(tenantId, item, checkbox);
       updateListSelectAll();
-      updateBulkActionsBar(); // Added this
+      updateBulkActionsBar(); 
     });
   });
 }
 
-// UPDATED: Enhanced grid event listeners
 function setupGridEventListeners() {
   const tenantCards = document.querySelectorAll(".tenant-card");
   tenantCards.forEach((card) => {
@@ -530,7 +488,6 @@ function toggleSelectAll() {
   const listSelectAll = document.getElementById("listSelectAll");
 
   if (listSelectAll && listSelectAll.checked) {
-    // Select all
     selectedTenants.clear();
     tenants.forEach((tenant) => selectedTenants.add(tenant.user_id));
     document.querySelectorAll(".tenant-list-item").forEach((item) => {
@@ -539,7 +496,6 @@ function toggleSelectAll() {
       if (checkbox) checkbox.checked = true;
     });
   } else {
-    // Deselect all
     selectedTenants.clear();
     document.querySelectorAll(".tenant-list-item").forEach((item) => {
       item.classList.remove("selected");
@@ -583,12 +539,10 @@ function toggleTenantSelection(tenantId, element, checkbox) {
   }
 
   updateSelectAllButton();
-  updateBulkActionsBar(); // Added this
+  updateBulkActionsBar(); 
 }
 
-// UPDATED: Better select all button handling
 function updateSelectAllButton() {
-  // Check if we have any select all elements that exist
   const selectAllElements = document.querySelectorAll("#selectAllCheckbox, .selectAllCheckbox");
   const totalTenants = tenants.length;
 
@@ -705,19 +659,51 @@ function deleteTenant(tenantId) {
   }
 }
 
-// Modal and form functions (unchanged - keeping your existing modal code)
 let currentStep = 1;
 
-function openCreateAccountModal() {
-  document.getElementById("createAccountModal").classList.add("active");
-  document.body.style.overflow = "hidden";
-  resetModal();
+function openCreateAccountInline() {
+    document.getElementById("createAccountInlineContainer").style.display = "block";
+    // Hide the controls row
+    const controlsRow = document.querySelector(".controls-row");
+    if (controlsRow) controlsRow.style.display = "none";
+    // Update breadcrumb for form
+    const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
+    if (breadcrumb) {
+        breadcrumb.innerHTML = `
+            <li class="breadcrumb-item" style="color: #6b7280;">
+                <i class="fas fa-users me-2"></i>Tenants
+            </li>
+            <li class="breadcrumb-divider"><span>›</span></li>
+            <li class="breadcrumb-item active" aria-current="page">
+                <i class="fas fa-user-plus me-2"></i> Add New Tenant
+            </li>
+        `;
+    }
+    if (document.getElementById("bulkActionsBar")) document.getElementById("bulkActionsBar").style.display = "none";
+    if (document.getElementById("pagination")) document.getElementById("pagination").style.display = "none";
+    if (document.getElementById("emptyState")) document.getElementById("emptyState").style.display = "none";
+    if (document.getElementById("gridView")) document.getElementById("gridView").style.display = "none";
+    if (document.getElementById("listView")) document.getElementById("listView").style.display = "none";
 }
 
-function closeCreateAccountModal() {
-  document.getElementById("createAccountModal").classList.remove("active");
-  document.body.style.overflow = "auto";
-  resetModal();
+function closeCreateAccountInline() {
+    document.getElementById("createAccountInlineContainer").style.display = "none";
+    // Show the controls row again
+    const controlsRow = document.querySelector(".controls-row");
+    if (controlsRow) controlsRow.style.display = "";
+    // Restore breadcrumb
+    const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
+    if (breadcrumb) {
+        breadcrumb.innerHTML = `
+            <li class="breadcrumb-item active" aria-current="page">
+                <i class="fas fa-users me-2"></i> Tenants
+            </li>
+        `;
+    }
+    if (document.getElementById("bulkActionsBar")) document.getElementById("bulkActionsBar").style.display = "";
+    if (document.getElementById("pagination")) document.getElementById("pagination").style.display = "";
+    if (document.getElementById("gridView")) document.getElementById("gridView").style.display = "";
+    // Optionally show emptyState if needed
 }
 
 function resetModal() {
@@ -990,10 +976,8 @@ function clearSavedFormData() {
   }
 }
 
-// Auto-save every 30 seconds
 setInterval(autoSaveFormData, 30000);
 
-// Export functions to window
 window.toggleView = toggleView;
 window.editTenant = editTenant;
 window.deleteTenant = deleteTenant;
@@ -1002,8 +986,6 @@ window.clearSelection = clearSelection;
 window.messageSelected = messageSelected;
 window.exportSelected = exportSelected;
 window.toggleSelectAll = toggleSelectAll;
-window.openCreateAccountModal = openCreateAccountModal;
-window.closeCreateAccountModal = closeCreateAccountModal;
 window.nextStep = nextStep;
 window.previousStep = previousStep;
 window.confirmAccount = confirmAccount;
@@ -1012,3 +994,5 @@ window.handleAvatarError = handleAvatarError;
 window.goToPage = goToPage;
 window.formatStatus = formatStatus;
 window.formatDate = formatDate;
+window.openCreateAccountInline = openCreateAccountInline;
+window.closeCreateAccountInline = closeCreateAccountInline;

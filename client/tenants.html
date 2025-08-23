@@ -44,172 +44,84 @@
 
         <!-- Tenants Section -->
         <div class="tenants-section">
-            <!-- Updated Tenants Header - Removed Message Selected Button -->
-            <div class="tenants-header">
-                <div class="header-left">
-                    <button class="btn btn-primary" onclick="openCreateAccountModal()">
-                        <i class="fas fa-plus"></i>
-                        <span class="btn-text">Add New Tenant</span>
-                    </button>
-                </div>
 
-                <div class="header-center">
-                    <div class="search-filter-controls">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="searchInput" placeholder="Search tenants..."
-                                onkeyup="searchTenants()">
+            <!-- Tenants Label (separate container, small and blue) -->
+            <div class="tenants-label-container mb-2">
+                <!-- Tenants Header (breadcrumb style, like Properties) -->
+                <div class="tenants-header-top">
+                    <div class="breadcrumb-container" id="tenantsBreadcrumbContainer">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb" id="tenantsBreadcrumbNav">
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    <i class="fas fa-users me-2"></i>Tenants
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Row: Add New Tenant, Search, Filter, View Toggle -->
+            <div class="controls-row mb-3">
+                <div class="tenants-header d-flex align-items-center justify-content-between mb-3 flex-wrap">
+                    <button class="btn btn-primary tenants-add-btn" onclick="openCreateAccountInline()">
+                        <i class="fas fa-plus me-2"></i>
+                        Add New Tenant
+                    </button>
+                    <div class="header-center flex-grow-1 d-flex align-items-center justify-content-center"
+                        style="min-width: 0;">
+                        <div class="search-filter-controls d-flex align-items-center gap-3 w-100"
+                            style="max-width: 600px;">
+                            <div class="search-box flex-grow-1">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="Search tenants..."
+                                    onkeyup="searchTenants()">
+                            </div>
+                            <select id="statusFilter" class="filter-select" onchange="filterTenants()">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
                         </div>
-                        <select id="statusFilter" class="filter-select" onchange="filterTenants()">
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
                     </div>
-                </div>
-
-                <div class="header-right">
-                    <div class="view-toggle">
-                        <button class="view-btn active" data-view="grid" onclick="toggleView('grid')" title="Grid View">
-                            <i class="fas fa-th"></i>
-                        </button>
-                        <button class="view-btn" data-view="list" onclick="toggleView('list')" title="List View">
-                            <i class="fas fa-list"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bulk Actions Bar -->
-            <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
-                <div class="bulk-actions-left">
-                    <span id="selectedCount" class="selected-count">0 selected</span>
-                    <button class="bulk-btn" onclick="selectAll()">
-                        <i class="fas fa-check-square"></i>
-                        <span>Select All</span>
-                    </button>
-                    <button class="bulk-btn" onclick="clearSelection()">
-                        <i class="fas fa-times"></i>
-                        <span>Clear Selection</span>
-                    </button>
-                </div>
-                <div class="bulk-actions-right">
-                    <button class="bulk-btn bulk-message" onclick="messageSelected()">
-                        <i class="fas fa-envelope"></i>
-                        <span>Message</span>
-                    </button>
-                    <button class="bulk-btn bulk-export" onclick="exportSelected()">
-                        <i class="fas fa-download"></i>
-                        <span>Export</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Loading State -->
-            <div id="loadingState" class="loading-state" style="display: none;">
-                <div class="loader"></div>
-                <p>Loading tenants...</p>
-            </div>
-
-            <!-- Error State -->
-            <div id="errorState" class="error-state" style="display: none;">
-                <div class="error-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <h3>Failed to load tenants</h3>
-                <p>Please check your connection and try again.</p>
-                <button onclick="loadTenants()" class="retry-btn">
-                    <i class="fas fa-redo"></i>
-                    Retry
-                </button>
-            </div>
-
-            <!-- Grid View -->
-            <div id="gridView" class="tenants-grid">
-                <!-- Tenant cards will be populated here -->
-            </div>
-
-            <!-- List View -->
-            <div id="listView" class="tenants-list" style="display: none;">
-                <div class="list-header">
-                    <div class="list-col list-col-checkbox">
-                        <input type="checkbox" id="listSelectAll" onchange="toggleSelectAll()">
-                    </div>
-                    <div class="list-col list-col-name">
-                        <span>Name</span>
-                        <i class="fas fa-sort sort-icon" onclick="sortTable('name')"></i>
-                    </div>
-                    <div class="list-col list-col-email">
-                        <span>Email</span>
-                        <i class="fas fa-sort sort-icon" onclick="sortTable('email')"></i>
-                    </div>
-                    <div class="list-col list-col-phone">
-                        <span>Phone</span>
-                    </div>
-                    <div class="list-col list-col-status">
-                        <span>Status</span>
-                        <i class="fas fa-sort sort-icon" onclick="sortTable('status')"></i>
-                    </div>
-                    <div class="list-col list-col-created">
-                        <span>Created</span>
-                        <i class="fas fa-sort sort-icon" onclick="sortTable('created')"></i>
-                    </div>
-                    <div class="list-col list-col-actions">Actions</div>
-                </div>
-                <div id="listContainer">
-                    <!-- Tenant list items will be populated here -->
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <div id="pagination" class="pagination" style="display: none;">
-                <!-- Pagination will be populated here -->
-            </div>
-
-            <!-- Empty State -->
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <div class="empty-icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <h3>No Tenants Found</h3>
-                <p>There are no tenants matching the search criteria.</p>
-                <button class="btn btn-primary" onclick="openCreateAccountModal()">
-                    <i class="fas fa-plus"></i>
-                    Create Tenant
-                </button>
-            </div>
-
-            <!-- Create Account Modal -->
-            <div class="modal-overlay" id="createAccountModal">
-                <div class="modal">
-                    <button class="close-modal" onclick="closeCreateAccountModal()">
-                        <i class="fas fa-times"></i>
-                    </button>
-
-                    <div class="modal-header">
-                        <h3 class="modal-title">Create Tenant Account</h3>
-                        <p class="modal-subtitle">Complete the form to add a new tenant to the system</p>
-                    </div>
-
-                    <div class="modal-body">
-                        <!-- Step Indicator -->
-                        <div class="step-indicator">
-                            <div class="step active" id="step1">
-                                <span class="step-number">1</span>
-                                <span class="step-label">Personal Info</span>
-                            </div>
-                            <div class="step-connector" id="connector1"></div>
-                            <div class="step inactive" id="step2">
-                                <span class="step-number">2</span>
-                                <span class="step-label">Rental Details</span>
-                            </div>
-                            <div class="step-connector" id="connector2"></div>
-                            <div class="step inactive" id="step3">
-                                <span class="step-number">3</span>
-                                <span class="step-label">Account Setup</span>
-                            </div>
+                    <div style="height: 18px;"></div>
+                    <div class="header-right d-flex align-items-center">
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="grid" onclick="toggleView('grid')"
+                                title="Grid View">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="view-btn" data-view="list" onclick="toggleView('list')" title="List View">
+                                <i class="fas fa-list"></i>
+                            </button>
                         </div>
+                    </div>
+                </div>
+            </div>
 
+            <div id="createAccountInlineContainer" style="display: none;">
+                <div class="inline-form-container">
+                    <h3 class="inline-form-title">Create Tenant Account</h3>
+                    <p class="inline-form-subtitle">Complete the form to add a new tenant to the system</p>
+
+                    <div class="step-indicator">
+                        <div class="step active" id="step1">
+                            <span class="step-number">1</span>
+                            <span class="step-label">Personal Info</span>
+                        </div>
+                        <div class="step-connector" id="connector1"></div>
+                        <div class="step inactive" id="step2">
+                            <span class="step-number">2</span>
+                            <span class="step-label">Rental Details</span>
+                        </div>
+                        <div class="step-connector" id="connector2"></div>
+                        <div class="step inactive" id="step3">
+                            <span class="step-number">3</span>
+                            <span class="step-label">Account Setup</span>
+                        </div>
+                    </div>
+                    <!-- The paginated form (reuse your existing form markup) -->
+                    <form id="createAccountForm">
                         <form id="createAccountForm">
                             <!-- Step 1: Personal Information -->
                             <div class="form-step active" id="formStep1">
@@ -460,9 +372,8 @@
                                 </div>
                             </div>
                         </form>
-                    </div>
-
-                    <div class="modal-footer">
+                    </form>
+                    <div class="inline-form-footer">
                         <button type="button" class="modal-btn modal-btn-secondary" id="prevBtn"
                             onclick="previousStep()" style="display: none;">
                             <i class="fas fa-arrow-left"></i>
@@ -478,9 +389,113 @@
                             <i class="fas fa-check"></i>
                             Create Account
                         </button>
+                        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCreateAccountInline()"
+                            style="margin-left: 10px;">
+                            Cancel
+                        </button>
                     </div>
                 </div>
             </div>
+
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                <div class="bulk-actions-left">
+                    <span id="selectedCount" class="selected-count">0 selected</span>
+                    <button class="bulk-btn" onclick="selectAll()">
+                        <i class="fas fa-check-square"></i>
+                        <span>Select All</span>
+                    </button>
+                    <button class="bulk-btn" onclick="clearSelection()">
+                        <i class="fas fa-times"></i>
+                        <span>Clear Selection</span>
+                    </button>
+                </div>
+                <div class="bulk-actions-right">
+                    <button class="bulk-btn bulk-message" onclick="messageSelected()">
+                        <i class="fas fa-envelope"></i>
+                        <span>Message</span>
+                    </button>
+                    <button class="bulk-btn bulk-export" onclick="exportSelected()">
+                        <i class="fas fa-download"></i>
+                        <span>Export</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state" style="display: none;">
+                <div class="loader"></div>
+                <p>Loading tenants...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state" style="display: none;">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Failed to load tenants</h3>
+                <p>Please check your connection and try again.</p>
+                <button onclick="loadTenants()" class="retry-btn">
+                    <i class="fas fa-redo"></i>
+                    Retry
+                </button>
+            </div>
+
+            <!-- Grid View -->
+            <div id="gridView" class="tenants-grid">
+                <!-- Tenant cards will be populated here -->
+            </div>
+
+            <!-- List View -->
+            <div id="listView" class="tenants-list" style="display: none;">
+                <div class="list-header">
+                    <div class="list-col list-col-checkbox">
+                        <input type="checkbox" id="listSelectAll" onchange="toggleSelectAll()">
+                    </div>
+                    <div class="list-col list-col-name">
+                        <span>Name</span>
+                        <i class="fas fa-sort sort-icon" onclick="sortTable('name')"></i>
+                    </div>
+                    <div class="list-col list-col-email">
+                        <span>Email</span>
+                        <i class="fas fa-sort sort-icon" onclick="sortTable('email')"></i>
+                    </div>
+                    <div class="list-col list-col-phone">
+                        <span>Phone</span>
+                    </div>
+                    <div class="list-col list-col-status">
+                        <span>Status</span>
+                        <i class="fas fa-sort sort-icon" onclick="sortTable('status')"></i>
+                    </div>
+                    <div class="list-col list-col-created">
+                        <span>Created</span>
+                        <i class="fas fa-sort sort-icon" onclick="sortTable('created')"></i>
+                    </div>
+                    <div class="list-col list-col-actions">Actions</div>
+                </div>
+                <div id="listContainer">
+                    <!-- Tenant list items will be populated here -->
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="pagination" style="display: none;">
+                <!-- Pagination will be populated here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>No Tenants Found</h3>
+                <p>There are no tenants matching the search criteria.</p>
+                <button class="btn btn-primary" onclick="openCreateAccountModal()">
+                    <i class="fas fa-plus"></i>
+                    Create Tenant
+                </button>
+            </div>
+
         </div>
 
         <script src="/javascript/bootstrap.bundle.min.js"></script>
