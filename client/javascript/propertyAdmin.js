@@ -257,16 +257,6 @@ function setupEventListeners() {
       searchProperties(e.target.value);
     });
 
-  // Profile dropdown
-  document
-    .getElementById("profileBtnIcon")
-    .addEventListener("click", function (e) {
-      e.stopPropagation();
-      const dropdown = document.getElementById("dropdownMenu");
-      dropdown.style.display =
-        dropdown.style.display === "block" ? "none" : "block";
-    });
-
   // Close dropdown when clicking outside
   document.addEventListener("click", function () {
     document.getElementById("dropdownMenu").style.display = "none";
