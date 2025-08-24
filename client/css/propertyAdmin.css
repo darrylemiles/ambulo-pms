@@ -12,13 +12,6 @@ body {
   overflow-x: hidden;
 }
 
-.main-content {
-  flex: 1;
-  padding: 30px;
-  overflow-y: auto;
-  transition: margin-left 0.3s ease;
-  margin-left: 0;
-}
 
 .header {
   display: flex;
@@ -141,9 +134,9 @@ body {
   background-color: #f1f1f1;
 }
 
-/* Property Management Module Styles */
 .property-container {
   background: white;
+  margin: 80px 24px 24px 104px;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -891,7 +884,6 @@ body {
   color: #2563eb;
 }
 
-/* FIXED: Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -899,7 +891,7 @@ body {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.75);
-  display: none; /* Changed from flex to none */
+  display: none; 
   justify-content: center;
   align-items: center;
   z-index: 999999;
@@ -907,7 +899,7 @@ body {
 }
 
 .modal-overlay.show {
-  display: flex !important; /* Force display when show class is added */
+  display: flex !important; 
   animation: fadeIn 0.3s ease;
 }
 

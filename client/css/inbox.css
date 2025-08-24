@@ -12,12 +12,12 @@
           overflow-x: hidden;
         }
 
-        .main-content {
+        .inbox-container {
           flex: 1;
           padding: 20px 30px 20px 30px;
           overflow-y: auto;
           transition: margin-left 0.3s ease, padding 0.3s ease;
-          margin-left: 0;
+          margin: 80px 24px 24px 75px;
           width: 100vw;
         }
 

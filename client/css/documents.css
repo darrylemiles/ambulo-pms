@@ -12,12 +12,12 @@ body {
   overflow-x: hidden;
 }
 
-.main-content {
+.documents-container {
   flex: 1;
   padding: 20px 30px 20px 30px;
+  margin: 80px 20px 20px 75px;
   overflow-y: auto;
   transition: margin-left 0.3s ease, padding 0.3s ease;
-  margin-left: 0;
   width: 100vw;
 }
 

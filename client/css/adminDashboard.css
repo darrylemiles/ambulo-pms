@@ -18,17 +18,10 @@
             flex: 1;
             padding: 30px;
             overflow-y: auto;
+            margin: 80px 24px 24px 104px;
             transition: margin-left 0.3s ease;
-            margin-left: 270px;
         }
 
-        .main-content.sidebar-hidden {
-            margin-left: 0;
-        }
-
-        .main-content.sidebar-collapsed {
-            margin-left: 80px;
-        }
 
         .header {
             display: flex;
