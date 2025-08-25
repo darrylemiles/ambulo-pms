@@ -10,3 +10,4 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Error loading navbar:', error);
         });
     });
+

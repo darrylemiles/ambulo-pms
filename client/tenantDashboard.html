@@ -5,39 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/tenantDashboard.css">
-    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/navbarTenant.css">
     <title>Tenant Dashboard</title>
 </head>
 <body>
-    <div class="overlay" id="overlay"></div>
-
-    <div id="sidebarContainer"></div>
+    <header id="navbar-tenant-placeholder"></header>
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
-        <div class="header">
             <div class="title-section">
                 <div>
-                    <h1>Hello, Rei!</h1>
-                    <h2>Dashboard</h2>
+                    <h1>Dashboard</h1>
                 </div>
-            </div>
-
-            <div class="header-right">
-                <div class="search-bar">
-                    <input type="text" placeholder="Search Anything...">
-                </div>
-                <button class="icon notification">🔔</button>
-                <button class="icon inbox">✉️</button>
-                <div class="profile-dropdown">
-                <button class="profile" id="profileBtnIcon">R</button>
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <a href="../client/userProfile.html">👤 Profile</a>
-                    <a href="../client/login.html">🚪 Logout</a>
-                </div>
-                </div>
-            </div>
         </div>
+
         <div class="dashboard-container">
             <!-- Calendar Column (Today's reminders + Calendar) -->
             <div class="calendar-column">
@@ -220,7 +201,7 @@
                 <!-- Your Information -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Your Information</h3>
+                        <h3 class="card-title">Lease Summary</h3>
                     </div>
                     <div class="no-records">No Records</div>
                 </div>
@@ -235,6 +216,7 @@
             </div>
         </div>
     </div>
+    <script src="/javascript/navbarTenant.js"></script>
     <script src="/javascript/tenantDashboard.js"></script>
 </body>
 </html>
