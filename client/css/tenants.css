@@ -151,19 +151,6 @@ body {
   background-color: #f1f1f1;
 }
 
-/* Tenants Section Styles - Updated with Blue Theme */
-.tenants-section {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  margin-top: 20px;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  margin-left: 0;
-}
-
 .view-toggle {
   display: flex;
   gap: 4px;
@@ -1498,14 +1485,18 @@ body {
 }
 
 .toggle-password {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 16px;
-  color: #718096;
-  user-select: none;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 16px;
+    padding-bottom: 15px;
+    color: #718096;
+    user-select: none;
+    background: transparent;
+    border: 0;
+    padding-right: 5px;
 }
 
 .terms-checkbox {
@@ -2214,13 +2205,7 @@ body {
 }
 
 .tenants-section {
-  margin-left: 0;
-  margin-top: 50px;
-  margin-right: 24px;
-  margin-bottom: 24px;
   width: auto;
-  max-width: 100%;
-  padding: 32px;
   min-height: 600px;
   background: white;
   border-radius: 12px;
@@ -2237,7 +2222,7 @@ body {
     margin-right: 32px;
     margin-top: 80px;
     margin-bottom: 32px;
-    padding: 32px 32px 32px 32px;
+    padding: 20px;
     max-width: calc(100vw - 120px);
   }
 }
@@ -2300,4 +2285,490 @@ body {
   flex: 1;
   min-width: 120px;
   box-shadow: none;
+}
+
+/* --- Responsive Create Tenant Form --- */
+.inline-form-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.08);
+  padding: 32px 40px;
+  margin-bottom: 32px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 1100px) {
+  .inline-form-container {
+    padding: 18px 4vw;
+    max-width: 100vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .inline-form-container {
+    padding: 10px 2vw;
+    max-width: 100vw;
+  }
+  .form-row,
+  .form-row.two-col,
+  .form-row.full-width {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+}
+
+/* Ensure form rows never overflow and inputs always fit */
+.form-row,
+.form-row.two-col,
+.form-row.full-width {
+  display: grid;
+  gap: 15px;
+  width: 100%;
+}
+
+.form-row {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-row.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+.form-row.full-width {
+  grid-template-columns: 1fr;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive: stack fields on small screens */
+@media (max-width: 900px) {
+  .form-row,
+  .form-row.two-col,
+  .form-row.full-width {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    min-width: 0;
+    font-size: 15px;
+    padding: 10px 10px;
+  }
+  .inline-form-title {
+    font-size: 1.3rem;
+  }
+}
+
+/* Step indicator labels fix */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.step {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #a0aec0;
+  position: relative;
+  z-index: 1;
+}
+
+.step-label {
+  margin-left: 8px;
+  margin-right: 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+  position: relative;
+  top: 1px;
+}
+
+.step.active .step-label,
+.step.completed .step-label {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .step-label {
+    font-size: 13px;
+    margin-right: 8px;
+    margin-left: 6px;
+  }
+  .step {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  .step-indicator {
+    gap: 4px;
+    margin-bottom: 18px;
+  }
+}
+
+/* Fix radio group wrapping on mobile */
+.radio-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* Step indicator: horizontal steps with connectors */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 0;
+}
+
+.step-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* The step circle */
+.step {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #a0aec0;
+  margin-bottom: 4px;
+  z-index: 2;
+}
+
+.step.active {
+  background: #3182ce;
+  color: white;
+  border-color: #3182ce;
+}
+
+.step.completed {
+  background: #48bb78;
+  color: white;
+  border-color: #48bb78;
+}
+
+/* The label below each step */
+.step-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 2px;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.step-connector {
+  flex: 1 1 60px;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 4px 36px 4px;
+  align-self: flex-start;
+  z-index: 0;
+  position: relative;
+  top: 20px; 
+}
+
+.step-connector.completed {
+  background: #48bb78;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .step {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+  .step-label {
+    font-size: 12px;
+    min-width: 40px;
+  }
+  .step-connector {
+    margin: 0 2px 28px 2px;
+    top: 15px;
+    min-width: 24px;
+  }
+}
+
+@media (max-width: 500px) {
+  .inline-form-container {
+    padding: 4px 2vw;
+  }
+  .step-indicator {
+    gap: 2px;
+    margin-bottom: 12px;
+  }
+  .step-label {
+    font-size: 12px;
+    margin-right: 4px;
+    margin-left: 4px;
+  }
+}
+
+/* Radio group: wrap on small screens */
+.radio-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* Fix button alignment on mobile */
+.inline-form-footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+@media (min-width: 601px) {
+  .inline-form-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+  }
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Fix input-with-currency to prevent overflow */
+.input-with-currency {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.input-with-currency .currency {
+  position: absolute;
+  left: 12px;
+  font-size: 15px;
+  color: #64748b;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.input-with-currency input {
+  padding-left: 28px !important;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.form-group,
+.form-group input,
+.form-group select {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .form-row,
+  .form-row.two-col,
+  .form-row.full-width {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  .input-with-currency input {
+    padding-left: 28px !important;
+  }
+}
+
+.form-group select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #2d3748;
+  margin-bottom: 6px;   
+  display: block;
+}
+
+.form-group input,
+.form-group select {
+  margin-bottom: 16px; 
+}
+
+.input-with-currency {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.input-with-currency .currency {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #64748b;
+  z-index: 2;
+  pointer-events: none;
+  line-height: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+
+}
+
+.form-group select,
+.filter-select {
+  padding-right: 40px !important;
+  background-position: right 16px center !important;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+}
+
+.input-with-currency input {
+  padding-left: 32px !important;
+}
+
+.currency {
+  padding: auto 0px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.radio-option label {
+  margin-bottom: 0;
+  cursor: pointer;
+  font-weight: 400;
+  color: #2d3748;
+  line-height: 1;
+}
+.form-section.billing-address label {
+  margin-bottom: 8px !important;
+  font-size: 14px;
+  color: #2d3748;
+  font-weight: 500;
+  display: block;
+}
+
+.radio-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  align-items: center; 
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.radio-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #3182ce;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.radio-option label {
+  margin-bottom: 0;
+  cursor: pointer;
+  font-weight: 400;
+  color: #2d3748;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.form-row.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 0.5fr;
+  gap: 15px;
+  width: 100%;
+}
+
+.currency {
+  padding-bottom: 20px;
+  font-weight: 400;
+}
+
+.profile-preview-content {
+    margin-left: 10px;
 }

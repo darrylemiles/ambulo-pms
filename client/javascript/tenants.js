@@ -24,8 +24,8 @@ document.addEventListener("DOMContentLoaded", function () {
     "errorState",
     "searchInput",
     "statusFilter",
-    "listSelectAll", // Added this
-    "bulkActionsBar" // Added this
+    "listSelectAll", 
+    "bulkActionsBar"
   ];
   requiredElements.forEach((id) => {
     const element = document.getElementById(id);
