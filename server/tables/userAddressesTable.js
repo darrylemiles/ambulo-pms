@@ -1,5 +1,5 @@
 const userAddressesTable = `CREATE TABLE IF NOT EXISTS user_addresses (
-	user_address_id int primary key,
+	user_address_id int auto_increment primary key,
 	house_no varchar(10),
 	street_address varchar(100),
 	city varchar(100),

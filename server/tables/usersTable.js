@@ -6,15 +6,13 @@ const usersTable = `CREATE TABLE IF NOT EXISTS users (
     suffix VARCHAR(10),
     birthdate DATE,
     gender ENUM('Male', 'Female', 'Other'),
-    business_name VARCHAR(64),
-    business_type VARCHAR(100),
     avatar VARCHAR(500),
     email VARCHAR(64),
     phone_number CHAR(15),
     alt_phone_number CHAR(15),
     user_address_id INT,
     password_hash CHAR(60),
-    role VARCHAR(50),
+    role VARCHAR(50) DEFAULT 'TENANT',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('ACTIVE', 'INACTIVE', 'BANNED') DEFAULT 'ACTIVE'
 );`;

@@ -1,5 +1,5 @@
 const tenantEmergencyContactsTable = `CREATE TABLE IF NOT EXISTS tenant_emergency_contacts (
-  contact_id INT PRIMARY KEY,
+  contact_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id VARCHAR(255),
   contact_name VARCHAR(100),
   contact_phone CHAR(15),
