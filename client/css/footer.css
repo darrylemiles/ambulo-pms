@@ -5,7 +5,7 @@
         }
 
         body {
-            font-family: Poppins, sans-serif;
+            font-family: 'Poppins', sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #C3D2D2;
@@ -16,7 +16,6 @@
         footer {
             background: #1a202c;
             color: #a0aec0;
-            text-align: center;
             padding: 30px 0;
             font-size: 14px;
         }
