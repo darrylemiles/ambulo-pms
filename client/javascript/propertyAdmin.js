@@ -30,7 +30,7 @@ const API_BASE_URL = "/api/v1/properties";
 // Initialize the application
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, initializing...");
-  populateAddressFilterDropdown(); // <-- Add this line
+  populateAddressFilterDropdown(); 
   loadProperties(1, pageSize);
   setupEventListeners();
 
@@ -125,6 +125,17 @@ async function loadProperties(page = 1, limit = pageSize) {
 }
 
 function transformPropertyData(backendProperty) {
+  // let property_pictures = backendProperty.property_pictures;
+  // if (typeof property_pictures === "string") {
+  //   try {
+  //     property_pictures = JSON.parse(property_pictures);
+  //     if (!Array.isArray(property_pictures)) property_pictures = [];
+  //     property_pictures = property_pictures.filter(Boolean);
+  //   } catch {
+  //     property_pictures = [];
+  //   }
+  // }
+
   return {
     id: backendProperty.property_id,
     property_name: backendProperty.property_name || "Unnamed Property",
@@ -134,12 +145,11 @@ function transformPropertyData(backendProperty) {
     floor_area_sqm: backendProperty.floor_area_sqm || 0,
     description: backendProperty.description || "",
     display_image: backendProperty.display_image,
-    property_pictures: backendProperty.property_pictures || [],
+    property_pictures: backendProperty.property_pictures,
     advance_months: backendProperty.advance_months || 0,
     security_deposit_months: backendProperty.security_deposit_months || 2,
     minimum_lease_term_months: backendProperty.minimum_lease_term_months || 24,
     address_id: backendProperty.address_id,
-    // Include individual address fields for extraction
     building_name: backendProperty.building_name,
     street: backendProperty.street,
     barangay: backendProperty.barangay,
@@ -150,7 +160,7 @@ function transformPropertyData(backendProperty) {
     created_at: backendProperty.created_at,
     updated_at: backendProperty.updated_at,
   };
-}
+} 
 
 function renderPagination() {
   const paginationContainerId = "paginationContainer";
@@ -257,11 +267,7 @@ function setupEventListeners() {
       searchProperties(e.target.value);
     });
 
-  // Close dropdown when clicking outside
-  document.addEventListener("click", function () {
-    document.getElementById("dropdownMenu").style.display = "none";
-    closeAllDropdowns();
-  });
+
 }
 
 function getAddressFilterValue() {
@@ -271,15 +277,11 @@ function setAddressFilterValue(val) {
   localStorage.setItem("addressFilter", val);
 }
 
-// Populate the address filter dropdown
 async function populateAddressFilterDropdown() {
   const dropdown = document.getElementById("addressFilterDropdown");
   if (!dropdown) return;
 
-  // Save current value to restore after repopulating
   const prevValue = getAddressFilterValue();
-
-  // Clear and add "All Addresses"
   dropdown.innerHTML = `<option value="all">All Addresses</option>`;
 
   try {
@@ -291,11 +293,9 @@ async function populateAddressFilterDropdown() {
     if (!response.ok) throw new Error("Failed to fetch addresses");
     const result = await response.json();
 
-    // Use unique address_id/building_name pairs
     const uniqueAddresses = new Map();
     result.addresses.forEach((address) => {
       if (address.address_id) {
-        // Use building_name if available, else fallback to formatted address
         let label = address.building_name?.trim();
         if (!label) {
           label = formatAddress(address, false);
@@ -304,7 +304,6 @@ async function populateAddressFilterDropdown() {
       }
     });
 
-    // Sort by label
     const sorted = Array.from(uniqueAddresses.entries()).sort((a, b) =>
       a[1].localeCompare(b[1])
     );
@@ -316,7 +315,6 @@ async function populateAddressFilterDropdown() {
       dropdown.appendChild(option);
     });
 
-    // Restore previous value (or default to "all")
     dropdown.value = prevValue;
   } catch (error) {
     console.error("Error populating address filter:", error);
@@ -1113,11 +1111,11 @@ function loadExistingShowcaseImages(property) {
       });
 
       const imageData = {
-        id: Date.now() + index, // Local ID for frontend tracking
+        id: Date.now() + index, 
         file: mockFile,
         description: picture.image_desc || "",
         isExisting: true,
-        existingId: picture.id, // This should be the actual database ID
+        existingId: picture.id, 
         dataUrl: picture.image_url,
       };
 
@@ -1259,12 +1257,15 @@ function setupEditInlineForm() {
 
 function populateEditForm(propertyId) {
   deletedShowcaseImages = [];
+  
 
   const property = properties.find((p) => p.id === propertyId);
   if (!property) {
     console.error("Property not found:", propertyId);
     return;
   }
+
+    console.log("Edit property property_pictures:", property.property_pictures);
 
   // Populate basic property fields
   const fieldMappings = {
@@ -2319,6 +2320,7 @@ async function handleInlineFormSubmit(event) {
     await loadProperties();
 
     showInlineSuccessMessage("Property added successfully!");
+    resetInlineFormSilently();
 
     // Navigate directly to properties list without confirmation
     setTimeout(() => {
@@ -2358,12 +2360,24 @@ function resetInlineFormSilently() {
 
   // Reset address form
   clearInlineAddressForm();
+  const addressSelect = document.getElementById("inlineAddressSelect");
+  if (addressSelect) {
+    addressSelect.selectedIndex = 0;
+    if (window.inlineAddressTomSelect) {
+      window.inlineAddressTomSelect.clear(true);
+    }
+  }
+
   const newAddressForm = document.getElementById("inlineNewAddressForm");
   const addNewAddressBtn = document.getElementById("inlineAddNewAddressBtn");
   if (newAddressForm) newAddressForm.style.display = "none";
   if (addNewAddressBtn)
     addNewAddressBtn.innerHTML =
       '<i class="fas fa-plus me-1"></i> Add New Address';
+
+  const descEditor = document.getElementById("addDescriptionEditor");
+  if (descEditor) descEditor.innerHTML = "";
+
 }
 
 function setupInlineForm() {
@@ -2867,112 +2881,111 @@ async function removeProperty(propertyId) {
   }
 }
 
-function populatePropertyDetails(property) {
-  const titleElement = document.getElementById("detailsTitle");
-  if (titleElement) {
-    titleElement.textContent = property.property_name || "Property Details";
-  }
+  function populatePropertyDetails(property) {
+      console.log("Details property property_pictures:", property.property_pictures);
+    const titleElement = document.getElementById("detailsTitle");
+    if (titleElement) {
+      titleElement.textContent = property.property_name || "Property Details";
+    }
 
-  const allImages = [];
-  if (property.display_image) {
-    allImages.push({
-      url: property.display_image,
-      description: "Main Display Image",
-    });
-  }
-  if (property.property_pictures && property.property_pictures.length > 0) {
-    property.property_pictures.forEach((picture, index) => {
+    const allImages = [];
+    if (property.display_image) {
       allImages.push({
-        url: picture.image_url,
-        description: picture.image_desc || `Showcase Image ${index + 1}`,
+        url: property.display_image,
+        description: "Main Display Image",
       });
-    });
-  }
-  if (allImages.length === 0) {
-    allImages.push({
-      url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      description: "No Image Available",
-    });
-  }
+    }
+    if (property.property_pictures && property.property_pictures.length > 0) {
+      property.property_pictures.forEach((picture, index) => {
+        allImages.push({
+          url: picture.image_url,
+          description: picture.image_desc || `Showcase Image ${index + 1}`,
+        });
+      });
+    }
+    if (allImages.length === 0) {
+      allImages.push({
+        url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+        description: "No Image Available",
+      });
+    }
 
-  let currentIndex = 0;
 
-  const mainImg = document.getElementById("carouselMainImage");
-  const desc = document.getElementById("carouselImageDescription");
-  const prevBtn = document.getElementById("carouselPrevBtn");
-  const nextBtn = document.getElementById("carouselNextBtn");
-  const thumbs = document.getElementById("carouselThumbnails");
-  const zoomBtn = document.getElementById("zoomImageBtn");
+    let currentIndex = 0;
 
-  function updateCarousel(idx) {
-    currentIndex = idx;
-    mainImg.src = allImages[idx].url;
-    mainImg.alt = allImages[idx].description;
-    desc.textContent = allImages[idx].description || "";
+    const mainImg = document.getElementById("carouselMainImage");
+    const desc = document.getElementById("carouselImageDescription");
+    const prevBtn = document.getElementById("carouselPrevBtn");
+    const nextBtn = document.getElementById("carouselNextBtn");
+    const thumbs = document.getElementById("carouselThumbnails");
+    const zoomBtn = document.getElementById("zoomImageBtn");
+
+    function updateCarousel(idx) {
+      currentIndex = idx;
+      mainImg.src = allImages[idx].url;
+      mainImg.alt = allImages[idx].description;
+      desc.textContent = allImages[idx].description || "";
+      thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
+        thumb.classList.toggle("active", i === idx);
+      });
+      prevBtn.style.display = allImages.length > 1 ? "" : "none";
+      nextBtn.style.display = allImages.length > 1 ? "" : "none";
+      zoomBtn.style.display = "block";
+    }
+
+    // Thumbnails
+    thumbs.innerHTML = allImages
+      .map(
+        (img, i) =>
+          `<img src="${img.url}" alt="Thumb ${i + 1}" class="carousel-thumbnail${
+            i === 0 ? " active" : ""
+          }" data-idx="${i}">`
+      )
+      .join("");
     thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
-      thumb.classList.toggle("active", i === idx);
+      thumb.onclick = () => updateCarousel(i);
     });
-    prevBtn.style.display = allImages.length > 1 ? "" : "none";
-    nextBtn.style.display = allImages.length > 1 ? "" : "none";
-    zoomBtn.style.display = "block";
+
+    // Arrows
+    prevBtn.onclick = () =>
+      updateCarousel((currentIndex - 1 + allImages.length) % allImages.length);
+    nextBtn.onclick = () => updateCarousel((currentIndex + 1) % allImages.length);
+
+    // Zoom
+    zoomBtn.onclick = () => openZoomModal(allImages[currentIndex].url);
+
+    // Initial load
+    updateCarousel(0);
+
+    document.getElementById("detailPropertyName").textContent =
+      property.property_name || "N/A";
+    document.getElementById("detailFloorArea").textContent =
+      property.floor_area_sqm ? `${property.floor_area_sqm} m²` : "N/A";
+    document.getElementById("detailLocation").textContent =
+      property.location || "N/A";
+    document.getElementById("detailDescription").innerHTML =
+      property.description || "<em>No description available</em>";
+    document.getElementById("detailStatus").textContent =
+      property.status.charAt(0).toUpperCase() + property.status.slice(1);
+    document.getElementById("detailStatus").className =
+      "details-value status " + property.status;
+
+    document.getElementById(
+      "detailPrice"
+    ).textContent = `₱${property.base_rent.toLocaleString()}`;
+    document.getElementById(
+      "detailLeaseTerm"
+    ).textContent = `${property.minimum_lease_term_months} months`;
+    document.getElementById(
+      "detailSecurityDeposit"
+    ).textContent = `${property.security_deposit_months} months`;
+    document.getElementById(
+      "detailAdvanceMonths"
+    ).textContent = `${property.advance_months} months`;
+    document.getElementById("detailLastUpdated").textContent = formatDate(
+      property.updated_at
+    );
   }
-
-  // Thumbnails
-  thumbs.innerHTML = allImages
-    .map(
-      (img, i) =>
-        `<img src="${img.url}" alt="Thumb ${i + 1}" class="carousel-thumbnail${
-          i === 0 ? " active" : ""
-        }" data-idx="${i}">`
-    )
-    .join("");
-  thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
-    thumb.onclick = () => updateCarousel(i);
-  });
-
-  // Arrows
-  prevBtn.onclick = () =>
-    updateCarousel((currentIndex - 1 + allImages.length) % allImages.length);
-  nextBtn.onclick = () => updateCarousel((currentIndex + 1) % allImages.length);
-
-  // Zoom
-  zoomBtn.onclick = () => openZoomModal(allImages[currentIndex].url);
-
-  // Initial load
-  updateCarousel(0);
-
-  // --- NEW: Populate Property Description Card ---
-  document.getElementById("detailPropertyName").textContent =
-    property.property_name || "N/A";
-  document.getElementById("detailFloorArea").textContent =
-    property.floor_area_sqm ? `${property.floor_area_sqm} m²` : "N/A";
-  document.getElementById("detailLocation").textContent =
-    property.location || "N/A";
-  // Display as rich text (HTML)
-  document.getElementById("detailDescription").innerHTML =
-    property.description || "<em>No description available</em>";
-  document.getElementById("detailStatus").textContent =
-    property.status.charAt(0).toUpperCase() + property.status.slice(1);
-  document.getElementById("detailStatus").className =
-    "details-value status " + property.status;
-
-  // --- Lease Requirements Card ---
-  document.getElementById(
-    "detailPrice"
-  ).textContent = `₱${property.base_rent.toLocaleString()}`;
-  document.getElementById(
-    "detailLeaseTerm"
-  ).textContent = `${property.minimum_lease_term_months} months`;
-  document.getElementById(
-    "detailSecurityDeposit"
-  ).textContent = `${property.security_deposit_months} months`;
-  document.getElementById(
-    "detailAdvanceMonths"
-  ).textContent = `${property.advance_months} months`;
-  document.getElementById("detailLastUpdated").textContent = formatDate(
-    property.updated_at
-  );
-}
 
 function openZoomModal(imgSrc) {
   const modal = document.getElementById("zoomImageModal");

@@ -107,6 +107,7 @@ const createProperty = async (propertyData = {}) => {
   }
 };
 
+
 const getProperties = async (queryObj = {}) => {
   try {
     let query = `
@@ -132,21 +133,9 @@ const getProperties = async (queryObj = {}) => {
         a.postal_code,
         a.country,
         a.latitude,
-        a.longitude,
-        JSON_ARRAYAGG(
-          CASE 
-            WHEN pp.image_url IS NOT NULL 
-            THEN JSON_OBJECT(
-              'id', pp.image_id,
-              'image_url', pp.image_url,
-              'image_desc', pp.image_desc
-            )
-            ELSE NULL
-          END
-        ) as property_pictures
+        a.longitude
       FROM properties p
       LEFT JOIN addresses a ON p.address_id = a.address_id
-      LEFT JOIN properties_pictures pp ON p.property_id = pp.property_id
       WHERE p.property_status != 'deleted'
     `;
 
@@ -193,7 +182,7 @@ const getProperties = async (queryObj = {}) => {
       values.push(queryObj.city);
     }
 
-    query += ` GROUP BY p.property_id`;
+    query += ` ORDER BY p.created_at DESC`;
 
     const page = parseInt(queryObj.page) > 0 ? parseInt(queryObj.page) : 1;
     const limit = parseInt(queryObj.limit) > 0 ? parseInt(queryObj.limit) : 6;
@@ -204,18 +193,34 @@ const getProperties = async (queryObj = {}) => {
 
     const [rows] = await pool.query(query, values);
 
-    const processedRows = rows.map(row => {
-      let pictures = [];
-      try {
-        pictures = JSON.parse(row.property_pictures).filter(Boolean);
-      } catch {
-        pictures = [];
-      }
-      return {
-        ...row,
-        property_pictures: pictures
-      };
-    });
+    // Fetch images for all properties in one query
+    const propertyIds = rows.map(r => r.property_id);
+    let picturesMap = {};
+    if (propertyIds.length > 0) {
+      const [pictures] = await pool.query(
+        `SELECT property_id, image_id as id, image_url, image_desc, created_at, updated_at
+         FROM properties_pictures
+         WHERE property_id IN (${propertyIds.map(() => '?').join(',')})`,
+        propertyIds
+      );
+      // Group images by property_id
+      picturesMap = pictures.reduce((acc, pic) => {
+        if (!acc[pic.property_id]) acc[pic.property_id] = [];
+        acc[pic.property_id].push({
+          id: pic.id,
+          image_url: pic.image_url,
+          image_desc: pic.image_desc,
+          created_at: pic.created_at,
+          updated_at: pic.updated_at
+        });
+        return acc;
+      }, {});
+    }
+
+    const processedRows = rows.map(row => ({
+      ...row,
+      property_pictures: picturesMap[row.property_id] || []
+    }));
 
     // --- Count query (for pagination) ---
     let countQuery = `
@@ -238,27 +243,22 @@ const getProperties = async (queryObj = {}) => {
       const searchTerm = `%${queryObj.search}%`;
       countValues.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
-
     if (queryObj.min_rent) {
       countQuery += ` AND p.base_rent >= ?`;
       countValues.push(parseFloat(queryObj.min_rent));
     }
-
     if (queryObj.max_rent) {
       countQuery += ` AND p.base_rent <= ?`;
       countValues.push(parseFloat(queryObj.max_rent));
     }
-
     if (queryObj.min_area) {
       countQuery += ` AND p.floor_area_sqm >= ?`;
       countValues.push(parseFloat(queryObj.min_area));
     }
-
     if (queryObj.max_area) {
       countQuery += ` AND p.floor_area_sqm <= ?`;
       countValues.push(parseFloat(queryObj.max_area));
     }
-
     if (queryObj.city) {
       countQuery += ` AND a.city = ?`;
       countValues.push(queryObj.city);
@@ -278,6 +278,180 @@ const getProperties = async (queryObj = {}) => {
     throw new Error(error.message || "Failed to get properties");
   }
 };
+// const getProperties = async (queryObj = {}) => {
+//   try {
+//     let query = `
+//       SELECT 
+//         p.property_id,
+//         p.property_name,
+//         p.floor_area_sqm,
+//         p.description,
+//         p.display_image,
+//         p.property_status,
+//         p.base_rent,
+//         p.advance_months,
+//         p.security_deposit_months,
+//         p.minimum_lease_term_months,
+//         p.address_id,
+//         p.created_at,
+//         p.updated_at,
+//         a.building_name,
+//         a.street,
+//         a.barangay,
+//         a.city,
+//         a.province,
+//         a.postal_code,
+//         a.country,
+//         a.latitude,
+//         a.longitude,
+//         JSON_ARRAYAGG(
+//           CASE 
+//             WHEN pp.image_url IS NOT NULL 
+//             THEN JSON_OBJECT(
+//               'id', pp.image_id,
+//               'image_url', pp.image_url,
+//               'image_desc', pp.image_desc
+//             )
+//             ELSE NULL
+//           END
+//         ) as property_pictures
+//       FROM properties p
+//       LEFT JOIN addresses a ON p.address_id = a.address_id
+//       LEFT JOIN properties_pictures pp ON p.property_id = pp.property_id
+//       WHERE p.property_status != 'deleted'
+//     `;
+
+//     const values = [];
+
+    
+
+//     // --- Address filter (always base) ---
+//     if (queryObj.address_id && queryObj.address_id !== "all") {
+//       query += ` AND p.address_id = ?`;
+//       values.push(queryObj.address_id);
+//     }
+
+//     // --- Status filter ---
+//     if (queryObj.property_status && queryObj.property_status !== "all") {
+//       query += ` AND p.property_status = ?`;
+//       values.push(queryObj.property_status);
+//     }
+
+//     // --- Search filter ---
+//     if (queryObj.search) {
+//       query += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ? OR p.description LIKE ?)`;
+//       const searchTerm = `%${queryObj.search}%`;
+//       values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+//     }
+
+//     // ...other filters (min/max rent/area/city)...
+//     if (queryObj.min_rent) {
+//       query += ` AND p.base_rent >= ?`;
+//       values.push(parseFloat(queryObj.min_rent));
+//     }
+//     if (queryObj.max_rent) {
+//       query += ` AND p.base_rent <= ?`;
+//       values.push(parseFloat(queryObj.max_rent));
+//     }
+//     if (queryObj.min_area) {
+//       query += ` AND p.floor_area_sqm >= ?`;
+//       values.push(parseFloat(queryObj.min_area));
+//     }
+//     if (queryObj.max_area) {
+//       query += ` AND p.floor_area_sqm <= ?`;
+//       values.push(parseFloat(queryObj.max_area));
+//     }
+//     if (queryObj.city) {
+//       query += ` AND a.city = ?`;
+//       values.push(queryObj.city);
+//     }
+
+//     query += ` GROUP BY p.property_id`;
+
+//     const page = parseInt(queryObj.page) > 0 ? parseInt(queryObj.page) : 1;
+//     const limit = parseInt(queryObj.limit) > 0 ? parseInt(queryObj.limit) : 6;
+//     const offset = (page - 1) * limit;
+
+//     query += ` LIMIT ? OFFSET ?`;
+//     values.push(limit, offset);
+
+//     const [rows] = await pool.query(query, values);
+
+//     const processedRows = rows.map(row => {
+//       let pictures = [];
+//       try {
+//         pictures = JSON.parse(row.property_pictures).filter(Boolean);
+//       } catch {
+//         pictures = [];
+//       }
+//       return {
+//         ...row,
+//         property_pictures: pictures
+//       };
+//     });
+
+//     // --- Count query (for pagination) ---
+//     let countQuery = `
+//       SELECT COUNT(DISTINCT p.property_id) as total 
+//       FROM properties p
+//       LEFT JOIN addresses a ON p.address_id = a.address_id
+//       WHERE p.property_status != 'deleted'
+//     `;
+//     const countValues = [];
+//     if (queryObj.address_id && queryObj.address_id !== "all") {
+//       countQuery += ` AND p.address_id = ?`;
+//       countValues.push(queryObj.address_id);
+//     }
+//     if (queryObj.property_status && queryObj.property_status !== "all") {
+//       countQuery += ` AND p.property_status = ?`;
+//       countValues.push(queryObj.property_status);
+//     }
+//     if (queryObj.search) {
+//       countQuery += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ? OR p.description LIKE ?)`;
+//       const searchTerm = `%${queryObj.search}%`;
+//       countValues.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+//     }
+
+//     if (queryObj.min_rent) {
+//       countQuery += ` AND p.base_rent >= ?`;
+//       countValues.push(parseFloat(queryObj.min_rent));
+//     }
+
+//     if (queryObj.max_rent) {
+//       countQuery += ` AND p.base_rent <= ?`;
+//       countValues.push(parseFloat(queryObj.max_rent));
+//     }
+
+//     if (queryObj.min_area) {
+//       countQuery += ` AND p.floor_area_sqm >= ?`;
+//       countValues.push(parseFloat(queryObj.min_area));
+//     }
+
+//     if (queryObj.max_area) {
+//       countQuery += ` AND p.floor_area_sqm <= ?`;
+//       countValues.push(parseFloat(queryObj.max_area));
+//     }
+
+//     if (queryObj.city) {
+//       countQuery += ` AND a.city = ?`;
+//       countValues.push(queryObj.city);
+//     }
+
+//     const [countResult] = await pool.query(countQuery, countValues);
+    
+
+//     return {
+//       message: "Properties retrieved successfully",
+//       properties: processedRows,
+//       total: countResult[0].total,
+//       page: queryObj.page || 1,
+//       limit: queryObj.limit || processedRows.length,
+//     };
+//   } catch (error) {
+//     console.error("Error getting properties:", error);
+//     throw new Error(error.message || "Failed to get properties");
+//   }
+// };
 
 const getSinglePropertyById = async (property_id = "") => {
   try {

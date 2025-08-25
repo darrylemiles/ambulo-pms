@@ -3987,3 +3987,12 @@ body.modal-open {
   font-family: inherit;
   outline: none;
 }
+
+.property-container {
+  background: white;
+  margin: 80px 24px 24px 104px; 
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 100vw;       
+}
