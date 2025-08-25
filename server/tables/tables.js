@@ -1,4 +1,5 @@
 // users
+import userAddressesTable from './userAddressesTable.js';
 import usersTable from './usersTable.js';
 import tenantEmergencyContactsTable from './tenantEmergencyContactsTable.js';
 import tenantIdsTable from './tenantIdsTable.js';
@@ -15,6 +16,7 @@ import propertiesPicturesTable from './propertiesPicturesTable.js';
 const tables = async (dbConnection) => {
   const queries = [
     // users
+    userAddressesTable,
     usersTable,
     tenantEmergencyContactsTable,
     tenantIdsTable,
