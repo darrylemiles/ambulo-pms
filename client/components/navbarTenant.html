@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/navbarTenant.css">
+
+</head>
+<body>
+    <header id="navbar">
+        <nav class="nav-container">
+            <div class="logo">Ambulo Properties</div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="/tenantDashboard.html" class="active">Dashboard</a></li>
+                <li><a href="/documentsTenant.html">Documents</a></li>
+                <li><a href="#paymentsTenant">Payments</a></li>
+                <li><a href="/maintenanceTenant.html">Maintenance</a></li>
+                <li><a href="#leaseTenant">Lease</a></li>
+            </ul>
+            
+            <!-- Header Right Section -->
+            <div class="header-right">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search Anything...">
+                </div>
+                <button class="icon notification">🔔</button>
+                <button class="icon inbox">✉️</button>
+                <div class="profile-dropdown">
+                    <button class="profile" id="profileBtnIcon">R</button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="/userProfile.html">👤 Profile</a>
+                        <a href="/login.html">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+            <div class="mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+    <script src="/javascript/navbarTenant.js"></script>
+</body>
+</html>

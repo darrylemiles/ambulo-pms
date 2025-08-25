@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Add Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/documentsTenant.css">
+    <title>Inbox</title>
+</head>
+<body>
+    <!-- Your existing body content remains the same -->
+    <div id="navbar-tenant-placeholder"></div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+            <div class="title-section">
+                <div>
+                    <h1>Documents</h1>
+                </div>
+            </div>
+
+        <!-- Document Management Section -->
+        <div class="documents-section">
+            <div class="documents-header">
+                <div class="controls">
+                    <div class="dropdown">
+                        <button class="btn btn-add" onclick="toggleAddMenu()">
+                        <i class="fa-solid fa-plus"></i>Add
+                        </button>
+                        <div class="add-dropdown-content" id="addMenu">
+                            <div class="add-menu-item" onclick="showNewFolderModal()">
+                                <div class="add-menu-icon"><i class="fa-solid fa-folder"></i></div>
+                                <div>
+                                    <div class="add-menu-text">New Folder</div>
+                                    <div class="add-menu-desc">Create a new folder</div>
+                                </div>
+                            </div>
+                            <div class="add-menu-item" onclick="showUploadModal()">
+                                <div class="add-menu-icon"><i class="fa-solid fa-file"></i></div>
+                                <div>
+                                    <div class="add-menu-text">Upload Files</div>
+                                    <div class="add-menu-desc">Upload documents and images</div>
+                                </div>
+                            </div>
+                            <div class="add-menu-item" onclick="showAttachmentModal()">
+                                <div class="add-menu-icon"><i class="fa-solid fa-paperclip"></i></div>
+                                <div>
+                                    <div class="add-menu-text">Add Attachment</div>
+                                    <div class="add-menu-desc">Attach files to current folder</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <div class="dropdown-button" onclick="toggleDropdown('tenantDropdown')">
+                            <span>Tenant Name</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="dropdown-content" id="tenantDropdown">
+                            <div class="dropdown-item" onclick="selectTenant('All Tenants')">All Tenants</div>
+                            <div class="dropdown-item" onclick="selectTenant('Tenant A')">Tenant A</div>
+                            <div class="dropdown-item" onclick="selectTenant('Tenant B')">Tenant B</div>
+                            <div class="dropdown-item" onclick="selectTenant('Tenant C')">Tenant C</div>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <div class="dropdown-button" onclick="toggleDropdown('typeDropdown')">
+                            <span>Type</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="dropdown-content" id="typeDropdown">
+                            <div class="dropdown-item" onclick="selectType('All Types')">All Types</div>
+                            <div class="dropdown-item" onclick="selectType('Folders')">Folders</div>
+                            <div class="dropdown-item" onclick="selectType('Documents')">Documents</div>
+                            <div class="dropdown-item" onclick="selectType('Images')">Images</div>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <div class="dropdown-button" onclick="toggleDropdown('modifiedDropdown')">
+                            <span>Modified</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="dropdown-content" id="modifiedDropdown">
+                            <div class="dropdown-item" onclick="selectModified('Any time')">Any time</div>
+                            <div class="dropdown-item" onclick="selectModified('Today')">Today</div>
+                            <div class="dropdown-item" onclick="selectModified('This week')">This week</div>
+                            <div class="dropdown-item" onclick="selectModified('This month')">This month</div>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- Tab Content Areas -->
+            <div class="tab-content active" id="tenantsContent">
+                <div class="main-content-docs">
+                    <div class="breadcrumb" id="breadcrumb">
+                        <span class="breadcrumb-item" onclick="navigateToFolder('')">Tenants Documents</span>
+                    </div>
+
+                    <div class="content-header">
+                        <div class="sort-header">
+                            <span>Name</span>
+                            <span>↑</span>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="view-btn active" onclick="switchView('list')" id="listBtn"><i class="fas fa-list"></i></button>
+                            <button class="view-btn" onclick="switchView('grid')" id="gridBtn"><i class="fas fa-th"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="items-container list-view" id="itemsContainer">
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fa-solid fa-users"></i></div>
+                            <h3>No tenant documents yet</h3>
+                            <p>Upload tenant-related documents to get started</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="contractsContent">
+                <div class="main-content-docs">
+                    <div class="breadcrumb">
+                        <span class="breadcrumb-item">Contracts</span>
+                    </div>
+
+                    <div class="content-header">
+                        <div class="sort-header">
+                            <span>Name</span>
+                            <span>↑</span>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="view-btn active" onclick="switchView('list')"><i class="fas fa-list"></i></button>
+                            <button class="view-btn" onclick="switchView('grid')"><i class="fas fa-th"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="items-container list-view">
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fa-solid fa-file-contract"></i></div>
+                            <h3>No contracts yet</h3>
+                            <p>Upload contract documents to get started</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="templatesContent">
+                <div class="main-content-docs">
+                    <div class="breadcrumb">
+                        <span class="breadcrumb-item">Templates</span>
+                    </div>
+
+                    <div class="content-header">
+                        <div class="sort-header">
+                            <span>Name</span>
+                            <span>↑</span>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="view-btn active" onclick="switchView('list')"><i class="fas fa-list"></i></button>
+                            <button class="view-btn" onclick="switchView('grid')"><i class="fas fa-th"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="items-container list-view">
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fa-solid fa-file-lines"></i></div>
+                            <h3>No templates yet</h3>
+                            <p>Upload document templates to get started</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="folderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Folder</h3>
+            </div>
+            <div class="input-group">
+                <label for="folderName">Folder Name</label>
+                <input type="text" id="folderName" placeholder="Enter folder name">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('folderModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="createFolder()">Create</button>
+            </div>
+        </div>
+    </div>
+
+        <div class="modal" id="renameModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Rename</h3>
+            </div>
+            <div class="input-group">
+                <label for="newName">New Name</label>
+                <input type="text" id="newName" placeholder="Enter new name">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('renameModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmRename()">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Confirmation</h3>
+            </div>
+            <p>Are you sure you want to delete "<span id="deleteItemName"></span>"?</p>
+            <div id="deleteWarning" style="display: none; color: #dc2626; font-size: 14px; margin-top: 10px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> This folder contains files. All contents will be permanently deleted.
+            </div>
+            <br>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Upload Files</h3>
+            </div>
+            <div class="file-drop-zone" onclick="document.getElementById('fileInput').click()" id="dropZone" style="border: 2px dashed #d1d5db; border-radius: 8px; padding: 32px 16px; text-align: center; margin: 16px 0; cursor: pointer; transition: all 0.2s ease;">
+                <p>Click here or drag files to upload</p>
+                <small>Supports multiple files (PDF, DOC, DOCX, JPG, PNG, etc.)</small>
+            </div>
+            <input type="file" id="fileInput" style="display: none;" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.svg">
+            <div class="selected-files" id="selectedFiles"></div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('uploadModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="uploadFiles()">Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="attachmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Attachment</h3>
+            </div>
+            <div class="file-drop-zone" onclick="document.getElementById('attachmentInput').click()" id="attachmentDropZone" style="border: 2px dashed #d1d5db; border-radius: 8px; padding: 32px 16px; text-align: center; margin: 16px 0; cursor: pointer; transition: all 0.2s ease;">
+                <p>Click here or drag files to attach</p>
+                <small>Attach files to the current folder</small>
+            </div>
+            <input type="file" id="attachmentInput" style="display: none;" multiple>
+            <div class="selected-files" id="selectedAttachments"></div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('attachmentModal')">Cancel</button>
+                <button class="btn btn-secondary" onclick="attachFiles()">Attach</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/javascript/navbarTenant.js"></script>
+    <script src="/javascript/documentsTenant.js"></script>
+</body>
+</html>

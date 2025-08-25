@@ -16,9 +16,159 @@
                 <h2>Property Units - Spaces Overview</h2>
                 <p>Manage and monitor your commercial property portfolio with comprehensive details, real-time status updates, and streamlined operations for optimal property performance.</p>
             </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-header">
+                    <h3 class="filter-title">Filter Properties</h3>
+                    <button class="filter-toggle" onclick="toggleFilters()">Toggle Filters</button>
+                </div>
+                
+                <div class="filter-content" id="filterContent">
+                    <!-- Search Bar -->
+                    <div class="filter-group" style="margin-bottom: 24px;">
+                        <input type="text" class="filter-input" id="searchInput" placeholder="Search by unit name or location...">
+                    </div>
+
+                    <!-- Status Filters -->
+                    <div class="filter-category">
+                        <label class="filter-label">Status</label>
+                        <div class="button-filters">
+                            <button class="filter-btn status-available" data-filter="status" data-value="available">
+                                <span class="filter-icon"></span>
+                                Available
+                            </button>
+                            <button class="filter-btn status-occupied" data-filter="status" data-value="occupied">
+                                <span class="filter-icon"></span>
+                                Occupied
+                            </button>
+                            <button class="filter-btn status-maintenance" data-filter="status" data-value="maintenance">
+                                <span class="filter-icon"></span>
+                                Maintenance
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Property Type Filters -->
+                    <div class="filter-category">
+                        <label class="filter-label">Property Type</label>
+                        <div class="button-filters">
+                            <button class="filter-btn type-office" data-filter="type" data-value="office">
+                                <span class="filter-icon"></span>
+                                Office Space
+                            </button>
+                            <button class="filter-btn type-retail" data-filter="type" data-value="retail">
+                                <span class="filter-icon"></span>
+                                Retail Space
+                            </button>
+                            <button class="filter-btn type-warehouse" data-filter="type" data-value="warehouse">
+                                <span class="filter-icon"></span>
+                                Warehouse
+                            </button>
+                            <button class="filter-btn type-restaurant" data-filter="type" data-value="restaurant">
+                                <span class="filter-icon"></span>
+                                Restaurant
+                            </button>
+                            <button class="filter-btn type-coworking" data-filter="type" data-value="coworking">
+                                <span class="filter-icon"></span>
+                                Co-working
+                            </button>
+                            <button class="filter-btn type-medical" data-filter="type" data-value="medical">
+                                <span class="filter-icon"></span>
+                                Medical Office
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- More Property Types -->
+                    <div class="filter-category">
+                        <div class="button-filters">
+                            <button class="filter-btn type-showroom" data-filter="type" data-value="showroom">
+                                <span class="filter-icon"></span>
+                                Showroom
+                            </button>
+                            <button class="filter-btn type-salon" data-filter="type" data-value="salon">
+                                <span class="filter-icon"></span>
+                                Salon Space
+                            </button>
+                            <button class="filter-btn type-gym" data-filter="type" data-value="gym">
+                                <span class="filter-icon"></span>
+                                Gym Space
+                            </button>
+                            <button class="filter-btn type-training" data-filter="type" data-value="training">
+                                <span class="filter-icon"></span>
+                                Training Center
+                            </button>
+                            <button class="filter-btn type-bookstore" data-filter="type" data-value="bookstore">
+                                <span class="filter-icon"></span>
+                                Bookstore
+                            </button>
+                            <button class="filter-btn type-supermarket" data-filter="type" data-value="supermarket">
+                                <span class="filter-icon"></span>
+                                Supermarket
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Price Range Filters -->
+                    <div class="filter-category">
+                        <label class="filter-label">Price Range</label>
+                        <div class="button-filters">
+                            <button class="filter-btn price-low" data-filter="price" data-value="low">
+                                <span class="filter-icon"></span>
+                                Under ₱40k
+                            </button>
+                            <button class="filter-btn price-mid" data-filter="price" data-value="mid">
+                                <span class="filter-icon"></span>
+                                ₱40k - ₱70k
+                            </button>
+                            <button class="filter-btn price-high" data-filter="price" data-value="high">
+                                <span class="filter-icon"></span>
+                                Over ₱70k
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Area Filters -->
+                    <div class="filter-category">
+                        <label class="filter-label">Area Size</label>
+                        <div class="button-filters">
+                            <button class="filter-btn area-small" data-filter="area" data-value="small">
+                                <span class="filter-icon"></span>
+                                Under 1,500 sq ft
+                            </button>
+                            <button class="filter-btn area-medium" data-filter="area" data-value="medium">
+                                <span class="filter-icon"></span>
+                                1,500 - 2,500 sq ft
+                            </button>
+                            <button class="filter-btn area-large" data-filter="area" data-value="large">
+                                <span class="filter-icon"></span>
+                                Over 2,500 sq ft
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button class="btn-filter btn-secondary" onclick="clearAllFilters()">Clear All Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Info -->
+            <div class="results-info">
+                <div class="results-count" id="resultsCount">Showing 12 of 12 properties</div>
+                <select class="sort-dropdown" id="sortSelect" onchange="sortProperties()">
+                    <option value="default">Sort by: Default</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="area-small">Area: Small to Large</option>
+                    <option value="area-large">Area: Large to Small</option>
+                    <option value="name">Name: A to Z</option>
+                </select>
+            </div>
             
-            <div class="property-grid">
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.1s;">
+            <div class="property-grid reveal-element">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.1s;" data-status="available" data-type="office" data-price="45000" data-area="1200">
                     <div class="property-image prop-1">
                         <div class="status-badge status-available">Available</div>
                     </div>
@@ -58,7 +208,7 @@
                     </div>
                 </div>
                 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.2s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.2s;" data-status="occupied" data-type="retail" data-price="85000" data-area="2500">
                     <div class="property-image prop-2">
                         <div class="status-badge status-occupied">Occupied</div>
                     </div>
@@ -98,7 +248,7 @@
                     </div>
                 </div>
                 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.3s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.3s;" data-status="available" data-type="warehouse" data-price="45000" data-area="5000">
                     <div class="property-image prop-3">
                         <div class="status-badge status-available">Available</div>
                     </div>
@@ -138,7 +288,7 @@
                     </div>
                 </div>
                 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.4s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.4s;" data-status="maintenance" data-type="restaurant" data-price="34000" data-area="1800">
                     <div class="property-image prop-4">
                         <div class="status-badge status-maintenance">Maintenance</div>
                     </div>
@@ -178,7 +328,7 @@
                     </div>
                 </div>
                 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.5s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.5s;" data-status="occupied" data-type="coworking" data-price="65000" data-area="2000">
                     <div class="property-image prop-5">
                         <div class="status-badge status-occupied">Occupied</div>
                     </div>
@@ -218,7 +368,7 @@
                     </div>
                 </div>
                 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.6s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.6s;" data-status="available" data-type="medical" data-price="50000" data-area="1500">
                     <div class="property-image prop-6">
                         <div class="status-badge status-available">Available</div>
                     </div>
@@ -259,7 +409,7 @@
                 </div>
 
                 <!-- Additional 6 Units -->
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.1s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.1s;" data-status="available" data-type="showroom" data-price="72000" data-area="2200">
                     <div class="property-image prop-7">
                         <div class="status-badge status-available">Available</div>
                     </div>
@@ -299,7 +449,7 @@
                     </div>
                 </div>
 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.2s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.2s;" data-status="occupied" data-type="salon" data-price="38000" data-area="900">
                     <div class="property-image prop-8">
                         <div class="status-badge status-occupied">Occupied</div>
                     </div>
@@ -339,7 +489,7 @@
                     </div>
                 </div>
 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.3s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.3s;" data-status="available" data-type="gym" data-price="95000" data-area="3000">
                     <div class="property-image prop-9">
                         <div class="status-badge status-available">Available</div>
                     </div>
@@ -379,7 +529,7 @@
                     </div>
                 </div>
 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.4s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.4s;" data-status="maintenance" data-type="training" data-price="58000" data-area="1600">
                     <div class="property-image prop-10">
                         <div class="status-badge status-maintenance">Maintenance</div>
                     </div>
@@ -419,7 +569,7 @@
                     </div>
                 </div>
 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.5s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.5s;" data-status="occupied" data-type="bookstore" data-price="42000" data-area="1100">
                     <div class="property-image prop-11">
                         <div class="status-badge status-occupied">Occupied</div>
                     </div>
@@ -459,7 +609,7 @@
                     </div>
                 </div>
 
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.6s;">
+                <div class="property-card reveal-element scale-up" style="transition-delay: 0.6s;" data-status="available" data-type="supermarket" data-price="78000" data-area="2400">
                     <div class="property-image prop-12">
                         <div class="status-badge status-available">Available</div>
                     </div>
@@ -499,13 +649,19 @@
                     </div>
                 </div>
             </div>
+
+            <!-- No Results Message -->
+            <div class="no-results" id="noResults" style="display: none;">
+                <h3>No Properties Found</h3>
+                <p>Try adjusting your filters to see more results.</p>
+            </div>
         </div>
     </section> 
 
     <!-- Footer Placeholder -->
     <div id="footer-placeholder"></div>
 
-        <script src="/javascript/propertySpaces.js"></script>
-        <script src="/javascript/footer.js"></script>
+    <script src="/javascript/propertySpaces.js"></script>
+    <script src="/javascript/footer.js"></script>
 </body>
 </html>
