@@ -1,6 +1,6 @@
 const tenantEmergencyContactsTable = `CREATE TABLE IF NOT EXISTS tenant_emergency_contacts (
   contact_id INT PRIMARY KEY,
-  user_id VARCHAR(255) ON DELETE CASCADE,
+  user_id VARCHAR(255),
   contact_name VARCHAR(100),
   contact_phone CHAR(15),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
