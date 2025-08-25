@@ -1,5 +1,5 @@
 import formatDate from "../utils/formatDate.js";
-import formatStatus from "../utils/formatStatus.js"
+import formatStatus from "../utils/formatStatus.js";
 
 // Global variables
 let tenants = [];
@@ -9,6 +9,8 @@ let currentView = "grid";
 let currentPage = 1;
 let totalPages = 1;
 let isLoading = false;
+let currentStep = 1;
+let selectedDocumentFiles = [];
 
 // API Configuration
 const API_BASE_URL = "/api/v1";
@@ -19,13 +21,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const requiredElements = [
     "gridView",
-    "listView", 
+    "listView",
     "loadingState",
     "errorState",
     "searchInput",
     "statusFilter",
-    "listSelectAll", 
-    "bulkActionsBar"
+    "listSelectAll",
+    "bulkActionsBar",
   ];
   requiredElements.forEach((id) => {
     const element = document.getElementById(id);
@@ -58,9 +60,6 @@ async function loadTenants(page = 1, filters = {}) {
       },
       credentials: "include",
     });
-
-    console.log("Response status:", response.status);
-    console.log("Response headers:", response.headers);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -105,11 +104,9 @@ function renderTenants() {
   } else {
     renderListView();
   }
-
-  // Update selection states after rendering
   updateSelectAllButton();
   updateListSelectAll();
-  updateBulkActionsBar(); // Added this
+  updateBulkActionsBar();
 }
 
 // Render grid view
@@ -124,13 +121,17 @@ function renderGridView() {
   const cardsHTML = tenants
     .map((tenant) => {
       const initials = getInitials(tenant.first_name, tenant.last_name);
-      const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""}`.trim();
+      const fullName = `${tenant.first_name || ""} ${
+        tenant.last_name || ""
+      }`.trim();
       const isSelected = selectedTenants.has(tenant.user_id);
 
       const avatarHTML = generateAvatarHTML(tenant);
 
       return `
-        <div class="tenant-card ${isSelected ? "selected" : ""}" data-tenant="${tenant.user_id}">
+        <div class="tenant-card ${isSelected ? "selected" : ""}" data-tenant="${
+        tenant.user_id
+      }">
           <div class="tenant-card-header">
             <div class="tenant-info">
               <div class="tenant-avatar">
@@ -141,13 +142,17 @@ function renderGridView() {
                 <p>${tenant.email || "No Email"}</p>
               </div>
             </div>
-            <input type="checkbox" class="checkbox" ${isSelected ? "checked" : ""}>
+            <input type="checkbox" class="checkbox" ${
+              isSelected ? "checked" : ""
+            }>
           </div>
           
           <div class="tenant-card-body">
             <div class="tenant-meta-item">
               <span class="label">Phone:</span>
-              <span class="value">${tenant.phone_number || "Not provided"}</span>
+              <span class="value">${
+                tenant.phone_number || "Not provided"
+              }</span>
             </div>
             <div class="tenant-meta-item">
               <span class="label">Business:</span>
@@ -156,7 +161,9 @@ function renderGridView() {
           </div>
           
           <div class="tenant-meta">
-            <span class="status-badge status-${(tenant.status || "active").toLowerCase()}">
+            <span class="status-badge status-${(
+              tenant.status || "active"
+            ).toLowerCase()}">
               ${formatStatus(tenant.status) || "Active"}
             </span>
             <span class="created-date">${formatDate(tenant.created_at)}</span>
@@ -187,13 +194,19 @@ function renderListView() {
 
   const rowsHTML = tenants
     .map((tenant) => {
-      const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""}`.trim();
+      const fullName = `${tenant.first_name || ""} ${
+        tenant.last_name || ""
+      }`.trim();
       const isSelected = selectedTenants.has(tenant.user_id);
       const avatarHTML = generateAvatarHTML(tenant, "small");
       return `
-        <div class="tenant-list-item ${isSelected ? "selected" : ""}" data-tenant="${tenant.user_id}">
+        <div class="tenant-list-item ${
+          isSelected ? "selected" : ""
+        }" data-tenant="${tenant.user_id}">
           <div class="list-col list-col-checkbox">
-            <input type="checkbox" class="list-checkbox" ${isSelected ? "checked" : ""}>
+            <input type="checkbox" class="list-checkbox" ${
+              isSelected ? "checked" : ""
+            }>
           </div>
           <div class="list-col list-col-name">
             <div class="tenant-info">
@@ -202,23 +215,41 @@ function renderListView() {
               </div>
               <div style="margin-left: 0.5rem;">
                 <div style="font-weight: 500;">${fullName || "No Name"}</div>
-                <div style="font-size: 0.75rem; color: #6b7280;">${tenant.business_name || ""}</div>
+                <div style="font-size: 0.75rem; color: #6b7280;">${
+                  tenant.business_name || ""
+                }</div>
               </div>
             </div>
           </div>
-          <div class="list-col list-col-email">${tenant.email || "No Email"}</div>
-          <div class="list-col list-col-phone">${tenant.phone_number || "Not provided"}</div>
+          <div class="list-col list-col-email">${
+            tenant.email || "No Email"
+          }</div>
+          <div class="list-col list-col-phone">${
+            tenant.phone_number || "Not provided"
+          }</div>
           <div class="list-col list-col-status">
-            <span class="status-badge status-${(tenant.status || "active").toLowerCase()}">
-              ${formatStatus ? formatStatus(tenant.status) : tenant.status || "Active"}
+            <span class="status-badge status-${(
+              tenant.status || "active"
+            ).toLowerCase()}">
+              ${
+                formatStatus
+                  ? formatStatus(tenant.status)
+                  : tenant.status || "Active"
+              }
             </span>
           </div>
-          <div class="list-col list-col-created">${formatDate ? formatDate(tenant.created_at) : tenant.created_at}</div>
+          <div class="list-col list-col-created">${
+            formatDate ? formatDate(tenant.created_at) : tenant.created_at
+          }</div>
           <div class="list-col list-col-actions">
-            <button class="action-btn" onclick="editTenant('${tenant.user_id}')" title="Edit">
+            <button class="action-btn" onclick="editTenant('${
+              tenant.user_id
+            }')" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="action-btn" onclick="deleteTenant('${tenant.user_id}')" title="Delete">
+            <button class="action-btn" onclick="deleteTenant('${
+              tenant.user_id
+            }')" title="Delete">
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -234,7 +265,7 @@ function renderListView() {
 function updateBulkActionsBar() {
   const bulkActionsBar = document.getElementById("bulkActionsBar");
   const selectedCount = document.getElementById("selectedCount");
-  
+
   if (!bulkActionsBar || !selectedCount) return;
 
   if (selectedTenants.size > 0) {
@@ -269,7 +300,7 @@ function messageSelected() {
     alert("Please select tenants to message.");
     return;
   }
-  
+
   const selectedIds = Array.from(selectedTenants);
   alert(`Messaging ${selectedTenants.size} selected tenant(s)`);
 }
@@ -279,7 +310,7 @@ function exportSelected() {
     alert("Please select tenants to export.");
     return;
   }
-  
+
   const selectedIds = Array.from(selectedTenants);
   alert(`Exporting ${selectedTenants.size} selected tenant(s)`);
 }
@@ -287,12 +318,12 @@ function exportSelected() {
 function searchTenants() {
   const searchInput = document.getElementById("searchInput");
   const statusFilter = document.getElementById("statusFilter");
-  
+
   if (!searchInput || !statusFilter) {
-    console.error('Search elements not found');
+    console.error("Search elements not found");
     return;
   }
-  
+
   const searchTerm = searchInput.value.trim();
   const statusValue = statusFilter.value;
 
@@ -306,6 +337,23 @@ function searchTenants() {
 
 function filterTenants() {
   searchTenants();
+}
+
+function showError(input, message) {
+  input.classList.add("is-invalid");
+  let error = input.parentElement.querySelector(".invalid-feedback");
+  if (!error) {
+    error = document.createElement("div");
+    error.className = "invalid-feedback";
+    input.parentElement.appendChild(error);
+  }
+  error.textContent = message;
+}
+
+function clearError(input) {
+  input.classList.remove("is-invalid");
+  let error = input.parentElement.querySelector(".invalid-feedback");
+  if (error) error.textContent = "";
 }
 
 function showLoadingState() {
@@ -366,7 +414,6 @@ function toggleView(viewType) {
     listView.style.display = "none";
     renderGridView();
   }
-
 }
 
 function setupEventListeners() {
@@ -378,9 +425,9 @@ function setupEventListeners() {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(searchTenants, 300);
     });
-    
-    searchInput.addEventListener("keypress", function(e) {
-      if (e.key === 'Enter') {
+
+    searchInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
         clearTimeout(searchTimeout);
         searchTenants();
       }
@@ -395,14 +442,15 @@ function setupEventListeners() {
 
   const profileBtn = document.getElementById("profileBtnIcon");
   const dropdownMenu = document.getElementById("dropdownMenu");
-  
+
   if (profileBtn && dropdownMenu) {
-    profileBtn.addEventListener("click", function(e) {
+    profileBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+      dropdownMenu.style.display =
+        dropdownMenu.style.display === "block" ? "none" : "block";
     });
 
-    document.addEventListener("click", function() {
+    document.addEventListener("click", function () {
       dropdownMenu.style.display = "none";
     });
   }
@@ -427,14 +475,17 @@ function setupListEventListeners() {
 
         updateSelectAllButton();
         updateListSelectAll();
-        updateBulkActionsBar(); 
+        updateBulkActionsBar();
       });
     }
 
     item.addEventListener("click", function (e) {
-      if (e.target.classList.contains("action-btn") || 
-          e.target.type === "checkbox" ||
-          e.target.closest(".action-btn")) { // Added closest check for icon clicks
+      if (
+        e.target.classList.contains("action-btn") ||
+        e.target.type === "checkbox" ||
+        e.target.closest(".action-btn")
+      ) {
+        // Added closest check for icon clicks
         return;
       }
 
@@ -443,7 +494,7 @@ function setupListEventListeners() {
 
       toggleTenantSelection(tenantId, item, checkbox);
       updateListSelectAll();
-      updateBulkActionsBar(); 
+      updateBulkActionsBar();
     });
   });
 }
@@ -539,14 +590,16 @@ function toggleTenantSelection(tenantId, element, checkbox) {
   }
 
   updateSelectAllButton();
-  updateBulkActionsBar(); 
+  updateBulkActionsBar();
 }
 
 function updateSelectAllButton() {
-  const selectAllElements = document.querySelectorAll("#selectAllCheckbox, .selectAllCheckbox");
+  const selectAllElements = document.querySelectorAll(
+    "#selectAllCheckbox, .selectAllCheckbox"
+  );
   const totalTenants = tenants.length;
 
-  selectAllElements.forEach(selectAllCheckbox => {
+  selectAllElements.forEach((selectAllCheckbox) => {
     if (selectedTenants.size === totalTenants && totalTenants > 0) {
       selectAllCheckbox.checked = true;
       selectAllCheckbox.indeterminate = false;
@@ -571,19 +624,19 @@ function selectAll() {
     // Select all
     selectedTenants.clear();
     tenants.forEach((tenant) => selectedTenants.add(tenant.user_id));
-    
+
     document.querySelectorAll(".tenant-card").forEach((card) => {
       card.classList.add("selected");
       const checkbox = card.querySelector(".checkbox");
       if (checkbox) checkbox.checked = true;
     });
-    
+
     document.querySelectorAll(".tenant-list-item").forEach((item) => {
       item.classList.add("selected");
       const checkbox = item.querySelector(".list-checkbox");
       if (checkbox) checkbox.checked = true;
     });
-    
+
     updateSelectAllButton();
     updateListSelectAll();
     updateBulkActionsBar();
@@ -605,16 +658,24 @@ function renderPagination() {
 
   // Previous button
   paginationHTML += `
-    <button class="pagination-btn" ${currentPage === 1 ? "disabled" : ""} onclick="goToPage(${currentPage - 1})">
+    <button class="pagination-btn" ${
+      currentPage === 1 ? "disabled" : ""
+    } onclick="goToPage(${currentPage - 1})">
       ← Previous
     </button>
   `;
 
   // Page numbers
   for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+    if (
+      i === 1 ||
+      i === totalPages ||
+      (i >= currentPage - 2 && i <= currentPage + 2)
+    ) {
       paginationHTML += `
-        <button class="pagination-btn ${i === currentPage ? "active" : ""}" onclick="goToPage(${i})">
+        <button class="pagination-btn ${
+          i === currentPage ? "active" : ""
+        }" onclick="goToPage(${i})">
           ${i}
         </button>
       `;
@@ -625,7 +686,9 @@ function renderPagination() {
 
   // Next button
   paginationHTML += `
-    <button class="pagination-btn" ${currentPage === totalPages ? "disabled" : ""} onclick="goToPage(${currentPage + 1})">
+    <button class="pagination-btn" ${
+      currentPage === totalPages ? "disabled" : ""
+    } onclick="goToPage(${currentPage + 1})">
       Next →
     </button>
   `;
@@ -659,17 +722,16 @@ function deleteTenant(tenantId) {
   }
 }
 
-let currentStep = 1;
-
 function openCreateAccountInline() {
-    document.getElementById("createAccountInlineContainer").style.display = "block";
-    // Hide the controls row
-    const controlsRow = document.querySelector(".controls-row");
-    if (controlsRow) controlsRow.style.display = "none";
-    // Update breadcrumb for form
-    const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
-    if (breadcrumb) {
-        breadcrumb.innerHTML = `
+  document.getElementById("createAccountInlineContainer").style.display =
+    "block";
+  // Hide the controls row
+  const controlsRow = document.querySelector(".controls-row");
+  if (controlsRow) controlsRow.style.display = "none";
+  // Update breadcrumb for form
+  const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
+  if (breadcrumb) {
+    breadcrumb.innerHTML = `
             <li class="breadcrumb-item" style="color: #6b7280;">
                 <i class="fas fa-users me-2"></i>Tenants
             </li>
@@ -678,32 +740,50 @@ function openCreateAccountInline() {
                 <i class="fas fa-user-plus me-2"></i> Add New Tenant
             </li>
         `;
-    }
-    if (document.getElementById("bulkActionsBar")) document.getElementById("bulkActionsBar").style.display = "none";
-    if (document.getElementById("pagination")) document.getElementById("pagination").style.display = "none";
-    if (document.getElementById("emptyState")) document.getElementById("emptyState").style.display = "none";
-    if (document.getElementById("gridView")) document.getElementById("gridView").style.display = "none";
-    if (document.getElementById("listView")) document.getElementById("listView").style.display = "none";
+  }
+  if (document.getElementById("bulkActionsBar"))
+    document.getElementById("bulkActionsBar").style.display = "none";
+  if (document.getElementById("pagination"))
+    document.getElementById("pagination").style.display = "none";
+  if (document.getElementById("emptyState"))
+    document.getElementById("emptyState").style.display = "none";
+  if (document.getElementById("gridView"))
+    document.getElementById("gridView").style.display = "none";
+  if (document.getElementById("listView"))
+    document.getElementById("listView").style.display = "none";
+
+  // --- Always reset to first step and clear avatar preview ---
+  currentStep = 1;
+  updateStepDisplay();
+  const profilePreview = document.querySelector(".profile-preview");
+  if (profilePreview) {
+    profilePreview.innerHTML =
+      '<div class="profile-preview-content"><i class="fas fa-user-plus"></i><span>Add Photo</span></div>';
+  }
 }
 
 function closeCreateAccountInline() {
-    document.getElementById("createAccountInlineContainer").style.display = "none";
-    // Show the controls row again
-    const controlsRow = document.querySelector(".controls-row");
-    if (controlsRow) controlsRow.style.display = "";
-    // Restore breadcrumb
-    const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
-    if (breadcrumb) {
-        breadcrumb.innerHTML = `
+  document.getElementById("createAccountInlineContainer").style.display =
+    "none";
+  // Show the controls row again
+  const controlsRow = document.querySelector(".controls-row");
+  if (controlsRow) controlsRow.style.display = "";
+  // Restore breadcrumb
+  const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
+  if (breadcrumb) {
+    breadcrumb.innerHTML = `
             <li class="breadcrumb-item active" aria-current="page">
                 <i class="fas fa-users me-2"></i> Tenants
             </li>
         `;
-    }
-    if (document.getElementById("bulkActionsBar")) document.getElementById("bulkActionsBar").style.display = "";
-    if (document.getElementById("pagination")) document.getElementById("pagination").style.display = "";
-    if (document.getElementById("gridView")) document.getElementById("gridView").style.display = "";
-    // Optionally show emptyState if needed
+  }
+  if (document.getElementById("bulkActionsBar"))
+    document.getElementById("bulkActionsBar").style.display = "";
+  if (document.getElementById("pagination"))
+    document.getElementById("pagination").style.display = "";
+  if (document.getElementById("gridView"))
+    document.getElementById("gridView").style.display = "";
+  // Optionally show emptyState if needed
 }
 
 function resetModal() {
@@ -713,7 +793,8 @@ function resetModal() {
 
   const profilePreview = document.querySelector(".profile-preview");
   if (profilePreview) {
-    profilePreview.innerHTML = '<div class="profile-preview-content"><i class="fas fa-user-plus"></i><span>Add Photo</span></div>';
+    profilePreview.innerHTML =
+      '<div class="profile-preview-content"><i class="fas fa-user-plus"></i><span>Add Photo</span></div>';
   }
 }
 
@@ -831,7 +912,7 @@ function confirmAccount() {
 
 function togglePassword(fieldId, toggleBtn) {
   const field = document.getElementById(fieldId);
-  const icon = toggleBtn.querySelector('i');
+  const icon = toggleBtn.querySelector("i");
 
   if (field.type === "password") {
     field.type = "text";
@@ -846,34 +927,51 @@ function togglePassword(fieldId, toggleBtn) {
 function handleAvatarError(imgElement, initials) {
   imgElement.style.display = "none";
   const avatarContainer = imgElement.parentElement;
-  
-  let initialsDiv = avatarContainer.querySelector('.tenant-avatar-initials');
+
+  let initialsDiv = avatarContainer.querySelector(".tenant-avatar-initials");
   if (!initialsDiv) {
     initialsDiv = document.createElement("div");
     initialsDiv.className = "tenant-avatar-initials";
     initialsDiv.textContent = initials;
     avatarContainer.appendChild(initialsDiv);
   }
-  
+
   initialsDiv.style.display = "flex";
 }
 
 function getPlaceholderAvatar(name, size = 48) {
   const colors = [
-    "#667eea", "#764ba2", "#f093fb", "#f5576c", "#4facfe", "#00f2fe",
-    "#43e97b", "#38f9d7", "#ffecd2", "#fcb69f", "#a8edea", "#fed6e3",
+    "#667eea",
+    "#764ba2",
+    "#f093fb",
+    "#f5576c",
+    "#4facfe",
+    "#00f2fe",
+    "#43e97b",
+    "#38f9d7",
+    "#ffecd2",
+    "#fcb69f",
+    "#a8edea",
+    "#fed6e3",
   ];
 
   const initials = getInitials(name?.split(" ")[0], name?.split(" ")[1]);
   const colorIndex = (name || "").length % colors.length;
   const backgroundColor = colors[colorIndex];
 
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=${size}&background=${backgroundColor.replace("#", "")}&color=ffffff&bold=true`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    initials
+  )}&size=${size}&background=${backgroundColor.replace(
+    "#",
+    ""
+  )}&color=ffffff&bold=true`;
 }
 
 function generateAvatarHTML(tenant, size = "normal") {
   const initials = getInitials(tenant.first_name, tenant.last_name);
-  const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""}`.trim();
+  const fullName = `${tenant.first_name || ""} ${
+    tenant.last_name || ""
+  }`.trim();
   const imageSize = size === "small" ? 32 : 48;
 
   let avatarSrc = tenant.avatar;
@@ -891,29 +989,88 @@ function generateAvatarHTML(tenant, size = "normal") {
   `;
 }
 
-// File upload handlers (keeping your existing code but with error handling)
-document.addEventListener("DOMContentLoaded", function() {
+function setupCreateAccountInlineForm() {
+  const form = document.getElementById("createAccountForm");
+  if (!form) return;
+
   const documentUpload = document.getElementById("documentUpload");
-  const profileUpload = document.getElementById("profileUpload");
-  const createAccountModal = document.getElementById("createAccountModal");
+  const docPreview = document.getElementById("documentPreview");
+  if (documentUpload && docPreview) {
+    selectedDocumentFiles = [];
 
-  if (documentUpload) {
-    documentUpload.addEventListener("change", function (e) {
-      const files = e.target.files;
-      const uploadArea = e.target.parentElement;
+    documentUpload.addEventListener("change", function () {
+      const newFiles = Array.from(documentUpload.files);
 
-      if (files.length > 0) {
-        uploadArea.querySelector(".upload-text").innerHTML = `<strong>${files.length} file(s) selected</strong><br>${Array.from(files).map((f) => f.name).join(", ")}`;
+      let combined = selectedDocumentFiles.concat(newFiles);
+
+      combined = combined.filter(
+        (file, idx, arr) =>
+          arr.findIndex((f) => f.name === file.name && f.size === file.size) ===
+          idx
+      );
+
+      if (combined.length > 4) {
+        showError(documentUpload, "You can only upload up to 4 files.");
+        documentUpload.value = "";
+        return;
       }
+
+      selectedDocumentFiles = combined;
+      renderDocumentPreview();
+      documentUpload.value = "";
+      clearError(documentUpload);
     });
+
+    function renderDocumentPreview() {
+      docPreview.innerHTML = "";
+      selectedDocumentFiles.forEach((file, idx) => {
+        const ext = file.name.split(".").pop().toLowerCase();
+        let thumb;
+        if (["jpg", "jpeg", "png"].includes(ext)) {
+          thumb = document.createElement("div");
+          thumb.className = "doc-thumb";
+          thumb.style.position = "relative";
+          thumb.innerHTML = `
+            <img src="${URL.createObjectURL(file)}">
+            <button type="button" class="remove-doc-btn" title="Remove" style="
+              position:absolute;top:2px;right:2px;background:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;box-shadow:0 1px 4px #0001;display:flex;align-items:center;justify-content:center;padding:0;">
+              <i class="fas fa-times" style="color:#dc2626;font-size:14px;"></i>
+            </button>
+          `;
+        } else if (ext === "pdf") {
+          thumb = document.createElement("div");
+          thumb.className = "doc-thumb pdf-thumb";
+          thumb.style.position = "relative";
+          thumb.innerHTML = `
+            <i class="fas fa-file-pdf" style="font-size:40px;color:#d9534f;"></i>
+            <button type="button" class="remove-doc-btn" title="Remove" style="
+              position:absolute;top:2px;right:2px;background:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;box-shadow:0 1px 4px #0001;display:flex;align-items:center;justify-content:center;padding:0;">
+              <i class="fas fa-times" style="color:#dc2626;font-size:14px;"></i>
+            </button>
+          `;
+        } else {
+          return;
+        }
+        thumb
+          .querySelector(".remove-doc-btn")
+          .addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectedDocumentFiles.splice(idx, 1);
+            renderDocumentPreview();
+          });
+        docPreview.appendChild(thumb);
+      });
+      docPreview.style.display = selectedDocumentFiles.length ? "flex" : "none";
+    }
   }
 
+  // --- Profile Picture Preview ---
+  const profileUpload = document.getElementById("profileUpload");
   if (profileUpload) {
     profileUpload.addEventListener("change", function (e) {
       const file = e.target.files[0];
       const preview = document.querySelector(".profile-preview");
-
-      if (file) {
+      if (file && preview) {
         const reader = new FileReader();
         reader.onload = function (e) {
           preview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview">`;
@@ -923,20 +1080,300 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  if (createAccountModal) {
-    createAccountModal.addEventListener("click", function (e) {
-      if (e.target === this) {
-        closeCreateAccountModal();
+  // --- Birthdate Min/Max ---
+  const birthDate = document.getElementById("birthDate");
+  if (birthDate) {
+    const today = new Date();
+    const minYear = today.getFullYear() - 100;
+    const maxDate = new Date(
+      today.getFullYear() - 18,
+      today.getMonth(),
+      today.getDate()
+    );
+    birthDate.max = maxDate.toISOString().split("T")[0];
+    birthDate.min = `${minYear}-01-01`;
+  }
+
+  // --- Password Generation ---
+  const genBtn = document.getElementById("generatePasswordBtn");
+  if (genBtn) {
+    genBtn.addEventListener("click", function () {
+      const pwd = generatePassword();
+      form.defaultPassword.value = pwd;
+      form.confirmPassword.value = pwd;
+    });
+  }
+
+  // --- Cancel/Reset ---
+  const cancelBtn = document.getElementById("cancelBtn");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", function () {
+      form.reset();
+      if (docPreview) docPreview.innerHTML = "";
+      document
+        .querySelectorAll(".is-invalid")
+        .forEach((el) => el.classList.remove("is-invalid"));
+      document
+        .querySelectorAll(".invalid-feedback")
+        .forEach((el) => (el.textContent = ""));
+      closeCreateAccountInline();
+    });
+  }
+
+  function filterNameInput(e) {
+    e.target.value = e.target.value.replace(/[^a-zA-Z\s\-]/g, "");
+  }
+
+  function filterNumberInput(e) {
+    e.target.value = e.target.value.replace(/[^0-9]/g, "");
+  }
+
+  form.firstName.addEventListener("input", filterNameInput);
+  form.middleName.addEventListener("input", filterNameInput);
+  form.lastName.addEventListener("input", filterNameInput);
+  form.suffix.addEventListener("input", filterNameInput);
+
+  if (form.zipCode) form.zipCode.addEventListener("input", filterNumberInput);
+  if (form.mobileNumber)
+    form.mobileNumber.addEventListener("input", function (e) {
+      // Allow + and numbers only
+      e.target.value = e.target.value.replace(/[^0-9\+]/g, "");
+    });
+  if (form.altMobileNumber)
+    form.altMobileNumber.addEventListener("input", function (e) {
+      e.target.value = e.target.value.replace(/[^0-9\+]/g, "");
+    });
+  if (form.emergencyNumber)
+    form.emergencyNumber.addEventListener("input", function (e) {
+      e.target.value = e.target.value.replace(/[^0-9\+]/g, "");
+    });
+
+  // --- Real-time Inline Validation ---
+  function validateName(input) {
+    if (!input.value.trim()) {
+      showError(input, "This field is required.");
+      return false;
+    }
+    clearError(input);
+    return true;
+  }
+  function validateEmail(input) {
+    if (
+      !input.value.trim() ||
+      !/^[^@]+@[^@]+\.[^@]+$/.test(input.value.trim())
+    ) {
+      showError(input, "Enter a valid email address.");
+      return false;
+    }
+    clearError(input);
+    return true;
+  }
+  function validatePHMobile(input, required = false) {
+    if (!input.value.trim() && !required) {
+      clearError(input);
+      return true;
+    }
+    if (!/^(\+63|0)9\d{9}$/.test(input.value.trim())) {
+      showError(input, "Enter a valid PH mobile number.");
+      return false;
+    }
+    clearError(input);
+    return true;
+  }
+  function validatePassword(input) {
+    if (!input.value || input.value.length < 8) {
+      showError(input, "Password must be at least 8 characters.");
+      return false;
+    }
+    clearError(input);
+    return true;
+  }
+  function validateConfirmPassword(pwd, confirm) {
+    if (pwd.value !== confirm.value) {
+      showError(confirm, "Passwords do not match.");
+      return false;
+    }
+    clearError(confirm);
+    return true;
+  }
+  function validateBirthdate(input) {
+    if (!input.value) {
+      clearError(input);
+      return true;
+    }
+    const bday = new Date(input.value);
+    const today = new Date();
+    const age =
+      today.getFullYear() -
+      bday.getFullYear() -
+      (today < new Date(today.getFullYear(), bday.getMonth(), bday.getDate())
+        ? 1
+        : 0);
+    if (age < 18) {
+      showError(input, "Tenant must be at least 18 years old.");
+      return false;
+    }
+    clearError(input);
+    return true;
+  }
+
+  form.firstName.addEventListener("input", () => validateName(form.firstName));
+  form.lastName.addEventListener("input", () => validateName(form.lastName));
+  form.email.addEventListener("input", () => validateEmail(form.email));
+  form.mobileNumber.addEventListener("input", () =>
+    validatePHMobile(form.mobileNumber, true)
+  );
+  form.altMobileNumber.addEventListener("input", () =>
+    validatePHMobile(form.altMobileNumber)
+  );
+  form.defaultPassword.addEventListener("input", () =>
+    validatePassword(form.defaultPassword)
+  );
+  form.confirmPassword.addEventListener("input", () =>
+    validateConfirmPassword(form.defaultPassword, form.confirmPassword)
+  );
+  form.birthDate.addEventListener("change", () =>
+    validateBirthdate(form.birthDate)
+  );
+  if (documentUpload) {
+    documentUpload.addEventListener("change", function () {
+      if (documentUpload.files.length > 4) {
+        showError(documentUpload, "You can only upload up to 4 files.");
+      } else {
+        clearError(documentUpload);
       }
     });
   }
-});
+
+  // --- Submit Handler ---
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    // Validate all fields before submit
+    let valid =
+      validateName(form.firstName) &
+      validateName(form.lastName) &
+      validateEmail(form.email) &
+      validatePHMobile(form.mobileNumber, true) &
+      validatePassword(form.defaultPassword) &
+      validateConfirmPassword(form.defaultPassword, form.confirmPassword) &
+      validateBirthdate(form.birthDate);
+
+    if (!valid) {
+      return;
+    }
+
+    // --- Build address object ---
+    const address = {
+      house_no: form.houseNo ? form.houseNo.value : "",
+      street_address: form.street ? form.street.value : "",
+      city: form.city ? form.city.value : "",
+      province: form.province ? form.province.value : "",
+      zip_code: form.zipCode ? form.zipCode.value : "",
+      country: form.country ? form.country.value : "",
+    };
+
+    // --- Build emergency contacts array (single contact for now) ---
+    const emergency_contacts = [];
+    if (
+      (form.emergencyName && form.emergencyName.value) ||
+      (form.emergencyNumber && form.emergencyNumber.value) ||
+      (form.emergencyRelationship && form.emergencyRelationship.value)
+    ) {
+      emergency_contacts.push({
+        contact_name: form.emergencyName ? form.emergencyName.value : "",
+        contact_phone: form.emergencyNumber ? form.emergencyNumber.value : "",
+        contact_relationship: form.emergencyRelationship
+          ? form.emergencyRelationship.value
+          : "",
+      });
+    }
+
+    // --- Prepare FormData with correct backend keys ---
+    const formData = new FormData();
+
+    formData.append("first_name", form.firstName.value);
+    formData.append(
+      "middle_name",
+      form.middleName ? form.middleName.value : ""
+    );
+    formData.append("last_name", form.lastName.value);
+    formData.append("suffix", form.suffix ? form.suffix.value : "");
+    formData.append("birthdate", form.birthDate.value);
+    formData.append("gender", form.gender ? form.gender.value : "");
+    formData.append("email", form.email.value);
+    formData.append("phone_number", form.mobileNumber.value);
+    formData.append(
+      "alt_phone_number",
+      form.altMobileNumber ? form.altMobileNumber.value : ""
+    );
+    formData.append("password", form.defaultPassword.value);
+    formData.append("role", "TENANT");
+    formData.append("status", "ACTIVE");
+    formData.append("address", JSON.stringify(address));
+    formData.append("emergency_contacts", JSON.stringify(emergency_contacts));
+
+    // --- Files ---
+    if (profileUpload && profileUpload.files.length > 0) {
+      formData.append("avatar", profileUpload.files[0]);
+    }
+    if (selectedDocumentFiles && selectedDocumentFiles.length > 0) {
+      selectedDocumentFiles.forEach((file) => {
+        formData.append("tenant_id_file", file);
+      });
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/create-user`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        alert(error.message || "Failed to create tenant.");
+        return;
+      }
+
+      alert("Tenant account created successfully!");
+      clearSavedFormData();
+      form.reset();
+      currentStep = 1;
+      updateStepDisplay();
+      if (docPreview) docPreview.innerHTML = "";
+      document
+        .querySelectorAll(".is-invalid")
+        .forEach((el) => el.classList.remove("is-invalid"));
+      document
+        .querySelectorAll(".invalid-feedback")
+        .forEach((el) => (el.textContent = ""));
+      closeCreateAccountInline();
+      loadTenants();
+    } catch (err) {
+      alert("An error occurred while creating the tenant.");
+      console.error(err);
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", setupCreateAccountInlineForm);
+
+function generatePassword(length = 12) {
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  let pwd = "";
+  for (let i = 0; i < length; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pwd;
+}
 
 // Auto-save functions (keeping your existing code)
 function autoSaveFormData() {
   const form = document.getElementById("createAccountForm");
   if (!form) return;
-  
+
   const formData = new FormData(form);
   const data = {};
   for (let [key, value] of formData.entries()) {
@@ -975,6 +1412,59 @@ function clearSavedFormData() {
     console.log("Could not clear saved form data");
   }
 }
+
+function showTenantSnackbar(message, type = "success") {
+  // Remove any existing snackbar
+  const existing = document.getElementById("tenantSnackbar");
+  if (existing) existing.remove();
+
+  const snackbar = document.createElement("div");
+  snackbar.id = "tenantSnackbar";
+  snackbar.style.cssText = `
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    background: linear-gradient(135deg, ${
+      type === "success"
+        ? "#10b981 0%, #059669 100%"
+        : "#ef4444 0%, #dc2626 100%"
+    });
+    color: white;
+    padding: 15px 24px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(${
+      type === "success" ? "16,185,129" : "239,68,68"
+    },0.18);
+    z-index: 1000000;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: tenantSnackbarIn 0.3s ease;
+  `;
+  snackbar.innerHTML = `
+    <i class="fas ${
+      type === "success" ? "fa-check-circle" : "fa-exclamation-circle"
+    } me-2"></i>${message}
+  `;
+
+  document.body.appendChild(snackbar);
+
+  setTimeout(
+    () => {
+      snackbar.style.animation = "tenantSnackbarOut 0.3s ease";
+      setTimeout(() => snackbar.remove(), 300);
+    },
+    type === "success" ? 3000 : 5000
+  );
+}
+
+// Usage example after successful tenant creation:
+// showTenantSnackbar("Tenant account created successfully!", "success");
+
+// Usage example for error:
+// showTenantSnackbar("Failed to create tenant.", "error");
 
 setInterval(autoSaveFormData, 30000);
 

@@ -20,12 +20,13 @@ router.post(
   createUploadMiddleware({
     fields: [
       { name: 'avatar', maxCount: 1 },
+      { name: 'tenant_id_file', maxCount: 4 }
     ],
     fieldFolders: {
       avatar: 'user_avatars',
+      tenant_id_file: 'tenant_id_files'
     },
   }),
-//   createValidator,
   createUser
 );
 
@@ -37,9 +38,11 @@ router.patch(
   createUploadMiddleware({
     fields: [
       { name: 'avatar', maxCount: 1 },
+      { name: 'tenant_id_file', maxCount: 1 }
     ],
     fieldFolders: {
       avatar: 'user_avatars',
+      tenant_id_file: 'tenant_id_files'
     },
   }),
   updateSingleUserById

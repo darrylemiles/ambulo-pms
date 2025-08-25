@@ -32,7 +32,16 @@ const authUser = expressAsync(async (req, res) => {
 const createUser = expressAsync(async (req, res) => {
   try {
     const avatar = req.files && req.files['avatar'] ? req.files['avatar'][0].path : "";
-    const payload = { ...req.body, avatar };
+    // FIX: Map all uploaded files for tenant_id_file
+    const tenant_id_file = req.files && req.files['tenant_id_file']
+      ? req.files['tenant_id_file'].map(file => ({ id_url: file.path }))
+      : [];
+
+    const payload = { 
+      ...req.body, 
+      avatar,
+      tenant_id_file
+    };
 
     const response = await usersServices.createUser(payload);
     res.json(response);
@@ -65,7 +74,15 @@ const getSingleUserById = expressAsync(async (req, res) => {
 const updateSingleUserById = expressAsync(async (req, res) => {
   try {
     const avatar = req.files && req.files['avatar'] ? req.files['avatar'][0].path : "";
-    const payload = { ...req.body, avatar };
+    const tenant_id_file = req.files && req.files['tenant_id_file']
+      ? { id_url: req.files['tenant_id_file'][0].path }
+      : null;
+
+    const payload = { 
+      ...req.body, 
+      avatar,
+      tenant_id_file
+    };
 
     const response = await usersServices.updateSingleUserById(
       req.params.user_id,
