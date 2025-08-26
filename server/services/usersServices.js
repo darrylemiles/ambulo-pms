@@ -330,17 +330,47 @@ const getUsers = async (queryObj = {}) => {
 
 const getSingleUserById = async (user_id = "") => {
   try {
-    const query = `
-      SELECT * FROM users WHERE user_id = ?
-    `;
-
-    const [user] = await pool.query(query, [user_id]);
-
-    if (user.length === 0) {
+    // 1. Get user
+    const [userRows] = await pool.query(
+      `SELECT * FROM users WHERE user_id = ?`,
+      [user_id]
+    );
+    if (userRows.length === 0) {
       throw new Error("[User] not found!.");
     }
+    const user = userRows[0];
 
-    return user[0];
+    // 2. Get address
+    let address = null;
+    if (user.user_address_id) {
+      const [addressRows] = await pool.query(
+        `SELECT * FROM user_addresses WHERE user_address_id = ?`,
+        [user.user_address_id]
+      );
+      address = addressRows[0] || null;
+    }
+
+    // 3. Get emergency contacts
+    const [emergencyRows] = await pool.query(
+      `SELECT contact_name, contact_phone, contact_relationship FROM tenant_emergency_contacts WHERE user_id = ?`,
+      [user_id]
+    );
+    const emergency_contacts = emergencyRows;
+
+    // 4. Get tenant ID files
+    const [tenantIdRows] = await pool.query(
+      `SELECT id_url FROM tenant_ids WHERE user_id = ?`,
+      [user_id]
+    );
+    const tenant_id_files = tenantIdRows;
+
+    // 5. Return all data
+    return {
+      ...user,
+      address,
+      emergency_contacts,
+      tenant_id_files,
+    };
   } catch (error) {
     console.error("Error getting user:", error);
     throw new Error(error.message || "Failed to get user");
