@@ -13,11 +13,179 @@
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
-            <div class="title-section">
-                <div>
-                    <h1>Maintenance</h1>
+        <div class="title-section">
+            <div>
+                <h1>Maintenance</h1>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="overview-section">
+            <h2 class="overview-title">
+                Request Overview
+            </h2>
+            <div class="overview-grid" id="overviewGrid">
+                <!-- Overview cards will be populated here -->
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Submit New Request Card -->
+            <div class="function-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-title-icon"></span>
+                        Submit New Request
+                    </h2>
+                    <p class="card-description">Report maintenance issues and track their progress through our professional system</p>
+                </div>
+                <div class="card-body">
+                    <div id="successMessage" class="success-message" style="display: none;">
+                        <strong>Request submitted successfully!</strong><br>
+                        Your request ID is: <strong id="requestId"></strong>
+                    </div>
+
+                    <form id="maintenanceForm">
+                        <div class="form-section">
+                            <h3 class="section-title">Contact Information</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label required" for="tenantName">Tenant Name</label>
+                                    <input type="text" id="tenantName" class="form-input" required>
+                                    <div class="error-message" id="tenantNameError"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label required" for="unitNumber">Unit Number</label>
+                                    <input type="text" id="unitNumber" class="form-input" placeholder="e.g., 2A" required>
+                                    <div class="error-message" id="unitNumberError"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required" for="contactPhone">Contact Phone</label>
+                                <input type="tel" id="contactPhone" class="form-input" placeholder="(555) 123-4567" required>
+                                <div class="error-message" id="contactPhoneError"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="section-title">Request Details</h3>
+                            <div class="form-group">
+                                <label class="form-label required" for="category">Service Category</label>
+                                <select id="category" class="form-select" required>
+                                    <option value="">Select a category</option>
+                                    <option value="plumbing">Plumbing Services</option>
+                                    <option value="electrical">Electrical Services</option>
+                                    <option value="hvac">HVAC & Climate Control</option>
+                                    <option value="appliance">Appliance Repair</option>
+                                    <option value="structural">Structural & Building</option>
+                                    <option value="security">Security Systems</option>
+                                    <option value="other">Other Services</option>
+                                </select>
+                                <div class="error-message" id="categoryError"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required">Priority Level</label>
+                                <div class="priority-grid">
+                                    <div class="priority-option">
+                                        <input type="radio" id="priorityLow" name="priority" value="low" class="priority-radio" required>
+                                        <label for="priorityLow" class="priority-label low">Low Priority</label>
+                                    </div>
+                                    <div class="priority-option">
+                                        <input type="radio" id="priorityMedium" name="priority" value="medium" class="priority-radio">
+                                        <label for="priorityMedium" class="priority-label medium">Medium Priority</label>
+                                    </div>
+                                    <div class="priority-option">
+                                        <input type="radio" id="priorityHigh" name="priority" value="high" class="priority-radio">
+                                        <label for="priorityHigh" class="priority-label high">High Priority</label>
+                                    </div>
+                                </div>
+                                <div class="error-message" id="priorityError"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="description">Detailed Description</label>
+                                <textarea id="description" class="form-textarea" placeholder="Please provide a detailed description of the maintenance issue, including location, symptoms, and any relevant details..." required></textarea>
+                                <div class="error-message" id="descriptionError"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Supporting Photos</label>
+                                <div class="file-upload-wrapper">
+                                    <input type="file" id="photos" class="file-upload-input" accept="image/*" multiple>
+                                    <label for="photos" class="file-upload-label">
+                                        <span><i class="fa-solid fa-paperclip"></i></span>
+                                        <span>Click to upload photos (optional)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-button">Submit Request</button>
+                    </form>
                 </div>
             </div>
+
+            <!-- Active Requests Card -->
+            <div class="function-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-title-icon"></span>
+                        Active Requests
+                    </h2>
+                    <p class="card-description">Monitor the status and progress of your current maintenance requests</p>
+                </div>
+                <div class="card-body">
+                    <div id="requestsList">
+                        <!-- Active requests will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="function-card history-section">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <span class="card-title-icon"></span>
+                    Maintenance History
+                </h2>
+                <p class="card-description">Complete record of past maintenance requests, resolutions, and service ratings</p>
+            </div>
+            <div class="card-body">
+                <div class="history-filters">
+                    <input type="text" id="historySearch" class="form-input" placeholder="Search by request ID, description, or category...">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">All Categories</option>
+                        <option value="plumbing">Plumbing</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="hvac">HVAC</option>
+                        <option value="appliance">Appliance</option>
+                        <option value="structural">Structural</option>
+                        <option value="security">Security</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="date-range">
+                    <div class="date-range-label">Filter by completion date range:</div>
+                    <input type="date" id="dateFrom" class="form-input" title="From Date">
+                    <input type="date" id="dateTo" class="form-input" title="To Date">
+                </div>
+
+                <div id="historyList">
+                    <!-- History items will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="/javascript/navbarTenant.js"></script>
     <script src="/javascript/maintenanceTenant.js"></script>
