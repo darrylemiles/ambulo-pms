@@ -229,7 +229,7 @@ const createUser = async (userData = {}) => {
 
 const getUsers = async (queryObj = {}) => {
   try {
-    const { page = 1, limit = 10, search, status, ...otherFilters } = queryObj;
+    const { page = 1, limit = 10, search, status, sort, ...otherFilters } = queryObj;
     const skip = (page - 1) * limit;
 
     let query =
@@ -245,7 +245,7 @@ const getUsers = async (queryObj = {}) => {
         phone_number LIKE ?
       )`;
       const searchTerm = `%${search.trim()}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     // Handle status filter
@@ -266,8 +266,38 @@ const getUsers = async (queryObj = {}) => {
       query += " AND " + otherFilterConditions.join(" AND ");
     }
 
-    // Order and pagination
-    query += " ORDER BY created_at DESC";
+    // --- Sorting ---
+    let orderBy = "created_at DESC"; // Default
+    switch (sort) {
+      case "name_asc":
+        orderBy = "first_name ASC, last_name ASC";
+        break;
+      case "name_desc":
+        orderBy = "first_name DESC, last_name DESC";
+        break;
+      // case "lease_end_asc":
+      //   orderBy = "lease_end_date ASC";
+      //   break;
+      // case "lease_end_desc":
+      //   orderBy = "lease_end_date DESC";
+      //   break;
+      // case "balance_asc":
+      //   orderBy = "balance ASC";
+      //   break;
+      // case "balance_desc":
+      //   orderBy = "balance DESC";
+      //   break;
+      case "date_added_asc":
+        orderBy = "created_at ASC";
+        break;
+      case "date_added_desc":
+        orderBy = "created_at DESC";
+        break;
+      default:
+        // fallback to default
+        break;
+    }
+    query += ` ORDER BY ${orderBy}`;
     query += " LIMIT ? OFFSET ?";
     params.push(parseInt(limit), parseInt(skip));
 
@@ -282,12 +312,10 @@ const getUsers = async (queryObj = {}) => {
         first_name LIKE ? OR 
         last_name LIKE ? OR 
         email LIKE ? OR 
-        business_name LIKE ? OR 
         phone_number LIKE ?
       )`;
       const searchTerm = `%${search.trim()}%`;
       countParams.push(
-        searchTerm,
         searchTerm,
         searchTerm,
         searchTerm,
