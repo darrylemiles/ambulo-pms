@@ -120,53 +120,50 @@ function renderGridView() {
 
   const cardsHTML = tenants
     .map((tenant) => {
-      const initials = getInitials(tenant.first_name, tenant.last_name);
-      const fullName = `${tenant.first_name || ""} ${
-        tenant.last_name || ""
-      }`.trim();
+      // Include suffix if present
+      const suffix = tenant.suffix ? ` ${tenant.suffix}` : "";
+      const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""}${suffix}`.trim();
       const isSelected = selectedTenants.has(tenant.user_id);
 
       const avatarHTML = generateAvatarHTML(tenant);
 
       return `
-        <div class="tenant-card ${isSelected ? "selected" : ""}" data-tenant="${
-        tenant.user_id
-      }">
+        <div class="tenant-card ${isSelected ? "selected" : ""}" data-tenant="${tenant.user_id}" tabindex="0" title="Select tenant">
           <div class="tenant-card-header">
             <div class="tenant-info">
               <div class="tenant-avatar">
                 ${avatarHTML}
               </div>
               <div class="tenant-details">
-                <h4>${fullName || "No Name"}</h4>
-                <p>${tenant.email || "No Email"}</p>
+                <h4 title="${fullName || "No Name"}">${fullName || "No Name"}</h4>
+                <div class="tenant-business">
+                  ${tenant.business_name || "N/A"}
+                </div>
               </div>
             </div>
-            <input type="checkbox" class="checkbox" ${
-              isSelected ? "checked" : ""
-            }>
           </div>
-          
           <div class="tenant-card-body">
             <div class="tenant-meta-item">
               <span class="label">Phone:</span>
-              <span class="value">${
-                tenant.phone_number || "Not provided"
-              }</span>
+              <span class="value">${tenant.phone_number || "Not provided"}</span>
             </div>
             <div class="tenant-meta-item">
-              <span class="label">Business:</span>
-              <span class="value">${tenant.business_name || "N/A"}</span>
+              <span class="label">Email:</span>
+              <span class="value email-value" title="${tenant.email || "No Email"}">${tenant.email || "No Email"}</span>
             </div>
           </div>
-          
           <div class="tenant-meta">
-            <span class="status-badge status-${(
-              tenant.status || "active"
-            ).toLowerCase()}">
+            <span class="status-badge status-${(tenant.status || "active").toLowerCase()}">
               ${formatStatus(tenant.status) || "Active"}
             </span>
-            <span class="created-date">${formatDate(tenant.created_at)}</span>
+            <div class="tenant-actions">
+              <button class="action-btn" title="View Details" onclick="event.stopPropagation();viewTenantDetails('${tenant.user_id}')">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn" title="Edit" onclick="event.stopPropagation();editTenant('${tenant.user_id}')">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -177,7 +174,6 @@ function renderGridView() {
   setupGridEventListeners();
 }
 
-// Render list view
 function renderListView() {
   const container = document.getElementById("listContainer");
 
@@ -187,26 +183,21 @@ function renderListView() {
   }
 
   if (tenants.length === 0) {
-    console.log("No tenants to render");
     container.innerHTML = "";
     return;
   }
 
   const rowsHTML = tenants
     .map((tenant) => {
-      const fullName = `${tenant.first_name || ""} ${
-        tenant.last_name || ""
-      }`.trim();
+      // Include suffix if present
+      const suffix = tenant.suffix ? ` ${tenant.suffix}` : "";
+      const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""}${suffix}`.trim();
       const isSelected = selectedTenants.has(tenant.user_id);
       const avatarHTML = generateAvatarHTML(tenant, "small");
       return `
-        <div class="tenant-list-item ${
-          isSelected ? "selected" : ""
-        }" data-tenant="${tenant.user_id}">
+        <div class="tenant-list-item ${isSelected ? "selected" : ""}" data-tenant="${tenant.user_id}">
           <div class="list-col list-col-checkbox">
-            <input type="checkbox" class="list-checkbox" ${
-              isSelected ? "checked" : ""
-            }>
+            <input type="checkbox" class="list-checkbox" ${isSelected ? "checked" : ""}>
           </div>
           <div class="list-col list-col-name">
             <div class="tenant-info">
@@ -215,41 +206,30 @@ function renderListView() {
               </div>
               <div style="margin-left: 0.5rem;">
                 <div style="font-weight: 500;">${fullName || "No Name"}</div>
-                <div style="font-size: 0.75rem; color: #6b7280;">${
-                  tenant.business_name || ""
-                }</div>
+                <div style="font-size: 0.75rem; color: #6b7280;">
+                  ${tenant.business_name || ""}
+                </div>
               </div>
             </div>
           </div>
-          <div class="list-col list-col-email">${
-            tenant.email || "No Email"
-          }</div>
-          <div class="list-col list-col-phone">${
-            tenant.phone_number || "Not provided"
-          }</div>
+          <div class="list-col list-col-email">${tenant.email || "No Email"}</div>
+          <div class="list-col list-col-phone">${tenant.phone_number || "Not provided"}</div>
           <div class="list-col list-col-status">
-            <span class="status-badge status-${(
-              tenant.status || "active"
-            ).toLowerCase()}">
-              ${
-                formatStatus
-                  ? formatStatus(tenant.status)
-                  : tenant.status || "Active"
-              }
+            <span class="status-badge status-${(tenant.status || "active").toLowerCase()}">
+              ${formatStatus ? formatStatus(tenant.status) : tenant.status || "Active"}
             </span>
           </div>
-          <div class="list-col list-col-created">${
-            formatDate ? formatDate(tenant.created_at) : tenant.created_at
-          }</div>
+          <div class="list-col list-col-created">
+            ${formatDate ? formatDate(tenant.created_at) : tenant.created_at}
+          </div>
           <div class="list-col list-col-actions">
-            <button class="action-btn" onclick="editTenant('${
-              tenant.user_id
-            }')" title="Edit">
+            <button class="action-btn" onclick="viewTenantDetails('${tenant.user_id}')" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="action-btn" onclick="editTenant('${tenant.user_id}')" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="action-btn" onclick="deleteTenant('${
-              tenant.user_id
-            }')" title="Delete">
+            <button class="action-btn" onclick="deleteTenant('${tenant.user_id}')" title="Delete">
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -260,6 +240,10 @@ function renderListView() {
 
   container.innerHTML = rowsHTML;
   setupListEventListeners();
+}
+
+function viewTenantDetails(tenantId) {
+  openTenantDetailsInlineForm(tenantId);
 }
 
 function updateBulkActionsBar() {
@@ -502,35 +486,26 @@ function setupListEventListeners() {
 function setupGridEventListeners() {
   const tenantCards = document.querySelectorAll(".tenant-card");
   tenantCards.forEach((card) => {
-    const checkbox = card.querySelector(".checkbox");
-    if (checkbox) {
-      checkbox.addEventListener("click", function (e) {
-        e.stopPropagation();
-        const tenantId = card.dataset.tenant;
-
-        if (this.checked) {
-          selectedTenants.add(tenantId);
-          card.classList.add("selected");
-        } else {
-          selectedTenants.delete(tenantId);
-          card.classList.remove("selected");
-        }
-
-        updateSelectAllButton();
-        updateBulkActionsBar(); // Added this
-      });
-    }
-
     card.addEventListener("click", function (e) {
-      if (e.target.type === "checkbox") {
-        return;
-      }
-
+      // Prevent selection if clicking an action button
+      if (e.target.closest(".action-btn")) return;
       const tenantId = card.dataset.tenant;
-      const checkbox = card.querySelector(".checkbox");
-
-      toggleTenantSelection(tenantId, card, checkbox);
-      updateBulkActionsBar(); // Added this
+      if (selectedTenants.has(tenantId)) {
+        selectedTenants.delete(tenantId);
+        card.classList.remove("selected");
+      } else {
+        selectedTenants.add(tenantId);
+        card.classList.add("selected");
+      }
+      updateSelectAllButton();
+      updateBulkActionsBar();
+    });
+    // Optional: keyboard accessibility
+    card.addEventListener("keydown", function (e) {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        card.click();
+      }
     });
   });
 }
@@ -1104,6 +1079,15 @@ function setupCreateAccountInlineForm() {
     });
   }
 
+  genBtn.addEventListener("click", function () {
+    const pwd = generatePassword();
+    form.defaultPassword.value = pwd;
+    form.confirmPassword.value = pwd;
+    // Trigger validation after setting values
+    form.defaultPassword.dispatchEvent(new Event("input"));
+    form.confirmPassword.dispatchEvent(new Event("input"));
+  });
+
   // --- Cancel/Reset ---
   const cancelBtn = document.getElementById("cancelBtn");
   if (cancelBtn) {
@@ -1249,6 +1233,13 @@ function setupCreateAccountInlineForm() {
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
+    const createBtn = document.getElementById("confirmBtn");
+    if (createBtn) {
+      createBtn.classList.add("btn-loading");
+      createBtn.disabled = true;
+      createBtn.innerHTML = `<span class="spinner"></span>Creating...`;
+    }
+
     // Validate all fields before submit
     let valid =
       validateName(form.firstName) &
@@ -1332,11 +1323,19 @@ function setupCreateAccountInlineForm() {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        alert(error.message || "Failed to create tenant.");
+        showTenantSnackbar(
+          error.message || "Failed to create tenant.",
+          "error"
+        );
+        if (createBtn) {
+          createBtn.classList.remove("btn-loading");
+          createBtn.disabled = false;
+          createBtn.innerHTML = `<i class="fas fa-check"></i> Create Account`;
+        }
         return;
       }
 
-      alert("Tenant account created successfully!");
+      showTenantSnackbar("Tenant account created successfully!", "success");
       clearSavedFormData();
       form.reset();
       currentStep = 1;
@@ -1351,8 +1350,16 @@ function setupCreateAccountInlineForm() {
       closeCreateAccountInline();
       loadTenants();
     } catch (err) {
-      alert("An error occurred while creating the tenant.");
+      showTenantSnackbar(
+        "An error occurred while creating the tenant.",
+        "error"
+      ); // <-- Show error snackbar
       console.error(err);
+      if (createBtn) {
+        createBtn.classList.remove("btn-loading");
+        createBtn.disabled = false;
+        createBtn.innerHTML = `<i class="fas fa-check"></i> Create Account`;
+      }
     }
   });
 }
@@ -1456,15 +1463,271 @@ function showTenantSnackbar(message, type = "success") {
       snackbar.style.animation = "tenantSnackbarOut 0.3s ease";
       setTimeout(() => snackbar.remove(), 300);
     },
-    type === "success" ? 3000 : 5000
+    type === "success" ? 5000 : 7000
   );
 }
 
-// Usage example after successful tenant creation:
-// showTenantSnackbar("Tenant account created successfully!", "success");
+/**
+ * Show the inline tenant details form for editing.
+ * @param {string} tenantId
+ */
+async function openTenantDetailsInlineForm(tenantId) {
+  // Hide main views and controls
+  document.getElementById("gridView").style.display = "none";
+  document.getElementById("listView").style.display = "none";
+  const controlsRow = document.querySelector(".controls-row");
+  if (controlsRow) controlsRow.style.display = "none";
+  const bulkActionsBar = document.getElementById("bulkActionsBar");
+  if (bulkActionsBar) bulkActionsBar.style.display = "none";
+  const pagination = document.getElementById("pagination");
+  if (pagination) pagination.style.display = "none";
+  const emptyState = document.getElementById("emptyState");
+  if (emptyState) emptyState.style.display = "none";
 
-// Usage example for error:
-// showTenantSnackbar("Failed to create tenant.", "error");
+  // Show the inline form
+  const formContainer = document.getElementById("tenantDetailsInlineForm");
+  if (formContainer) formContainer.style.display = "block";
+
+  // Update breadcrumb
+  const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
+  if (breadcrumb) {
+    breadcrumb.innerHTML = `
+      <li class="breadcrumb-item" style="color: #6b7280;">
+        <i class="fas fa-users me-2"></i>Tenants
+      </li>
+      <li class="breadcrumb-divider"><span>›</span></li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="fas fa-user-edit me-2"></i> View Tenant Details
+      </li>
+    `;
+  }
+
+  // --- Fetch full tenant details from backend ---
+  try {
+    const response = await fetch(`/api/v1/users/${tenantId}`, {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" }
+    });
+    if (!response.ok) throw new Error("Failed to fetch tenant details");
+    const tenant = await response.json();
+
+    // Populate form fields with tenant data
+    populateEditTenantFormWithFullData(tenant);
+
+    // Render tenant ID files if present
+    renderTenantIdFiles(tenant.tenant_id_files || []);
+
+    // Set view mode (not editable)
+    setTenantDetailsEditMode(false);
+  } catch (err) {
+    alert("Failed to load tenant details.");
+    closeTenantDetailsInlineForm();
+  }
+}
+
+function renderTenantIdFiles(files) {
+  const container = document.getElementById("tenantIdFilesList");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!files.length) {
+    container.innerHTML = "<div>No ID files uploaded.</div>";
+    return;
+  }
+
+  // Start the list wrapper
+  const listDiv = document.createElement("div");
+  listDiv.className = "tenant-id-files-list";
+
+  files.forEach(file => {
+    const ext = file.id_url.split('.').pop().toLowerCase();
+    const fileName = file.id_url.split('/').pop();
+    let fileThumb = document.createElement("div");
+    fileThumb.className = "tenant-id-file-thumb";
+
+    if (["jpg", "jpeg", "png"].includes(ext)) {
+      fileThumb.innerHTML = `
+        <a href="${file.id_url}" target="_blank" style="display:block;width:100%;height:100%;">
+          <img src="${file.id_url}" alt="ID File">
+        </a>
+      `;
+    } else if (ext === "pdf") {
+      fileThumb.innerHTML = `
+        <a href="${file.id_url}" target="_blank" style="display:block;width:100%;height:100%;text-align:center;">
+          <i class="fas fa-file-pdf"></i>
+          <div class="tenant-id-file-label">${fileName}</div>
+        </a>
+      `;
+    } else {
+      fileThumb.innerHTML = `
+        <a href="${file.id_url}" target="_blank">${fileName}</a>
+      `;
+    }
+    listDiv.appendChild(fileThumb);
+  });
+
+  container.appendChild(listDiv);
+}
+
+function renderEditAvatarPreview(avatarUrl, firstName, lastName) {
+  const preview = document.getElementById("editAvatarPreview");
+  if (!preview) return;
+
+  preview.innerHTML = ""; // Clear previous content
+
+  if (avatarUrl && avatarUrl.trim() !== "") {
+    // Show the avatar image directly
+    const img = document.createElement("img");
+    img.src = avatarUrl;
+    img.alt = "Avatar";
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "50%";
+    img.style.display = "block";
+    img.onerror = function () {
+      preview.innerHTML = `<div class="profile-preview-content">${getInitials(firstName, lastName)}</div>`;
+    };
+    preview.appendChild(img);
+  } else {
+    // Show the Add Photo overlay
+    preview.innerHTML = `
+      <div class="profile-preview-content">
+        <i class="fas fa-user-plus"></i>
+        <span>Add Photo</span>
+      </div>
+    `;
+  }
+}
+
+// Helper to populate the form with full tenant data
+function populateEditTenantFormWithFullData(tenant) {
+  document.querySelector('[data-field="firstName"]').textContent = tenant.first_name || "";
+  document.querySelector('[data-field="middleName"]').textContent = tenant.middle_name || "";
+  document.querySelector('[data-field="lastName"]').textContent = tenant.last_name || "";
+  document.querySelector('[data-field="suffix"]').textContent = tenant.suffix || "";
+  document.querySelector('[data-field="birthDate"]').textContent = tenant.birthdate ? tenant.birthdate.split("T")[0] : "";
+  document.querySelector('[data-field="gender"]').textContent = tenant.gender || "";
+  document.querySelector('[data-field="phoneNumber"]').textContent = tenant.phone_number || "";
+  document.querySelector('[data-field="altPhoneNumber"]').textContent = tenant.alt_phone_number || "";
+  document.querySelector('[data-field="email"]').textContent = tenant.email || "";
+  document.querySelector('[data-field="houseNo"]').textContent = tenant.address?.house_no || "";
+  document.querySelector('[data-field="street"]').textContent = tenant.address?.street_address || "";
+  document.querySelector('[data-field="city"]').textContent = tenant.address?.city || "";
+  document.querySelector('[data-field="province"]').textContent = tenant.address?.province || "";
+  document.querySelector('[data-field="zipCode"]').textContent = tenant.address?.zip_code || "";
+  document.querySelector('[data-field="country"]').textContent = tenant.address?.country || "";
+  document.querySelector('[data-field="emergencyName"]').textContent = tenant.emergency_contacts?.[0]?.contact_name || "";
+  document.querySelector('[data-field="emergencyNumber"]').textContent = tenant.emergency_contacts?.[0]?.contact_phone || "";
+  document.querySelector('[data-field="emergencyRelationship"]').textContent = tenant.emergency_contacts?.[0]?.contact_relationship || "";
+  document.querySelector('[data-field="status"]').textContent = tenant.status || "ACTIVE";
+  document.querySelector('[data-field="role"]').textContent = tenant.role || "TENANT";
+
+  // Set header
+  renderEditAvatarPreview(tenant.avatar, tenant.first_name, tenant.last_name);
+  document.getElementById("tenantNameDisplay").textContent =
+    `${tenant.first_name || ""} ${tenant.last_name || ""}`.trim() || "Tenant Details";
+  document.getElementById("tenantEmailDisplay").textContent = tenant.email || "";
+
+  // Set input fields (for edit mode)
+  const form = document.getElementById("editTenantForm");
+  if (!form) return;
+  form.firstName.value = tenant.first_name || "";
+  form.middleName.value = tenant.middle_name || "";
+  form.lastName.value = tenant.last_name || "";
+  form.suffix.value = tenant.suffix || "";
+  form.birthDate.value = tenant.birthdate ? tenant.birthdate.split("T")[0] : "";
+  form.gender.value = tenant.gender || "";
+  form.phoneNumber.value = tenant.phone_number || "";
+  form.altPhoneNumber.value = tenant.alt_phone_number || "";
+  form.email.value = tenant.email || "";
+  form.houseNo.value = tenant.address?.house_no || "";
+  form.street.value = tenant.address?.street_address || "";
+  form.city.value = tenant.address?.city || "";
+  form.province.value = tenant.address?.province || "";
+  form.zipCode.value = tenant.address?.zip_code || "";
+  form.country.value = tenant.address?.country || "";
+  form.emergencyName.value = tenant.emergency_contacts?.[0]?.contact_name || "";
+  form.emergencyNumber.value = tenant.emergency_contacts?.[0]?.contact_phone || "";
+  form.emergencyRelationship.value = tenant.emergency_contacts?.[0]?.contact_relationship || "";
+  form.status.value = tenant.status || "ACTIVE";
+  form.role.value = tenant.role || "TENANT";
+}
+
+/**
+ * Toggle between view and edit mode for tenant details.
+ * @param {boolean} editable
+ */
+function setTenantDetailsEditMode(editable) {
+  // Show/hide value spans and input fields
+  document.querySelectorAll('.tenant-details-value').forEach(el => {
+    el.style.display = editable ? "none" : "block";
+  });
+  document.querySelectorAll('.tenant-details-input').forEach(el => {
+    el.style.display = editable ? "block" : "none";
+  });
+  // Show/hide footer
+  document.querySelector('.tenant-details-footer').style.display = editable ? "flex" : "none";
+  // Disable edit/delete buttons in edit mode
+  document.getElementById("editUserBtn").disabled = editable;
+}
+
+/**
+ * Handler for Edit User button.
+ */
+function toggleEditTenantForm(editable) {
+  setTenantDetailsEditMode(editable);
+}
+
+/**
+ * Handler for Delete button in details view.
+ */
+function deleteTenantFromDetails() {
+  // You can call your deleteTenant logic here, e.g.:
+  const email = document.getElementById("tenantEmailDisplay").textContent;
+  if (confirm(`Are you sure you want to delete this tenant (${email})?`)) {
+    // Find tenantId by email (or store tenantId in a variable)
+    const tenant = tenants.find(t => t.email === email);
+    if (tenant) deleteTenant(tenant.user_id);
+  }
+}
+
+
+/**
+ * Hide the inline tenant details form and restore main UI.
+ */
+function closeTenantDetailsInlineForm() {
+  // Hide the inline form
+  const formContainer = document.getElementById("tenantDetailsInlineForm");
+  if (formContainer) formContainer.style.display = "none";
+
+  // Show main views and controls
+  if (currentView === "grid") {
+    document.getElementById("gridView").style.display = "grid";
+    document.getElementById("listView").style.display = "none";
+  } else {
+    document.getElementById("gridView").style.display = "none";
+    document.getElementById("listView").style.display = "flex";
+  }
+  const controlsRow = document.querySelector(".controls-row");
+  if (controlsRow) controlsRow.style.display = "";
+  const bulkActionsBar = document.getElementById("bulkActionsBar");
+  if (bulkActionsBar) bulkActionsBar.style.display = "";
+  const pagination = document.getElementById("pagination");
+  if (pagination) pagination.style.display = "";
+  // Optionally show empty state if needed
+
+  // Restore breadcrumb
+  const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
+  if (breadcrumb) {
+    breadcrumb.innerHTML = `
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="fas fa-users me-2"></i> Tenants
+      </li>
+    `;
+  }
+}
 
 setInterval(autoSaveFormData, 30000);
 
@@ -1486,3 +1749,6 @@ window.formatStatus = formatStatus;
 window.formatDate = formatDate;
 window.openCreateAccountInline = openCreateAccountInline;
 window.closeCreateAccountInline = closeCreateAccountInline;
+window.viewTenantDetails = viewTenantDetails;
+window.openTenantDetailsInlineForm = openTenantDetailsInlineForm;
+window.closeTenantDetailsInlineForm = closeTenantDetailsInlineForm;
