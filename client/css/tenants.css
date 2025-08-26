@@ -341,17 +341,12 @@ body {
 }
 
 .search-filter-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
   background: white;
   padding: 8px 12px;
   border-radius: 12px;
   border: 2px solid #e5e7eb;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
   transition: all 0.3s ease;
-  width: 100%;
-  max-width: 450px;
 }
 
 .search-filter-controls:hover {
@@ -623,8 +618,8 @@ body {
 
 .tenants-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px; /* Increased gap for better spacing */
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px; 
   width: 100%;
   padding: 0;
 }
@@ -756,15 +751,6 @@ body {
   gap: 10px;
   flex: 1;
   margin-bottom: 16px;
-}
-
-.tenant-meta-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  font-size: 14px;
-  border-bottom: 1px solid #f8fafc;
 }
 
 .tenant-meta-item:last-child {
@@ -1892,16 +1878,6 @@ body {
   }
 }
 
-.inline-form-container {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.08);
-  padding: 32px 40px;
-  margin-bottom: 32px;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-}
 
 .inline-form-title {
   font-size: 2rem;
@@ -2006,16 +1982,6 @@ body {
   font-size: 15px;
   color: #2563eb;
   margin-right: 7px;
-}
-
-.tenants-header {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-  background: transparent;
-  padding: 0;
 }
 
 .tenants-add-btn {
@@ -2298,17 +2264,6 @@ body {
   box-shadow: none;
 }
 
-/* --- Responsive Create Tenant Form --- */
-.inline-form-container {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.08);
-  padding: 32px 40px;
-  margin-bottom: 32px;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-}
 
 @media (max-width: 1100px) {
   .inline-form-container {
@@ -3384,7 +3339,7 @@ body {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255, 255, 255, 0.92);
   border: none;
   border-radius: 50%;
   width: 28px;
@@ -3440,14 +3395,25 @@ body {
 }
 /* --- End Create Tenant Form Enhancements --- */
 
-
 @keyframes tenantSnackbarIn {
-  from { opacity: 0; transform: translateY(-20px) scale(0.98);}
-  to { opacity: 1; transform: translateY(0) scale(1);}
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 @keyframes tenantSnackbarOut {
-  from { opacity: 1; transform: translateY(0) scale(1);}
-  to { opacity: 0; transform: translateY(-20px) scale(0.98);}
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+  }
 }
 
 .form-group .input-with-icon {
@@ -3492,7 +3458,7 @@ body {
 }
 
 #defaultPassword {
-  margin-bottom: 38px !important;
+  margin-bottom: 20px !important;
 }
 
 .profile-preview-content {
@@ -3549,14 +3515,25 @@ body {
   box-shadow: 0 0 0 2px #dc262633;
 }
 
-
 @keyframes shakeBirthdate {
-  0% { transform: translateX(0);}
-  20% { transform: translateX(-4px);}
-  40% { transform: translateX(4px);}
-  60% { transform: translateX(-2px);}
-  80% { transform: translateX(2px);}
-  100% { transform: translateX(0);}
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 #birthDate:invalid:required:focus {
   animation: shakeBirthdate 0.3s;
@@ -3579,7 +3556,9 @@ body {
   transition: opacity 0.2s;
 }
 
-.input-with-icon input[type="password"]:not(:placeholder-shown) ~ .toggle-password,
+.input-with-icon
+  input[type="password"]:not(:placeholder-shown)
+  ~ .toggle-password,
 .input-with-icon input[type="password"]:focus ~ .toggle-password {
   opacity: 1;
   pointer-events: auto;
@@ -3647,9 +3626,9 @@ body {
 /* Eye toggle: vertically and horizontally aligned right inside the input */
 .toggle-password {
   position: absolute;
-  top: 50%;
+  top: 23%;
   right: 16px;
-  transform: translateY(-50%);
+  transform: translateY(-35%);
   cursor: pointer;
   font-size: 20px;
   color: #718096;
@@ -3682,7 +3661,7 @@ body {
 #generatePasswordBtn {
   position: absolute;
   right: 0;
-  bottom: -44px;
+  bottom: -130px;
   z-index: 2;
   margin: 0;
   border-radius: 8px;
@@ -3728,4 +3707,590 @@ body {
   #confirmPassword {
     margin-bottom: 36px !important;
   }
+}
+
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+.btn-loading .spinner {
+  border: 2.5px solid #fff;
+  border-top: 2.5px solid #059669;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  margin-bottom: 2px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+#tenantSnackbar {
+  position: fixed;
+  top: 28px;
+  right: 32px;
+  z-index: 99999;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  padding: 18px 32px 18px 24px;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(16,185,129,0.18);
+  font-size: 1.08rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  pointer-events: none;
+  animation: tenantSnackbarIn 0.4s forwards;
+}
+
+#tenantSnackbar.error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 6px 24px rgba(239,68,68,0.18);
+}
+
+@keyframes tenantSnackbarIn {
+  from { opacity: 0; transform: translateY(-20px) scale(0.98);}
+  to { opacity: 1; transform: translateY(0) scale(1);}
+}
+@keyframes tenantSnackbarOut {
+  from { opacity: 1; transform: translateY(0) scale(1);}
+  to { opacity: 0; transform: translateY(-20px) scale(0.98);}
+}
+
+.tenant-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 0 0;
+  border-top: 1px solid #f1f5f9;
+  margin-top: auto;
+}
+
+.tenant-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tenant-actions .action-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 15px;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tenant-actions .action-btn:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+.tenant-meta-item .value {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 13px;
+  text-align: left;
+  white-space: normal;
+  max-width: 100%;
+  display: block;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* Tenant Details Wide Form */
+.tenant-details-wide {
+  max-width: 98vw;
+  width: 100%;
+  margin: 32px auto;
+  padding: 40px 48px;
+  border-radius: 18px;
+  box-shadow: 0 6px 32px #2563eb14;
+  background: #fff;
+}
+
+.tenant-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 32px;
+}
+
+.tenant-details-title {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.tenant-details-name {
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 0.2rem;
+  margin-top: 0;
+}
+
+.tenant-details-email {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+}
+
+.tenant-details-actions {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tenant-details-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.tenant-details-section {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 24px 32px 18px 32px;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px #2563eb08;
+}
+
+.tenant-details-section h4 {
+  color: #2563eb;
+  font-size: 1.15rem;
+  margin-bottom: 18px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.tenant-details-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-bottom: 10px;
+}
+
+.tenant-details-col {
+  flex: 1 1 180px;
+  min-width: 180px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tenant-details-col label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.tenant-details-value {
+  font-size: 1.08rem;
+  color: #1e293b;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  border-radius: 6px;
+  min-height: 32px;
+  transition: background 0.2s;
+  cursor: default;
+}
+
+.tenant-details-input {
+  display: none;
+  font-size: 1.08rem;
+  color: #1e293b;
+  font-weight: 500;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-height: 32px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.tenant-details-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px #2563eb22;
+}
+
+.tenant-details-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 32px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+  background: #f8fafc;
+}
+
+@media (max-width: 1200px) {
+  .tenant-details-wide {
+    padding: 24px 2vw;
+  }
+  .tenant-details-section {
+    padding: 18px 10px 12px 10px;
+  }
+  .tenant-details-row {
+    gap: 18px;
+  }
+}
+
+@media (max-width: 900px) {
+  .tenant-details-header {
+    flex-direction: column;
+    gap: 18px;
+    align-items: flex-start;
+  }
+  .tenant-details-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .tenant-details-col {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
+
+.tenant-avatar-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto;
+}
+
+/* --- Tenant Details Header --- */
+.tenant-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 32px;
+}
+
+.tenant-details-title {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+}
+
+.tenant-details-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid #2563eb;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 24px #2563eb22;
+}
+
+.tenant-details-avatar img,
+.tenant-details-avatar .tenant-avatar-initials {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  font-size: 3.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tenant-details-name {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #2563eb;
+  margin-bottom: 0.2rem;
+  margin-top: 0;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+}
+
+.tenant-details-contact {
+  font-size: 1.25rem;
+  color: #475569;
+  margin-bottom: 0.2rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.tenant-details-email {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+}
+
+/* --- Tenant ID Files Section --- */
+.tenant-id-files-section {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 32px 32px 24px 32px;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px #2563eb08;
+  margin-top: 32px;
+}
+
+.tenant-id-files-section h4 {
+  color: #2563eb;
+  font-size: 1.35rem;
+  margin-bottom: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.tenant-id-files-list {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-height: 120px;
+}
+
+.tenant-id-file-thumb {
+  width: 180px;
+  height: 180px;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px #2563eb11;
+  border: 2.5px solid #e5e7eb;
+  background: #fff;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.tenant-id-file-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+}
+
+.tenant-id-file-thumb .fa-file-pdf {
+  font-size: 5.5rem;
+  color: #d9534f;
+}
+
+.tenant-id-file-label {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  background: rgba(36, 41, 46, 0.65);
+  color: #fff;
+  font-size: 1.02rem;
+  font-weight: 500;
+  padding: 4px 0;
+  border-radius: 0 0 18px 18px;
+  letter-spacing: 0.1px;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .tenant-details-avatar {
+    width: 90px;
+    height: 90px;
+  }
+  .tenant-details-name {
+    font-size: 2rem;
+  }
+  .tenant-id-file-thumb {
+    width: 110px;
+    height: 110px;
+    border-radius: 10px;
+  }
+  .tenant-id-file-thumb .fa-file-pdf {
+    font-size: 2.8rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .tenant-details-avatar {
+    width: 64px;
+    height: 64px;
+  }
+  .tenant-details-name {
+    font-size: 1.3rem;
+  }
+  .tenant-id-file-thumb {
+    width: 70px;
+    height: 70px;
+    border-radius: 7px;
+  }
+  .tenant-id-file-thumb .fa-file-pdf {
+    font-size: 1.5rem;
+  }
+}
+
+.tenant-details-avatar {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tenant-details-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .tenant-details-wide {
+    padding: 10px 2vw !important;
+    margin: 12px auto !important;
+  }
+  .tenant-details-header {
+    margin-bottom: 14px !important;
+    gap: 12px !important;
+  }
+  .tenant-details-title {
+    gap: 12px !important;
+  }
+  .tenant-details-section {
+    padding: 10px 6px 8px 6px !important;
+    margin-bottom: 0 !important;
+  }
+  .tenant-details-row {
+    gap: 6px !important;
+    margin-bottom: 4px !important;
+  }
+  .tenant-details-col {
+    gap: 2px !important;
+    min-width: 120px !important;
+    max-width: 100% !important;
+  }
+  .tenant-details-name {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+  .tenant-details-avatar {
+    width: 54px !important;
+    height: 54px !important;
+    border-width: 2px !important;
+  }
+  .tenant-details-section h4 {
+    font-size: 1rem !important;
+    margin-bottom: 8px !important;
+  }
+  .tenant-details-value,
+  .tenant-details-input {
+    font-size: 0.98rem !important;
+    min-height: 24px !important;
+    padding: 3px 0 !important;
+  }
+}
+
+/* Even more compact for extra small screens */
+@media (max-width: 400px) {
+  .tenant-details-wide {
+    padding: 2px 1vw !important;
+  }
+  .tenant-details-header {
+    gap: 6px !important;
+  }
+  .tenant-details-section {
+    padding: 4px 2px 4px 2px !important;
+  }
+} 
+
+/* Compact tenant details for mobile */
+@media (max-width: 600px) {
+  .tenant-details-section {
+    padding: 6px 4px 4px 4px !important;
+    margin-bottom: 0 !important;
+  }
+  .tenant-details-row {
+    gap: 2px !important;
+    margin-bottom: 2px !important;
+  }
+    .tenant-details-col {
+        gap: 1px !important;
+        min-width: 100px !important;
+        max-width: 50% !important;
+        max-height: fit-content;
+    }
+
+  .tenant-details-value,
+  .tenant-details-input {
+    font-size: 0.95rem !important;
+    min-height: 18px !important;
+    padding: 2px 0 !important;
+  }
+  .tenant-details-section h4 {
+    font-size: 0.95rem !important;
+    margin-bottom: 4px !important;
+  }
+}
+
+/* Remove extra margin between form groups */
+.tenant-details-col label {
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 600px) {
+  .tenant-details-actions {
+    flex-direction: row !important;
+    gap: 6px !important;
+    align-items: center !important;
+    margin-top: 0 !important;
+  }
+  .tenant-details-actions .btn,
+  .tenant-details-actions button {
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .tenant-details-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    border-width: 2px !important;
+  }
+}
+
+@media (max-width: 900px) {
+      .tenant-details-col {
+        gap: 1px !important;
+        min-width: 100px !important;
+        max-width: 50% !important;
+        max-height: fit-content;
+    }
 }
