@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/paymentTenant.css">
+    <title>Payment - Tenant</title>
+</head>
+<body>
+    <div id="navbar-tenant-placeholder"></div>
+    
+    <!-- Header -->
+    <section class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1>Payments</h1>
+            </div>
+        </div>
+    </section>
+
+            <div class="payment-section-container">
+            <div class="card payment-section" id="payment-section">
+                <div class="tenant-info">
+                    <h3>👤 Tenant Information</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Name</div>
+                            <div class="info-value" id="tenant-name">Rea</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Unit</div>
+                            <div class="info-value" id="tenant-unit">Unit 2A</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Monthly Rent</div>
+                            <div class="info-value" id="monthly-rent">₱15,000</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Next Due Date</div>
+                            <div class="info-value" id="next-due">September 1, 2025</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert success" id="success-alert">
+                    ✅ Payment information recorded successfully! Please keep your reference number for tracking.
+                </div>
+
+                <div class="alert error" id="error-alert">
+                    ❌ Please fill in all required fields.
+                </div>
+
+                <div class="payment-section">
+                    <div class="qr-container">
+                        <h3>GCash Payment</h3>
+                        <div class="qr-code">
+                            <div>
+                                <div style="font-size: 18px; margin-bottom: 15px;">📱 Scan QR Code</div>
+                                <div style="font-size: 12px; color: #999; margin-bottom: 20px;">QR Code for GCash Payment</div>
+                                <div style="padding: 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+                                    <div style="font-size: 16px; font-weight: 600;">Sample QR Code</div>
+                                    <div style="font-size: 11px; margin-top: 8px; opacity: 0.9;">Replace with actual QR code image</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gcash-info">
+                            <div style="text-align: center; margin-bottom: 15px; font-weight: 600;">
+                                <strong>GCash Number</strong>
+                            </div>
+                            <div class="gcash-number">09XX-XXX-XXXX</div>
+                            <div style="text-align: center; font-size: 0.9em; margin-top: 15px; opacity: 0.9;">
+                                Landlord: Maria Santos
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-form">
+                        <h3>Payment Details</h3>
+                        <form id="payment-form">
+                            <div class="form-group">
+                                <label for="payment-type">Payment Type *</label>
+                                <select id="payment-type" required>
+                                    <option value="">-- Select Type --</option>
+                                    <option value="rent">Rent</option>
+                                    <option value="utilities">Utilities</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="amount">Amount (₱) *</label>
+                                <input type="number" id="amount" placeholder="Enter amount" required min="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reference-number">GCash Reference # *</label>
+                                <input type="text" id="reference-number" placeholder="Enter GCash Ref No." required minlength="6">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="payment-date">Payment Date *</label>
+                                <input type="date" id="payment-date" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="notes">Notes (Optional)</label>
+                                <textarea id="notes" rows="3" placeholder="Additional notes or comments..."></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">✨ Submit</button>
+                                <button type="reset" class="btn btn-secondary">🗑️ Clear</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="history-section">
+                <h2 class="section-title">Payment History</h2>
+                <div class="payment-history">
+                    <table id="payment-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Reference #</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payment-tbody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 60px 20px; color: #6c757d; font-style: italic;">
+                                    <div style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;">📋</div>
+                                    <div style="font-size: 18px; margin-bottom: 10px;">No payment records found</div>
+                                    <div style="font-size: 14px;">Submit your first payment to see history here.</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/javascript/navbarTenant.js"></script>
+    <script src="/javascript/paymentTenant.js"></script>
+</body>
+</html>

@@ -11,23 +11,24 @@
 <body>
     <header id="navbar-tenant-placeholder"></header>
 
-    <!-- Main Content -->
-    <div class="main-content" id="mainContent">
-            <div class="title-section">
-                <div>
-                    <h1>Dashboard</h1>
-                </div>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <h1>Dashboard</h1>
         </div>
+    </div>
 
+    <!-- Main Content -->
+    <div class="main-content">
         <div class="dashboard-container">
-            <!-- Calendar Column (Today's reminders + Calendar) -->
+            <!-- Calendar Column -->
             <div class="calendar-column">
                 <!-- Today's Reminders -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Today, August 1</h3>
+                        <h3 class="card-title">Today, August 28</h3>
                     </div>
-                    <div class="reminder-content">You have 0 reminder for Today. <a href="#" class="see-all">View All</a></div>
+                    <div class="reminder-content">You have 0 reminders for Today. <a href="#" class="see-all">View All</a></div>
                 </div>
 
                 <!-- Calendar Card -->
@@ -53,7 +54,7 @@
                         <div class="day"></div>
                         <div class="day"></div>
                         <div class="day"></div>
-                        <div class="day today">1</div>
+                        <div class="day">1</div>
                         <div class="day">2</div>
                         <div class="day">3</div>
                         <div class="day">4</div>
@@ -80,22 +81,23 @@
                         <div class="day">25</div>
                         <div class="day">26</div>
                         <div class="day">27</div>
-                        <div class="day">28</div>
+                        <div class="day today">28</div>
                         <div class="day">29</div>
                         <div class="day">30</div>
                         <div class="day">31</div>
                     </div>
                     
                     <div class="rent-payment">
-                        <div class="payment-label">Rent Payment</div>
-                        <div class="payment-amount">Amount: ₱23,000.00</div>
+                        <div class="payment-label">Monthly Rent Payment</div>
+                        <div class="payment-amount">₱23,000.00</div>
                         <button class="pay-now-btn">Pay Now</button>
                         <div style="clear: both;"></div>
                     </div>
                 </div>
             </div>
 
-                        <div class="card">
+            <!-- Maintenance Requests -->
+            <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Maintenance Requests</h3>
                     <a href="#" class="see-all">See All</a>
@@ -129,34 +131,34 @@
                 </div>
             </div>
 
-            <!-- Last Transaction -->
+            <!-- Last Transactions -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Last Transactions</h3>
+                    <h3 class="card-title">Recent Transactions</h3>
                     <a href="#" class="see-all">See All</a>
                 </div>
                 <div class="transaction-item">
                     <div class="transaction-icon">🏠</div>
                     <div class="transaction-details">
-                        <div class="transaction-type">Rent</div>
-                        <div class="transaction-date">15 April 2025, 9:25</div>
+                        <div class="transaction-type">Rent Payment</div>
+                        <div class="transaction-date">15 April 2025, 9:25 AM</div>
                     </div>
                     <div class="transaction-category payment">Payment</div>
                 </div>
                 <div class="transaction-item">
                     <div class="transaction-icon">⚡</div>
                     <div class="transaction-details">
-                        <div class="transaction-type">Electrical</div>
-                        <div class="transaction-date">15 April 2025, 9:25</div>
+                        <div class="transaction-type">Electrical Maintenance</div>
+                        <div class="transaction-date">15 April 2025, 9:25 AM</div>
                     </div>
                     <div class="transaction-category maintenance">Maintenance</div>
                 </div>
             </div>
 
-                        <!-- Announcements -->
+            <!-- Announcements -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Announcement</h3>
+                    <h3 class="card-title">Announcements</h3>
                 </div>
                 <div class="announcement-item">
                     <div class="announcement-icon"></div>
@@ -188,22 +190,22 @@
                 </div>
             </div>
 
-            <!-- Bottom row cards container -->
+            <!-- Bottom row cards -->
             <div class="bottom-cards-container">
                 <!-- Late Payments -->
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Late Payments</h3>
                     </div>
-                    <div class="no-records">No Records</div>
+                    <div class="no-records">No Outstanding Payments</div>
                 </div>
 
-                <!-- Your Information -->
+                <!-- Lease Summary -->
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Lease Summary</h3>
                     </div>
-                    <div class="no-records">No Records</div>
+                    <div class="no-records">Contract Details Available</div>
                 </div>
 
                 <!-- Documents -->
@@ -211,11 +213,12 @@
                     <div class="card-header">
                         <h3 class="card-title">Documents</h3>
                     </div>
-                    <div class="no-records">No Records</div>
+                    <div class="no-records">Upload & View Documents</div>
                 </div>
             </div>
         </div>
     </div>
+
     <script src="/javascript/navbarTenant.js"></script>
     <script src="/javascript/tenantDashboard.js"></script>
 </body>
