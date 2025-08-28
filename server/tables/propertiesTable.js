@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS properties (
     security_deposit_months INT,
     minimum_lease_term_months INT DEFAULT 24,
     address_id INT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at timestamp DEFAULT CURRENT_TIMESTAMP(),
+    updated_at timestamp DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
     CONSTRAINT fk_properties_address
         FOREIGN KEY (address_id) REFERENCES addresses(address_id)
         ON DELETE SET NULL

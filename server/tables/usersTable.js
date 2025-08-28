@@ -13,7 +13,8 @@ const usersTable = `CREATE TABLE IF NOT EXISTS users (
     user_address_id INT,
     password_hash CHAR(60),
     role VARCHAR(50) DEFAULT 'TENANT',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
     status ENUM('ACTIVE', 'INACTIVE', 'BANNED') DEFAULT 'ACTIVE',
     FOREIGN KEY (user_address_id) REFERENCES user_addresses(user_address_id) ON DELETE SET NULL ON UPDATE CASCADE
 );`;
