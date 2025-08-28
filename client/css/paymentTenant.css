@@ -74,7 +74,7 @@
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 16px;
-            padding: 1.25rem;   /* reduce padding */
+            padding: 1.25rem;
             margin-bottom: 2rem;
             margin-left: 3rem;
             max-width: 1800px;
@@ -273,6 +273,37 @@
                 0 8px 20px rgba(0, 0, 0, 0.15);
         }
 
+        /* QR Code content styles */
+        .qr-code-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .qr-code-subtitle {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 20px;
+        }
+
+        .qr-placeholder {
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .qr-placeholder-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .qr-placeholder-subtitle {
+            font-size: 11px;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+
         .gcash-info {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
@@ -299,6 +330,12 @@
             left: 100%;
         }
 
+        .gcash-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
         .gcash-number {
             font-size: 1.8em;
             font-weight: 700;
@@ -306,6 +343,13 @@
             margin: 15px 0;
             letter-spacing: 3px;
             font-family: 'Courier New', monospace;
+        }
+
+        .gcash-landlord {
+            text-align: center;
+            font-size: 0.9em;
+            margin-top: 15px;
+            opacity: 0.9;
         }
 
         .payment-form {
@@ -425,6 +469,11 @@
             box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
         }
 
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
         .section-title {
             font-size: 32px;
             font-weight: 700;
@@ -542,6 +591,30 @@
             border-left-color: #ef4444;
         }
 
+        /* Empty state styles */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .empty-state-subtitle {
+            font-size: 14px;
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) {
             .container {
@@ -588,6 +661,10 @@
             .btn-secondary {
                 margin-left: 0;
                 margin-top: 1rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
             }
 
             .qr-code {
@@ -640,16 +717,6 @@
 
             .btn-secondary {
                 margin-left: 0;
-            }
-
-            .navigation {
-                gap: 0.5rem;
-            }
-
-            .nav-btn {
-                padding: 0.6rem 1.5rem;
-                min-width: 120px;
-                font-size: 13px;
             }
 
             .gcash-number {
@@ -707,5 +774,17 @@
                 background: white;
                 box-shadow: none;
                 border: 1px solid #ccc;
+            }
+        }
+
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
