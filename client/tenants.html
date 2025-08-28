@@ -10,31 +10,6 @@
   <link rel="stylesheet" href="/css/sidebar.css" />
   <link rel="stylesheet" href="/css/tenants.css" />
   <title>Tenants</title>
-  <style>
-    .is-invalid {
-      border-color: #dc3545 !important;
-    }
-
-    .invalid-feedback {
-      color: #dc3545;
-      font-size: 0.9em;
-    }
-
-    .doc-thumb {
-      display: inline-block;
-      margin-right: 8px;
-    }
-
-    .pdf-thumb {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 60px;
-      height: 60px;
-      background: #f5f5f5;
-      border-radius: 4px;
-    }
-  </style>
 </head>
 
 <body>
@@ -42,9 +17,8 @@
   <div id="sidebarContainer"></div>
   <!-- Tenants Section -->
   <div class="tenants-section">
-    <!-- Tenants Label (separate container, small and blue) -->
+    <!-- Tenants Label (breadcrumb style) -->
     <div class="tenants-label-container mb-2">
-      <!-- Tenants Header (breadcrumb style, like Properties) -->
       <div class="tenants-header-top">
         <div class="breadcrumb-container" id="tenantsBreadcrumbContainer">
           <nav aria-label="breadcrumb">
@@ -114,6 +88,7 @@
       </div>
     </div>
 
+    <!-- Create Account Inline Form (hidden by default) -->
     <div id="createAccountInlineContainer" style="display: none">
       <div class="inline-form-container">
         <h3 class="inline-form-title">Create Tenant Account</h3>
@@ -284,12 +259,12 @@
                   <label for="emergencyRelationship">Relationship</label>
                   <select id="emergencyRelationship" name="emergencyRelationship">
                     <option value="">Select Relationship</option>
-                    <option value="parent">Parent</option>
-                    <option value="spouse">Spouse</option>
-                    <option value="sibling">Sibling</option>
-                    <option value="friend">Friend</option>
-                    <option value="colleague">Colleague</option>
-                    <option value="other">Other</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Friend">Friend</option>
+                    <option value="Colleague">Colleague</option>
+                    <option value="Other">Other</option>
                   </select>
                   <div class="invalid-feedback"></div>
                 </div>
@@ -437,6 +412,7 @@
       </button>
     </div>
 
+    <!-- Tenant Details Inline Form (hidden by default) -->
     <div id="tenantDetailsContainer">
       <div id="tenantDetailsInlineForm" class="inline-form-container tenant-details-wide" style="display:none;">
         <form id="editTenantForm" autocomplete="off">
@@ -448,6 +424,7 @@
               </div>
               <input type="file" id="editAvatarUpload" name="avatar" accept=".jpg,.jpeg,.png" style="display:none;">
               <div>
+                <input type="hidden" name="user_id" id="editUserId">
                 <h2 id="tenantNameDisplay" class="tenant-details-name">Tenant Details</h2>
                 <div class="tenant-details-contact"></div>
                 <div id="tenantEmailDisplay" class="tenant-details-email"></div>
@@ -500,9 +477,9 @@
                   <span class="tenant-details-value" data-field="gender"></span>
                   <select name="gender" class="tenant-details-input" style="display:none;">
                     <option value="">Select</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               </div>
@@ -595,6 +572,7 @@
                   <select name="status" class="tenant-details-input" style="display:none;">
                     <option value="ACTIVE">Active</option>
                     <option value="INACTIVE">Inactive</option>
+                    <option value="BANNED">Banned</option>
                   </select>
                 </div>
                 <div class="tenant-details-col">
@@ -608,31 +586,31 @@
               </div>
             </section>
           </div>
-          <div class="tenant-details-footer" style="display:none;">
-            <button type="button" class="modal-btn modal-btn-cancel"
-              onclick="toggleEditTenantForm(false)">Cancel</button>
-            <button type="submit" class="modal-btn modal-btn-success"><i class="fas fa-save"></i>Save Changes</button>
-          </div>
-        </form>
-        <div id="tenantIdFilesSection" class="tenant-id-files-section" style="margin: 24px 0 0 0;">
-          <h4>Tenant ID Files</h4>
 
-          <div id="tenantIdFilesList" class="tenant-id-files-list">
-            <!-- Files will be rendered here -->
+          <div id="tenantIdFilesSection" class="tenant-id-files-section" style="margin: 24px 0 0 0;">
+            <h4>Tenant ID Files</h4>
+            <div id="tenantIdFilesList" class="tenant-id-files-list">
+              <!-- Files will be rendered here -->
+            </div>
+            <div class="tenant-details-footer" style="display:none;">
+              <button type="button" class="modal-btn modal-btn-cancel"
+                onclick="toggleEditTenantForm(false)">Cancel</button>
+              <button type="submit" class="modal-btn modal-btn-success"><i class="fas fa-save"></i>Save Changes</button>
+            </div>
           </div>
-        </div>
+
+        </form>
       </div>
     </div>
 
-    <!-- Grid View -->
+    <!-- Grid View (always present, shown/hidden by JS) -->
     <div id="gridView" class="tenants-grid">
       <!-- Tenant cards will be populated here -->
     </div>
 
-    <!-- List View -->
+    <!-- List View (always present, shown/hidden by JS) -->
     <div id="listView" class="tenants-list" style="display: none">
       <div class="list-header">
-
         <div class="list-col list-col-checkbox">
           <input type="checkbox" id="listSelectAll" onchange="toggleSelectAll()" />
         </div>
@@ -653,16 +631,11 @@
         </div>
         <div class="list-col list-col-actions">Actions</div>
       </div>
-
       <div id="listContainer"></div>
-
-
-
       <!-- Pagination -->
       <div id="pagination" class="pagination" style="display: none">
         <!-- Pagination will be populated here -->
       </div>
-
       <!-- Empty State -->
       <div id="emptyState" class="empty-state" style="display: none">
         <div class="empty-icon">
@@ -676,11 +649,12 @@
         </button>
       </div>
     </div>
+  </div>
 
-    <script src="/javascript/bootstrap.bundle.min.js"></script>
-    <script src="constants/constants.js"></script>
-    <script type="module" src="/javascript/tenants.js"></script>
-    <script src="/javascript/sidebar.js"></script>
+  <script src="/javascript/bootstrap.bundle.min.js"></script>
+  <script src="constants/constants.js"></script>
+  <script type="module" src="/javascript/tenants.js"></script>
+  <script src="/javascript/sidebar.js"></script>
 </body>
 
 </html>

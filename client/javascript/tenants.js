@@ -47,17 +47,19 @@ document.addEventListener("DOMContentLoaded", function () {
       statusBtn.classList.toggle("active");
     });
 
-  document.querySelectorAll('#statusFilterDropdown .dropdown-item').forEach(item => {
-  item.addEventListener('click', function() {
-    const value = this.getAttribute('data-value');
-    document.getElementById('statusFilter').value = value;
-    statusLabel.textContent = this.textContent;
-    statusDropdown.style.display = "none";
-    statusBtn.classList.remove("active");
-    // Set filter and trigger search
-        filterTenants();
+    document
+      .querySelectorAll("#statusFilterDropdown .dropdown-item")
+      .forEach((item) => {
+        item.addEventListener("click", function () {
+          const value = this.getAttribute("data-value");
+          document.getElementById("statusFilter").value = value;
+          statusLabel.textContent = this.textContent;
+          statusDropdown.style.display = "none";
+          statusBtn.classList.remove("active");
+          // Set filter and trigger search
+          filterTenants();
+        });
       });
-    });
 
     document.addEventListener("click", function () {
       statusDropdown.style.display = "none";
@@ -350,7 +352,8 @@ function sortTenants() {
   const statusFilter = document.getElementById("statusFilter");
 
   const filters = {};
-  if (searchInput && searchInput.value.trim()) filters.search = searchInput.value.trim();
+  if (searchInput && searchInput.value.trim())
+    filters.search = searchInput.value.trim();
   if (statusFilter && statusFilter.value) filters.status = statusFilter.value;
 
   if (currentSort) filters.sort = currentSort;
@@ -1081,6 +1084,113 @@ function generateAvatarHTML(tenant, size = "normal") {
   `;
 }
 
+// --- Real-time Inline Validation ---
+function validateName(input) {
+  if (!input.value.trim()) {
+    showError(input, "This field is required.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validateEmail(input) {
+  if (!input.value.trim() || !/^[^@]+@[^@]+\.[^@]+$/.test(input.value.trim())) {
+    showError(input, "Enter a valid email address.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validatePHMobile(input, required = false) {
+  if (!input.value.trim() && !required) {
+    clearError(input);
+    return true;
+  }
+  if (!/^(\+63|0)9\d{9}$/.test(input.value.trim())) {
+    showError(input, "Enter a valid PH mobile number.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validatePassword(input) {
+  if (!input.value || input.value.length < 8) {
+    showError(input, "Password must be at least 8 characters.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validateConfirmPassword(pwd, confirm) {
+  if (pwd.value !== confirm.value) {
+    showError(confirm, "Passwords do not match.");
+    return false;
+  }
+  clearError(confirm);
+  return true;
+}
+function validateBirthdate(input) {
+  if (!input.value) {
+    clearError(input);
+    return true;
+  }
+  const bday = new Date(input.value);
+  const today = new Date();
+  const age =
+    today.getFullYear() -
+    bday.getFullYear() -
+    (today < new Date(today.getFullYear(), bday.getMonth(), bday.getDate())
+      ? 1
+      : 0);
+  if (age < 18) {
+    showError(input, "Tenant must be at least 18 years old.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+
+function validateHouseNo(input) {
+  if (!input.value.trim()) {
+    showError(input, "This field is required.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validateStreet(input) {
+  if (!input.value.trim()) {
+    showError(input, "This field is required.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validateCity(input) {
+  if (!input.value.trim()) {
+    showError(input, "This field is required.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validateProvince(input) {
+  if (!input.value.trim()) {
+    showError(input, "This field is required.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+function validateZipCode(input) {
+  if (!input.value.trim()) {
+    showError(input, "This field is required.");
+    return false;
+  }
+  clearError(input);
+  return true;
+}
+
 function setupCreateAccountInlineForm() {
   const form = document.getElementById("createAccountForm");
   if (!form) return;
@@ -1248,75 +1358,6 @@ function setupCreateAccountInlineForm() {
     form.emergencyNumber.addEventListener("input", function (e) {
       e.target.value = e.target.value.replace(/[^0-9\+]/g, "");
     });
-
-  // --- Real-time Inline Validation ---
-  function validateName(input) {
-    if (!input.value.trim()) {
-      showError(input, "This field is required.");
-      return false;
-    }
-    clearError(input);
-    return true;
-  }
-  function validateEmail(input) {
-    if (
-      !input.value.trim() ||
-      !/^[^@]+@[^@]+\.[^@]+$/.test(input.value.trim())
-    ) {
-      showError(input, "Enter a valid email address.");
-      return false;
-    }
-    clearError(input);
-    return true;
-  }
-  function validatePHMobile(input, required = false) {
-    if (!input.value.trim() && !required) {
-      clearError(input);
-      return true;
-    }
-    if (!/^(\+63|0)9\d{9}$/.test(input.value.trim())) {
-      showError(input, "Enter a valid PH mobile number.");
-      return false;
-    }
-    clearError(input);
-    return true;
-  }
-  function validatePassword(input) {
-    if (!input.value || input.value.length < 8) {
-      showError(input, "Password must be at least 8 characters.");
-      return false;
-    }
-    clearError(input);
-    return true;
-  }
-  function validateConfirmPassword(pwd, confirm) {
-    if (pwd.value !== confirm.value) {
-      showError(confirm, "Passwords do not match.");
-      return false;
-    }
-    clearError(confirm);
-    return true;
-  }
-  function validateBirthdate(input) {
-    if (!input.value) {
-      clearError(input);
-      return true;
-    }
-    const bday = new Date(input.value);
-    const today = new Date();
-    const age =
-      today.getFullYear() -
-      bday.getFullYear() -
-      (today < new Date(today.getFullYear(), bday.getMonth(), bday.getDate())
-        ? 1
-        : 0);
-    if (age < 18) {
-      showError(input, "Tenant must be at least 18 years old.");
-      return false;
-    }
-    clearError(input);
-    return true;
-  }
 
   form.firstName.addEventListener("input", () => validateName(form.firstName));
   form.lastName.addEventListener("input", () => validateName(form.lastName));
@@ -1629,39 +1670,42 @@ async function openTenantDetailsInlineForm(tenantId) {
     if (!response.ok) throw new Error("Failed to fetch tenant details");
     const tenant = await response.json();
 
-    // Populate form fields with tenant data
+    window.currentTenantFiles = (tenant.tenant_id_files || []).map((f) => ({
+      ...f,
+    }));
+
     populateEditTenantFormWithFullData(tenant);
 
-    // Render tenant ID files if present
-    renderTenantIdFiles(tenant.tenant_id_files || []);
+    renderTenantIdFiles(window.currentTenantFiles, false);
 
-    // Set view mode (not editable)
     setTenantDetailsEditMode(false);
   } catch (err) {
-    alert("Failed to load tenant details.");
+    showTenantSnackbar("Failed to load tenant details.", "error");
     closeTenantDetailsInlineForm();
   }
 }
 
-function renderTenantIdFiles(files) {
+/**
+ * Render tenant ID files and upload UI in edit mode.
+ * @param {Array} files
+ * @param {boolean} editable
+ */
+function renderTenantIdFiles(files, editable = false) {
   const container = document.getElementById("tenantIdFilesList");
   if (!container) return;
   container.innerHTML = "";
-
-  if (!files.length) {
-    container.innerHTML = "<div>No ID files uploaded.</div>";
-    return;
-  }
 
   // Start the list wrapper
   const listDiv = document.createElement("div");
   listDiv.className = "tenant-id-files-list";
 
-  files.forEach((file) => {
+  // Render existing files with remove button if editable
+  files.forEach((file, idx) => {
     const ext = file.id_url.split(".").pop().toLowerCase();
     const fileName = file.id_url.split("/").pop();
     let fileThumb = document.createElement("div");
     fileThumb.className = "tenant-id-file-thumb";
+    fileThumb.style.position = "relative";
 
     if (["jpg", "jpeg", "png"].includes(ext)) {
       fileThumb.innerHTML = `
@@ -1681,8 +1725,66 @@ function renderTenantIdFiles(files) {
         <a href="${file.id_url}" target="_blank">${fileName}</a>
       `;
     }
+
+    // Add remove button if editable
+    if (editable) {
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "remove-doc-btn";
+      removeBtn.title = "Remove";
+      removeBtn.innerHTML = `<i class="fas fa-times"></i>`;
+      removeBtn.style.position = "absolute";
+      removeBtn.style.top = "8px";
+      removeBtn.style.right = "8px";
+      removeBtn.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        files.splice(idx, 1);
+        renderTenantIdFiles(files, true);
+      };
+      fileThumb.appendChild(removeBtn);
+    }
+
     listDiv.appendChild(fileThumb);
   });
+
+  // Add upload thumbnail if editable
+  if (editable) {
+  const uploadThumb = document.createElement("div");
+  uploadThumb.className = "tenant-id-file-thumb";
+  uploadThumb.style.display = "flex";
+  uploadThumb.style.alignItems = "center";
+  uploadThumb.style.justifyContent = "center";
+  uploadThumb.style.cursor = "pointer";
+  uploadThumb.innerHTML = `
+    <label style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;">
+      <i class="fas fa-plus" style="font-size:2rem;color:#2563eb;"></i>
+      <span style="font-size:0.95rem;color:#2563eb;">Add ID File</span>
+      <input type="file" id="editTenantIdFileInput" accept="image/*,application/pdf" style="display:none" multiple>
+    </label>
+  `;
+  // Handle file input
+  uploadThumb.querySelector("input").addEventListener("change", function (e) {
+    const newFiles = Array.from(e.target.files);
+    newFiles.forEach((file) => {
+      const ext = file.name.split(".").pop().toLowerCase();
+      let id_url = "";
+      if (["jpg", "jpeg", "png"].includes(ext)) {
+        id_url = URL.createObjectURL(file);
+      } else if (ext === "pdf") {
+        id_url = URL.createObjectURL(file);
+      }
+      files.push({
+        id_url,
+        name: file.name,
+        _file: file, // keep the File object for upload on save
+        _isNew: true // mark as new for preview
+      });
+    });
+    renderTenantIdFiles(files, true);
+  });
+  listDiv.appendChild(uploadThumb);
+}
 
   container.appendChild(listDiv);
 }
@@ -1764,6 +1866,8 @@ function populateEditTenantFormWithFullData(tenant) {
   document.querySelector('[data-field="role"]').textContent =
     tenant.role || "TENANT";
 
+
+
   // Set header
   renderEditAvatarPreview(tenant.avatar, tenant.first_name, tenant.last_name);
   document.getElementById("tenantNameDisplay").textContent =
@@ -1775,6 +1879,7 @@ function populateEditTenantFormWithFullData(tenant) {
   // Set input fields (for edit mode)
   const form = document.getElementById("editTenantForm");
   if (!form) return;
+  form.setAttribute("data-tenant-id", tenant.user_id || "");
   form.firstName.value = tenant.first_name || "";
   form.middleName.value = tenant.middle_name || "";
   form.lastName.value = tenant.last_name || "";
@@ -1804,19 +1909,76 @@ function populateEditTenantFormWithFullData(tenant) {
  * @param {boolean} editable
  */
 function setTenantDetailsEditMode(editable) {
-  // Show/hide value spans and input fields
   document.querySelectorAll(".tenant-details-value").forEach((el) => {
     el.style.display = editable ? "none" : "block";
   });
   document.querySelectorAll(".tenant-details-input").forEach((el) => {
     el.style.display = editable ? "block" : "none";
+    el.disabled = !editable;
   });
-  // Show/hide footer
-  document.querySelector(".tenant-details-footer").style.display = editable
-    ? "flex"
-    : "none";
-  // Disable edit/delete buttons in edit mode
-  document.getElementById("editUserBtn").disabled = editable;
+
+  // --- Avatar upload ---
+  const avatarUploadWrapper = document.getElementById("editAvatarUploadWrapper");
+  if (avatarUploadWrapper) {
+    avatarUploadWrapper.style.display = editable ? "block" : "none";
+  }
+
+  const roleInput = document.getElementById("editTenantForm")?.role;
+  if (roleInput) {
+    roleInput.disabled = true;
+    roleInput.style.background = "#f3f4f6";
+    roleInput.style.cursor = "not-allowed";
+  }
+
+  const countryInput = document.getElementById("editTenantForm")?.country;
+  if (countryInput) {
+    countryInput.disabled = true;
+    countryInput.style.background = "#f3f4f6";
+  }
+
+  const footer = document.querySelector(".tenant-details-footer");
+  if (footer) {
+    if (editable) {
+      footer.style.display = "flex";
+      footer.classList.add("sticky-footer");
+    } else {
+      footer.style.display = "none";
+      footer.classList.remove("sticky-footer");
+    }
+  }
+
+  const editBtn = document.getElementById("editUserBtn");
+  if (editBtn) editBtn.disabled = editable;
+
+  if (!editable) {
+    document
+      .querySelectorAll("#editTenantForm .is-invalid")
+      .forEach((el) => el.classList.remove("is-invalid"));
+    document
+      .querySelectorAll("#editTenantForm .invalid-feedback")
+      .forEach((el) => (el.textContent = ""));
+  }
+
+  if (window.currentTenantFiles) {
+    renderTenantIdFiles(window.currentTenantFiles, editable);
+  }
+
+  if (editable) {
+    const avatarInput = document.getElementById("editAvatarUpload");
+    const preview = document.getElementById("editAvatarPreview");
+    if (avatarInput && preview) {
+      avatarInput.addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            preview.innerHTML = `<img src="${e.target.result}" alt="Avatar Preview" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  }
 }
 
 /**
@@ -1874,6 +2036,246 @@ function closeTenantDetailsInlineForm() {
   }
 }
 
+async function handleEditTenantFormSubmit(e) {
+  e.preventDefault();
+  const form = document.getElementById("editTenantForm");
+  if (!form) return;
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.classList.add("btn-loading");
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner"></span>Saving...`;
+  }
+
+  const formData = new FormData();
+  formData.set("first_name", form.firstName.value);
+  formData.set("middle_name", form.middleName.value);
+  formData.set("last_name", form.lastName.value);
+  formData.set("suffix", form.suffix.value);
+  formData.set("birthdate", form.birthDate.value);
+  formData.set("gender", form.gender.value);
+  formData.set("email", form.email.value);
+  formData.set("phone_number", form.phoneNumber.value);
+  formData.set("alt_phone_number", form.altPhoneNumber.value);
+  formData.set("status", form.status.value);
+
+  // --- Address ---
+  const address = {
+    house_no: form.houseNo.value,
+    street_address: form.street.value,
+    city: form.city.value,
+    province: form.province.value,
+    zip_code: form.zipCode.value,
+    country: form.country.value,
+  };
+  formData.set("address", JSON.stringify(address));
+
+  // --- Emergency contacts ---
+  const emergency_contacts = [
+    {
+      contact_name: form.emergencyName.value,
+      contact_phone: form.emergencyNumber.value,
+      contact_relationship: form.emergencyRelationship.value,
+    },
+  ];
+  formData.set("emergency_contacts", JSON.stringify(emergency_contacts));
+
+  // --- Avatar: Only send if changed ---
+  const avatarInput = document.getElementById("editAvatarUpload");
+  if (avatarInput && avatarInput.files && avatarInput.files.length > 0) {
+    formData.set("avatar", avatarInput.files[0]);
+  }
+  // If not changed, do NOT set "avatar" at all
+
+  // --- Tenant ID Files: Always send all (existing + new) ---
+  let tenantIdFiles = [];
+  if (window.currentTenantFiles && window.currentTenantFiles.length > 0) {
+    // Existing files (no _file property)
+    tenantIdFiles = window.currentTenantFiles
+      .filter(f => f.id_url && !f._file)
+      .map(f => ({ id_url: f.id_url }));
+
+    // New files (with _file property)
+    window.currentTenantFiles
+      .filter(f => f._file)
+      .forEach(f => {
+        formData.append("tenant_id_file", f._file);
+        tenantIdFiles.push({ id_url: f.id_url }); // id_url is a blob URL, but backend will replace with real URL after upload
+      });
+  }
+  formData.set("tenant_id_files", JSON.stringify(tenantIdFiles));
+
+  try {
+    const tenantId = form.getAttribute("data-tenant-id") || formData.get("user_id");
+    const response = await fetch(`/api/v1/users/${tenantId}`, {
+      method: "PATCH",
+      body: formData,
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to update tenant");
+    showTenantSnackbar("Tenant updated successfully!", "success");
+    setTenantDetailsEditMode(false);
+    openTenantDetailsInlineForm(tenantId);
+  } catch (err) {
+    showTenantSnackbar("Failed to update tenant.", "error");
+  } finally {
+    if (submitBtn) {
+      submitBtn.classList.remove("btn-loading");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fas fa-save"></i>Save Changes`;
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const editForm = document.getElementById("editTenantForm");
+  if (editForm) {
+    editForm.addEventListener("submit", handleEditTenantFormSubmit);
+  }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  const editForm = document.getElementById("editTenantForm");
+  const saveBtn = editForm
+    ? editForm.querySelector('button[type="submit"]')
+    : null;
+  if (!editForm) return;
+  const requiredFields = [
+    editForm.firstName,
+    editForm.lastName,
+    editForm.email,
+    editForm.phoneNumber,
+    editForm.birthDate,
+    editForm.houseNo,
+    editForm.street,
+    editForm.city,
+    editForm.province,
+    editForm.zipCode,
+  ];
+
+  function validateAllFields() {
+    let allValid = true;
+    const editForm = document.getElementById("editTenantForm");
+    if (!editForm) return false;
+  
+    // Only validate fields that are visible and enabled
+    const visibleFields = Array.from(editForm.querySelectorAll("input, select")).filter(
+      (el) =>
+        el.offsetParent !== null && // visible
+        !el.disabled // enabled
+    );
+  
+    visibleFields.forEach((field) => {
+      switch (field.name) {
+        case "firstName":
+          if (!validateName(field)) allValid = false;
+          break;
+        case "lastName":
+          if (!validateName(field)) allValid = false;
+          break;
+        case "email":
+          if (!validateEmail(field)) allValid = false;
+          break;
+        case "phoneNumber":
+          if (!validatePHMobile(field, true)) allValid = false;
+          break;
+        case "birthDate":
+          if (!validateBirthdate(field)) allValid = false;
+          break;
+        case "houseNo":
+          if (!validateHouseNo(field)) allValid = false;
+          break;
+        case "street":
+          if (!validateStreet(field)) allValid = false;
+          break;
+        case "city":
+          if (!validateCity(field)) allValid = false;
+          break;
+        case "province":
+          if (!validateProvince(field)) allValid = false;
+          break;
+        case "zipCode":
+          // Only validate if required or not empty
+          if (field.required || field.value.trim() !== "") {
+            if (!validateZipCode(field)) allValid = false;
+          } else {
+            clearError(field);
+          }
+          break;
+        default:
+          break;
+      }
+    });
+  
+    const saveBtn = editForm.querySelector('button[type="submit"]');
+    if (saveBtn) saveBtn.disabled = !allValid;
+    return allValid;
+  }
+
+  // Attach validation events using existing functions
+  if (editForm.firstName)
+    editForm.firstName.addEventListener("input", function () {
+      validateName(editForm.firstName);
+      validateAllFields();
+    });
+  if (editForm.lastName)
+    editForm.lastName.addEventListener("input", function () {
+      validateName(editForm.lastName);
+      validateAllFields();
+    });
+  if (editForm.email)
+    editForm.email.addEventListener("input", function () {
+      validateEmail(editForm.email);
+      validateAllFields();
+    });
+  if (editForm.phoneNumber)
+    editForm.phoneNumber.addEventListener("input", function () {
+      validatePHMobile(editForm.phoneNumber, true);
+      validateAllFields();
+    });
+  if (editForm.birthDate)
+    editForm.birthDate.addEventListener("change", function () {
+      validateBirthdate(editForm.birthDate);
+      validateAllFields();
+    });
+  if (editForm.houseNo)
+    editForm.houseNo.addEventListener("input", function () {
+      validateHouseNo(editForm.houseNo);
+      validateAllFields();
+    });
+  if (editForm.street)
+    editForm.street.addEventListener("input", function () {
+      validateStreet(editForm.street);
+      validateAllFields();
+    });
+  if (editForm.city)
+    editForm.city.addEventListener("input", function () {
+      validateCity(editForm.city);
+      validateAllFields();
+    });
+  if (editForm.province)
+    editForm.province.addEventListener("input", function () {
+      validateProvince(editForm.province);
+      validateAllFields();
+    });
+  if (editForm.zipCode)
+    editForm.zipCode.addEventListener("input", function () {
+      validateZipCode(editForm.zipCode);
+      validateAllFields();
+    });
+
+  validateAllFields();
+
+  editForm.addEventListener("submit", function (e) {
+    let valid = validateAllFields();
+    if (!valid) {
+      e.preventDefault();
+      showTenantSnackbar("Please correct the highlighted fields.", "error");
+    }
+  });
+});
+
 setInterval(autoSaveFormData, 30000);
 
 window.toggleView = toggleView;
@@ -1897,3 +2299,4 @@ window.closeCreateAccountInline = closeCreateAccountInline;
 window.viewTenantDetails = viewTenantDetails;
 window.openTenantDetailsInlineForm = openTenantDetailsInlineForm;
 window.closeTenantDetailsInlineForm = closeTenantDetailsInlineForm;
+window.toggleEditTenantForm = toggleEditTenantForm;

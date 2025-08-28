@@ -38,7 +38,7 @@ router.patch(
   createUploadMiddleware({
     fields: [
       { name: 'avatar', maxCount: 1 },
-      { name: 'tenant_id_file', maxCount: 1 }
+      { name: 'tenant_id_file', maxCount: 4 }
     ],
     fieldFolders: {
       avatar: 'user_avatars',

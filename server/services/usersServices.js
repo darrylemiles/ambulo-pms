@@ -93,6 +93,15 @@ const createUser = async (userData = {}) => {
     }
   }
 
+  if (userData.birthdate instanceof Date) {
+    userData.birthdate = userData.birthdate.toISOString().split("T")[0];
+  } else if (
+    typeof userData.birthdate === "string" &&
+    userData.birthdate.includes("T")
+  ) {
+    userData.birthdate = userData.birthdate.split("T")[0];
+  }
+
   const user_id = uuidv4();
 
   const conn = await pool.getConnection();
@@ -229,7 +238,14 @@ const createUser = async (userData = {}) => {
 
 const getUsers = async (queryObj = {}) => {
   try {
-    const { page = 1, limit = 10, search, status, sort, ...otherFilters } = queryObj;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      sort,
+      ...otherFilters
+    } = queryObj;
     const skip = (page - 1) * limit;
 
     let query =
@@ -315,12 +331,7 @@ const getUsers = async (queryObj = {}) => {
         phone_number LIKE ?
       )`;
       const searchTerm = `%${search.trim()}%`;
-      countParams.push(
-        searchTerm,
-        searchTerm,
-        searchTerm,
-        searchTerm
-      );
+      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (status && status.trim() !== "") {
@@ -368,6 +379,10 @@ const getSingleUserById = async (user_id = "") => {
     }
     const user = userRows[0];
 
+    if (user.birthdate instanceof Date) {
+      user.birthdate = user.birthdate.toISOString().split("T")[0];
+    }
+
     // 2. Get address
     let address = null;
     if (user.user_address_id) {
@@ -406,44 +421,192 @@ const getSingleUserById = async (user_id = "") => {
 };
 
 const updateSingleUserById = async (user_id = "", userData = {}) => {
+  if (!user_id) throw new Error("User ID is required");
+
+  const conn = await pool.getConnection();
   try {
+    await conn.beginTransaction();
+
+    // 1. Get current user and address
     const user = await getSingleUserById(user_id);
 
-    const {
-      first_name,
-      last_name,
-      business_name,
-      business_type,
-      avatar,
-      email,
-      phone_number,
-      status,
-    } = userData || {};
+    // 2. Prepare user fields
+    const allowedFields = [
+      "first_name",
+      "middle_name",
+      "last_name",
+      "suffix",
+      "birthdate",
+      "gender",
+      "avatar",
+      "email",
+      "phone_number",
+      "alt_phone_number",
+      "status",
+      // "role"
+    ];
 
-    const updatedUser = {
-      first_name: first_name || user.first_name,
-      last_name: last_name || user.last_name,
-      business_name: business_name || user.business_name,
-      business_type: business_type || user.business_type,
-      avatar: avatar || user.avatar,
-      email: email || user.email,
-      phone_number: phone_number || user.phone_number,
-      status: status || user.status,
-    };
+    if (userData.birthdate instanceof Date) {
+      userData.birthdate = userData.birthdate.toISOString().split("T")[0];
+    } else if (
+      typeof userData.birthdate === "string" &&
+      userData.birthdate.includes("T")
+    ) {
+      userData.birthdate = userData.birthdate.split("T")[0];
+    }
 
-    const fields = Object.keys(updatedUser)
-      .map((key) => `${key} = ?`)
-      .join(", ");
-    const values = Object.values(updatedUser);
+    const updatedUser = {};
+    for (const key of allowedFields) {
+      if (userData[key] !== undefined && userData[key] !== null) {
+        updatedUser[key] = userData[key];
+      }
+    }
 
-    const query = `UPDATE users SET ${fields} WHERE user_id = ?`;
-    await pool.query(query, [...values, user_id]);
+    // 3. Update users table if needed
+    if (Object.keys(updatedUser).length > 0) {
+      const fields = Object.keys(updatedUser)
+        .map((key) => `\`${key}\` = ?`)
+        .join(", ");
+      const values = Object.values(updatedUser);
+      await conn.query(`UPDATE users SET ${fields} WHERE user_id = ?`, [
+        ...values,
+        user_id,
+      ]);
+    }
+
+    // 4. Update address if present
+    if (userData.address && user.user_address_id) {
+      let address = userData.address;
+      if (typeof address === "string") {
+        try {
+          address = JSON.parse(address);
+        } catch {
+          address = {};
+        }
+      }
+      const addressFields = [
+        "house_no",
+        "street_address",
+        "city",
+        "province",
+        "zip_code",
+        "country",
+      ];
+      const addressUpdate = {};
+      for (const key of addressFields) {
+        if (address[key] !== undefined && address[key] !== null) {
+          addressUpdate[key] = address[key];
+        }
+      }
+      if (Object.keys(addressUpdate).length > 0) {
+        const fields = Object.keys(addressUpdate)
+          .map((key) => `\`${key}\` = ?`)
+          .join(", ");
+        const values = Object.values(addressUpdate);
+        await conn.query(
+          `UPDATE user_addresses SET ${fields}, updated_at = NOW() WHERE user_address_id = ?`,
+          [...values, user.user_address_id]
+        );
+      }
+    }
+
+    // 5. Update emergency contacts
+    if (userData.emergency_contacts) {
+      let contacts = userData.emergency_contacts;
+      if (typeof contacts === "string") {
+        try {
+          contacts = JSON.parse(contacts);
+        } catch {
+          contacts = [];
+        }
+      }
+      // Remove old
+      await conn.query(
+        "DELETE FROM tenant_emergency_contacts WHERE user_id = ?",
+        [user_id]
+      );
+      // Insert new
+      for (const contact of contacts) {
+        if (
+          contact.contact_name ||
+          contact.contact_phone ||
+          contact.contact_relationship
+        ) {
+          await conn.query(
+            `INSERT INTO tenant_emergency_contacts (user_id, contact_name, contact_phone, contact_relationship, created_at, updated_at)
+             VALUES (?, ?, ?, ?, NOW(), NOW())`,
+            [
+              user_id,
+              contact.contact_name || "",
+              contact.contact_phone || "",
+              contact.contact_relationship || "",
+            ]
+          );
+        }
+      }
+    }
+
+    // 6. Update tenant ID files
+    if (userData.tenant_id_files) {
+      let newFiles = userData.tenant_id_files;
+      if (typeof newFiles === "string") {
+        try {
+          newFiles = JSON.parse(newFiles);
+        } catch {
+          newFiles = [];
+        }
+      }
+      const [currentRows] = await conn.query(
+        "SELECT id_url FROM tenant_ids WHERE user_id = ?",
+        [user_id]
+      );
+      const currentUrls = currentRows.map((f) => f.id_url);
+
+      const newUrls = newFiles.map((f) => f.id_url);
+
+      const toDelete = currentUrls.filter((url) => !newUrls.includes(url));
+      const toAdd = newFiles.filter((f) => !currentUrls.includes(f.id_url));
+
+      if (toDelete.length > 0) {
+        await conn.query(
+          `DELETE FROM tenant_ids WHERE user_id = ? AND id_url IN (${toDelete
+            .map(() => "?")
+            .join(",")})`,
+          [user_id, ...toDelete]
+        );
+      }
+      for (const file of toAdd) {
+        if (file && file.id_url) {
+          await conn.query(
+            `INSERT INTO tenant_ids (user_id, id_url, created_at)
+             VALUES (?, ?, NOW())`,
+            [user_id, file.id_url]
+          );
+        }
+      }
+    }
+
+    await conn.commit();
+    conn.release();
 
     return {
+      user: {
+        user_id: user.user_id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        phone_number: user.phone_number,
+        status: user.status,
+        role: user.role,
+        address: user.address,
+        emergency_contacts: user.emergency_contacts,
+        tenant_id_files: user.tenant_id_files,
+      },
       message: "User updated successfully",
-      userData: updatedUser,
     };
   } catch (error) {
+    await conn.rollback();
+    conn.release();
     console.error("Error updating user:", error);
     throw new Error(error.message || "Failed to update user");
   }

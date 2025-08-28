@@ -4059,12 +4059,18 @@ body {
 
 /* --- Tenant ID Files Section --- */
 .tenant-id-files-section {
+  position: relative;
+  height: 420px; /* Set a fixed height (adjust as needed) */
+  overflow-y: auto; /* Enable vertical scrolling */
+  min-height: 320px;
   background: #f8fafc;
   border-radius: 12px;
   padding: 32px 32px 24px 32px;
   margin-bottom: 0;
   box-shadow: 0 2px 8px #2563eb08;
   margin-top: 32px;
+  display: flex;
+  flex-direction: column;
 }
 
 .tenant-id-files-section h4 {
@@ -4076,11 +4082,13 @@ body {
 }
 
 .tenant-id-files-list {
+  flex: 1 1 auto;
   display: flex;
   gap: 32px;
   flex-wrap: wrap;
   align-items: flex-start;
   min-height: 120px;
+  margin-bottom: 24px;
 }
 
 .tenant-id-file-thumb {
@@ -4570,7 +4578,7 @@ body {
   font-size: 16px;
   color: #374151;
   cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-weight: 500;
   border-bottom: 1px solid #f3f4f6;
   background: #fff;
@@ -4601,7 +4609,7 @@ body {
 
 .status-filter-dropdown .dropdown-item::before,
 .sort-filter-dropdown .dropdown-item::before {
-  content: '';
+  content: "";
   display: block;
   width: 6px;
   height: 6px;
@@ -4625,7 +4633,7 @@ body {
 
 .status-filter-dropdown .dropdown-item[data-value="active"]::after,
 .status-filter-dropdown .dropdown-item[data-value="inactive"]::after {
-  content: '';
+  content: "";
   display: inline-block;
   width: 10px;
   height: 10px;
@@ -4638,4 +4646,78 @@ body {
 
 .status-filter-dropdown .dropdown-item[data-value="inactive"]::after {
   background: #ef4444;
+}
+
+.tenant-id-files-section {
+  position: relative;
+  min-height: 320px; /* adjust as needed for your layout */
+  /* If you want scrolling inside this section: */
+  /* max-height: 500px; overflow-y: auto; */
+}
+
+.tenant-details-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #fff;
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  z-index: 10;
+}
+
+.sticky-footer {
+  position: sticky;
+  bottom: 0;
+}
+
+.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+.invalid-feedback {
+  color: #dc3545;
+  font-size: 0.9em;
+}
+
+.doc-thumb {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.pdf-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+/* Fix for sticky footer inside tenant details */
+.tenant-details-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.tenant-details-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tenant-details-sections,
+#tenantIdFilesSection {
+  padding-bottom: 80px;
 }
