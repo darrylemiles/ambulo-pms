@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/contentManagement.css">
+    <title>Content Management</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div id="sidebarContainer"></div>
+
+        <div class="container">
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="content-title">Content Management</h1>
+                <p class="content-subtitle">Manage your listing content</p>
+                <p class="content-description">
+                    Choose a category below to manage different aspects of your website content.
+                </p>
+            </div>
+
+            <div class="categories-grid">
+                <a href="#" class="category-card" onclick="navigateToCategory(event, 'company-information')">
+                    <div class="category-arrow"></div>
+                    <div class="category-icon"><i class="fa-solid fa-building"></i></div>
+                    <h3 class="category-title">Company Information</h3>
+                    <p class="category-description">
+                        Manage your company details including name, logo, contact information, and business profile.
+                    </p>
+                    <div class="category-features">
+                        <span class="feature-badge">Company Name</span>
+                        <span class="feature-badge">Logo</span>
+                        <span class="feature-badge">Contact Info</span>
+                    </div>
+                </a>
+
+                <a href="#" class="category-card" onclick="navigateToCategory(event, 'building-addresses')">
+                    <div class="category-arrow"></div>
+                    <div class="category-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <h3 class="category-title">Building Addresses</h3>
+                    <p class="category-description">
+                        Add, edit, and remove building addresses for your property listings.
+                    </p>
+                    <div class="category-features">
+                        <span class="feature-badge">Add</span>
+                        <span class="feature-badge">Edit</span>
+                        <span class="feature-badge">Remove</span>
+                    </div>
+                </a>
+
+                <a href="#" class="category-card" onclick="navigateToCategory(event, 'faqs')">
+                    <div class="category-arrow"></div>
+                    <div class="category-icon"><i class="fa-solid fa-circle-question"></i></div>
+                    <h3 class="category-title">FAQs</h3>
+                    <p class="category-description">
+                        Manage frequently asked questions to help your customers find answers quickly.
+                    </p>
+                    <div class="category-features">
+                        <span class="feature-badge">Questions</span>
+                        <span class="feature-badge">Answers</span>
+                        <span class="feature-badge">Categories</span>
+                    </div>
+                </a>
+
+                <a href="#" class="category-card" onclick="navigateToCategory(event, 'website-content')">
+                    <div class="category-arrow"></div>
+                    <div class="category-icon"><i class="fa-solid fa-house"></i></div>
+                    <h3 class="category-title">Website Content</h3>
+                    <p class="category-description">
+                        Manage display images, text-based content, and other website materials.
+                    </p>
+                    <div class="category-features">
+                        <span class="feature-badge">Images</span>
+                        <span class="feature-badge">Text Content</span>
+                        <span class="feature-badge">Media</span>
+                    </div>
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script src="/javascript/contentManagement.js"></script>
+    <script src="/javascript/sidebar.js"></script>
+</body>
+</html>

@@ -13,9 +13,9 @@
             <div class="logo">Ambulo Properties</div>
             <ul class="nav-links" id="navLinks">
                 <li><a href="/tenantDashboard.html" class="active">Dashboard</a></li>
-                <li><a href="#leaseTenant">Lease</a></li>
+                <li><a href="/leaseTenant.html">Lease</a></li>
                 <li><a href="/documentsTenant.html">Documents</a></li>
-                <li><a href="#paymentsTenant">Payments</a></li>
+                <li><a href="/paymentTenant.html">Payments</a></li>
                 <li><a href="/maintenanceTenant.html">Maintenance</a></li>
             </ul>
             
@@ -25,7 +25,26 @@
                     <input type="text" placeholder="Search Anything...">
                 </div>
                 <button class="icon notification">🔔</button>
-                <button class="icon inbox">✉️</button>
+                
+                <!-- Inbox with Dropdown -->
+                <div class="inbox-dropdown">
+                    <button class="icon inbox" id="inboxBtn">✉️</button>
+                    <div class="inbox-dropdown-menu" id="inboxDropdown">
+                        <div class="inbox-header">
+                            <div class="inbox-header-content">
+                                <h3 class="inbox-title">Messages</h3>
+                                <span class="inbox-badge" id="inboxBadge">4 New</span>
+                            </div>
+                        </div>
+                        <div class="inbox-content" id="inboxContent">
+                            <!-- Messages will be populated here -->
+                        </div>
+                        <div class="inbox-footer">
+                            <a href="/messages.html" class="view-all-btn">View All Messages</a>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="profile-dropdown">
                     <button class="profile" id="profileBtnIcon">R</button>
                     <div class="dropdown-menu" id="dropdownMenu">

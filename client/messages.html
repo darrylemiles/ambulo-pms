@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Font Awesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/messages.css">
+    <title>Messages</title>
+</head>
+<body>
+    <div id="navbar-tenant-placeholder"></div>
+        <!-- Main Content -->
+    <div class="messages-container">
+        <!-- Header Section -->
+        <div class="messages-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>Messages</h1>
+                    <div class="header-stats">
+                        <div class="stat-item unread">
+                            <div class="stat-dot unread"></div>
+                            <span id="unreadCount">4 Unread</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-dot"></div>
+                            <span id="totalCount">15 Total</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="messages-controls">
+            <div class="control-group">
+                <div class="select-all-container">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    <label for="selectAll">Select All</label>
+                </div>
+                <button class="filter-btn active" data-filter="all">All Messages</button>
+                <button class="filter-btn" data-filter="unread">Unread</button>
+                <button class="filter-btn" data-filter="urgent">Urgent</button>
+                <button class="filter-btn" data-filter="maintenance">Maintenance</button>
+                <button class="filter-btn" data-filter="lease">Lease</button>
+            </div>
+            <div class="control-group">
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Search messages..." id="searchInput">
+                </div>
+                <div class="bulk-actions" id="bulkActions" style="display: none;">
+                    <button class="action-btn success" onclick="markSelectedAsRead()" id="markReadBtn">
+                        ✓ Mark as Read
+                    </button>
+                    <button class="action-btn secondary" onclick="replyToSelected()" id="replyBtn">
+                        <i class="fa-solid fa-message"></i> Reply to Selected
+                    </button>
+                    <button class="action-btn" onclick="deleteSelected()" id="deleteBtn">
+                        <i class="fa-solid fa-trash"></i> Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages List -->
+        <div class="messages-list" id="messagesList">
+            <!-- Messages will be populated here -->
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination">
+            <!-- Pagination will be populated here -->
+        </div>
+    </div>
+
+    <!-- Message View Modal -->
+    <div class="message-view-modal" id="messageViewModal">
+        <div class="message-view-content">
+            <div class="message-view-header">
+                <h3 class="message-view-title">Message Details</h3>
+                <button class="message-view-close" onclick="closeMessageView()">×</button>
+            </div>
+            <div class="message-view-body">
+                <div class="message-view-info">
+                    <div>
+                        <div class="message-view-sender" id="viewSender">Property Manager</div>
+                        <div class="message-view-date" id="viewDate">2024-08-26 14:30</div>
+                    </div>
+                </div>
+                <h2 id="viewSubject" style="margin-bottom: 16px; color: #1a1f23;">Message Subject</h2>
+                <div class="message-view-text" id="viewText">
+                    <!-- Message content will be populated here -->
+                </div>
+            </div>
+            <div class="message-view-actions">
+                <button class="modal-btn secondary" onclick="markAsReadFromView()">Mark as Read</button>
+                <button class="modal-btn secondary" onclick="deleteFromView()">Delete</button>
+                <button class="modal-btn secondary" onclick="closeMessageView()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reply Modal -->
+    <div class="modal-overlay" id="replyModal">
+        <div class="reply-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Reply to Message</h3>
+                <button class="modal-close" onclick="closeReplyModal()">×</button>
+            </div>
+            <div class="modal-content">
+                <div class="original-message" id="originalMessage">
+                    <!-- Original message will be populated here -->
+                </div>
+                <form class="reply-form" onsubmit="sendReply(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="replySubject">Subject</label>
+                        <input type="text" id="replySubject" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="replyMessage">Your Reply</label>
+                        <div class="compose-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="formatText('bold')" title="Bold">
+                                <strong>B</strong>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('italic')" title="Italic">
+                                <em>I</em>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="formatText('underline')" title="Underline">
+                                <u>U</u>
+                            </button>
+                            <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                            <button type="button" class="toolbar-btn" onclick="insertList('ul')" title="Bullet List">
+                                • List
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertList('ol')" title="Numbered List">
+                                1. List
+                            </button>
+                            <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                            <button type="button" class="toolbar-btn" onclick="insertTemplate('greeting')" title="Insert Greeting">
+                                👋 Greeting
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertTemplate('signature')" title="Insert Signature">
+                                ✍️ Signature
+                            </button>
+                        </div>
+                        <textarea 
+                            id="replyMessage" 
+                            class="form-input compose-textarea" 
+                            placeholder="Type your reply here..." 
+                            required
+                            oninput="updateCharacterCount()"
+                            maxlength="2000"
+                        ></textarea>
+                        <div class="compose-footer">
+                            <div class="compose-options">
+                                <div class="compose-option">
+                                    <input type="checkbox" id="markUrgent">
+                                    <label for="markUrgent">Mark as urgent</label>
+                                </div>
+                                <div class="compose-option">
+                                    <input type="checkbox" id="requestReceipt">
+                                    <label for="requestReceipt">Request read receipt</label>
+                                </div>
+                                <div class="compose-option">
+                                    <input type="checkbox" id="followUp">
+                                    <label for="followUp">Follow up in 3 days</label>
+                                </div>
+                            </div>
+                            <div class="character-count" id="characterCount">
+                                0 / 2000 characters
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="saveDraft()">Save Draft</button>
+                <button class="modal-btn secondary" onclick="closeReplyModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="sendReply(event)">Send Reply</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/javascript/navbarTenant.js"></script>
+    <script src="/javascript/messages.js"></script>
+</body>
+</html>

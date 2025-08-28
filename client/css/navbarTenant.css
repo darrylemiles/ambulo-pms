@@ -19,11 +19,9 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
         
-
         .header-right {
             display: flex;
             align-items: center;
-
         }
 
         .search-bar {
@@ -251,6 +249,224 @@
             transform: translateY(-2px);
         }
 
+        /* Inbox Dropdown Styles */
+        .inbox-dropdown {
+            position: relative;
+        }
+
+        .inbox-dropdown-menu {
+            position: absolute;
+            top: 120%;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
+            width: 450px;
+            max-height: 600px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-15px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .inbox-dropdown-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .inbox-header {
+            padding: 20px 24px 16px;
+            background: linear-gradient(135deg, #2c4a6b 0%, #3d5e86 100%);
+            border-radius: 12px 12px 0 0;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .inbox-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .inbox-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .inbox-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            letter-spacing: -0.2px;
+        }
+
+        .inbox-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .inbox-content {
+            max-height: 380px;
+            overflow-y: auto;
+            background: #fafbfc;
+        }
+
+        .inbox-item {
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            position: relative;
+        }
+
+        .inbox-item:hover {
+            background: #f8f9fb;
+            transform: translateX(0.5px);
+            box-shadow: inset 4px 0 0 #2c4a6b;
+        }
+
+        .inbox-item.unread {
+            background: linear-gradient(90deg, #f0f8ff 0%, #ffffff 100%);
+            border-left: 4px solid #2c4a6b;
+            box-shadow: 0 2px 8px rgba(44, 74, 107, 0.08);
+        }
+
+        .inbox-item.unread:hover {
+            background: linear-gradient(90deg, #e6f3ff 0%, #f8f9fb 100%);
+        }
+
+        .inbox-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .inbox-sender-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .inbox-sender {
+            font-weight: 700;
+            color: #1a1f23;
+            font-size: 15px;
+            letter-spacing: -0.1px;
+        }
+
+        .inbox-priority {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff6b6b;
+        }
+
+        .inbox-priority.medium {
+            background: #ffa726;
+        }
+
+        .inbox-priority.low {
+            background: #66bb6a;
+        }
+
+        .inbox-time {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+            background: #f1f3f5;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .inbox-subject {
+            font-size: 15px;
+            color: #2d3748;
+            margin-bottom: 6px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .inbox-preview {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .inbox-footer {
+            padding: 16px 24px;
+            background: white;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            text-align: center;
+        }
+
+        .view-all-btn {
+            color: #2c4a6b;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(44, 74, 107, 0.08) 0%, rgba(61, 94, 134, 0.08) 100%);
+        }
+
+        .view-all-btn:hover {
+            background: linear-gradient(135deg, #2c4a6b 0%, #3d5e86 100%);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(44, 74, 107, 0.3);
+        }
+
+        .empty-inbox {
+            padding: 60px 24px;
+            text-align: center;
+            color: #6c757d;
+            background: white;
+        }
+
+        .empty-inbox-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-inbox-text {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .empty-inbox-subtext {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
         .profile-dropdown {
             position: relative;
         }
@@ -399,6 +615,10 @@
 
             .mobile-toggle.active span:nth-child(3) {
                 transform: rotate(45deg) translate(-5px, -6px);
+            }
+
+            .inbox-dropdown-menu {
+                width: 380px;
             }
         }
 

@@ -5,44 +5,84 @@
         }
 
         body {
-            font-family: Poppins, sans-serif;
-            background: #9dbebe;
-            display: flex;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             overflow-x: hidden;
         }
-        
 
+        /* Header */
+        .header .container {
+            max-width: 100%;
+            margin-left: 0;
+            padding-left: 2rem;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 3rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-20px, -20px) rotate(360deg); }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            text-align: left;  
+            margin-left: 0;         
+            padding-left: 2rem;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.2rem;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        /* Main Content */
         .main-content {
-            flex: 1;
             padding: 30px;
             overflow-y: auto;
-            transition: margin-left 0.3s ease;
         }
-
-        .main-content.sidebar-hidden {
-            margin-left: 0;
-        }
-
-        .main-content.sidebar-collapsed {
-            margin-left: 80px;
-        }
-
 
         .dashboard-container {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
+            grid-template-columns: 2fr 2fr 2fr 2fr;
             grid-template-rows: auto auto auto;
             gap: 25px;
             max-width: 100%;
         }
 
-        .title-section h1{
-            font-size: 50px;
-            font-weight: 700px;
-            color: #1e293b;
-            margin-bottom: 25px;
-        }
         /* Calendar column container */
         .calendar-column {
             display: flex;
@@ -50,7 +90,7 @@
             gap: 25px;
         }
 
-        /* Bottom cards container - inline layout */
+        /* Bottom cards container */
         .bottom-cards-container {
             grid-column: 1 / -1;
             display: grid;
@@ -59,16 +99,30 @@
         }
 
         .card {
-            background: white;
-            border-radius: 16px;
-            padding: 18px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            border: 1px solid #f1f5f9;
+            position: relative;
+            overflow: hidden;
         }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
         .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
         }
 
         .card-header {
@@ -76,27 +130,31 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 25px;
+            position: relative;
+            z-index: 2;
         }
 
         .card-title {
             font-size: 20px;
-            font-weight: 600;
-            color: #64748b;
+            font-weight: 700;
+            color: #1f2937;
         }
 
         .see-all {
-            color: #3b82f6;
+            color: #667eea;
             font-size: 16px;
             text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
         .see-all:hover {
-            color: #2563eb;
+            color: #764ba2;
+            transform: translateX(3px);
         }
 
-        /* Calendar Card - No span needed now */
+        /* Calendar Card */
         .calendar-card {
             flex: 1;
             min-height: 500px;
@@ -111,8 +169,8 @@
 
         .month-title {
             font-size: 20px;
-            font-weight: 600;
-            color: #64748b;
+            font-weight: 700;
+            color: #1f2937;
         }
 
         .month-nav {
@@ -121,38 +179,41 @@
         }
 
         .nav-btn {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            width: 40px;
-            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            width: 45px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             font-size: 18px;
-            color: #64748b;
+            color: white;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .nav-btn:hover {
-            background: #e2e8f0;
-            color: #1e293b;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
 
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
+            gap: 4px;
             margin-bottom: 25px;
         }
 
         .day-header {
             text-align: center;
             font-size: 14px;
-            font-weight: 600;
-            color: #64748b;
+            font-weight: 700;
+            color: #6b7280;
             padding: 12px 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .day {
@@ -160,47 +221,63 @@
             padding: 12px 4px;
             font-size: 16px;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 12px;
             transition: all 0.3s ease;
-            color: #1e293b;
-            min-height: 40px;
+            color: #1f2937;
+            min-height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: 600;
         }
 
         .day:hover {
-            background: #f1f5f9;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            transform: scale(1.1);
         }
 
         .day.today {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .rent-payment {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 15px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 16px;
             padding: 25px;
             margin-top: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rent-payment::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
         }
 
         .payment-label {
             font-size: 16px;
-            color: #64748b;
+            color: #6b7280;
             margin-bottom: 10px;
+            font-weight: 600;
         }
 
         .payment-amount {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
-            color: #1e293b;
+            color: #667eea;
             margin-bottom: 20px;
         }
 
         .pay-now-btn {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
             padding: 15px 30px;
@@ -210,36 +287,187 @@
             font-weight: 600;
             transition: all 0.3s ease;
             float: right;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pay-now-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .pay-now-btn:hover::before {
+            left: 100%;
         }
 
         .pay-now-btn:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
 
+        /* Maintenance, Transaction, Announcement Items */
+        .maintenance-item,
+        .transaction-item,
         .announcement-item {
             display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            background: #f8fafc;
-            border-radius: 15px;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.03), rgba(118, 75, 162, 0.03));
+            border-radius: 16px;
             transition: all 0.3s ease;
-            border-left: 4px solid #3b82f6;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            overflow: hidden;
+            gap: 10px;
         }
 
-        .announcement-item:hover {
-            background: #e2e8f0;
-            transform: translateX(3px);
+        /* Left section: icon + text */
+        .item-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1; /* take up remaining space */
+            min-width: 0; /* prevents overflow */
         }
 
+        .item-content p {
+            margin: 0;
+            word-break: break-word;
+        }
+
+        /* Right section: status */
+        .item-status {
+            white-space: nowrap; /* keeps status in one line */
+            font-weight: 600;
+            text-align: right;
+            flex-shrink: 0; /* prevent shrinking */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .maintenance-item,
+            .transaction-item,
+            .announcement-item {
+                flex-direction: row; /* keep left vs right */
+                align-items: flex-start;
+            }
+
+            .item-content {
+                flex-direction: column; /* stack icon + text */
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .maintenance-item,
+            .transaction-item,
+            .announcement-item {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+        }
+
+
+        .maintenance-item::before, .transaction-item::before, .announcement-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+        }
+
+        .maintenance-item:hover, .transaction-item:hover, .announcement-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateX(5px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        }
+
+        .maintenance-icon, .transaction-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-right: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .maintenance-details, .transaction-details {
+            flex: 1;
+        }
+
+        .maintenance-type, .transaction-type {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .maintenance-id {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .maintenance-issue {
+            font-size: 15px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .transaction-date {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .status, .transaction-category {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 15px;
+        }
+
+        .status.processing, .transaction-category.maintenance {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .status.done, .transaction-category.payment {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Announcement items */
         .announcement-icon {
-            width: 8px;
-            height: 8px;
-            background: #3b82f6;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 50%;
             margin-top: 8px;
+            margin-right: 20px;
             flex-shrink: 0;
         }
 
@@ -249,235 +477,56 @@
 
         .announcement-date {
             font-size: 14px;
-            color: #64748b;
+            color: #6b7280;
             margin-bottom: 5px;
+            font-weight: 600;
         }
 
         .announcement-text {
             font-size: 16px;
-            color: #1e293b;
-            font-weight: 500;
-        }
-
-        /* Transaction items - Larger */
-        .transaction-item {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            margin: 12px 0;
-            background: #f8fafc;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .transaction-item:hover {
-            background: #e2e8f0;
-            transform: translateX(3px);
-        }
-
-        .transaction-icon {
-            width: 55px;
-            height: 55px;
-            border-radius: 15px;
-            background: #3b82f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: white;
-            font-size: 22px;
-            flex-shrink: 0;
-        }
-
-        .transaction-details {
-            flex: 1;
-        }
-
-        .transaction-type {
-            font-size: 16px;
+            color: #1f2937;
             font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 5px;
         }
 
-        .transaction-date {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .transaction-category {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-left: auto;
-        }
-
-        .payment {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .maintenance {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        /* Maintenance items - Larger */
-        .maintenance-item {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            margin: 12px 0;
-            background: #f8fafc;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .maintenance-item:hover {
-            background: #e2e8f0;
-            transform: translateX(3px);
-        }
-
-        .maintenance-icon {
-            width: 55px;
-            height: 55px;
-            background: #3b82f6;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 22px;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-
-        .maintenance-details {
-            flex: 1;
-        }
-
-        .maintenance-type {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 3px;
-        }
-
-        .maintenance-id {
-            font-size: 13px;
-            color: #64748b;
-            margin-bottom: 5px;
-        }
-
-        .maintenance-issue {
-            font-size: 16px;
-            color: #1e293b;
-        }
-
-        .status {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-left: 15px;
-        }
-
-        .status.processing {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status.done {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        /* Empty State - Larger */
+        /* Empty State */
         .no-records {
             text-align: center;
-            color: #64748b;
+            color: #6b7280;
             font-style: italic;
             padding: 50px;
-            font-size: 18px;
+            font-size: 16px;
+            font-weight: 500;
         }
 
         .reminder-content {
             font-size: 16px;
-            color: #64748b;
+            color: #6b7280;
+            font-weight: 500;
         }
 
-        /* Responsive grid adjustments */
-        @media (max-width: 1600px) {
-            .dashboard-container {
-                grid-template-columns: 1.5fr 1fr 1fr;
-                grid-template-rows: auto auto auto;
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
             }
-            
-            .calendar-card {
-                grid-row: span 3;
-            }
-            
-            .bottom-cards-container {
-                grid-template-columns: 1fr;
-                gap: 20px;
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        @media (max-width: 1400px) {
-            .dashboard-container {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto;
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
             }
-            
-            .calendar-card {
-                grid-row: span 2;
-            }
-            
-            .bottom-cards-container {
-                grid-template-columns: 1fr 1fr 1fr;
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 20px;
-                margin-left: 0;
-            }
-            
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .dashboard-container {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .calendar-card {
-                grid-row: span 1;
-            }
-            
-            .card {
-                padding: 20px;
-            }
-            
-            .header {
-                flex-direction: column;
-                gap: 20px;
-                align-items: flex-start;
-            }
-            
-            .search-bar input {
-                width: 280px;
-            }
-        }
-
-        /* Animation delays */
         .card:nth-child(1) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.1s; }
         .card:nth-child(2) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.2s; }
         .card:nth-child(3) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.3s; }
@@ -485,13 +534,264 @@
         .card:nth-child(5) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.5s; }
         .card:nth-child(6) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.6s; }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
+        /* Enhanced Responsive Design */
+        @media (max-width: 1600px) {
+            .dashboard-container {
+                grid-template-columns: 2fr 1fr 1fr;
+                gap: 20px;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            
+            .bottom-cards-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            
+            .calendar-column {
+                grid-row: span 2;
+            }
+            
+            .bottom-cards-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .main-content {
+                padding: 25px 20px;
+            }
+
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .calendar-column {
+                grid-row: span 1;
+            }
+            
+            .bottom-cards-container {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 2.2rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px 15px;
+            }
+            
+            .header {
+                padding: 1.5rem 0;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+                margin-bottom: 8px;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .dashboard-container {
+                gap: 15px;
+            }
+            
+            .card {
+                padding: 1.2rem;
+            }
+            
+            .bottom-cards-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .maintenance-icon, .transaction-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+                margin-right: 15px;
+            }
+
+            .payment-amount {
+                font-size: 24px;
+            }
+
+            .card-title {
+                font-size: 18px;
+            }
+
+            .maintenance-item, .transaction-item, .announcement-item {
+                padding: 15px;
+                margin: 10px 0;
+            }
+
+            .calendar-grid {
+                gap: 3px;
+            }
+
+            .day {
+                min-height: 40px;
+                font-size: 15px;
+            }
+
+            .nav-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .see-all {
+                font-size: 14px;
+            }
+
+            .maintenance-type, .transaction-type {
+                font-size: 15px;
+            }
+
+            .maintenance-issue {
+                font-size: 14px;
+            }
+
+            .announcement-text {
+                font-size: 15px;
+            }
+
+            .pay-now-btn {
+                width: 100%;
+                float: none;
+                margin-top: 10px;
+            }
+
+            .rent-payment {
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .subtitle {
+                font-size: 0.9rem;
+            }
+
+            .main-content {
+                padding: 15px 10px;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            .card-title {
+                font-size: 16px;
+            }
+
+            .calendar-grid {
+                gap: 2px;
+            }
+
+            .day {
+                min-height: 35px;
+                font-size: 14px;
+                padding: 8px 2px;
+            }
+
+            .day-header {
+                font-size: 12px;
+                padding: 8px 2px;
+            }
+
+            .maintenance-icon, .transaction-icon {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .maintenance-item, .transaction-item, .announcement-item {
+                padding: 12px;
+            }
+
+            .status, .transaction-category {
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+
+            .payment-amount {
+                font-size: 22px;
+            }
+
+            .nav-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+
+            .month-title {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .card {
+                padding: 0.8rem;
+            }
+
+            .maintenance-details, .transaction-details {
+                margin-right: 8px;
+            }
+
+            .announcement-content {
+                font-size: 13px;
+            }
+
+            .day {
+                min-height: 30px;
+                font-size: 12px;
             }
         }
