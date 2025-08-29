@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/error.css">
+    <title>404 - Page Not Found</title>
+</head>
+<body>
+    <div class="background-404">503</div>
+
+    <div class="container">
+        <div class="bird-container">
+            <div class="bird">
+                <div class="magnifying-glass">
+                </div>
+            </div>
+        </div>
+
+        <h1 class="error-title">Under Construction</h1>
+        <p class="error-message">The page you're looking for doesn't exist or is currently unavailable.</p>
+        <p class="sub-message"> We're working hard to improve your experience. Please try again later.</p>
+        
+        <button class="home-button" onclick="goBack()">
+            Go Back
+        </button>
+    </div>
+
+    <script>
+        function goBack() {
+            // Check if there's a previous page in browser history
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Fallback: if no history, try to go to the root/home page
+                window.location.href = '/';
+            }
+        }
+    </script>
+</body>
+</html>
