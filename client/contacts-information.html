@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/contacts-information.css">
+    <title>Website Content Management</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div id="sidebarContainer"></div>
+
+        <div class="main-card-wrapper">
+        <div class="container">
+        <a href="/contentManagement.html" class="back-button" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i>
+            Back to Content Management
+        </a>
+
+        <div class="header">
+            <h1 class="title">Contact Information Management</h1>
+            <p class="description">
+                Add, edit, and manage contact details and building addresses for Ambulo Properties. Centrally manage all locations, contact information, and communication settings.
+            </p>
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-button active" onclick="switchTab('contact')" data-tab="contact">
+                    <i class="fas fa-phone"></i>
+                    Contact Info
+                </button>
+                <button class="tab-button" onclick="switchTab('buildings')" data-tab="buildings">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Building Addresses
+                </button>
+            </div>
+
+            <!-- Contact Information Tab -->
+            <div class="tab-content active" id="contact-tab">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-phone"></i>
+                        Contact Information
+                    </h3>
+                    <span class="status-indicator">
+                        <i class="fas fa-check"></i>
+                        Live
+                    </span>
+                </div>
+
+                <h4 class="section-subtitle">Primary Contact Details</h4>
+                
+                <div class="two-column">
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-input" id="contact-email" value="ambulosproperty@gmail.com" required>
+                        <div class="error-message" id="email-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-input" id="contact-phone" value="+63 917 123 4567" required>
+                        <div class="error-message" id="phone-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Business Address *</label>
+                    <textarea class="form-input form-textarea" id="contact-address" required>Kapt. Sayas Street, Brgy. San Vicente II
+Silang, Cavite, Philippines</textarea>
+                    <div class="error-message" id="address-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Business Hours</label>
+                    <textarea class="form-input form-textarea" id="contact-hours">Monday - Friday: 9:00 AM - 6:00 PM
+Saturday: 10:00 AM - 4:00 PM
+Sunday: By Appointment Only</textarea>
+                </div>
+
+                <h4 class="section-subtitle">Contact Form Settings</h4>
+
+                <div class="form-group">
+                    <label class="form-label">Contact Form Title</label>
+                    <input type="text" class="form-input" id="contact-form-title" value="Send Us a Message">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contact Form Subtitle</label>
+                    <textarea class="form-input form-textarea" id="contact-form-subtitle">Fill out the form below and we'll get back to you within 24 hours. Let us know about your commercial space requirements.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Success Message</label>
+                    <textarea class="form-input form-textarea" id="contact-success-msg">Thank you for your message! We'll get back to you within 24 hours.</textarea>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="saveContactInfo()">
+                        <i class="fas fa-save"></i>
+                        Save Contact Info
+                    </button>
+                    <button class="btn btn-primary" onclick="testContactForm()">
+                        <i class="fas fa-envelope"></i>
+                        Test Contact Form
+                    </button>
+                    <button class="btn btn-outline" onclick="previewContact()">
+                        <i class="fas fa-eye"></i>
+                        Preview
+                    </button>
+                </div>
+            </div>
+
+            <!-- Building Addresses Tab -->
+            <div class="tab-content" id="buildings-tab">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Building Addresses
+                    </h3>
+                    <span class="status-indicator">
+                        <i class="fas fa-check"></i>
+                        Live
+                    </span>
+                </div>
+
+                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 30px;">
+                    <h4 class="section-subtitle" style="margin: 0;">Managed Properties</h4>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-primary" onclick="addNewBuilding()">
+                        <i class="fas fa-plus"></i>
+                        Add New Building
+                    </button>
+                </div>
+                <div id="buildings-container">
+                    <!-- Buildings will be dynamically added here -->
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="saveBuildingAddresses()">
+                        <i class="fas fa-save"></i>
+                        Save Building Info
+                    </button>
+                    <button class="btn btn-outline" onclick="previewBuildings()">
+                        <i class="fas fa-eye"></i>
+                        Preview Locations
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="preview-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Preview</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="preview-content" id="preview-content">
+                <!-- Preview content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="auto-save-indicator" id="auto-save-indicator">
+        <i class="fas fa-check"></i>
+        Auto-saved
+    </div>
+
+    <script src="/javascript/bootstrap.bundle.min.js"></script>
+    <script src="/javascript/contacts-information.js"></script>
+    <script src="/javascript/sidebar.js"></script>
+</body>
+</html>

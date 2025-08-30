@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/company-information.css">
+    <title>Website Content Management</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div id="sidebarContainer"></div>
+
+    <div class="main-card-wrapper">
+    <div class="container">
+        <a href="/contentManagement.html" class="back-button" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i>
+            Back to Content Management
+        </a>
+
+        <div class="header">
+            <h1 class="title">Manage Company Information</h1>
+            <p class="description">
+                Manage all website content for Ambulo Properties. Edit company information, about page content, services, and competitive advantages with real-time preview capabilities.
+            </p>
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-button active" data-tab="company">
+                    <i class="fas fa-building"></i>
+                    Company Info
+                </button>
+                <button class="tab-button" data-tab="about">
+                    <i class="fas fa-info-circle"></i>
+                    About Content
+                </button>
+                <button class="tab-button" data-tab="services">
+                    <i class="fas fa-cogs"></i>
+                    Services
+                </button>
+                <button class="tab-button" data-tab="advantages">
+                    <i class="fas fa-star"></i>
+                    Why Choose
+                </button>
+            </div>
+
+            <!-- Company Information Tab -->
+            <div class="tab-content active" id="company">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-building"></i>
+                        Company Information
+                    </h3>
+                    <span class="status-indicator">
+                        <i class="fas fa-check"></i>
+                        Live
+                    </span>
+                </div>
+
+                <h4 class="section-subtitle">Company Logo</h4>
+                
+                <div class="form-group">
+                    <label class="form-label">Upload Logo</label>
+                    <div class="logo-upload-container">
+                        <div class="logo-preview" id="logo-preview">
+                            <div class="logo-placeholder">
+                                <i class="fas fa-building"></i>
+                                <p>No logo uploaded</p>
+                                <small>Click to upload or drag & drop</small>
+                            </div>
+                        </div>
+                        <input type="file" id="logo-input" accept="image/*" style="display: none;">
+                        <div class="logo-actions">
+                            <button type="button" class="btn btn-primary" onclick="triggerLogoUpload()">
+                                <i class="fas fa-upload"></i>
+                                Upload Logo
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="removeLogo()" id="remove-logo-btn" style="display: none;">
+                                <i class="fas fa-trash"></i>
+                                Remove Logo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="section-subtitle">Basic Company Details</h4>
+                
+                <div class="three-column">
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" class="form-input" id="company-name" value="Ambulo Properties">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tagline</label>
+                        <input type="text" class="form-input" id="company-tagline" value="Commercial Real Estate Excellence">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Founded Year</label>
+                        <input type="number" class="form-input" id="company-founded" value="2018" min="1900" max="2024">
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="saveCompanyInfo()">
+                        <i class="fas fa-save"></i>
+                        Save Company Info
+                    </button>
+                    <button class="btn btn-primary" onclick="previewCompanyInfo()">
+                        <i class="fas fa-eye"></i>
+                        Preview Company Profile
+                    </button>
+                    <button class="btn btn-danger" onclick="resetCompanyInfo()">
+                        <i class="fas fa-undo"></i>
+                        Reset to Defaults
+                    </button>
+                </div>
+            </div>
+
+            <!-- About Content Tab -->
+            <div class="tab-content" id="about">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-info-circle"></i>
+                        About Page Content
+                    </h3>
+                    <span class="status-indicator">
+                        <i class="fas fa-check"></i>
+                        Live
+                    </span>
+                </div>
+
+                <h4 class="section-subtitle">Our Story Section</h4>
+                
+                <div class="form-group">
+                    <label class="form-label">Story Section Title</label>
+                    <input type="text" class="form-input" id="story-title" value="Our Story">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Story Paragraph 1</label>
+                    <textarea class="form-input form-textarea" id="story-para1">What began as a family-owned property has evolved into one of Silang's most sought-after commercial destinations. Ambulo Properties started with a simple vision: to create spaces where local businesses could thrive and communities could grow.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Story Paragraph 2</label>
+                    <textarea class="form-input form-textarea" id="story-para2">Located strategically along Kapt. Sayas Street in Brgy. San Vicente II, our property has become a bustling commercial hub that houses diverse businesses—from trendy ramen shops and beauty lounges to professional clinics and retail stores.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Story Paragraph 3</label>
+                    <textarea class="form-input form-textarea" id="story-para3">Our journey reflects our commitment to supporting entrepreneurs and small business owners by providing flexible, affordable, and strategically located commercial spaces that adapt to the changing needs of modern business.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Story Paragraph 4</label>
+                    <textarea class="form-input form-textarea" id="story-para4">Today, we're proud to be fully occupied with thriving tenants who have made our property their business home, contributing to the vibrant commercial landscape of Silang, Cavite.</textarea>
+                </div>
+
+                <h4 class="section-subtitle">Mission, Vision & Values</h4>
+                
+                <div class="three-column">
+                    <div class="form-group">
+                        <label class="form-label">Mission Statement</label>
+                        <textarea class="form-input form-textarea" id="mission-text">To empower local entrepreneurs and businesses by providing premium commercial spaces that foster growth, innovation, and community connection in Silang, Cavite.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Vision Statement</label>
+                        <textarea class="form-input form-textarea" id="vision-text">To be the premier commercial real estate destination in Cavite, known for our commitment to tenant success, community development, and innovative property management solutions.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Core Values</label>
+                        <textarea class="form-input form-textarea" id="values-text">Integrity, Innovation, Community Focus, and Tenant Success. We believe in building lasting relationships and creating value for all stakeholders in our commercial ecosystem.</textarea>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="saveAboutContent()">
+                        <i class="fas fa-save"></i>
+                        Save About Content
+                    </button>
+                    <button class="btn btn-primary" onclick="previewAbout()">
+                        <i class="fas fa-eye"></i>
+                        Preview About Page
+                    </button>
+                </div>
+            </div>
+
+            <!-- Services Content Tab -->
+            <div class="tab-content" id="services">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs"></i>
+                        Services Management
+                    </h3>
+                    <button class="btn btn-primary" onclick="addService()">
+                        <i class="fas fa-plus"></i>
+                        Add New Service
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Services Section Title</label>
+                    <input type="text" class="form-input" id="services-title" value="Our Services">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Services Section Description</label>
+                    <textarea class="form-input" id="services-desc">Comprehensive commercial real estate solutions tailored to your business needs</textarea>
+                </div>
+
+                <div class="services-grid" id="services-list">
+                    <!-- Services will be loaded here dynamically -->
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="saveServicesContent()">
+                        <i class="fas fa-save"></i>
+                        Save All Services
+                    </button>
+                    <button class="btn btn-primary" onclick="previewServices()">
+                        <i class="fas fa-eye"></i>
+                        Preview Services
+                    </button>
+                </div>
+            </div>
+
+            <!-- Why Choose/Advantages Tab -->
+            <div class="tab-content" id="advantages">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-star"></i>
+                        Why Choose Us
+                    </h3>
+                    <button class="btn btn-primary" onclick="addAdvantage()">
+                        <i class="fas fa-plus"></i>
+                        Add New Advantage
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Section Title</label>
+                    <input type="text" class="form-input" id="advantages-title" value="Why Choose Ambulo Properties">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Section Description</label>
+                    <textarea class="form-input" id="advantages-desc">Discover the competitive advantages that make us Silang's preferred commercial real estate partner</textarea>
+                </div>
+
+                <div class="advantages-grid" id="advantages-list">
+                    <!-- Advantages will be loaded here dynamically -->
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="saveAdvantagesContent()">
+                        <i class="fas fa-save"></i>
+                        Save All Advantages
+                    </button>
+                    <button class="btn btn-primary" onclick="previewAdvantages()">
+                        <i class="fas fa-eye"></i>
+                        Preview Why Choose
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Edit Modal -->
+    <div class="modal" id="service-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Service</h3>
+                <button class="close-btn" onclick="closeServiceModal()">&times;</button>
+            </div>
+            <form id="service-form">
+                <div class="form-group">
+                    <label class="form-label">Service Title</label>
+                    <input type="text" class="form-input" id="service-title-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Service Description</label>
+                    <textarea class="form-input form-textarea" id="service-desc-input" required></textarea>
+                </div>
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i>
+                        Save Service
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="closeServiceModal()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Advantage Edit Modal -->
+    <div class="modal" id="advantage-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Advantage</h3>
+                <button class="close-btn" onclick="closeAdvantageModal()">&times;</button>
+            </div>
+            <form id="advantage-form">
+                <div class="form-group">
+                    <label class="form-label">Advantage Title</label>
+                    <input type="text" class="form-input" id="advantage-title-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Advantage Description</label>
+                    <textarea class="form-input form-textarea" id="advantage-desc-input" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Choose Icon</label>
+                    <div class="icon-selector" id="icon-selector">
+                        <!-- Icons will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i>
+                        Save Advantage
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="closeAdvantageModal()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal" id="preview-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Content Preview</h3>
+                <button class="close-btn" onclick="closePreviewModal()">&times;</button>
+            </div>
+            <div class="preview-content" id="preview-content">
+                <!-- Preview content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/javascript/bootstrap.bundle.min.js"></script>
+    <script src="/javascript/company-information.js"></script>
+    <script src="/javascript/sidebar.js"></script>
+</body>
+</html>
