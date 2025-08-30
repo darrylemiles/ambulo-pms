@@ -3996,3 +3996,7 @@ body.modal-open {
   overflow: hidden;
   width: 100vw;       
 }
+
+.add-property-form, .edit-property-form {
+  margin-bottom: 80px;
+}

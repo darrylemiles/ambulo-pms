@@ -12,6 +12,7 @@ let isLoading = false;
 let currentStep = 1;
 let currentSort = "";
 let selectedDocumentFiles = [];
+const USER_ROLES = window.AppConstants.USER_ROLES;
 
 // API Configuration
 const API_BASE_URL = "/api/v1";
@@ -272,10 +273,10 @@ function renderGridView() {
               }')">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="action-btn" title="Edit" onclick="event.stopPropagation();editTenant('${
+              <button class="action-btn" title="Edit" onclick="event.stopPropagation();openTenantDetailsInEditMode('${
                 tenant.user_id
               }')">
-                <i class="fas fa-edit"></i>
+              <i class="fas fa-edit"></i>
               </button>
             </div>
           </div>
@@ -358,10 +359,10 @@ function renderListView() {
             }')" title="View Details">
               <i class="fas fa-eye"></i>
             </button>
-            <button class="action-btn" onclick="editTenant('${
+            <button class="action-btn" onclick="openTenantDetailsInEditMode('${
               tenant.user_id
             }')" title="Edit">
-              <i class="fas fa-edit"></i>
+            <i class="fas fa-edit"></i>
             </button>
             <button class="action-btn" onclick="deleteTenant('${
               tenant.user_id
@@ -835,12 +836,6 @@ function goToPage(page) {
   }
 }
 
-// Action functions
-function editTenant(tenantId) {
-  console.log("Edit tenant:", tenantId);
-  // Implement edit functionality
-}
-
 function deleteTenant(tenantId) {
   if (confirm("Are you sure you want to delete this tenant?")) {
     console.log("Delete tenant:", tenantId);
@@ -913,16 +908,21 @@ function closeCreateAccountInline() {
   // Optionally show emptyState if needed
 }
 
-function resetModal() {
-  currentStep = 1;
-  updateStepDisplay();
-  document.getElementById("createAccountForm").reset();
-
-  const profilePreview = document.querySelector(".profile-preview");
-  if (profilePreview) {
-    profilePreview.innerHTML =
-      '<div class="profile-preview-content"><i class="fas fa-user-plus"></i><span>Add Photo</span></div>';
-  }
+function isCreateAccountFormDirty() {
+  const form = document.getElementById("createAccountForm");
+  if (!form) return false;
+  // Check if any input, textarea, or select has a value
+  return Array.from(form.elements).some(
+    (el) =>
+      (el.tagName === "INPUT" ||
+        el.tagName === "TEXTAREA" ||
+        el.tagName === "SELECT") &&
+      el.type !== "hidden" &&
+      el.type !== "button" &&
+      el.type !== "submit" &&
+      el.value &&
+      el.value.trim() !== ""
+  );
 }
 
 function updateStepDisplay() {
@@ -1370,7 +1370,17 @@ function setupCreateAccountInlineForm() {
   // --- Cancel/Reset ---
   const cancelBtn = document.getElementById("cancelBtn");
   if (cancelBtn) {
-    cancelBtn.addEventListener("click", function () {
+    cancelBtn.addEventListener("click", function (e) {
+      if (isCreateAccountFormDirty()) {
+        if (
+          !confirm(
+            "You have unsaved changes. Are you sure you want to cancel and lose your changes?"
+          )
+        ) {
+          e.preventDefault();
+          return;
+        }
+      }
       form.reset();
       if (docPreview) docPreview.innerHTML = "";
       document
@@ -1509,7 +1519,7 @@ function setupCreateAccountInlineForm() {
       form.altMobileNumber ? form.altMobileNumber.value : ""
     );
     formData.append("password", form.defaultPassword.value);
-    formData.append("role", "TENANT");
+    formData.append("role", USER_ROLES.TENANT);
     formData.append("status", "ACTIVE");
     formData.append("address", JSON.stringify(address));
     formData.append("emergency_contacts", JSON.stringify(emergency_contacts));
@@ -1693,7 +1703,18 @@ function attachTenantsBreadcrumbHandler() {
     "tenantsBreadcrumbLink"
   );
   if (tenantsBreadcrumbLink) {
-    tenantsBreadcrumbLink.addEventListener("click", function () {
+    tenantsBreadcrumbLink.addEventListener("click", function (e) {
+      const form = document.getElementById("createAccountForm");
+      if (form && form.offsetParent !== null && isCreateAccountFormDirty()) {
+        if (
+          !confirm(
+            "You have unsaved changes. Are you sure you want to leave this page?"
+          )
+        ) {
+          e.preventDefault();
+          return;
+        }
+      }
       const formContainer = document.getElementById("tenantDetailsInlineForm");
       if (formContainer) formContainer.style.display = "none";
       const createAccount = document.getElementById(
@@ -1959,7 +1980,7 @@ function populateEditTenantFormWithFullData(tenant) {
   document.querySelector('[data-field="status"]').textContent =
     tenant.status || "ACTIVE";
   document.querySelector('[data-field="role"]').textContent =
-    tenant.role || "TENANT";
+    tenant.role || USER_ROLES.TENANT;
 
   // Set header
   renderEditAvatarPreview(tenant.avatar, tenant.first_name, tenant.last_name);
@@ -1994,7 +2015,7 @@ function populateEditTenantFormWithFullData(tenant) {
   form.emergencyRelationship.value =
     tenant.emergency_contacts?.[0]?.contact_relationship || "";
   form.status.value = tenant.status || "ACTIVE";
-  form.role.value = tenant.role || "TENANT";
+  form.role.value = tenant.role || USER_ROLES.TENANT;
 }
 
 /**
@@ -2224,6 +2245,11 @@ async function handleEditTenantFormSubmit(e) {
   }
 }
 
+async function openTenantDetailsInEditMode(tenantId) {
+  await openTenantDetailsInlineForm(tenantId);
+  setTenantDetailsEditMode(true);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const editForm = document.getElementById("editTenantForm");
   if (editForm) {
@@ -2379,7 +2405,6 @@ document.addEventListener("DOMContentLoaded", setupCreateAccountInlineForm);
 setInterval(autoSaveFormData, 30000);
 
 window.toggleView = toggleView;
-window.editTenant = editTenant;
 window.deleteTenant = deleteTenant;
 window.selectAll = selectAll;
 window.clearSelection = clearSelection;
@@ -2400,3 +2425,4 @@ window.viewTenantDetails = viewTenantDetails;
 window.openTenantDetailsInlineForm = openTenantDetailsInlineForm;
 window.closeTenantDetailsInlineForm = closeTenantDetailsInlineForm;
 window.toggleEditTenantForm = toggleEditTenantForm;
+window.openTenantDetailsInEditMode = openTenantDetailsInEditMode;
