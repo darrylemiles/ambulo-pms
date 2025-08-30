@@ -29,8 +29,7 @@ const REQUEST_TYPES = {
 const USER_ROLES = {
     ADMIN: 'ADMIN',
     MANAGER: 'MANAGER',
-    TENANT: 'TENANT',
-    MAINTENANCE: 'MAINTENANCE'
+    TENANT: 'TENANT'
 };
 
 // File Upload Constants
@@ -178,6 +177,7 @@ const PAGINATION = {
     MAX_LIMIT: 100,
     DEFAULT_PAGE: 1
 };
+
 
 // Browser export - make available globally
 if (typeof module !== 'undefined' && module.exports) {

@@ -7,7 +7,7 @@ const tenantEmergencyContactsTable = `CREATE TABLE IF NOT EXISTS tenant_emergenc
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (user_id) REFERENCES users(user_id)
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 )`;
 
 export default tenantEmergencyContactsTable;
