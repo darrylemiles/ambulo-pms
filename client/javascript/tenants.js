@@ -101,6 +101,37 @@ document.addEventListener("DOMContentLoaded", function () {
   setupEventListeners();
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  const tenantsBreadcrumbLink = document.getElementById(
+    "tenantsBreadcrumbLink"
+  );
+  if (tenantsBreadcrumbLink) {
+    tenantsBreadcrumbLink.addEventListener("click", function () {
+      const formContainer = document.getElementById("tenantDetailsInlineForm");
+      if (formContainer) formContainer.style.display = "none";
+      const createAccount = document.getElementById(
+        "createAccountInlineContainer"
+      );
+      if (createAccount) createAccount.style.display = "none";
+      if (currentView === "grid") {
+        document.getElementById("gridView").style.display = "grid";
+        document.getElementById("listView").style.display = "none";
+      } else {
+        document.getElementById("gridView").style.display = "none";
+        document.getElementById("listView").style.display = "flex";
+      }
+      const controlsRow = document.querySelector(".controls-row");
+      if (controlsRow) controlsRow.style.display = "";
+      const bulkActionsBar = document.getElementById("bulkActionsBar");
+      if (bulkActionsBar) bulkActionsBar.style.display = "";
+      const pagination = document.getElementById("pagination");
+      if (pagination) pagination.style.display = "";
+      const emptyState = document.getElementById("emptyState");
+      if (emptyState) emptyState.style.display = "none";
+    });
+  }
+});
+
 // Load tenants from backend
 async function loadTenants(page = 1, filters = {}) {
   if (isLoading) return;
@@ -827,14 +858,15 @@ function openCreateAccountInline() {
   const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
   if (breadcrumb) {
     breadcrumb.innerHTML = `
-            <li class="breadcrumb-item" style="color: #6b7280;">
-                <i class="fas fa-users me-2"></i>Tenants
-            </li>
-            <li class="breadcrumb-divider"><span>›</span></li>
-            <li class="breadcrumb-item active" aria-current="page">
-                <i class="fas fa-user-plus me-2"></i> Add New Tenant
-            </li>
-        `;
+  <li class="breadcrumb-item" id="tenantsBreadcrumbLink" style="cursor:pointer; color: #959596ff; hover: color: #2563eb;">
+    <i class="fas fa-users me-2"></i>Tenants
+  </li>
+  <li class="breadcrumb-divider"><span>›</span></li>
+  <li class="breadcrumb-item active" aria-current="page">
+    <i class="fas fa-user-edit me-2"></i> View Tenant Details
+  </li>
+`;
+    attachTenantsBreadcrumbHandler();
   }
   if (document.getElementById("bulkActionsBar"))
     document.getElementById("bulkActionsBar").style.display = "none";
@@ -1114,8 +1146,28 @@ function validatePHMobile(input, required = false) {
   return true;
 }
 function validatePassword(input) {
-  if (!input.value || input.value.length < 8) {
-    showError(input, "Password must be at least 8 characters.");
+  const value = input.value || "";
+  const minLength = 8;
+  const hasUpper = /[A-Z]/.test(value);
+  const hasLower = /[a-z]/.test(value);
+  const hasDigit = /\d/.test(value);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\\/]/.test(value);
+
+  let message = "";
+  if (value.length < minLength) {
+    message = "Password must be at least 8 characters.";
+  } else if (!hasUpper) {
+    message = "Password must include at least one uppercase letter.";
+  } else if (!hasLower) {
+    message = "Password must include at least one lowercase letter.";
+  } else if (!hasDigit) {
+    message = "Password must include at least one digit.";
+  } else if (!hasSpecial) {
+    message = "Password must include at least one special character.";
+  }
+
+  if (message) {
+    showError(input, message);
     return false;
   }
   clearError(input);
@@ -1522,18 +1574,29 @@ function setupCreateAccountInlineForm() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", setupCreateAccountInlineForm);
-
 function generatePassword(length = 12) {
-  const chars =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-  let pwd = "";
-  for (let i = 0; i < length; i++) {
-    pwd += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return pwd;
-}
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const digits = "0123456789";
+  const specials = "!@#$%^&*()_+-=[]{}|;:',.<>/?";
+  const all = upper + lower + digits + specials;
 
+  let pwd = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    digits[Math.floor(Math.random() * digits.length)],
+    specials[Math.floor(Math.random() * specials.length)],
+  ];
+
+  for (let i = pwd.length; i < length; i++) {
+    pwd.push(all[Math.floor(Math.random() * all.length)]);
+  }
+
+  // Shuffle the password
+  pwd = pwd.sort(() => Math.random() - 0.5);
+
+  return pwd.join("");
+}
 // Auto-save functions (keeping your existing code)
 function autoSaveFormData() {
   const form = document.getElementById("createAccountForm");
@@ -1625,6 +1688,37 @@ function showTenantSnackbar(message, type = "success") {
   );
 }
 
+function attachTenantsBreadcrumbHandler() {
+  const tenantsBreadcrumbLink = document.getElementById(
+    "tenantsBreadcrumbLink"
+  );
+  if (tenantsBreadcrumbLink) {
+    tenantsBreadcrumbLink.addEventListener("click", function () {
+      const formContainer = document.getElementById("tenantDetailsInlineForm");
+      if (formContainer) formContainer.style.display = "none";
+      const createAccount = document.getElementById(
+        "createAccountInlineContainer"
+      );
+      if (createAccount) createAccount.style.display = "none";
+      if (currentView === "grid") {
+        document.getElementById("gridView").style.display = "grid";
+        document.getElementById("listView").style.display = "none";
+      } else {
+        document.getElementById("gridView").style.display = "none";
+        document.getElementById("listView").style.display = "flex";
+      }
+      const controlsRow = document.querySelector(".controls-row");
+      if (controlsRow) controlsRow.style.display = "";
+      const bulkActionsBar = document.getElementById("bulkActionsBar");
+      if (bulkActionsBar) bulkActionsBar.style.display = "";
+      const pagination = document.getElementById("pagination");
+      if (pagination) pagination.style.display = "";
+      const emptyState = document.getElementById("emptyState");
+      if (emptyState) emptyState.style.display = "none";
+    });
+  }
+}
+
 /**
  * Show the inline tenant details form for editing.
  * @param {string} tenantId
@@ -1650,14 +1744,15 @@ async function openTenantDetailsInlineForm(tenantId) {
   const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
   if (breadcrumb) {
     breadcrumb.innerHTML = `
-      <li class="breadcrumb-item" style="color: #6b7280;">
-        <i class="fas fa-users me-2"></i>Tenants
-      </li>
-      <li class="breadcrumb-divider"><span>›</span></li>
-      <li class="breadcrumb-item active" aria-current="page">
-        <i class="fas fa-user-edit me-2"></i> View Tenant Details
-      </li>
-    `;
+  <li class="breadcrumb-item" id="tenantsBreadcrumbLink" style="cursor:pointer; color: #959596ff; hover: color: #2563eb;">
+    <i class="fas fa-users me-2"></i>Tenants
+  </li>
+  <li class="breadcrumb-divider"><span>›</span></li>
+  <li class="breadcrumb-item active" aria-current="page">
+    <i class="fas fa-user-edit me-2"></i> View Tenant Details
+  </li>
+`;
+    attachTenantsBreadcrumbHandler();
   }
 
   // --- Fetch full tenant details from backend ---
@@ -1750,41 +1845,41 @@ function renderTenantIdFiles(files, editable = false) {
 
   // Add upload thumbnail if editable
   if (editable) {
-  const uploadThumb = document.createElement("div");
-  uploadThumb.className = "tenant-id-file-thumb";
-  uploadThumb.style.display = "flex";
-  uploadThumb.style.alignItems = "center";
-  uploadThumb.style.justifyContent = "center";
-  uploadThumb.style.cursor = "pointer";
-  uploadThumb.innerHTML = `
+    const uploadThumb = document.createElement("div");
+    uploadThumb.className = "tenant-id-file-thumb";
+    uploadThumb.style.display = "flex";
+    uploadThumb.style.alignItems = "center";
+    uploadThumb.style.justifyContent = "center";
+    uploadThumb.style.cursor = "pointer";
+    uploadThumb.innerHTML = `
     <label style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;">
       <i class="fas fa-plus" style="font-size:2rem;color:#2563eb;"></i>
       <span style="font-size:0.95rem;color:#2563eb;">Add ID File</span>
       <input type="file" id="editTenantIdFileInput" accept="image/*,application/pdf" style="display:none" multiple>
     </label>
   `;
-  // Handle file input
-  uploadThumb.querySelector("input").addEventListener("change", function (e) {
-    const newFiles = Array.from(e.target.files);
-    newFiles.forEach((file) => {
-      const ext = file.name.split(".").pop().toLowerCase();
-      let id_url = "";
-      if (["jpg", "jpeg", "png"].includes(ext)) {
-        id_url = URL.createObjectURL(file);
-      } else if (ext === "pdf") {
-        id_url = URL.createObjectURL(file);
-      }
-      files.push({
-        id_url,
-        name: file.name,
-        _file: file, // keep the File object for upload on save
-        _isNew: true // mark as new for preview
+    // Handle file input
+    uploadThumb.querySelector("input").addEventListener("change", function (e) {
+      const newFiles = Array.from(e.target.files);
+      newFiles.forEach((file) => {
+        const ext = file.name.split(".").pop().toLowerCase();
+        let id_url = "";
+        if (["jpg", "jpeg", "png"].includes(ext)) {
+          id_url = URL.createObjectURL(file);
+        } else if (ext === "pdf") {
+          id_url = URL.createObjectURL(file);
+        }
+        files.push({
+          id_url,
+          name: file.name,
+          _file: file, // keep the File object for upload on save
+          _isNew: true, // mark as new for preview
+        });
       });
+      renderTenantIdFiles(files, true);
     });
-    renderTenantIdFiles(files, true);
-  });
-  listDiv.appendChild(uploadThumb);
-}
+    listDiv.appendChild(uploadThumb);
+  }
 
   container.appendChild(listDiv);
 }
@@ -1866,8 +1961,6 @@ function populateEditTenantFormWithFullData(tenant) {
   document.querySelector('[data-field="role"]').textContent =
     tenant.role || "TENANT";
 
-
-
   // Set header
   renderEditAvatarPreview(tenant.avatar, tenant.first_name, tenant.last_name);
   document.getElementById("tenantNameDisplay").textContent =
@@ -1918,7 +2011,9 @@ function setTenantDetailsEditMode(editable) {
   });
 
   // --- Avatar upload ---
-  const avatarUploadWrapper = document.getElementById("editAvatarUploadWrapper");
+  const avatarUploadWrapper = document.getElementById(
+    "editAvatarUploadWrapper"
+  );
   if (avatarUploadWrapper) {
     avatarUploadWrapper.style.display = editable ? "block" : "none";
   }
@@ -2093,13 +2188,13 @@ async function handleEditTenantFormSubmit(e) {
   if (window.currentTenantFiles && window.currentTenantFiles.length > 0) {
     // Existing files (no _file property)
     tenantIdFiles = window.currentTenantFiles
-      .filter(f => f.id_url && !f._file)
-      .map(f => ({ id_url: f.id_url }));
+      .filter((f) => f.id_url && !f._file)
+      .map((f) => ({ id_url: f.id_url }));
 
     // New files (with _file property)
     window.currentTenantFiles
-      .filter(f => f._file)
-      .forEach(f => {
+      .filter((f) => f._file)
+      .forEach((f) => {
         formData.append("tenant_id_file", f._file);
         tenantIdFiles.push({ id_url: f.id_url }); // id_url is a blob URL, but backend will replace with real URL after upload
       });
@@ -2107,7 +2202,8 @@ async function handleEditTenantFormSubmit(e) {
   formData.set("tenant_id_files", JSON.stringify(tenantIdFiles));
 
   try {
-    const tenantId = form.getAttribute("data-tenant-id") || formData.get("user_id");
+    const tenantId =
+      form.getAttribute("data-tenant-id") || formData.get("user_id");
     const response = await fetch(`/api/v1/users/${tenantId}`, {
       method: "PATCH",
       body: formData,
@@ -2158,14 +2254,16 @@ document.addEventListener("DOMContentLoaded", function () {
     let allValid = true;
     const editForm = document.getElementById("editTenantForm");
     if (!editForm) return false;
-  
+
     // Only validate fields that are visible and enabled
-    const visibleFields = Array.from(editForm.querySelectorAll("input, select")).filter(
+    const visibleFields = Array.from(
+      editForm.querySelectorAll("input, select")
+    ).filter(
       (el) =>
         el.offsetParent !== null && // visible
         !el.disabled // enabled
     );
-  
+
     visibleFields.forEach((field) => {
       switch (field.name) {
         case "firstName":
@@ -2207,7 +2305,7 @@ document.addEventListener("DOMContentLoaded", function () {
           break;
       }
     });
-  
+
     const saveBtn = editForm.querySelector('button[type="submit"]');
     if (saveBtn) saveBtn.disabled = !allValid;
     return allValid;
@@ -2275,6 +2373,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+document.addEventListener("DOMContentLoaded", setupCreateAccountInlineForm);
 
 setInterval(autoSaveFormData, 30000);
 
