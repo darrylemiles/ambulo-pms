@@ -418,9 +418,14 @@
         <form id="editTenantForm" autocomplete="off">
           <div class="tenant-details-header">
             <div class="tenant-details-title">
-              <div class="tenant-details-avatar" id="editAvatarPreview"
-                onclick="document.getElementById('editAvatarUpload').click()">
-                <!-- Avatar image or Add Photo will be injected here by JS -->
+              <div class="tenant-avatar-wrapper" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <button type="button" class="btn btn-secondary" id="backToGridBtn" style="margin-bottom: 16px;">
+                  <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <div class="tenant-details-avatar" id="editAvatarPreview"
+                  onclick="document.getElementById('editAvatarUpload').click()">
+                  <!-- Avatar image or Add Photo will be injected here by JS -->
+                </div>
               </div>
               <input type="file" id="editAvatarUpload" name="avatar" accept=".jpg,.jpeg,.png" style="display:none;">
               <div>

@@ -2400,6 +2400,15 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  const backBtn = document.getElementById("backToGridBtn");
+  if (backBtn) {
+    backBtn.addEventListener("click", function () {
+      closeTenantDetailsInlineForm();
+    });
+  }
+});
+
 document.addEventListener("DOMContentLoaded", setupCreateAccountInlineForm);
 
 setInterval(autoSaveFormData, 30000);
