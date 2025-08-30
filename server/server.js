@@ -14,6 +14,7 @@ import express from 'express';
 import usersRoutes from './routes/usersRoutes.js';
 import propertiesRoutes from './routes/propertiesRoutes.js';
 import ticketsRoutes from './routes/ticketsRoutes.js';
+import companyDetailsRoutes from './routes/companyDetailsRoutes.js';
 
 import tables from './tables/tables.js';
 
@@ -53,6 +54,7 @@ app.use(express.static(path.join(__dirname, '../client')));
 app.use(`/api/${API_VERSION}/users`, usersRoutes);
 app.use(`/api/${API_VERSION}/properties`, propertiesRoutes);
 app.use(`/api/${API_VERSION}/tickets`, ticketsRoutes);
+app.use(`/api/${API_VERSION}/company-details`, companyDetailsRoutes);
 // Serve login page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../client', 'login.html'));
