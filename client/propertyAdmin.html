@@ -63,6 +63,8 @@
                                         class="fas fa-user me-2"></i>Occupied</a>
                                 <a href="#" class="maintenance" onclick="filterByStatus('maintenance')"><i
                                         class="fas fa-tools me-2"></i>Maintenance</a>
+                                <a href="#" class="reserved" onclick="filterByStatus('reserved')"><i
+                                        class="fas fa-bookmark me-2"></i>Reserved</a>
                             </div>
                         </div>
 
@@ -189,6 +191,7 @@
                                             <option value="Available">Available</option>
                                             <option value="Occupied">Occupied</option>
                                             <option value="Maintenance">Maintenance</option>
+                                            <option value="Reserved">Reserved</option>
                                         </select>
                                         <div class="error-message" id="editPropertyStatusError"></div>
                                     </div>
@@ -388,6 +391,7 @@
                                             <option value="Available">Available</option>
                                             <option value="Occupied">Occupied</option>
                                             <option value="Maintenance">Maintenance</option>
+                                            <option value="Reserved">Reserved</option>
                                         </select>
                                         <div class="error-message" id="propertyStatusError"></div>
                                     </div>

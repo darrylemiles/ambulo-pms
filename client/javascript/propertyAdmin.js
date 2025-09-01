@@ -245,6 +245,7 @@ function mapPropertyStatus(backendStatus) {
     Occupied: "occupied",
     Maintenance: "maintenance",
     "Under Maintenance": "maintenance",
+    Reserved: "reserved"
   };
   return statusMap[backendStatus] || "available";
 }
@@ -255,6 +256,7 @@ function mapStatusToBackend(frontendStatus) {
     available: "Available",
     occupied: "Occupied",
     maintenance: "Maintenance",
+    reserved: "Reserved"
   };
   return statusMap[frontendStatus] || "Available";
 }
@@ -579,6 +581,7 @@ function getStatusIcon(status) {
     available: "fa-check-circle",
     occupied: "fa-user",
     maintenance: "fa-tools",
+    reserved: "fa-bookmark",
   };
   return iconMap[status] || "fa-circle";
 }
@@ -692,6 +695,11 @@ function updateStatusDropdownLabel(status) {
       text = "Maintenance";
       color = "#d97706";
       icon = '<i class="fas fa-tools me-2"></i>';
+      break;
+    case "reserved":
+      text = "Reserved";
+      color = "#59657cff";
+      icon = '<i class="fas fa-bookmark me-2"></i>';
       break;
     case "all":
     default:
