@@ -12,6 +12,9 @@ import addressesTable from './addressesTable.js';
 import propertiesTable from './propertiesTable.js'
 import propertiesPicturesTable from './propertiesPicturesTable.js';
 
+//cms
+import companyInfoTable from './companyInfoTable.js';
+
 
 const tables = async (dbConnection) => {
   const queries = [
@@ -27,9 +30,10 @@ const tables = async (dbConnection) => {
     // properties
     addressesTable,
     propertiesTable,
-    propertiesPicturesTable
+    propertiesPicturesTable,
     
-    
+    //cms
+    companyInfoTable,
 
   ];
 
