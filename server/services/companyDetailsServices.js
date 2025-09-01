@@ -42,50 +42,45 @@ const getCompanyDetails = async (companyId) => {
   const [rows] = await pool.query(query);
   return rows;
 };
-
 const updateCompanyDetails = async (companyId, companyData) => {
-  const {
-    company_name,
-    icon_logo_url,
-    alt_logo_url,
-    email,
-    phone_number,
-    alt_phone_number,
-    business_desc,
-    mission,
-    vision,
-    company_values,
-  } = companyData;
+  const allowedFields = [
+    "company_name",
+    "icon_logo_url",
+    "alt_logo_url",
+    "email",
+    "phone_number",
+    "alt_phone_number",
+    "business_desc",
+    "mission",
+    "vision",
+    "company_values"
+  ];
+
+  const setClauses = [];
+  const values = [];
+
+  allowedFields.forEach((field) => {
+    if (companyData[field] !== undefined) {
+      setClauses.push(`${field} = ?`);
+      values.push(companyData[field]);
+    }
+  });
+
+  setClauses.push("updated_at = NOW()");
+
+  if (setClauses.length === 1) {
+    return false;
+  }
 
   const pool = await conn();
   const query = `
     UPDATE company_info SET
-      company_name = ?,
-      icon_logo_url = ?,
-      alt_logo_url = ?,
-      email = ?,
-      phone_number = ?,
-      alt_phone_number = ?,
-      business_desc = ?,
-      mission = ?,
-      vision = ?,
-      company_values = ?,
-      updated_at = NOW()
+      ${setClauses.join(", ")}
     WHERE id = ?
   `;
-  const [result] = await pool.query(query, [
-    company_name,
-    icon_logo_url,
-    alt_logo_url,
-    email,
-    phone_number,
-    alt_phone_number,
-    business_desc,
-    mission,
-    vision,
-    company_values,
-    companyId,
-  ]);
+  values.push(companyId);
+
+  const [result] = await pool.query(query, values);
   return result.affectedRows > 0;
 };
 
