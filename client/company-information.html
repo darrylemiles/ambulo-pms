@@ -71,6 +71,7 @@
                             <label class="form-label">Upload Logo</label>
                             <div class="logo-upload-container">
                                 <div class="logo-preview" id="logo-preview">
+                                    <span id="logo-preview-warning" class="field-warning"></span>
                                     <div class="logo-placeholder">
                                         <i class="fas fa-building"></i>
                                         <p>No logo uploaded</p>
@@ -97,6 +98,7 @@
                             <label class="form-label">Upload Alternate Logo</label>
                             <div class="logo-upload-container">
                                 <div class="logo-preview" id="alt-logo-preview">
+                                    <span id="alt-logo-preview-warning" class="field-warning"></span>
                                     <div class="logo-placeholder">
                                         <i class="fas fa-image"></i>
                                         <p>No alternate logo uploaded</p>
@@ -124,19 +126,23 @@
                     <div class="three-column">
                         <div class="form-group">
                             <label class="form-label">Company Name</label>
-                            <input type="text" class="form-input" id="company-name" value="Ambulo Properties">
+                            <input type="text" class="form-input" id="company-name" placeholder="Your Company Name">
+                            <span id="company-name-warning" class="field-warning"></span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Email</label>
                             <input type="email" class="form-input" id="company-email" placeholder="company@email.com">
+                            <span id="company-email-warning" class="field-warning"></span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Phone Number</label>
                             <input type="tel" class="form-input" id="company-phone" placeholder="e.g. 09123456789">
+                            <span id="company-phone-warning" class="field-warning"></span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Alternative Phone Number</label>
                             <input type="tel" class="form-input" id="company-alt-phone" placeholder="e.g. 09123456780">
+                            <span id="company-alt-phone-warning" class="field-warning"></span>
                         </div>
                     </div>
 
@@ -144,6 +150,7 @@
                         <label class="form-label">Business Description</label>
                         <textarea class="form-input form-textarea" id="company-description" rows="3"
                             placeholder="Describe your business"></textarea>
+                        <span id="company-description-warning" class="field-warning"></span>
                     </div>
 
                     <div class="three-column">
@@ -151,16 +158,19 @@
                             <label class="form-label">Mission</label>
                             <textarea class="form-input form-textarea" id="company-mission" rows="2"
                                 placeholder="Company mission"></textarea>
+                            <span id="company-mission-warning" class="field-warning"></span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Vision</label>
                             <textarea class="form-input form-textarea" id="company-vision" rows="2"
                                 placeholder="Company vision"></textarea>
+                            <span id="company-vision-warning" class="field-warning"></span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Values</label>
                             <textarea class="form-input form-textarea" id="company-values" rows="2"
                                 placeholder="Company values"></textarea>
+                            <span id="company-values-warning" class="field-warning"></span>
                         </div>
                     </div>
 

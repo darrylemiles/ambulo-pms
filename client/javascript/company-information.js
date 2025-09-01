@@ -4,7 +4,6 @@ let companyId = null;
 // API Configuration
 const API_BASE_URL = "/api/v1/company-details";
 
-
 let websiteData = {
   company: {
     name: "Ambulo Properties",
@@ -162,11 +161,14 @@ let hasUnsavedChanges = false;
 
 // Initialize the app
 document.addEventListener("DOMContentLoaded", function () {
-  loadCompanyInfo();
+  loadCompanyInfo().then(() => {
+    setupRealtimeValidation();
+  });
   loadFormData();
   setupEventListeners();
   setupLogoHandling();
   setupAltLogoHandling();
+  setupRealtimeValidation();
   renderServices();
   renderAdvantages();
   console.log("CMS initialized successfully");
@@ -514,20 +516,26 @@ async function loadCompanyInfo() {
   try {
     const res = await fetch(`${API_BASE_URL}`);
     const companies = await res.json();
-    const company = companies[0]; // Get the first (and only) company
+    const company = companies[0];
     if (company) {
-      companyId = company.id; // Save the ID for PATCH requests
-      document.getElementById("company-name").value = company.company_name || "";
+      companyId = company.id;
+      document.getElementById("company-name").value =
+        company.company_name || "";
       document.getElementById("company-email").value = company.email || "";
-      document.getElementById("company-phone").value = company.phone_number || "";
-      document.getElementById("company-alt-phone").value = company.alt_phone_number || "";
-      document.getElementById("company-description").value = company.business_desc || "";
+      document.getElementById("company-phone").value =
+        company.phone_number || "";
+      document.getElementById("company-alt-phone").value =
+        company.alt_phone_number || "";
+      document.getElementById("company-description").value =
+        company.business_desc || "";
       document.getElementById("company-mission").value = company.mission || "";
       document.getElementById("company-vision").value = company.vision || "";
-      document.getElementById("company-values").value = company.company_values || "";
+      document.getElementById("company-values").value =
+        company.company_values || "";
 
       if (company.icon_logo_url) displayLogo(company.icon_logo_url);
       if (company.alt_logo_url) displayAltLogo(company.alt_logo_url);
+
     }
   } catch (err) {
     showNotification("Failed to load company info.", "error");
@@ -544,33 +552,70 @@ async function saveCompanyInfo() {
   saveBtn.innerHTML = `<span class="spinner"></span>Saving...`;
 
   const formData = new FormData();
-  formData.append("company_name", document.getElementById("company-name").value.trim());
-  formData.append("email", document.getElementById("company-email").value.trim());
-  formData.append("phone_number", document.getElementById("company-phone").value.trim());
-  formData.append("alt_phone_number", document.getElementById("company-alt-phone").value.trim());
-  formData.append("business_desc", document.getElementById("company-description").value.trim());
-  formData.append("mission", document.getElementById("company-mission").value.trim());
-  formData.append("vision", document.getElementById("company-vision").value.trim());
-  formData.append("company_values", document.getElementById("company-values").value.trim());
+  formData.append(
+    "company_name",
+    document.getElementById("company-name").value.trim()
+  );
+  formData.append(
+    "email",
+    document.getElementById("company-email").value.trim()
+  );
+  formData.append(
+    "phone_number",
+    document.getElementById("company-phone").value.trim()
+  );
+  formData.append(
+    "alt_phone_number",
+    document.getElementById("company-alt-phone").value.trim()
+  );
+  formData.append(
+    "business_desc",
+    document.getElementById("company-description").value.trim()
+  );
+  formData.append(
+    "mission",
+    document.getElementById("company-mission").value.trim()
+  );
+  formData.append(
+    "vision",
+    document.getElementById("company-vision").value.trim()
+  );
+  formData.append(
+    "company_values",
+    document.getElementById("company-values").value.trim()
+  );
 
   // Handle logo files
   const logoInput = document.getElementById("logo-input");
   if (logoInput.files[0]) formData.append("icon_logo_url", logoInput.files[0]);
   const altLogoInput = document.getElementById("alt-logo-input");
-  if (altLogoInput.files[0]) formData.append("alt_logo_url", altLogoInput.files[0]);
+  if (altLogoInput.files[0])
+    formData.append("alt_logo_url", altLogoInput.files[0]);
 
   try {
-    if (!companyId) {
-      showNotification("Company ID not found. Please reload the page.", "error");
-      return;
+    let res;
+    if (companyId) {
+      // Update existing company info
+      res = await fetch(`${API_BASE_URL}/${companyId}`, {
+        method: "PATCH",
+        body: formData,
+      });
+    } else {
+      // Create new company info
+      res = await fetch(`${API_BASE_URL}/create`, {
+        method: "POST",
+        body: formData,
+      });
     }
-    const res = await fetch(`${API_BASE_URL}/${companyId}`, {
-      method: 'PATCH',
-      body: formData,
-    });
     if (res.ok) {
       showNotification("Company information saved successfully!", "success");
       hasUnsavedChanges = false;
+      // If created, get new ID and reload info
+      if (!companyId) {
+        const data = await res.json();
+        companyId = data.id;
+        await loadCompanyInfo();
+      }
     } else {
       showNotification("Failed to save company info.", "error");
     }
@@ -588,18 +633,28 @@ function previewCompanyInfo() {
   const name = document.getElementById("company-name").value.trim();
   const email = document.getElementById("company-email").value.trim();
   const phone = document.getElementById("company-phone").value.trim();
-  const description = document.getElementById("company-description").value.trim();
+  const description = document
+    .getElementById("company-description")
+    .value.trim();
   const mission = document.getElementById("company-mission").value.trim();
   const vision = document.getElementById("company-vision").value.trim();
   const values = document.getElementById("company-values").value.trim();
-  const logo = document.getElementById("logo-preview").querySelector("img")?.src;
-  const altLogo = document.getElementById("alt-logo-preview").querySelector("img")?.src;
+  const logo = document
+    .getElementById("logo-preview")
+    .querySelector("img")?.src;
+  const altLogo = document
+    .getElementById("alt-logo-preview")
+    .querySelector("img")?.src;
 
   const previewContent = `
     <div class="company-profile-card">
       <div class="company-header">
         <div class="company-logo-display">
-          ${logo ? `<img src="${logo}" alt="Company Logo">` : `<i class="fas fa-building"></i>`}
+          ${
+            logo
+              ? `<img src="${logo}" alt="Company Logo">`
+              : `<i class="fas fa-building"></i>`
+          }
         </div>
         <div class="company-details">
           <h2>${name}</h2>
@@ -618,7 +673,11 @@ function previewCompanyInfo() {
       </div>
       <div>
         <h4>Alternate Logo</h4>
-        ${altLogo ? `<img src="${altLogo}" alt="Alternate Logo">` : `<i class="fas fa-image"></i>`}
+        ${
+          altLogo
+            ? `<img src="${altLogo}" alt="Alternate Logo">`
+            : `<i class="fas fa-image"></i>`
+        }
       </div>
     </div>
   `;
@@ -629,18 +688,122 @@ function validateCompanyInfoForm() {
   const name = document.getElementById("company-name").value.trim();
   const email = document.getElementById("company-email").value.trim();
   const phone = document.getElementById("company-phone").value.trim();
-  const description = document.getElementById("company-description").value.trim();
+  const description = document
+    .getElementById("company-description")
+    .value.trim();
   const mission = document.getElementById("company-mission").value.trim();
   const vision = document.getElementById("company-vision").value.trim();
   const values = document.getElementById("company-values").value.trim();
   const logo = document.getElementById("logo-preview").querySelector("img");
-  const altLogo = document.getElementById("alt-logo-preview").querySelector("img");
+  const altLogo = document
+    .getElementById("alt-logo-preview")
+    .querySelector("img");
 
-  if (!name || !email || !phone || !description || !mission || !vision || !values || !logo || !altLogo) {
+  if (
+    !name ||
+    !email ||
+    !phone ||
+    !description ||
+    !mission ||
+    !vision ||
+    !values ||
+    !logo ||
+    !altLogo
+  ) {
     showNotification("All fields including both logos are required.", "error");
     return false;
   }
   return true;
+}
+
+function setupRealtimeValidation() {
+  const requiredFields = [
+    { id: "company-name", warning: "Company name is required." },
+    { id: "company-email", warning: "Email is required." },
+    { id: "company-phone", warning: "Phone number is required." },
+    { id: "company-description", warning: "Business description is required." },
+    { id: "company-mission", warning: "Mission is required." },
+    { id: "company-vision", warning: "Vision is required." },
+    { id: "company-values", warning: "Values are required." },
+  ];
+
+  requiredFields.forEach((field) => {
+    const input = document.getElementById(field.id);
+    const warningSpan = document.getElementById(`${field.id}-warning`);
+    if (!input) return;
+    if (!warningSpan) return;
+    input.addEventListener("input", () => {
+      if (!input.value.trim()) {
+        warningSpan.textContent = field.warning;
+        warningSpan.style.display = "inline";
+      } else {
+        warningSpan.textContent = "";
+        warningSpan.style.display = "none";
+      }
+    });
+    // Initial validation
+    if (!input.value.trim()) {
+      warningSpan.textContent = field.warning;
+      warningSpan.style.display = "inline";
+    } else {
+      warningSpan.textContent = "";
+      warningSpan.style.display = "none";
+    }
+  });
+
+  function validateLogoPreview() {
+  const logoImg = document.getElementById("logo-preview").querySelector("img");
+  const logoWarning = document.getElementById("logo-preview-warning");
+  if (!logoWarning) return; 
+  if (!logoImg) {
+    logoWarning.textContent = "Company logo is required.";
+    logoWarning.style.display = "inline";
+  } else {
+    logoWarning.textContent = "";
+    logoWarning.style.display = "none";
+  }
+}
+
+function validateAltLogoPreview() {
+  const altLogoImg = document.getElementById("alt-logo-preview").querySelector("img");
+  const altLogoWarning = document.getElementById("alt-logo-preview-warning");
+  if (!altLogoWarning) return; 
+  if (!altLogoImg) {
+    altLogoWarning.textContent = "Alternate logo is required.";
+    altLogoWarning.style.display = "inline";
+  } else {
+    altLogoWarning.textContent = "";
+    altLogoWarning.style.display = "none";
+  }
+}
+
+  // Validate on logo changes
+  document
+    .getElementById("logo-input")
+    .addEventListener("change", validateLogoPreview);
+  document
+    .getElementById("alt-logo-input")
+    .addEventListener("change", validateAltLogoPreview);
+
+  // Also validate on displayLogo/displayAltLogo calls
+  const origDisplayLogo = window.displayLogo;
+  window.displayLogo = function (...args) {
+    origDisplayLogo.apply(this, args);
+    validateLogoPreview();
+  };
+  const origDisplayAltLogo = window.displayAltLogo;
+  window.displayAltLogo = function (...args) {
+    origDisplayAltLogo.apply(this, args);
+    validateAltLogoPreview();
+  };
+
+  // Initial validation
+  requiredFields.forEach((field) => {
+    const input = document.getElementById(field.id);
+    input.dispatchEvent(new Event("input"));
+  });
+  validateLogoPreview();
+  validateAltLogoPreview();
 }
 
 // function resetCompanyInfo() {
@@ -1388,11 +1551,8 @@ function showAutoSave() {
     const currentTab = document.querySelector(".tab-button.active").dataset.tab;
 
     if (currentTab === "company") {
-      websiteData.company.name = document.getElementById("company-name").value;
-      websiteData.company.tagline =
-        document.getElementById("company-tagline").value;
-      websiteData.company.founded =
-        parseInt(document.getElementById("company-founded").value) || 2018;
+      const nameInput = document.getElementById("company-name");
+      websiteData.company.name = nameInput ? nameInput.value : "";
     } else if (currentTab === "about") {
       websiteData.about.story.title =
         document.getElementById("story-title").value;
