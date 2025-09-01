@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const createUploadMiddleware = ({ fields = [], fieldFolders = {} }) => {
   const allowedFormats = [
-    'jpg', 'jpeg', 'png',
+    'jpg', 'jpeg', 'png', 'svg', 'svg+xml',
     'pdf', 'doc', 'docx',
     'ppt', 'pptx',
     'xls', 'xlsx',
@@ -15,6 +15,8 @@ const createUploadMiddleware = ({ fields = [], fieldFolders = {} }) => {
     'jpeg': 'jpeg',
     'jpg': 'jpg',
     'png': 'png',
+    'svg': 'svg',
+    'svg+xml': 'svg',
     'pdf': 'pdf',
     'msword': 'doc',
     'vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
