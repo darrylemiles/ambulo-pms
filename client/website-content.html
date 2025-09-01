@@ -13,7 +13,262 @@
     <div class="overlay" id="overlay"></div>
     <div id="sidebarContainer"></div>
 
-    
+    <div class="container">
+        <div class="main-card-wrapper">
+            <a href="/contentManagement.html" class="back-button" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+                Back to Content Management
+            </a>
+
+            <div class="header">
+                <h1 class="title">Manage Homepage Content</h1>
+                <p class="description">
+                    Manage all website content for Ambulo Properties. Edit company information, about page content, services, and competitive advantages with real-time preview capabilities.
+                </p>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-button active" data-tab="hero">
+                        <i class="fas fa-home"></i>
+                        Hero Section
+                    </button>
+                    <button class="tab-button" data-tab="location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Location
+                    </button>
+                    <button class="tab-button" data-tab="about">
+                        <i class="fas fa-info-circle"></i>
+                        About
+                    </button>
+                    <button class="tab-button" data-tab="contact">
+                        <i class="fas fa-phone"></i>
+                        Contact
+                    </button>
+                </div>
+
+                <!-- Hero Section -->
+                <div class="tab-content active" id="hero-section">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-home"></i>
+                            Hero Section Configuration
+                        </h2>
+                        <div class="status-indicator">
+                            <i class="fas fa-check-circle"></i>
+                            Active
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="heroTitle">Hero Title</label>
+                            <input type="text" id="heroTitle" class="form-input" placeholder="WELCOME TO" value="WELCOME TO">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="brandName">Brand Name</label>
+                            <input type="text" id="brandName" class="form-input" placeholder="Ambulo's Property" value="Ambulo's Property">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="heroSubtitle">Hero Subtitle</label>
+                        <textarea id="heroSubtitle" class="form-input form-textarea" placeholder="Every Property Has a Story. Start Yours Here.">Every Property Has a Story. Start Yours Here.</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="primaryBtnText">Primary Button Text</label>
+                            <input type="text" id="primaryBtnText" class="form-input" placeholder="Inquire Now" value="Inquire Now">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="secondaryBtnText">Secondary Button Text</label>
+                            <input type="text" id="secondaryBtnText" class="form-input" placeholder="Call Us" value="Call Us">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Background Image</label>
+                        <div class="image-upload" id="heroImageUpload" onclick="document.getElementById('heroImageInput').click()">
+                            <div class="upload-placeholder">
+                                <i class="fas fa-camera"></i>
+                                <p>Click to upload hero background image</p>
+                                <small>Recommended size: 1920x1080px</small>
+                            </div>
+                        </div>
+                        <input type="file" id="heroImageInput" accept="image/*" style="display: none;">
+                        <div id="heroImageContainer" style="display: none;">
+                            <img id="heroCurrentImage" class="current-image" alt="Hero background">
+                            <div class="image-actions">
+                                <button type="button" class="btn btn-danger" onclick="removeHeroImage()">
+                                    <i class="fas fa-trash"></i>
+                                    Remove Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Section -->
+                <div class="tab-content" id="location-section">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Location Section
+                        </h2>
+                        <div class="status-indicator">
+                            <i class="fas fa-check-circle"></i>
+                            Active
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="locationTitle">Location Title</label>
+                        <input type="text" id="locationTitle" class="form-input" value="Locate Your Next Business in Silang's Commercial Hotspot">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="locationDesc">Location Description</label>
+                        <textarea id="locationDesc" class="form-input form-textarea">Position your business where it matters most. Our strategic location in Silang, Cavite offers excellent accessibility, growing customer base, and strong business ecosystem.</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="locationBtnText">Button Text</label>
+                            <input type="text" id="locationBtnText" class="form-input" value="Learn About the Area">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="locationAddress">Map Address Display</label>
+                            <input type="text" id="locationAddress" class="form-input" value="📍 Kapt. Sayas Street, Silang, Cavite">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div class="tab-content" id="about-section">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-info-circle"></i>
+                            About Section
+                        </h2>
+                        <div class="status-indicator">
+                            <i class="fas fa-check-circle"></i>
+                            Active
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="aboutTitle">About Title</label>
+                            <input type="text" id="aboutTitle" class="form-input" value="About Us">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="aboutSubtitle">About Subtitle</label>
+                            <input type="text" id="aboutSubtitle" class="form-input" value="Building successful businesses through strategic commercial real estate solutions">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="aboutPara1">First Paragraph</label>
+                        <textarea id="aboutPara1" class="form-input form-textarea">At Ambulo's Properties, we provide more than just spaces—we create foundations for success. Our commitment to excellence and understanding of business needs drives us to offer premium commercial properties that help businesses thrive.</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="aboutPara2">Second Paragraph</label>
+                        <textarea id="aboutPara2" class="form-input form-textarea">From retail stores and restaurants to service centers and creative studios, our diverse portfolio caters to various business models. Each property is carefully selected and maintained to ensure optimal business operations.</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="aboutPara3">Third Paragraph</label>
+                        <textarea id="aboutPara3" class="form-input form-textarea">Now powered by a custom-built web-based management system, we streamline the leasing process and provide exceptional customer service that sets us apart in the commercial real estate market.</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">About Images (4 images)</label>
+                        <div id="aboutImagesGrid" class="about-images-grid">
+                            <!-- About image uploads will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="tab-content" id="contact-section">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-phone"></i>
+                            Contact Information
+                        </h2>
+                        <div class="status-indicator">
+                            <i class="fas fa-check-circle"></i>
+                            Active
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="contactTitle">Contact Title</label>
+                            <input type="text" id="contactTitle" class="form-input" value="Contact Us">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="contactFormTitle">Contact Form Title</label>
+                            <input type="text" id="contactFormTitle" class="form-input" value="Send us Information">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="contactInfoTitle">Contact Info Title</label>
+                        <input type="text" id="contactInfoTitle" class="form-input" value="Get In Touch">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="contactEmail">Email</label>
+                            <input type="email" id="contactEmail" class="form-input" value="ambulosproperty@gmail.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="contactPhone">Phone</label>
+                            <input type="text" id="contactPhone" class="form-input" value="+63 xxx xxx xxxx">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="contactAddress">Address</label>
+                        <textarea id="contactAddress" class="form-input form-textarea">Kapt. Sayas Street, Brgy. San Vicente II, Silang, Cavite 4118</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="businessHours">Business Hours</label>
+                        <textarea id="businessHours" class="form-input form-textarea">Monday - Friday: 9:00 AM - 6:00 PM
+Saturday: 9:00 AM - 3:00 PM
+Sunday: Closed</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="contactFooterText">Footer Text</label>
+                        <textarea id="contactFooterText" class="form-input form-textarea">Ready to discover your ideal commercial space? Contact Ambulo's Properties today and let us help you find the perfect location for your business success.</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button type="button" class="btn btn-success" onclick="saveData()">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+                <button type="button" class="btn btn-danger" onclick="resetForm()">
+                    <i class="fas fa-refresh"></i>
+                    Reset to Defaults
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification" class="notification"></div>
+    <div id="autoSaveIndicator" class="auto-save-indicator">
+        <i class="fas fa-check-circle"></i>
+        Changes saved automatically
+    </div>
 
     <script src="/javascript/bootstrap.bundle.min.js"></script>
     <script src="/javascript/website-content.js"></script>
