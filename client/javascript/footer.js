@@ -16,30 +16,30 @@ async function setDynamicFooterContent() {
   if (!data || !data[0]) return;
   const company = data[0];
 
-  const nameEl = document.getElementById("dynamic-company-name");
+  const nameEl = document.getElementById("ft-dynamic-company-name");
   if (nameEl) nameEl.textContent = company.company_name || "Ambulo Properties";
-  const descEl = document.getElementById("dynamic-company-description");
+  const descEl = document.getElementById("ft-dynamic-company-description");
   if (descEl)
     descEl.textContent =
       company.business_desc ||
       "Your trusted partner for premium commercial spaces in Silang, Cavite.";
-  const addressEl = document.getElementById("dynamic-company-address");
+  const addressEl = document.getElementById("ft-dynamic-company-address");
   if (addressEl)
     addressEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${
       company.street_address || ""
     }, ${company.city || ""}, ${company.province || ""}, ${
       company.country || ""
     }`;
-  const phoneEl = document.getElementById("dynamic-company-phone");
-  const altPhoneEl = document.getElementById("dynamic-company-alt-phone");
+  const phoneEl = document.getElementById("ft-dynamic-company-phone");
+  const altPhoneEl = document.getElementById("ft-dynamic-company-alt-phone");
   if (phoneEl && altPhoneEl) {
     phoneEl.innerHTML = `<i class="fa-solid fa-phone"></i> ${
       company.phone_number || ""
-    } | <span id="dynamic-company-alt-phone">${
+    } | <span id="ft-dynamic-company-alt-phone">${
       company.alt_phone_number || ""
     }</span>`;
   }
-  const emailEl = document.getElementById("dynamic-company-email");
+  const emailEl = document.getElementById("ft-dynamic-company-email");
   if (emailEl)
     emailEl.innerHTML = `<i class="fa-solid fa-envelope"></i> ${
       company.email || ""

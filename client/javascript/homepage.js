@@ -53,5 +53,4 @@ async function setDynamicHomepageContent() {
 
 document.addEventListener("DOMContentLoaded", () => {
   setDynamicHomepageContent();
-  setupNavbarFeatures();
 });
