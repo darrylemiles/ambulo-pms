@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,17 +9,18 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png">
-    <link rel="manifest" href="/assets/favicon/site.webmanifest">
     <title>Property Spaces</title>
 </head>
+
 <body>
     <header id="navbar-placeholder"></header>
-    
+
     <section id="properties" class="properties">
         <div class="container">
             <div class="section-title reveal-element">
                 <h2>Property Units - Spaces Overview</h2>
-                <p>Manage and monitor your commercial property portfolio with comprehensive details, real-time status updates, and streamlined operations for optimal property performance.</p>
+                <p>Manage and monitor your commercial property portfolio with comprehensive details, real-time status
+                    updates, and streamlined operations for optimal property performance.</p>
             </div>
 
             <!-- Filter Section -->
@@ -27,11 +29,12 @@
                     <h3 class="filter-title">Filter Properties</h3>
                     <button class="filter-toggle" onclick="toggleFilters()">Toggle Filters</button>
                 </div>
-                
+
                 <div class="filter-content" id="filterContent">
                     <!-- Search Bar -->
                     <div class="filter-group" style="margin-bottom: 24px;">
-                        <input type="text" class="filter-input" id="searchInput" placeholder="Search by unit name or location...">
+                        <input type="text" class="filter-input" id="searchInput"
+                            placeholder="Search by unit name or location...">
                     </div>
 
                     <!-- Status Filters -->
@@ -151,7 +154,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="filter-actions">
                         <button class="btn-filter btn-secondary" onclick="clearAllFilters()">Clear All Filters</button>
                     </div>
@@ -170,488 +173,9 @@
                     <option value="name">Name: A to Z</option>
                 </select>
             </div>
-            
-            <div class="property-grid reveal-element">
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.1s;" data-status="available" data-type="office" data-price="45000" data-area="1200">
-                    <div class="property-image prop-1">
-                        <div class="status-badge status-available">Available</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 1</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 101
-                                </div>
-                            </div>
-                            <div class="property-price">₱45,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>1,200 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚗</div>
-                                <span>2 Parking</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏢</div>
-                                <span>5th Floor</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🌐</div>
-                                <span>Fiber Ready</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=1'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.2s;" data-status="occupied" data-type="retail" data-price="85000" data-area="2500">
-                    <div class="property-image prop-2">
-                        <div class="status-badge status-occupied">Occupied</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 2</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 102
-                                </div>
-                            </div>
-                            <div class="property-price">₱85,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>2,500 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚗</div>
-                                <span>4 Parking</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏢</div>
-                                <span>Ground Floor</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">👥</div>
-                                <span>High Traffic</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=2'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.3s;" data-status="available" data-type="warehouse" data-price="45000" data-area="5000">
-                    <div class="property-image prop-3">
-                        <div class="status-badge status-available">Available</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 3</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 103
-                                </div>
-                            </div>
-                            <div class="property-price">₱45,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>5,000 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚛</div>
-                                <span>Loading Bay</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">⚡</div>
-                                <span>High Voltage</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏗️</div>
-                                <span>20ft Ceiling</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=3'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.4s;" data-status="maintenance" data-type="restaurant" data-price="34000" data-area="1800">
-                    <div class="property-image prop-4">
-                        <div class="status-badge status-maintenance">Maintenance</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 4</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 104
-                                </div>
-                            </div>
-                            <div class="property-price">₱34,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>1,800 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🍽️</div>
-                                <span>Full Kitchen</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🪑</div>
-                                <span>80 Seating</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🅿️</div>
-                                <span>Valet Area</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=4'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.5s;" data-status="occupied" data-type="coworking" data-price="65000" data-area="2000">
-                    <div class="property-image prop-5">
-                        <div class="status-badge status-occupied">Occupied</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 5</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 105
-                                </div>
-                            </div>
-                            <div class="property-price">₱65,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>2,000 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">💺</div>
-                                <span>50 Desks</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏢</div>
-                                <span>3rd Floor</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">☕</div>
-                                <span>Café Area</span>
-                            </div>
-                        </div>
-        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=5'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.6s;" data-status="available" data-type="medical" data-price="50000" data-area="1500">
-                    <div class="property-image prop-6">
-                        <div class="status-badge status-available">Available</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 6</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 106
-                                </div>
-                            </div>
-                            <div class="property-price">₱50,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>1,500 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏥</div>
-                                <span>6 Rooms</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚗</div>
-                                <span>3 Parking</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">♿</div>
-                                <span>Accessible</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=6'">View Details</button>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Additional 6 Units -->
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.1s;" data-status="available" data-type="showroom" data-price="72000" data-area="2200">
-                    <div class="property-image prop-7">
-                        <div class="status-badge status-available">Available</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 7</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 107
-                                </div>
-                            </div>
-                            <div class="property-price">₱72,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>2,200 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏪</div>
-                                <span>Showroom</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚗</div>
-                                <span>5 Parking</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🔒</div>
-                                <span>Security</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=7'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.2s;" data-status="occupied" data-type="salon" data-price="38000" data-area="900">
-                    <div class="property-image prop-8">
-                        <div class="status-badge status-occupied">Occupied</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 8</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 108
-                                </div>
-                            </div>
-                            <div class="property-price">₱38,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>900 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">💇</div>
-                                <span>Salon Space</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🪑</div>
-                                <span>8 Stations</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚿</div>
-                                <span>Wash Area</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=8'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.3s;" data-status="available" data-type="gym" data-price="95000" data-area="3000">
-                    <div class="property-image prop-9">
-                        <div class="status-badge status-available">Available</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 9</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 109
-                                </div>
-                            </div>
-                            <div class="property-price">₱95,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>3,000 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏋️</div>
-                                <span>Gym Space</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚿</div>
-                                <span>Locker Room</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">❄️</div>
-                                <span>AC System</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=9'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.4s;" data-status="maintenance" data-type="training" data-price="58000" data-area="1600">
-                    <div class="property-image prop-10">
-                        <div class="status-badge status-maintenance">Maintenance</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 10</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 110
-                                </div>
-                            </div>
-                            <div class="property-price">₱58,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>1,600 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🎓</div>
-                                <span>Training Center</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">💺</div>
-                                <span>40 Seats</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">📺</div>
-                                <span>AV System</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=10'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.5s;" data-status="occupied" data-type="bookstore" data-price="42000" data-area="1100">
-                    <div class="property-image prop-11">
-                        <div class="status-badge status-occupied">Occupied</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 11</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 111
-                                </div>
-                            </div>
-                            <div class="property-price">₱42,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>1,100 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">📚</div>
-                                <span>Bookstore</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">☕</div>
-                                <span>Reading Café</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">📶</div>
-                                <span>Free WiFi</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=11'">View Details</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="property-card reveal-element scale-up" style="transition-delay: 0.6s;" data-status="available" data-type="supermarket" data-price="78000" data-area="2400">
-                    <div class="property-image prop-12">
-                        <div class="status-badge status-available">Available</div>
-                    </div>
-                    <div class="property-info">
-                        <div class="property-header">
-                            <div>
-                                <div class="property-title">Unit 12</div>
-                                <div class="property-desc">
-                                    Silang, Cavite • Unit 112
-                                </div>
-                            </div>
-                            <div class="property-price">₱78,000/mo</div>
-                        </div>
-                        
-                        <div class="property-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">📐</div>
-                                <span>2,400 sq ft</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🏪</div>
-                                <span>Supermarket</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">❄️</div>
-                                <span>Cold Storage</span>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">🚚</div>
-                                <span>Loading Dock</span>
-                            </div>
-                        </div>
-                        
-                        <div class="property-actions">
-                            <button class="btn btn-primary" onclick="window.location.href='spacesDetails.html?id=12'">View Details</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="property-grid reveal-element" id="propertyGrid">
+                <!-- Cards will be injected here -->
             </div>
 
             <!-- No Results Message -->
@@ -660,7 +184,7 @@
                 <p>Try adjusting your filters to see more results.</p>
             </div>
         </div>
-    </section> 
+    </section>
 
     <!-- Footer Placeholder -->
     <div id="footer-placeholder"></div>
@@ -668,4 +192,5 @@
     <script type="module" src="/javascript/propertySpaces.js"></script>
     <script type="module" src="/javascript/footer.js"></script>
 </body>
+
 </html>
