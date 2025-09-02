@@ -1,3 +1,8 @@
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+
+// API Configuration
+const API_BASE_URL = "/api/v1/users";
+
 document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.getElementById("loginForm");
   const passwordField = document.getElementById("passwordField");
@@ -21,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const password = document.querySelector('input[type="password"]').value;
 
     try {
-      const response = await fetch("http://localhost:5000/api/v1/users/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,3 +61,31 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+async function setDynamicCompanyDetails() {
+  const data = await fetchCompanyDetails();
+  if(!data || !data[0]) return;
+  const companyDetails = data[0];
+
+  // Brand name
+  const brandName = document.getElementById("dynamic-company-name");
+  if (brandName) brandName.textContent = companyDetails.company_name || "Your Company";
+
+  // Brand desc
+  const brandDesc = document.getElementById("dynamic-company-desc");
+  if (brandDesc) brandDesc.textContent = companyDetails.business_desc || "Your trusted partner in property management.";
+
+  // Login icon
+  const logoImg = document.getElementById("dynamic-logo");
+  if (logoImg) logoImg.src = companyDetails.icon_logo_url || "/assets/logo-property.png";
+
+  // Tab icon
+  const favicon = document.getElementById("dynamic-favicon");
+  if (favicon) favicon.href = companyDetails.icon_logo_url || "/assets/logo-property.png";
+
+  // Tab title
+  document.title = `${companyDetails.company_name || "Ambulo Properties"} Login`;
+
+}
+
+document.addEventListener("DOMContentLoaded", setDynamicCompanyDetails);

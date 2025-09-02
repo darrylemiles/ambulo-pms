@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="assets/fontawesome/all.min.css">
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/login.css">
+    <link rel="icon" id="dynamic-favicon" type="image/svg+xml" href="/assets/logo-property.png">
     <title>Ambulo Properties Login</title>
 </head>
 <body>
@@ -13,25 +14,25 @@
         <div class="left-section">
             <div class="welcome-content">
                 <div class="welcome-text">Welcome Back!</div>
-                <div class="brand-name">Ambulo Properties</div>
-                <div class="brand-desc">Your trusted partner in property management.</div>
+                <div class="brand-name" id="dynamic-company-name">Ambulo Properties</div>
+                <div class="brand-desc" id="dynamic-company-desc">Your trusted partner in property management.</div>
             </div>
             <div class="property-showcase">
                 <div class="main-property">
-                    <img src="/assets/image1.jpg" alt="Featured Property" class="property-image"/>
+                    <img src="/assets/image1.jpg" id="dynamic-image-first" alt="Featured Property" class="property-image"/>
                 </div>
                 <div class="secondary-property">
-                    <img src="/assets/image2.jpg" alt="Property" class="property-image"/>
+                    <img src="/assets/image2.jpg" id="dynamic-image-secondary" alt="Property" class="property-image"/>
                 </div>
                 <div class="third-property">
-                    <img src="/assets/image3.jpg" alt="Property" class="property-image"/>
+                    <img src="/assets/image3.jpg" id="dynamic-image-third" alt="Property" class="property-image"/>
                 </div>
             </div>
         </div>
         <div class="right-section">
             <div class="login-card">
                 <div class="login-icon">
-                    <img src="/assets/logo-property.png" alt="Ambulo Logo"/>
+                    <img src="/assets/logo-property.png" id="dynamic-logo" alt="Ambulo Logo"/>
                 </div>
                 <h2 class="login-title">Sign in to your account</h2>
                 <form id="loginForm">
@@ -67,6 +68,6 @@
             </div>
         </div>
     </div>
-    <script src="/javascript/login.js"></script>
+    <script type="module" src="/javascript/login.js"></script>
 </body>
 </html>
