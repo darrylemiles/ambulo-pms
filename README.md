@@ -44,7 +44,7 @@ This project was developed by a collaborative team of 4 developers:
 | Name | Role | Contributions | GitHub | LinkedIn |
 |------|------|---------------|--------|----------|
 | **Kei Lebron** | Project Manager & Backend Developer | Project coordination, server-side logic, database architecture | [@keilebron](https://github.com/kklebron) | [LinkedIn](https://linkedin.com/in/kei-lebron) |
-| **Rea Buena** | Backend Developer | Server-side logic, database operations, API endpoints | [@rrreigun](https://github.com/rrreigun) | N/A |
+| **Rea Buena** | Backend Developer | Server-side logic, database operations, API endpoints | [@rrreigun](https://github.com/rrreigun) | [LinkedIn](https://www.linkedin.com/in/reana-buena/) |
 | **Joshua Deputo** | Frontend Developer | User interface implementation, client-side functionality, responsive layouts | [@joshuadeputo](https://github.com/joshuadeputo) | N/A |
 | **Jerson Matuguina** | UI/UX Designer | Web design, user experience | [@jersonmatuguina](https://github.com/jersonmatuguina) | N/A |
 
