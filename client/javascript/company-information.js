@@ -533,9 +533,20 @@ async function loadCompanyInfo() {
       document.getElementById("company-values").value =
         company.company_values || "";
 
+      // Address fields
+      document.getElementById("company-house-no").value =
+        company.house_no || "";
+      document.getElementById("company-street-address").value =
+        company.street_address || "";
+      document.getElementById("company-city").value = company.city || "";
+      document.getElementById("company-province").value =
+        company.province || "";
+      document.getElementById("company-zip-code").value =
+        company.zip_code || "";
+      document.getElementById("company-country").value = company.country || "";
+
       if (company.icon_logo_url) displayLogo(company.icon_logo_url);
       if (company.alt_logo_url) displayAltLogo(company.alt_logo_url);
-
     }
   } catch (err) {
     showNotification("Failed to load company info.", "error");
@@ -583,6 +594,29 @@ async function saveCompanyInfo() {
   formData.append(
     "company_values",
     document.getElementById("company-values").value.trim()
+  );
+
+  // Address fields
+  formData.append(
+    "house_no",
+    document.getElementById("company-house-no").value.trim()
+  );
+  formData.append(
+    "street_address",
+    document.getElementById("company-street-address").value.trim()
+  );
+  formData.append("city", document.getElementById("company-city").value.trim());
+  formData.append(
+    "province",
+    document.getElementById("company-province").value.trim()
+  );
+  formData.append(
+    "zip_code",
+    document.getElementById("company-zip-code").value.trim()
+  );
+  formData.append(
+    "country",
+    document.getElementById("company-country").value.trim()
   );
 
   // Handle logo files
@@ -646,6 +680,28 @@ function previewCompanyInfo() {
     .getElementById("alt-logo-preview")
     .querySelector("img")?.src;
 
+  // Address fields
+  const houseNo = document.getElementById("company-house-no").value.trim();
+  const streetAddress = document.getElementById("company-street-address").value.trim();
+  const city = document.getElementById("company-city").value.trim();
+  const province = document.getElementById("company-province").value.trim();
+  const zipCode = document.getElementById("company-zip-code").value.trim();
+  const country = document.getElementById("company-country").value.trim();
+
+  const addressHtml = `
+    <div style="margin-bottom: 18px;">
+      <h4>Company Address</h4>
+      <p>
+        ${houseNo ? houseNo + ", " : ""}
+        ${streetAddress ? streetAddress + ", " : ""}
+        ${city ? city + ", " : ""}
+        ${province ? province + ", " : ""}
+        ${zipCode ? zipCode + ", " : ""}
+        ${country}
+      </p>
+    </div>
+  `;
+
   const previewContent = `
     <div class="company-profile-card">
       <div class="company-header">
@@ -662,6 +718,7 @@ function previewCompanyInfo() {
           <p><strong>Phone:</strong> ${phone}</p>
         </div>
       </div>
+      ${addressHtml}
       <p>${description}</p>
       <div>
         <h4>Mission</h4>
@@ -688,16 +745,19 @@ function validateCompanyInfoForm() {
   const name = document.getElementById("company-name").value.trim();
   const email = document.getElementById("company-email").value.trim();
   const phone = document.getElementById("company-phone").value.trim();
-  const description = document
-    .getElementById("company-description")
-    .value.trim();
+  const description = document.getElementById("company-description").value.trim();
   const mission = document.getElementById("company-mission").value.trim();
   const vision = document.getElementById("company-vision").value.trim();
   const values = document.getElementById("company-values").value.trim();
   const logo = document.getElementById("logo-preview").querySelector("img");
-  const altLogo = document
-    .getElementById("alt-logo-preview")
-    .querySelector("img");
+  const altLogo = document.getElementById("alt-logo-preview").querySelector("img");
+
+  // Address fields
+  const streetAddress = document.getElementById("company-street-address").value.trim();
+  const city = document.getElementById("company-city").value.trim();
+  const province = document.getElementById("company-province").value.trim();
+  const zipCode = document.getElementById("company-zip-code").value.trim();
+  const country = document.getElementById("company-country").value.trim();
 
   if (
     !name ||
@@ -708,13 +768,19 @@ function validateCompanyInfoForm() {
     !vision ||
     !values ||
     !logo ||
-    !altLogo
+    !altLogo ||
+    !streetAddress ||
+    !city ||
+    !province ||
+    !zipCode ||
+    !country
   ) {
-    showNotification("All fields including both logos are required.", "error");
+    showNotification("All fields except House No. are required, including both logos and address.", "error");
     return false;
   }
   return true;
 }
+
 
 function setupRealtimeValidation() {
   const requiredFields = [
@@ -725,6 +791,11 @@ function setupRealtimeValidation() {
     { id: "company-mission", warning: "Mission is required." },
     { id: "company-vision", warning: "Vision is required." },
     { id: "company-values", warning: "Values are required." },
+    { id: "company-street-address", warning: "Street address is required." },
+    { id: "company-city", warning: "City is required." },
+    { id: "company-province", warning: "Province is required." },
+    { id: "company-zip-code", warning: "Zip code is required." },
+    { id: "company-country", warning: "Country is required." },
   ];
 
   requiredFields.forEach((field) => {
@@ -752,30 +823,34 @@ function setupRealtimeValidation() {
   });
 
   function validateLogoPreview() {
-  const logoImg = document.getElementById("logo-preview").querySelector("img");
-  const logoWarning = document.getElementById("logo-preview-warning");
-  if (!logoWarning) return; 
-  if (!logoImg) {
-    logoWarning.textContent = "Company logo is required.";
-    logoWarning.style.display = "inline";
-  } else {
-    logoWarning.textContent = "";
-    logoWarning.style.display = "none";
+    const logoImg = document
+      .getElementById("logo-preview")
+      .querySelector("img");
+    const logoWarning = document.getElementById("logo-preview-warning");
+    if (!logoWarning) return;
+    if (!logoImg) {
+      logoWarning.textContent = "Company logo is required.";
+      logoWarning.style.display = "inline";
+    } else {
+      logoWarning.textContent = "";
+      logoWarning.style.display = "none";
+    }
   }
-}
 
-function validateAltLogoPreview() {
-  const altLogoImg = document.getElementById("alt-logo-preview").querySelector("img");
-  const altLogoWarning = document.getElementById("alt-logo-preview-warning");
-  if (!altLogoWarning) return; 
-  if (!altLogoImg) {
-    altLogoWarning.textContent = "Alternate logo is required.";
-    altLogoWarning.style.display = "inline";
-  } else {
-    altLogoWarning.textContent = "";
-    altLogoWarning.style.display = "none";
+  function validateAltLogoPreview() {
+    const altLogoImg = document
+      .getElementById("alt-logo-preview")
+      .querySelector("img");
+    const altLogoWarning = document.getElementById("alt-logo-preview-warning");
+    if (!altLogoWarning) return;
+    if (!altLogoImg) {
+      altLogoWarning.textContent = "Alternate logo is required.";
+      altLogoWarning.style.display = "inline";
+    } else {
+      altLogoWarning.textContent = "";
+      altLogoWarning.style.display = "none";
+    }
   }
-}
 
   // Validate on logo changes
   document
