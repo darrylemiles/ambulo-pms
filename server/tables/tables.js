@@ -14,6 +14,7 @@ import propertiesPicturesTable from './propertiesPicturesTable.js';
 
 //cms
 import companyInfoTable from './companyInfoTable.js';
+import companyAddressTable from './companyAddressTable.js';
 
 
 const tables = async (dbConnection) => {
@@ -34,6 +35,7 @@ const tables = async (dbConnection) => {
     
     //cms
     companyInfoTable,
+    companyAddressTable
 
   ];
 
