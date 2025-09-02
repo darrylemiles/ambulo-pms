@@ -1,6 +1,6 @@
 import conn from "./../config/db.js";
 
-// Create company details and address
+// Create company details and address if not exists
 const createCompanyDetails = async (companyData) => {
   const {
     company_name,
@@ -10,6 +10,7 @@ const createCompanyDetails = async (companyData) => {
     phone_number,
     alt_phone_number,
     business_desc,
+    business_hours,
     mission,
     vision,
     company_values,
@@ -27,8 +28,8 @@ const createCompanyDetails = async (companyData) => {
   const companyQuery = `
     INSERT INTO company_info (
       company_name, icon_logo_url, alt_logo_url, email, phone_number, alt_phone_number,
-      business_desc, mission, vision, company_values, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      business_desc, business_hours, mission, vision, company_values, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
   `;
   const [companyResult] = await pool.query(companyQuery, [
     company_name,
@@ -38,6 +39,7 @@ const createCompanyDetails = async (companyData) => {
     phone_number,
     alt_phone_number,
     business_desc,
+    business_hours, 
     mission,
     vision,
     company_values,
@@ -86,6 +88,7 @@ const updateCompanyDetails = async (companyId, companyData) => {
     "phone_number",
     "alt_phone_number",
     "business_desc",
+    "business_hours", 
     "mission",
     "vision",
     "company_values"
@@ -148,7 +151,6 @@ const updateCompanyDetails = async (companyId, companyData) => {
       companyData.country || "",
     ]);
   } else {
-    // Update existing address
     const addressSetClauses = [];
     const addressValues = [];
     addressFields.forEach((field) => {

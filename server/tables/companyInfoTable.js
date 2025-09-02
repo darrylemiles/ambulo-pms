@@ -7,6 +7,7 @@ const companyInfoTable = `CREATE TABLE IF NOT EXISTS company_info (
     phone_number VARCHAR(15) NOT NULL,
     alt_phone_number VARCHAR(15),
     business_desc TEXT NOT NULL,
+    business_hours TEXT NOT NULL,
     mission TEXT NOT NULL,
     vision TEXT NOT NULL,
     company_values TEXT NOT NULL,

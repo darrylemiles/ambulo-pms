@@ -528,6 +528,8 @@ async function loadCompanyInfo() {
         company.alt_phone_number || "";
       document.getElementById("company-description").value =
         company.business_desc || "";
+      document.getElementById("company-business-hours").value =
+        company.business_hours || "";
       document.getElementById("company-mission").value = company.mission || "";
       document.getElementById("company-vision").value = company.vision || "";
       document.getElementById("company-values").value =
@@ -582,6 +584,10 @@ async function saveCompanyInfo() {
   formData.append(
     "business_desc",
     document.getElementById("company-description").value.trim()
+  );
+  formData.append(
+    "business_hours",
+    document.getElementById("company-business-hours").value.trim()
   );
   formData.append(
     "mission",
@@ -670,6 +676,7 @@ function previewCompanyInfo() {
   const description = document
     .getElementById("company-description")
     .value.trim();
+  const businessHours = document.getElementById("company-business-hours").value.trim();
   const mission = document.getElementById("company-mission").value.trim();
   const vision = document.getElementById("company-vision").value.trim();
   const values = document.getElementById("company-values").value.trim();
@@ -720,6 +727,8 @@ function previewCompanyInfo() {
       </div>
       ${addressHtml}
       <p>${description}</p>
+      <h4>Business Hours</h4>
+      <p>${businessHours}</p>
       <div>
         <h4>Mission</h4>
         <p>${mission}</p>
@@ -746,6 +755,7 @@ function validateCompanyInfoForm() {
   const email = document.getElementById("company-email").value.trim();
   const phone = document.getElementById("company-phone").value.trim();
   const description = document.getElementById("company-description").value.trim();
+  const businessHours = document.getElementById("company-business-hours").value.trim();
   const mission = document.getElementById("company-mission").value.trim();
   const vision = document.getElementById("company-vision").value.trim();
   const values = document.getElementById("company-values").value.trim();
@@ -763,6 +773,7 @@ function validateCompanyInfoForm() {
     !name ||
     !email ||
     !phone ||
+    !businessHours ||
     !description ||
     !mission ||
     !vision ||
@@ -788,6 +799,7 @@ function setupRealtimeValidation() {
     { id: "company-email", warning: "Email is required." },
     { id: "company-phone", warning: "Phone number is required." },
     { id: "company-description", warning: "Business description is required." },
+    { id: "company-business-hours", warning: "Business hours are required." },
     { id: "company-mission", warning: "Mission is required." },
     { id: "company-vision", warning: "Vision is required." },
     { id: "company-values", warning: "Values are required." },
