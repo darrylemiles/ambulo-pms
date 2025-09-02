@@ -1,5 +1,6 @@
 import conn from "./../config/db.js";
 
+// Create company details and address
 const createCompanyDetails = async (companyData) => {
   const {
     company_name,
@@ -12,16 +13,24 @@ const createCompanyDetails = async (companyData) => {
     mission,
     vision,
     company_values,
+    house_no,
+    street_address,
+    city,
+    province,
+    zip_code,
+    country,
   } = companyData;
 
   const pool = await conn();
-  const query = `
+
+  // Insert into company_info
+  const companyQuery = `
     INSERT INTO company_info (
       company_name, icon_logo_url, alt_logo_url, email, phone_number, alt_phone_number,
       business_desc, mission, vision, company_values, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
   `;
-  const [result] = await pool.query(query, [
+  const [companyResult] = await pool.query(companyQuery, [
     company_name,
     icon_logo_url,
     alt_logo_url,
@@ -33,15 +42,41 @@ const createCompanyDetails = async (companyData) => {
     vision,
     company_values,
   ]);
-  return result.insertId;
+  const companyId = companyResult.insertId;
+
+  // Insert into company_address
+  const addressQuery = `
+    INSERT INTO company_address (
+      company_id, house_no, street_address, city, province, zip_code, country
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+  await pool.query(addressQuery, [
+    companyId,
+    house_no || "",
+    street_address || "",
+    city || "",
+    province || "",
+    zip_code || "",
+    country || "",
+  ]);
+
+  return companyId;
 };
 
+// Get company details and address
 const getCompanyDetails = async (companyId) => {
   const pool = await conn();
-  const query = `SELECT * FROM company_info`;
-  const [rows] = await pool.query(query);
+  const query = `
+    SELECT ci.*, ca.house_no, ca.street_address, ca.city, ca.province, ca.zip_code, ca.country
+    FROM company_info ci
+    LEFT JOIN company_address ca ON ci.id = ca.company_id
+    ${companyId ? "WHERE ci.id = ?" : ""}
+  `;
+  const [rows] = await pool.query(query, companyId ? [companyId] : []);
   return rows;
 };
+
+// Update company details and address
 const updateCompanyDetails = async (companyId, companyData) => {
   const allowedFields = [
     "company_name",
@@ -56,6 +91,15 @@ const updateCompanyDetails = async (companyId, companyData) => {
     "company_values"
   ];
 
+  const addressFields = [
+    "house_no",
+    "street_address",
+    "city",
+    "province",
+    "zip_code",
+    "country"
+  ];
+
   const setClauses = [];
   const values = [];
 
@@ -68,20 +112,63 @@ const updateCompanyDetails = async (companyId, companyData) => {
 
   setClauses.push("updated_at = NOW()");
 
-  if (setClauses.length === 1) {
-    return false;
+  const pool = await conn();
+
+  // Update company_info
+  if (setClauses.length > 1) {
+    const companyQuery = `
+      UPDATE company_info SET
+        ${setClauses.join(", ")}
+      WHERE id = ?
+    `;
+    values.push(companyId);
+    await pool.query(companyQuery, values);
   }
 
-  const pool = await conn();
-  const query = `
-    UPDATE company_info SET
-      ${setClauses.join(", ")}
-    WHERE id = ?
-  `;
-  values.push(companyId);
+  // Check if address exists
+  const [addressRows] = await pool.query(
+    "SELECT id FROM company_address WHERE company_id = ?",
+    [companyId]
+  );
 
-  const [result] = await pool.query(query, values);
-  return result.affectedRows > 0;
+  if (addressRows.length === 0) {
+    // Insert new address
+    const addressQuery = `
+      INSERT INTO company_address (
+        company_id, house_no, street_address, city, province, zip_code, country
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    await pool.query(addressQuery, [
+      companyId,
+      companyData.house_no || "",
+      companyData.street_address || "",
+      companyData.city || "",
+      companyData.province || "",
+      companyData.zip_code || "",
+      companyData.country || "",
+    ]);
+  } else {
+    // Update existing address
+    const addressSetClauses = [];
+    const addressValues = [];
+    addressFields.forEach((field) => {
+      if (companyData[field] !== undefined) {
+        addressSetClauses.push(`${field} = ?`);
+        addressValues.push(companyData[field]);
+      }
+    });
+    if (addressSetClauses.length > 0) {
+      const addressUpdateQuery = `
+        UPDATE company_address SET
+          ${addressSetClauses.join(", ")}
+        WHERE company_id = ?
+      `;
+      addressValues.push(companyId);
+      await pool.query(addressUpdateQuery, addressValues);
+    }
+  }
+
+  return true;
 };
 
 export default {
