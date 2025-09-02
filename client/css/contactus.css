@@ -277,7 +277,7 @@
             margin-bottom: 40px;
         }
 
-        .contact-item {
+        .contact-item-box {
             display: flex;
             align-items: flex-start;
             margin-bottom: 30px;
@@ -289,7 +289,7 @@
             transition: transform 0.3s ease;
         }
 
-        .contact-item:hover {
+        .contact-item-box:hover {
             transform: translateX(10px);
         }
 
@@ -306,14 +306,14 @@
             flex-shrink: 0;
         }
 
-        .contact-item-content h4 {
+        .contact-item-box-content h4 {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 5px;
             color: white;
         }
 
-        .contact-item-content p {
+        .contact-item-box-content p {
             color: rgba(255, 255, 255, 0.8);
             line-height: 1.5;
             font-size: 15px;
@@ -657,7 +657,7 @@
                 font-size: 22px;
             }
 
-            .contact-item {
+            .contact-item-box {
                 padding: 15px;
             }
 

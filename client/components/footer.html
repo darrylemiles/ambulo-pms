@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+    <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="../assets/fontawesome/all.min.css">
 </head>
+
 <body>
     <footer>
         <div class="footer-overlay"></div>
-        
+
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3>Ambulo Properties</h3>
-                    <p>Your trusted partner for premium commercial spaces in Silang, Cavite. We help businesses find their perfect location.</p>
+                    <h3><span id="dynamic-company-name">Ambulo Properties</span></h3>
+                    <p><span id="dynamic-company-description">Your trusted partner for premium commercial spaces in
+                            Silang, Cavite. We help businesses find their perfect location.</span></p>
                 </div>
-                
+
                 <div class="footer-section">
                     <h4>Quick Links</h4>
                     <ul class="footer-links">
@@ -26,7 +30,7 @@
                         <li><a href="/contactus.html">Contact</a></li>
                     </ul>
                 </div>
-                
+
                 <div class="footer-section">
                     <h4>Services</h4>
                     <ul class="footer-links footer-services">
@@ -36,23 +40,25 @@
                         <li><span>Space Planning</span></li>
                     </ul>
                 </div>
-                
+
                 <div class="footer-section">
                     <h4>Contact Info</h4>
                     <div class="contact-item">
-                        <p>📍 Kapt. Sayas Street, Brgy. San Vicente II</p>
-                        <p class="contact-address">Silang, Cavite, Philippines</p>
+                        <p id="dynamic-company-address">Silang, Cavite, Philippines</p>
                     </div>
-                    <p class="contact-phone">📞 +63 xxx xxx xxxx</p>
-                    <p class="contact-email">📧 ambulosproperty@gmail.com</p>
+                    <p class="contact-phone" id="dynamic-company-phone">📞 +63 xxx xxx xxxx | <span id="dynamic-company-alt-phone">+63 xxx xxx xxxx</span></p>
+                    <p class="contact-email" id="dynamic-company-email">📧 ambulosproperty@gmail.com</p>
                 </div>
             </div>
-            
+
             <div class="footer-bottom">
-                <p>&copy; 2025 Ambulo Properties. All rights reserved. | Designed with care for growing businesses.</p>
+                <p>&copy; 2025 <span id="dynamic-company-name">Ambulo Properties</span>. All rights reserved. | Designed
+                    with care for growing businesses.</p>
             </div>
         </div>
     </footer>
-<script src="/javascript/footer.js"></script>
+    <script type="module" src="/javascript/footer.js"></script>
 </body>
+
+
 </html>
