@@ -1,8 +1,8 @@
 const API_BASE_URL = "/api/v1/company-details";
-let cachedCompanyDetails = null;
 
 async function fetchCompanyDetails() {
-  if (cachedCompanyDetails) return cachedCompanyDetails; 
+  const cached = sessionStorage.getItem("companyDetails");
+  if (cached) return JSON.parse(cached);
 
   try {
     const res = await fetch(API_BASE_URL, {
@@ -13,7 +13,7 @@ async function fetchCompanyDetails() {
     });
     if (!res.ok) throw new Error("Failed to fetch company details");
     const data = await res.json();
-    cachedCompanyDetails = data;
+    sessionStorage.setItem("companyDetails", JSON.stringify(data));
     return data;
   } catch (err) {
     console.error("Error fetching company details:", err);
