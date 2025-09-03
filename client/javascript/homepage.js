@@ -1,5 +1,23 @@
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
+document.addEventListener("DOMContentLoaded", async () => {
+  setDynamicHomepageContent();
+
+  const grid = document.getElementById("homepagePropertyGrid");
+  if (grid) {
+    const properties = await fetchHomepageProperties();
+    grid.innerHTML = properties.map(renderHomepagePropertyCard).join("");
+
+    setTimeout(() => {
+      grid.querySelectorAll('.property-card').forEach(card => {
+        card.classList.add('revealed');
+      });
+      grid.querySelectorAll('.reveal-element').forEach(el => {
+        el.classList.add('revealed');
+      });
+    }, 100); 
+  }
+});
 
 async function setDynamicHomepageContent() {
   const data = await fetchCompanyDetails();
@@ -51,6 +69,49 @@ async function setDynamicHomepageContent() {
     : "Ambulo Properties - Homepage";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  setDynamicHomepageContent();
-});
+async function fetchHomepageProperties() {
+  const cacheKey = "homepagePropertiesAll";
+  let properties = [];
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    try {
+      properties = JSON.parse(cached);
+    } catch {
+      sessionStorage.removeItem(cacheKey);
+    }
+  } else {
+    const res = await fetch("/api/v1/properties?limit=50");
+    if (!res.ok) return [];
+    const data = await res.json();
+    properties = data.properties || [];
+    sessionStorage.setItem(cacheKey, JSON.stringify(properties));
+  }
+
+  // Shuffle and pick 6 random properties
+  for (let i = properties.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [properties[i], properties[j]] = [properties[j], properties[i]];
+  }
+  return properties.slice(0, 6);
+}
+
+function renderHomepagePropertyCard(property) {
+  const imageUrl =
+    property.display_image ||
+    (property.property_pictures && property.property_pictures[0]?.image_url) ||
+    "/assets/default-property.jpg";
+  const address = property.street
+    ? `${property.street}, ${property.city}, ${property.province}`
+    : property.city || "";
+
+  return `
+    <div class="property-card reveal-element scale-up">
+      <div class="property-image" style="background-image:url('${imageUrl}');"></div>
+      <div class="property-info">
+        <div class="property-title">${property.property_name || "Unit"}</div>
+        <div class="property-desc">${address}</div>
+        <div class="property-price">${property.base_rent ? `₱ ${Number(property.base_rent).toLocaleString()}/mo` : "N/A"}</div>
+      </div>
+    </div>
+  `;
+}

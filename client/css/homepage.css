@@ -259,6 +259,7 @@
             height: 280px;
             position: relative;
             overflow: hidden;
+            background-size: cover;
         }
 
         .property-image::before {
