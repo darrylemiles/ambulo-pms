@@ -85,8 +85,10 @@ function setupNavbarFeatures() {
     }
   });
 
-  // Form submission
-  document.querySelector("form").addEventListener("submit", function (e) {
+// Form submission
+const contactForm = document.querySelector("form");
+if (contactForm) {
+  contactForm.addEventListener("submit", function (e) {
     e.preventDefault();
 
     // Get form data
@@ -115,6 +117,7 @@ function setupNavbarFeatures() {
       button.disabled = false;
     }, 2000);
   });
+}
 
   // Add some interactive elements
   document.querySelectorAll(".property-card").forEach((card) => {
