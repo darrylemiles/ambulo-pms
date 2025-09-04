@@ -11,9 +11,6 @@ const createCompanyDetails = async (companyData) => {
     alt_phone_number,
     business_desc,
     business_hours,
-    mission,
-    vision,
-    company_values,
     house_no,
     street_address,
     city,
@@ -40,9 +37,6 @@ const createCompanyDetails = async (companyData) => {
     alt_phone_number,
     business_desc,
     business_hours, 
-    mission,
-    vision,
-    company_values,
   ]);
   const companyId = companyResult.insertId;
 
@@ -89,9 +83,6 @@ const updateCompanyDetails = async (companyId, companyData) => {
     "alt_phone_number",
     "business_desc",
     "business_hours", 
-    "mission",
-    "vision",
-    "company_values"
   ];
 
   const addressFields = [
