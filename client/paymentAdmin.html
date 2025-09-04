@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/paymentAdmin.css">
+    <title>Manage Payment</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div id="sidebarContainer"></div>
+
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-number" id="total-payments">247</div>
+                <div class="stat-label">Total Payments</div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-number" id="pending-payments">18</div>
+                <div class="stat-label">Pending Review</div>
+            </div>
+            <div class="stat-card paid">
+                <div class="stat-number" id="paid-payments">195</div>
+                <div class="stat-label">Confirmed</div>
+            </div>
+            <div class="stat-card overdue">
+                <div class="stat-number" id="overdue-payments">34</div>
+                <div class="stat-label">Overdue</div>
+            </div>
+        </div>
+
+        <!-- Payment Management -->
+        <div class="property-container">
+            <div class="property-header">
+                <div class="property-header-top">
+                    <h2 class="section-title">
+                        <i class="fas fa-list-alt"></i>
+                        Payment Submissions
+                    </h2>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <div class="filter-item">
+                        <label>Status</label>
+                        <select id="status-filter" onchange="filterPayments()">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label>Date From</label>
+                        <input type="date" id="date-from" onchange="filterPayments()">
+                    </div>
+                    <div class="filter-item">
+                        <label>Date To</label>
+                        <input type="date" id="date-to" onchange="filterPayments()">
+                    </div>
+                    <div class="filter-item">
+                        <label>Search</label>
+                        <input type="text" id="search-filter" placeholder="Tenant, reference..." onchange="filterPayments()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-table-container">
+                <table id="payments-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                            <th><i class="fas fa-user"></i> Tenant</th>
+                            <th><i class="fas fa-building"></i> Space</th>
+                            <th><i class="fas fa-peso-sign"></i> Amount</th>
+                            <th><i class="fas fa-hashtag"></i> Reference</th>
+                            <th><i class="fas fa-check-circle"></i> Status</th>
+                            <th><i class="fas fa-image"></i> Proof</th>
+                            <th><i class="fas fa-cogs"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payments-tbody">
+                        <!-- Sample Data -->
+                        <tr>
+                            <td>2025-01-15</td>
+                            <td>Maria Santos</td>
+                            <td>Unit 201-A</td>
+                            <td>₱25,000.00</td>
+                            <td>REF-2025-001</td>
+                            <td><span class="status-badge pending">Pending</span></td>
+                            <td>
+                                <button class="btn btn-primary" onclick="viewProof('proof1.jpg')">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-success" onclick="approvePayment('1')">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button class="btn btn-warning" onclick="reviewPayment('1')">
+                                        <i class="fas fa-search"></i> Review
+                                    </button>
+                                    <button class="btn btn-primary" onclick="generateReceipt('1')">
+                                        <i class="fas fa-receipt"></i> Receipt
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2025-01-14</td>
+                            <td>Juan Dela Cruz</td>
+                            <td>Unit 305-B</td>
+                            <td>₱18,500.00</td>
+                            <td>REF-2025-002</td>
+                            <td><span class="status-badge paid">Paid</span></td>
+                            <td>
+                                <button class="btn btn-primary" onclick="viewProof('proof2.jpg')">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary" onclick="generateReceipt('2')">
+                                        <i class="fas fa-receipt"></i> Receipt
+                                    </button>
+                                    <button class="btn btn-warning" onclick="editPayment('2')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2025-01-10</td>
+                            <td>Ana Rodriguez</td>
+                            <td>Unit 102-C</td>
+                            <td>₱22,000.00</td>
+                            <td>REF-2025-003</td>
+                            <td><span class="status-badge overdue">Overdue</span></td>
+                            <td>
+                                <span style="color: #9ca3af; font-style: italic;">No Proof</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-danger" onclick="sendReminder('3')">
+                                        <i class="fas fa-exclamation"></i> Remind
+                                    </button>
+                                    <button class="btn btn-warning" onclick="contactTenant('3')">
+                                        <i class="fas fa-phone"></i> Contact
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Review Modal -->
+    <div class="modal" id="review-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-search"></i>
+                    Review Payment Submission
+                </h2>
+                <button class="close-btn" onclick="closeModal('review-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert success" id="review-success-alert"></div>
+                <div class="alert error" id="review-error-alert"></div>
+
+                <div id="review-content">
+                    <div class="payment-proof-container">
+                        <h4 style="margin-bottom: 15px; color: #374151;">Payment Proof</h4>
+                        <img src="https://via.placeholder.com/600x400/3b82f6/ffffff?text=Payment+Proof" alt="Payment Proof" class="payment-proof-img">
+                        <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Submitted on January 15, 2025 at 2:30 PM</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid #3b82f6;">
+                            <h4 style="color: #374151; margin-bottom: 15px;">Payment Details</h4>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #6b7280;">Amount:</span>
+                                <span style="font-weight: 600;">₱25,000.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #6b7280;">Reference:</span>
+                                <span style="font-weight: 600;">REF-2025-001</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #6b7280;">Date:</span>
+                                <span style="font-weight: 600;">2025-01-15</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #6b7280;">Method:</span>
+                                <span style="font-weight: 600;">Bank Transfer</span>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid #10b981;">
+                            <h4 style="color: #374151; margin-bottom: 15px;">Tenant Information</h4>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #6b7280;">Name:</span>
+                                <span style="font-weight: 600;">Maria Santos</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #6b7280;">Unit:</span>
+                                <span style="font-weight: 600;">Unit 201-A</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #6b7280;">Email:</span>
+                                <span style="font-weight: 600;">maria.santos@email.com</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #6b7280;">Phone:</span>
+                                <span style="font-weight: 600;">+63 917 123 4567</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
+                        <h4 style="color: #374151; margin-bottom: 15px;">Admin Notes</h4>
+                        <textarea placeholder="Add your review notes here..." style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; min-height: 100px; font-family: 'Poppins', sans-serif; resize: vertical;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="approvePayment('1')">
+                    <i class="fas fa-check"></i> Approve Payment
+                </button>
+                <button class="btn btn-danger" onclick="rejectPayment('1')">
+                    <i class="fas fa-times"></i> Reject Payment
+                </button>
+                <button class="btn btn-primary" onclick="generateReceipt('1')">
+                    <i class="fas fa-receipt"></i> Generate Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Generation Modal -->
+    <div class="modal" id="receipt-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-receipt"></i>
+                    Generate Receipt
+                </h2>
+                <button class="close-btn" onclick="closeModal('receipt-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert success" id="receipt-success-alert"></div>
+                <div class="alert error" id="receipt-error-alert"></div>
+
+                <form class="receipt-form" id="receipt-form">
+                    <div class="form-group">
+                        <label>Receipt Number</label>
+                        <input type="text" id="receipt-number" value="RCP-2025-001" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Issue Date</label>
+                        <input type="date" id="receipt-date" value="2025-01-15" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Additional Notes</label>
+                        <textarea id="receipt-notes" placeholder="Any additional information for the receipt..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Receipt Type</label>
+                        <select id="receipt-type" required>
+                            <option value="payment">Payment Confirmation</option>
+                            <option value="rent">Rent Receipt</option>
+                            <option value="deposit">Security Deposit</option>
+                            <option value="utility">Utility Payment</option>
+                        </select>
+                    </div>
+                </form>
+
+                <div class="receipt-preview" id="receipt-preview">
+                    <div class="receipt-header">
+                        <h3 class="receipt-title">Payment Receipt</h3>
+                        <p class="receipt-subtitle">Official Receipt - RCP-2025-001</p>
+                    </div>
+
+                    <div class="receipt-details">
+                        <div class="receipt-section">
+                            <h4>Payment Details</h4>
+                            <div class="receipt-item">
+                                <span>Amount Paid:</span>
+                                <span>₱25,000.00</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span>Payment Date:</span>
+                                <span>January 15, 2025</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span>Payment Method:</span>
+                                <span>Bank Transfer</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span>Reference No:</span>
+                                <span>REF-2025-001</span>
+                            </div>
+                        </div>
+
+                        <div class="receipt-section">
+                            <h4>Tenant Information</h4>
+                            <div class="receipt-item">
+                                <span>Name:</span>
+                                <span>Maria Santos</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span>Property:</span>
+                                <span>Unit 201-A</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span>Period:</span>
+                                <span>January 2025</span>
+                            </div>
+                            <div class="receipt-item">
+                                <span>Due Date:</span>
+                                <span>January 5, 2025</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="receipt-total">
+                        Total Amount: ₱25,000.00
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="generateAndSendReceipt()">
+                    <i class="fas fa-paper-plane"></i>
+                    Generate & Send Receipt
+                </button>
+                <button class="btn btn-primary" onclick="downloadReceipt()">
+                    <i class="fas fa-download"></i>
+                    Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/javascript/sidebar.js"></script>
+    <script src="/javascript/paymentAdmin.js"></script>
+</body>
+</html>
