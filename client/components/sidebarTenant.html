@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
   <link rel="stylesheet" href="/css/fonts.css" />
-  <link rel="stylesheet" href="/css/sidebar.css" />
+  <link rel="stylesheet" href="/css/sidebarTenant.css" />
 </head>
 
 <body>
@@ -18,16 +18,9 @@
 
     <nav class="sidebar-nav">
       <div class="nav-item">
-        <a href="/adminDashboard.html" class="nav-link" data-tooltip="Dashboard" data-page="dashboard">
+        <a href="/tenantDashboard.html" class="nav-link" data-tooltip="Dashboard" data-page="dashboard">
           <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
           <span class="nav-text">Dashboard</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="/inbox.html" class="nav-link" data-tooltip="Inbox" data-page="inbox">
-          <div class="nav-icon"><i class="fa-solid fa-inbox"></i></div>
-          <span class="nav-text">Inbox</span>
         </a>
       </div>
 
@@ -35,17 +28,10 @@
         <div class="nav-section-title">Property Management</div>
       </div>
 
-      <div class="nav-item">
-        <a href="/propertyAdmin.html" class="nav-link functional" data-tooltip="Properties" data-page="propertyAdmin">
-          <div class="nav-icon"><i class="fas fa-building"></i></div>
-          <span class="nav-text">Properties</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="/tenants.html" class="nav-link" data-tooltip="Tenants" data-page="tenants">
-          <div class="nav-icon"><i class="fas fa-users"></i></div>
-          <span class="nav-text">Tenants</span>
+        <div class="nav-item">
+        <a href="/leaseTenant.html" class="nav-link" data-tooltip="Leases" data-page="leases">
+          <div class="nav-icon"><i class="fas fa-file-contract"></i></div>
+          <span class="nav-text">Leases</span>
         </a>
       </div>
 
@@ -56,48 +42,24 @@
         </a>
       </div>
 
-      <div class="nav-item">
-        <a href="#" class="nav-link" data-tooltip="Leases" data-page="leases">
-          <div class="nav-icon"><i class="fas fa-file-contract"></i></div>
-          <span class="nav-text">Leases</span>
-        </a>
-      </div>
-
       <div class="nav-section">
         <div class="nav-section-title">Operations</div>
       </div>
 
       <div class="nav-item">
-        <a href="/maintenance.html" class="nav-link functional" data-tooltip="Maintenance" data-page="maintenance">
+        <a href="/maintenanceTenant.html" class="nav-link functional" data-tooltip="Maintenance" data-page="maintenance">
           <div class="nav-icon"><i class="fas fa-tools"></i></div>
           <span class="nav-text">Maintenance</span>
         </a>
       </div>
 
       <div class="nav-item">
-        <a href="/paymentAdmin.html" class="nav-link" data-tooltip="Payments" data-page="payments">
+        <a href="/paymentTenant.html" class="nav-link" data-tooltip="Payments" data-page="payments">
           <div class="nav-icon"><i class="fas fa-credit-card"></i></div>
           <span class="nav-text">Payments</span>
         </a>
       </div>
 
-      <div class="nav-item">
-        <a href="#" class="nav-link" data-tooltip="Reports" data-page="reports">
-          <div class="nav-icon"><i class="fas fa-chart-bar"></i></div>
-          <span class="nav-text">Reports</span>
-        </a>
-      </div>
-
-      <div class="nav-section">
-        <div class="nav-section-title">Content Management</div>
-      </div>
-
-      <div class="nav-item">
-        <a href="/contentManagement.html" class="nav-link" data-tooltip="Manage Content" data-page="Manage Content">
-          <div class="nav-icon"><i class="fa-solid fa-gears"></i></div>
-          <span class="nav-text">Manage Content</span>
-        </a>
-      </div>
     </nav>
     <div id="overlay" class="overlay"></div>
   </div>

@@ -724,7 +724,7 @@
 
         @media (max-width: 480px) {
             .container {
-<<<<<<< HEAD
+
                 padding: 0 10px;
             }
 
@@ -806,9 +806,9 @@
             
             .header, .navigation {
                 display: none;
-=======
+
                 padding: 0 15px;
->>>>>>> f20ed4fbd35f90f1eb6bb4ed53a227ca80a8436c
+
             }
             
             .card {
