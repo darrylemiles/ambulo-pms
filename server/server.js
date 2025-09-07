@@ -17,6 +17,7 @@ import ticketsRoutes from './routes/ticketsRoutes.js';
 import companyDetailsRoutes from './routes/companyDetailsRoutes.js';
 import faqsRoutes from './routes/faqsRoutes.js';
 import leaseRoutes from './routes/leaseRoutes.js'
+import aboutUsRoutes from './routes/aboutUsRoutes.js'
 
 import tables from './tables/tables.js';
 
@@ -59,6 +60,7 @@ app.use(`/api/${API_VERSION}/tickets`, ticketsRoutes);
 app.use(`/api/${API_VERSION}/company-details`, companyDetailsRoutes);
 app.use(`/api/${API_VERSION}/faqs`, faqsRoutes);
 app.use(`/api/${API_VERSION}/leases`, leaseRoutes);
+app.use(`/api/${API_VERSION}/about-us`, aboutUsRoutes);
 
 // Serve login page
 app.get('/', (req, res) => {
