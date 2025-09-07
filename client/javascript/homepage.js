@@ -9,13 +9,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     grid.innerHTML = properties.map(renderHomepagePropertyCard).join("");
 
     setTimeout(() => {
-      grid.querySelectorAll('.property-card').forEach(card => {
-        card.classList.add('revealed');
+      grid.querySelectorAll(".property-card").forEach((card) => {
+        card.classList.add("revealed");
       });
-      grid.querySelectorAll('.reveal-element').forEach(el => {
-        el.classList.add('revealed');
+      grid.querySelectorAll(".reveal-element").forEach((el) => {
+        el.classList.add("revealed");
       });
-    }, 100); 
+    }, 100);
   }
 
   populateHomepageAboutSection();
@@ -111,7 +111,11 @@ function renderHomepagePropertyCard(property) {
       <div class="property-info">
         <div class="property-title">${property.property_name || "Unit"}</div>
         <div class="property-desc">${address}</div>
-        <div class="property-price">${property.base_rent ? `₱ ${Number(property.base_rent).toLocaleString()}/mo` : "N/A"}</div>
+        <div class="property-price">${
+          property.base_rent
+            ? `₱ ${Number(property.base_rent).toLocaleString()}/mo`
+            : "N/A"
+        }</div>
       </div>
     </div>
   `;
@@ -152,14 +156,22 @@ async function populateHomepageAboutSection() {
     aboutText.innerHTML = about.homepage_about_content || "";
   }
 
-  const aboutImages = document.querySelectorAll("#about .about-image");
+  const aboutImages = [
+    document.getElementById("about-image-1"),
+    document.getElementById("about-image-2"),
+    document.getElementById("about-image-3"),
+    document.getElementById("about-image-4"),
+  ];
   for (let i = 1; i <= 4; i++) {
     const imgUrl = about[`about_img${i}`];
-    if (aboutImages[i - 1]) {
+    const imgElem = aboutImages[i - 1];
+    if (imgElem) {
       if (imgUrl) {
-        aboutImages[i - 1].style.backgroundImage = `url('${imgUrl}')`;
+        imgElem.src = imgUrl;
+        imgElem.style.display = "block";
       } else {
-        aboutImages[i - 1].style.backgroundImage = "";
+        imgElem.src = "";
+        imgElem.style.display = "none";
       }
     }
   }
