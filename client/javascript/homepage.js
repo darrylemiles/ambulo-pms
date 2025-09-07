@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }, 100); 
   }
+
+  populateHomepageAboutSection();
 });
 
 async function setDynamicHomepageContent() {
@@ -87,7 +89,6 @@ async function fetchHomepageProperties() {
     sessionStorage.setItem(cacheKey, JSON.stringify(properties));
   }
 
-  // Shuffle and pick 6 random properties
   for (let i = properties.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [properties[i], properties[j]] = [properties[j], properties[i]];
@@ -114,4 +115,52 @@ function renderHomepagePropertyCard(property) {
       </div>
     </div>
   `;
+}
+
+function getAboutUsSession() {
+  const data = sessionStorage.getItem("aboutUsData");
+  return data ? JSON.parse(data) : null;
+}
+
+async function populateHomepageAboutSection() {
+  let about = getAboutUsSession();
+
+  if (!about) {
+    try {
+      const res = await fetch("/api/v1/about-us");
+      const result = await res.json();
+      about = result.data && result.data[0] ? result.data[0] : null;
+      if (about) sessionStorage.setItem("aboutUsData", JSON.stringify(about));
+    } catch (err) {
+      console.error("Failed to load About Us content for homepage.", err);
+      return;
+    }
+  }
+
+  if (!about) return;
+
+  const aboutSection = document.querySelector("#about .section-title");
+  if (aboutSection) {
+    aboutSection.querySelector("h2").textContent = "About Us";
+    aboutSection.querySelector("p").textContent =
+      about.homepage_about_subtitle ||
+      "Building successful businesses through strategic commercial real estate solutions";
+  }
+
+  const aboutText = document.querySelector("#about .about-text");
+  if (aboutText) {
+    aboutText.innerHTML = about.homepage_about_content || "";
+  }
+
+  const aboutImages = document.querySelectorAll("#about .about-image");
+  for (let i = 1; i <= 4; i++) {
+    const imgUrl = about[`about_img${i}`];
+    if (aboutImages[i - 1]) {
+      if (imgUrl) {
+        aboutImages[i - 1].style.backgroundImage = `url('${imgUrl}')`;
+      } else {
+        aboutImages[i - 1].style.backgroundImage = "";
+      }
+    }
+  }
 }
