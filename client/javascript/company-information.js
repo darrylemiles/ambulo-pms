@@ -169,24 +169,6 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("CMS initialized successfully");
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-  if (document.getElementById("story-content-editor")) {
-    window.storyQuill = new Quill("#story-content-editor", {
-      theme: "snow",
-      placeholder: "Write your story here...",
-      modules: {
-        toolbar: [
-          [{ header: [1, 2, false] }],
-          ["bold", "italic", "underline"],
-          ["link", "blockquote", "code-block"],
-          [{ list: "ordered" }, { list: "bullet" }],
-          ["clean"],
-        ],
-      },
-    });
-  }
-});
-
 function setupEventListeners() {
   // Tab functionality
   document.querySelectorAll(".tab-button").forEach((button) => {
@@ -989,7 +971,41 @@ function createAdvantageElement(advantage) {
 //#region ABOUT US
 document.addEventListener("DOMContentLoaded", function () {
   generateAboutImageUploads();
+
+    if (document.getElementById("story-content-editor")) {
+      window.storyQuill = new Quill("#story-content-editor", {
+        theme: "snow",
+        placeholder: "Write your story here...",
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, false] }],
+            ["bold", "italic", "underline"],
+            ["link", "blockquote", "code-block"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["clean"],
+          ],
+        },
+      });
+    }
+  
+    if (document.getElementById("homepage-about-content-editor")) {
+    window.homepageAboutQuill = new Quill("#homepage-about-content-editor", {
+      theme: "snow",
+      placeholder: "Enter About Us content...",
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, false] }],
+          ["bold", "italic", "underline"],
+          ["link", "blockquote", "code-block"],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["clean"],
+        ],
+      },
+    });
+  }
+  
   loadAboutUsContent();
+
 });
 
 function setAboutUsSession(data) {
@@ -1022,7 +1038,8 @@ async function loadAboutUsContent(forceRefresh = false) {
 
   if (!about) return;
 
-  document.getElementById("story-title").value = about.story_section_title || "";
+  document.getElementById("story-title").value =
+    about.story_section_title || "";
 
   if (window.storyQuill && about.story_content) {
     window.storyQuill.root.innerHTML = about.story_content;
@@ -1031,8 +1048,12 @@ async function loadAboutUsContent(forceRefresh = false) {
   document.getElementById("mission-text").value = about.mission || "";
   document.getElementById("vision-text").value = about.vision || "";
   document.getElementById("values-text").value = about.core_values || "";
-  document.getElementById("homepage-about-subtitle").value = about.homepage_about_subtitle || "";
-  document.getElementById("homepage-about-content").value = about.homepage_about_content || "";
+  document.getElementById("homepage-about-subtitle").value =
+    about.homepage_about_subtitle || "";
+  
+  if (window.homepageAboutQuill && about.homepage_about_content) {
+    window.homepageAboutQuill.root.innerHTML = about.homepage_about_content;
+  }
 
   for (let i = 1; i <= 4; i++) {
     const imgUrl = about[`about_img${i}`];
@@ -1053,7 +1074,6 @@ async function loadAboutUsContent(forceRefresh = false) {
   }
 }
 
-
 async function saveAboutContent() {
   const saveBtn = document.querySelector("#about .btn-success");
   saveBtn.classList.add("btn-loading");
@@ -1061,13 +1081,34 @@ async function saveAboutContent() {
   saveBtn.innerHTML = `<span class="spinner"></span>Saving...`;
 
   const formData = new FormData();
-  formData.append("story_section_title", document.getElementById("story-title").value.trim());
-  formData.append("story_content", window.storyQuill ? window.storyQuill.root.innerHTML : "");
-  formData.append("mission", document.getElementById("mission-text").value.trim());
-  formData.append("vision", document.getElementById("vision-text").value.trim());
-  formData.append("core_values", document.getElementById("values-text").value.trim());
-  formData.append("homepage_about_subtitle", document.getElementById("homepage-about-subtitle").value.trim());
-  formData.append("homepage_about_content", document.getElementById("homepage-about-content").value.trim());
+  formData.append(
+    "story_section_title",
+    document.getElementById("story-title").value.trim()
+  );
+  formData.append(
+    "story_content",
+    window.storyQuill ? window.storyQuill.root.innerHTML : ""
+  );
+  formData.append(
+    "mission",
+    document.getElementById("mission-text").value.trim()
+  );
+  formData.append(
+    "vision",
+    document.getElementById("vision-text").value.trim()
+  );
+  formData.append(
+    "core_values",
+    document.getElementById("values-text").value.trim()
+  );
+  formData.append(
+    "homepage_about_subtitle",
+    document.getElementById("homepage-about-subtitle").value.trim()
+  );
+  formData.append(
+    "homepage_about_content",
+    window.homepageAboutQuill ? window.homepageAboutQuill.root.innerHTML : ""
+  );
 
   for (let i = 1; i <= 4; i++) {
     const fileInput = document.getElementById(`aboutImage${i}`);
