@@ -3,6 +3,7 @@ let companyId = null;
 
 // API Configuration
 const API_BASE_URL = "/api/v1/company-details";
+const ABOUT_API_URL = "/api/v1/about-us";
 
 let websiteData = {
   company: {
@@ -14,12 +15,6 @@ let websiteData = {
   about: {
     story: {
       title: "Our Story",
-      paragraphs: [
-        "What began as a family-owned property has evolved into one of Silang's most sought-after commercial destinations. Ambulo Properties started with a simple vision: to create spaces where local businesses could thrive and communities could grow.",
-        "Located strategically along Kapt. Sayas Street in Brgy. San Vicente II, our property has become a bustling commercial hub that houses diverse businesses—from trendy ramen shops and beauty lounges to professional clinics and retail stores.",
-        "Our journey reflects our commitment to supporting entrepreneurs and small business owners by providing flexible, affordable, and strategically located commercial spaces that adapt to the changing needs of modern business.",
-        "Today, we're proud to be fully occupied with thriving tenants who have made our property their business home, contributing to the vibrant commercial landscape of Silang, Cavite.",
-      ],
     },
     mvv: {
       mission:
@@ -172,6 +167,24 @@ document.addEventListener("DOMContentLoaded", function () {
   renderServices();
   renderAdvantages();
   console.log("CMS initialized successfully");
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  if (document.getElementById("story-content-editor")) {
+    window.storyQuill = new Quill("#story-content-editor", {
+      theme: "snow",
+      placeholder: "Write your story here...",
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, false] }],
+          ["bold", "italic", "underline"],
+          ["link", "blockquote", "code-block"],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["clean"],
+        ],
+      },
+    });
+  }
 });
 
 function setupEventListeners() {
@@ -418,17 +431,6 @@ function loadFormData() {
 
   // Load about data
   document.getElementById("story-title").value = websiteData.about.story.title;
-  document.getElementById("story-para1").value =
-    websiteData.about.story.paragraphs[0];
-  document.getElementById("story-para2").value =
-    websiteData.about.story.paragraphs[1];
-  document.getElementById("story-para3").value =
-    websiteData.about.story.paragraphs[2];
-  document.getElementById("story-para4").value =
-    websiteData.about.story.paragraphs[3];
-  document.getElementById("mission-text").value = websiteData.about.mvv.mission;
-  document.getElementById("vision-text").value = websiteData.about.mvv.vision;
-  document.getElementById("values-text").value = websiteData.about.mvv.values;
 
   // Load services data
   document.getElementById("services-title").value = websiteData.services.title;
@@ -530,10 +532,6 @@ async function loadCompanyInfo() {
         company.business_desc || "";
       document.getElementById("company-business-hours").value =
         company.business_hours || "";
-      document.getElementById("company-mission").value = company.mission || "";
-      document.getElementById("company-vision").value = company.vision || "";
-      document.getElementById("company-values").value =
-        company.company_values || "";
 
       // Address fields
       document.getElementById("company-house-no").value =
@@ -589,19 +587,6 @@ async function saveCompanyInfo() {
     "business_hours",
     document.getElementById("company-business-hours").value.trim()
   );
-  formData.append(
-    "mission",
-    document.getElementById("company-mission").value.trim()
-  );
-  formData.append(
-    "vision",
-    document.getElementById("company-vision").value.trim()
-  );
-  formData.append(
-    "company_values",
-    document.getElementById("company-values").value.trim()
-  );
-
   // Address fields
   formData.append(
     "house_no",
@@ -676,10 +661,9 @@ function previewCompanyInfo() {
   const description = document
     .getElementById("company-description")
     .value.trim();
-  const businessHours = document.getElementById("company-business-hours").value.trim();
-  const mission = document.getElementById("company-mission").value.trim();
-  const vision = document.getElementById("company-vision").value.trim();
-  const values = document.getElementById("company-values").value.trim();
+  const businessHours = document
+    .getElementById("company-business-hours")
+    .value.trim();
   const logo = document
     .getElementById("logo-preview")
     .querySelector("img")?.src;
@@ -689,7 +673,9 @@ function previewCompanyInfo() {
 
   // Address fields
   const houseNo = document.getElementById("company-house-no").value.trim();
-  const streetAddress = document.getElementById("company-street-address").value.trim();
+  const streetAddress = document
+    .getElementById("company-street-address")
+    .value.trim();
   const city = document.getElementById("company-city").value.trim();
   const province = document.getElementById("company-province").value.trim();
   const zipCode = document.getElementById("company-zip-code").value.trim();
@@ -730,14 +716,6 @@ function previewCompanyInfo() {
       <h4>Business Hours</h4>
       <p>${businessHours}</p>
       <div>
-        <h4>Mission</h4>
-        <p>${mission}</p>
-        <h4>Vision</h4>
-        <p>${vision}</p>
-        <h4>Values</h4>
-        <p>${values}</p>
-      </div>
-      <div>
         <h4>Alternate Logo</h4>
         ${
           altLogo
@@ -754,16 +732,21 @@ function validateCompanyInfoForm() {
   const name = document.getElementById("company-name").value.trim();
   const email = document.getElementById("company-email").value.trim();
   const phone = document.getElementById("company-phone").value.trim();
-  const description = document.getElementById("company-description").value.trim();
-  const businessHours = document.getElementById("company-business-hours").value.trim();
-  const mission = document.getElementById("company-mission").value.trim();
-  const vision = document.getElementById("company-vision").value.trim();
-  const values = document.getElementById("company-values").value.trim();
+  const description = document
+    .getElementById("company-description")
+    .value.trim();
+  const businessHours = document
+    .getElementById("company-business-hours")
+    .value.trim();
   const logo = document.getElementById("logo-preview").querySelector("img");
-  const altLogo = document.getElementById("alt-logo-preview").querySelector("img");
+  const altLogo = document
+    .getElementById("alt-logo-preview")
+    .querySelector("img");
 
   // Address fields
-  const streetAddress = document.getElementById("company-street-address").value.trim();
+  const streetAddress = document
+    .getElementById("company-street-address")
+    .value.trim();
   const city = document.getElementById("company-city").value.trim();
   const province = document.getElementById("company-province").value.trim();
   const zipCode = document.getElementById("company-zip-code").value.trim();
@@ -775,9 +758,6 @@ function validateCompanyInfoForm() {
     !phone ||
     !businessHours ||
     !description ||
-    !mission ||
-    !vision ||
-    !values ||
     !logo ||
     !altLogo ||
     !streetAddress ||
@@ -786,12 +766,14 @@ function validateCompanyInfoForm() {
     !zipCode ||
     !country
   ) {
-    showNotification("All fields except House No. are required, including both logos and address.", "error");
+    showNotification(
+      "All fields except House No. are required, including both logos and address.",
+      "error"
+    );
     return false;
   }
   return true;
 }
-
 
 function setupRealtimeValidation() {
   const requiredFields = [
@@ -800,9 +782,6 @@ function setupRealtimeValidation() {
     { id: "company-phone", warning: "Phone number is required." },
     { id: "company-description", warning: "Business description is required." },
     { id: "company-business-hours", warning: "Business hours are required." },
-    { id: "company-mission", warning: "Mission is required." },
-    { id: "company-vision", warning: "Vision is required." },
-    { id: "company-values", warning: "Values are required." },
     { id: "company-street-address", warning: "Street address is required." },
     { id: "company-city", warning: "City is required." },
     { id: "company-province", warning: "Province is required." },
@@ -1007,55 +986,148 @@ function createAdvantageElement(advantage) {
   return div;
 }
 
-// About content functions
-function saveAboutContent() {
-  websiteData.about.story.title = document.getElementById("story-title").value;
-  websiteData.about.story.paragraphs = [
-    document.getElementById("story-para1").value,
-    document.getElementById("story-para2").value,
-    document.getElementById("story-para3").value,
-    document.getElementById("story-para4").value,
-  ];
-  websiteData.about.mvv.mission = document.getElementById("mission-text").value;
-  websiteData.about.mvv.vision = document.getElementById("vision-text").value;
-  websiteData.about.mvv.values = document.getElementById("values-text").value;
+//#region ABOUT US
+document.addEventListener("DOMContentLoaded", function () {
+  generateAboutImageUploads();
+  loadAboutUsContent();
+});
 
-  hasUnsavedChanges = false;
-  showNotification("About content saved successfully!", "success");
-  console.log("About data saved:", websiteData.about);
+function setAboutUsSession(data) {
+  sessionStorage.setItem("aboutUsData", JSON.stringify(data));
+}
+
+function getAboutUsSession() {
+  const data = sessionStorage.getItem("aboutUsData");
+  return data ? JSON.parse(data) : null;
+}
+
+async function loadAboutUsContent(forceRefresh = false) {
+  let about = null;
+
+  if (!forceRefresh) {
+    about = getAboutUsSession();
+  }
+
+  if (!about) {
+    try {
+      const res = await fetch(ABOUT_API_URL);
+      const result = await res.json();
+      about = result.data && result.data[0] ? result.data[0] : null;
+      if (about) setAboutUsSession(about);
+    } catch (err) {
+      showNotification("Failed to load About Us content.", "error");
+      return;
+    }
+  }
+
+  if (!about) return;
+
+  document.getElementById("story-title").value = about.story_section_title || "";
+
+  if (window.storyQuill && about.story_content) {
+    window.storyQuill.root.innerHTML = about.story_content;
+  }
+
+  document.getElementById("mission-text").value = about.mission || "";
+  document.getElementById("vision-text").value = about.vision || "";
+  document.getElementById("values-text").value = about.core_values || "";
+  document.getElementById("homepage-about-subtitle").value = about.homepage_about_subtitle || "";
+  document.getElementById("homepage-about-content").value = about.homepage_about_content || "";
+
+  for (let i = 1; i <= 4; i++) {
+    const imgUrl = about[`about_img${i}`];
+    const img = document.getElementById(`aboutImage${i}Current`);
+    const placeholder = document.getElementById(`aboutImagePlaceholder${i}`);
+    const removeBtn = document.getElementById(`removeAboutImageBtn${i}`);
+    if (imgUrl) {
+      img.src = imgUrl;
+      img.style.display = "block";
+      placeholder.style.display = "none";
+      removeBtn.style.display = "inline-flex";
+    } else {
+      img.src = "";
+      img.style.display = "none";
+      placeholder.style.display = "block";
+      removeBtn.style.display = "none";
+    }
+  }
+}
+
+
+async function saveAboutContent() {
+  const saveBtn = document.querySelector("#about .btn-success");
+  saveBtn.classList.add("btn-loading");
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = `<span class="spinner"></span>Saving...`;
+
+  const formData = new FormData();
+  formData.append("story_section_title", document.getElementById("story-title").value.trim());
+  formData.append("story_content", window.storyQuill ? window.storyQuill.root.innerHTML : "");
+  formData.append("mission", document.getElementById("mission-text").value.trim());
+  formData.append("vision", document.getElementById("vision-text").value.trim());
+  formData.append("core_values", document.getElementById("values-text").value.trim());
+  formData.append("homepage_about_subtitle", document.getElementById("homepage-about-subtitle").value.trim());
+  formData.append("homepage_about_content", document.getElementById("homepage-about-content").value.trim());
+
+  for (let i = 1; i <= 4; i++) {
+    const fileInput = document.getElementById(`aboutImage${i}`);
+    if (fileInput && fileInput.files[0]) {
+      formData.append(`about_img${i}`, fileInput.files[0]);
+    }
+  }
+
+  try {
+    const res = await fetch(ABOUT_API_URL);
+    const result = await res.json();
+    const exists = result.data && result.data.length > 0;
+
+    let saveRes;
+    if (!exists) {
+      // Insert new row
+      saveRes = await fetch(`${ABOUT_API_URL}/create-about-us`, {
+        method: "POST",
+        body: formData,
+      });
+    } else {
+      saveRes = await fetch(`${ABOUT_API_URL}`, {
+        method: "PATCH",
+        body: formData,
+      });
+    }
+
+    if (saveRes.ok) {
+      showNotification("About Us content saved successfully!", "success");
+      hasUnsavedChanges = false;
+      await loadAboutUsContent(true);
+    } else {
+      showNotification("Failed to save About Us content.", "error");
+    }
+  } catch (err) {
+    showNotification("Error saving About Us content.", "error");
+  } finally {
+    saveBtn.classList.remove("btn-loading");
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<i class="fas fa-save"></i> Save About Content`;
+  }
 }
 
 function previewAbout() {
   const previewContent = `
                 <div style="font-family: 'Poppins', sans-serif; line-height: 1.6;">
-                    <h2 style="color: #2c3e50; margin-bottom: 20px;">${
-                      websiteData.about.story.title
-                    }</h2>
-                    ${websiteData.about.story.paragraphs
-                      .map(
-                        (para) =>
-                          `<p style="margin-bottom: 15px; color: #64748b;">${para}</p>`
-                      )
-                      .join("")}
+                    <h2 style="color: #2c3e50; margin-bottom: 20px;">${websiteData.about.story.title}</h2>
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px;">
                         <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
                             <h4 style="color: #3b82f6; margin-bottom: 10px;">Mission</h4>
-                            <p style="color: #64748b; font-size: 14px;">${
-                              websiteData.about.mvv.mission
-                            }</p>
+                            <p style="color: #64748b; font-size: 14px;">${websiteData.about.mvv.mission}</p>
                         </div>
                         <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
                             <h4 style="color: #3b82f6; margin-bottom: 10px;">Vision</h4>
-                            <p style="color: #64748b; font-size: 14px;">${
-                              websiteData.about.mvv.vision
-                            }</p>
+                            <p style="color: #64748b; font-size: 14px;">${websiteData.about.mvv.vision}</p>
                         </div>
                         <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
                             <h4 style="color: #3b82f6; margin-bottom: 10px;">Values</h4>
-                            <p style="color: #64748b; font-size: 14px;">${
-                              websiteData.about.mvv.values
-                            }</p>
+                            <p style="color: #64748b; font-size: 14px;">${websiteData.about.mvv.values}</p>
                         </div>
                     </div>
                 </div>
@@ -1063,6 +1135,71 @@ function previewAbout() {
 
   showPreview("About Page Preview", previewContent);
 }
+function generateAboutImageUploads() {
+  const grid = document.getElementById("aboutImagesGrid");
+  grid.innerHTML = "";
+
+  for (let i = 1; i <= 4; i++) {
+    const imageContainer = document.createElement("div");
+    imageContainer.className = "image-upload-container";
+    imageContainer.innerHTML = `
+      <div class="form-group">
+        <label class="form-label">About Image ${i}</label>
+        <div class="image-upload" id="aboutImageUpload${i}" onclick="document.getElementById('aboutImage${i}').click()" style="position: relative;">
+          <div class="upload-placeholder" id="aboutImagePlaceholder${i}">
+            <i class="fas fa-image"></i>
+            <p>Upload image ${i}</p>
+            <small>Recommended size: 800x600px</small>
+          </div>
+          <img id="aboutImage${i}Current" class="current-image" alt="About Image ${i}" style="display:none; max-width:100%; max-height:160px; position:absolute; top:0; left:0; right:0; bottom:0; margin:auto;">
+          <button type="button" class="btn btn-danger" id="removeAboutImageBtn${i}" style="display:none; position:absolute; top:8px; right:8px; z-index:2;" onclick="removeAboutImage(${i})">
+            <i class="fas fa-trash"></i>
+            Remove
+          </button>
+        </div>
+        <input type="file" id="aboutImage${i}" accept="image/*" style="display: none;">
+      </div>
+    `;
+    grid.appendChild(imageContainer);
+
+    // Add preview handler for this input
+    setTimeout(() => {
+      const fileInput = document.getElementById(`aboutImage${i}`);
+      const img = document.getElementById(`aboutImage${i}Current`);
+      const placeholder = document.getElementById(`aboutImagePlaceholder${i}`);
+      const removeBtn = document.getElementById(`removeAboutImageBtn${i}`);
+
+      fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (file && file.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            img.src = e.target.result;
+            img.style.display = "block";
+            placeholder.style.display = "none";
+            removeBtn.style.display = "inline-flex";
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }, 0);
+  }
+}
+
+// Remove image handler
+window.removeAboutImage = function (i) {
+  const fileInput = document.getElementById(`aboutImage${i}`);
+  const img = document.getElementById(`aboutImage${i}Current`);
+  const placeholder = document.getElementById(`aboutImagePlaceholder${i}`);
+  const removeBtn = document.getElementById(`removeAboutImageBtn${i}`);
+  fileInput.value = "";
+  img.src = "";
+  img.style.display = "none";
+  placeholder.style.display = "block";
+  removeBtn.style.display = "none";
+};
+
+//#endregion
 
 // Services content functions
 function addService() {
@@ -1441,14 +1578,6 @@ function previewWebsite() {
                         <h2 style="color: #2c3e50; margin-bottom: 30px; text-align: center; font-size: 2.5em;">${
                           websiteData.about.story.title
                         }</h2>
-                        <div style="max-width: 1000px; margin: 0 auto;">
-                            ${websiteData.about.story.paragraphs
-                              .map(
-                                (para) =>
-                                  `<p style="margin-bottom: 20px; color: #64748b; line-height: 1.8; font-size: 1.1em;">${para}</p>`
-                              )
-                              .join("")}
-                        </div>
                     </section>
                     
                     <section style="margin-bottom: 60px;">
@@ -1643,12 +1772,6 @@ function showAutoSave() {
     } else if (currentTab === "about") {
       websiteData.about.story.title =
         document.getElementById("story-title").value;
-      websiteData.about.story.paragraphs = [
-        document.getElementById("story-para1").value,
-        document.getElementById("story-para2").value,
-        document.getElementById("story-para3").value,
-        document.getElementById("story-para4").value,
-      ];
       websiteData.about.mvv.mission =
         document.getElementById("mission-text").value;
       websiteData.about.mvv.vision =
@@ -1710,5 +1833,23 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
-// Initialize everything when the page loads
-console.log("CMS System Ready - Ambulo Properties Content Management");
+window.closePreviewModal = closePreviewModal;
+window.previewCompanyInfo = previewCompanyInfo;
+window.saveCompanyInfo = saveCompanyInfo;
+window.addService = addService;
+window.previewAbout = previewAbout;
+window.saveAboutContent = saveAboutContent;
+window.editService = editService;
+window.updateService = updateService;
+window.deleteService = deleteService;
+window.closeServiceModal = closeServiceModal;
+window.saveServicesContent = saveServicesContent;
+window.previewServices = previewServices;
+window.addAdvantage = addAdvantage;
+window.editAdvantage = editAdvantage;
+window.updateAdvantage = updateAdvantage;
+window.deleteAdvantage = deleteAdvantage;
+window.closeAdvantageModal = closeAdvantageModal;
+window.saveAdvantagesContent = saveAdvantagesContent;
+window.previewAdvantages = previewAdvantages;
+window.saveAllContent = saveAllContent;

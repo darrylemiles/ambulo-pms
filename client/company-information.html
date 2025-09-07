@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/sidebar.css">
     <link rel="stylesheet" href="/css/company-information.css">
@@ -194,27 +196,6 @@
                         <span id="company-business-hours-warning" class="field-warning"></span>
                     </div>
 
-                    <div class="three-column">
-                        <div class="form-group">
-                            <label class="form-label">Mission</label>
-                            <textarea class="form-input form-textarea" id="company-mission" rows="2"
-                                placeholder="Company mission"></textarea>
-                            <span id="company-mission-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Vision</label>
-                            <textarea class="form-input form-textarea" id="company-vision" rows="2"
-                                placeholder="Company vision"></textarea>
-                            <span id="company-vision-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Values</label>
-                            <textarea class="form-input form-textarea" id="company-values" rows="2"
-                                placeholder="Company values"></textarea>
-                            <span id="company-values-warning" class="field-warning"></span>
-                        </div>
-                    </div>
-
                     <div class="action-buttons">
                         <button class="btn btn-success" id="save-company-btn" onclick="saveCompanyInfo()">
                             <i class="fas fa-save"></i>
@@ -224,10 +205,6 @@
                             <i class="fas fa-eye"></i>
                             Preview Company Profile
                         </button>
-                        <!-- <button class="btn btn-danger" onclick="resetCompanyInfo()">
-                            <i class="fas fa-undo"></i>
-                            Reset to Defaults
-                        </button> -->
                     </div>
                 </div>
 
@@ -252,27 +229,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Story Paragraph 1</label>
-                        <textarea class="form-input form-textarea"
-                            id="story-para1">What began as a family-owned property has evolved into one of Silang's most sought-after commercial destinations. Ambulo Properties started with a simple vision: to create spaces where local businesses could thrive and communities could grow.</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Story Paragraph 2</label>
-                        <textarea class="form-input form-textarea"
-                            id="story-para2">Located strategically along Kapt. Sayas Street in Brgy. San Vicente II, our property has become a bustling commercial hub that houses diverse businesses—from trendy ramen shops and beauty lounges to professional clinics and retail stores.</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Story Paragraph 3</label>
-                        <textarea class="form-input form-textarea"
-                            id="story-para3">Our journey reflects our commitment to supporting entrepreneurs and small business owners by providing flexible, affordable, and strategically located commercial spaces that adapt to the changing needs of modern business.</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Story Paragraph 4</label>
-                        <textarea class="form-input form-textarea"
-                            id="story-para4">Today, we're proud to be fully occupied with thriving tenants who have made our property their business home, contributing to the vibrant commercial landscape of Silang, Cavite.</textarea>
+                        <label class="form-label">Story Content</label>
+                        <div id="story-content-editor" style="height: 200px;"></div>
                     </div>
 
                     <h4 class="section-subtitle">Mission, Vision & Values</h4>
@@ -293,7 +251,30 @@
                             <textarea class="form-input form-textarea"
                                 id="values-text">Integrity, Innovation, Community Focus, and Tenant Success. We believe in building lasting relationships and creating value for all stakeholders in our commercial ecosystem.</textarea>
                         </div>
+
+
                     </div>
+
+                    <h4 class="section-subtitle">Homepage - About Us Section</h4>
+                    <div class="form-group">
+                        <label class="form-label">About Us - Subtitle</label>
+                        <input type="text" class="form-input" id="homepage-about-subtitle"
+                            placeholder="Enter About Us subtitle">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">About Us - Content</label>
+                        <textarea class="form-input form-textarea" id="homepage-about-content" rows="3"
+                            placeholder="Enter About Us content"></textarea>
+                    </div>
+
+                    <h4 class="section-subtitle">About Page Images</h4>
+                    <div class="form-group">
+                        <label class="form-label">About Images (4 images)</label>
+                        <div id="aboutImagesGrid" class="about-images-grid">
+                        </div>
+                    </div>
+
+
 
                     <div class="action-buttons">
                         <button class="btn btn-success" onclick="saveAboutContent()">
