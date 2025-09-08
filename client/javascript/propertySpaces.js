@@ -88,24 +88,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// Filter System Variables
 let activeFilters = {
   status: [],
-  type: [],
+  // type: [],
   price: [],
   area: [],
 };
 
-// Filter Functions
 function toggleFilter(filterType, value, buttonElement) {
   const index = activeFilters[filterType].indexOf(value);
 
   if (index > -1) {
-    // Remove filter
     activeFilters[filterType].splice(index, 1);
     buttonElement.classList.remove("active");
   } else {
-    // Add filter
     activeFilters[filterType].push(value);
     buttonElement.classList.add("active");
   }
@@ -120,7 +116,7 @@ function applyFilters() {
 
   propertyCards.forEach((card) => {
     const cardStatus = card.getAttribute("data-status");
-    const cardType = card.getAttribute("data-type");
+    // const cardType = card.getAttribute("data-type");
     const cardPrice = parseInt(card.getAttribute("data-price"));
     const cardArea = parseInt(card.getAttribute("data-area"));
     const cardTitle = card
@@ -130,23 +126,19 @@ function applyFilters() {
       .querySelector(".property-desc")
       .textContent.toLowerCase();
 
-    // Search filter
     const matchesSearch =
       !searchTerm ||
       cardTitle.includes(searchTerm) ||
-      cardLocation.includes(searchTerm) ||
-      cardType.toLowerCase().includes(searchTerm);
+      cardLocation.includes(searchTerm)
+      // cardType.toLowerCase().includes(searchTerm);
 
-    // Status filter
     const matchesStatus =
       activeFilters.status.length === 0 ||
       activeFilters.status.includes(cardStatus);
 
-    // Type filter
-    const matchesType =
-      activeFilters.type.length === 0 || activeFilters.type.includes(cardType);
+    // const matchesType =
+    //   activeFilters.type.length === 0 || activeFilters.type.includes(cardType);
 
-    // Price filter
     let matchesPrice = true;
     if (activeFilters.price.length > 0) {
       matchesPrice = activeFilters.price.some((priceRange) => {
@@ -158,7 +150,6 @@ function applyFilters() {
       });
     }
 
-    // Area filter
     let matchesArea = true;
     if (activeFilters.area.length > 0) {
       matchesArea = activeFilters.area.some((areaRange) => {
@@ -172,7 +163,7 @@ function applyFilters() {
     const shouldShow =
       matchesSearch &&
       matchesStatus &&
-      matchesType &&
+      // matchesType &&
       matchesPrice &&
       matchesArea;
 
@@ -184,7 +175,6 @@ function applyFilters() {
     }
   });
 
-  // Update results count
   const resultsCount = document.getElementById("resultsCount");
   const noResults = document.getElementById("noResults");
   const totalCount = propertyCards.length;
@@ -199,7 +189,6 @@ function applyFilters() {
 }
 
 function clearAllFilters() {
-  // Clear search
   const searchInput = document.getElementById("searchInput");
   if (searchInput) {
     searchInput.value = "";
@@ -207,7 +196,7 @@ function clearAllFilters() {
 
   activeFilters = {
     status: [],
-    type: [],
+    // type: [],
     price: [],
     area: [],
   };
@@ -216,13 +205,11 @@ function clearAllFilters() {
     btn.classList.remove("active");
   });
 
-  // Reset sort dropdown
   const sortSelect = document.getElementById("sortSelect");
   if (sortSelect) {
     sortSelect.value = "default";
   }
 
-  // Show all properties and update count
   applyFilters();
 }
 
@@ -252,12 +239,10 @@ function sortProperties() {
         return titleA.localeCompare(titleB);
       case "default":
       default:
-        // Sort by original order (by data-id or DOM order)
         return 0;
     }
   });
 
-  // Re-append sorted cards to the grid
   propertyCards.forEach((card) => {
     propertyGrid.appendChild(card);
   });
@@ -270,15 +255,12 @@ function toggleFilters() {
   }
 }
 
-// Initialize filter system when DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
-  // Real-time search
   const searchInput = document.getElementById("searchInput");
   if (searchInput) {
     searchInput.addEventListener("input", applyFilters);
   }
 
-  // Filter button event listeners
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", function () {
       const filterType = this.getAttribute("data-filter");
@@ -287,13 +269,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Sort dropdown event listener
   const sortSelect = document.getElementById("sortSelect");
   if (sortSelect) {
     sortSelect.addEventListener("change", sortProperties);
   }
-
-  // Property card hover effects
   document.addEventListener("mouseover", function (e) {
     if (e.target.closest(".property-card")) {
       const card = e.target.closest(".property-card");
@@ -308,20 +287,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Initial filter application
   applyFilters();
 });
 
 async function fetchProperties() {
-//   const cached = sessionStorage.getItem("propertiesData");
-//   if (cached) return JSON.parse(cached);
 
   try {
     const res = await fetch(`${API_BASE_URL}?limit=50`, { method: "GET" });
     if (!res.ok) throw new Error("Failed to fetch properties");
     
     const data = await res.json();
-    // sessionStorage.setItem("propertiesData", JSON.stringify(data));
     return data;
   } catch (err) {
     console.error("Error fetching properties:", err);
@@ -433,3 +408,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+window.clearAllFilters = clearAllFilters;
