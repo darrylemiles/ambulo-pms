@@ -1,6 +1,23 @@
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const heroContent = document.querySelector(".hero-content");
+  if (heroContent) {
+    heroContent.innerHTML = `
+      <div class="hero-title-group">
+        <span class="hero-welcome">Welcome to</span>
+        <h1 class="hero-brand">
+          <span class="brand" id="dynamic-company-name"></span>
+        </h1>
+      </div>
+      <p>Every Property Has a Story. Start Yours Here.</p>
+      <div class="cta-buttons">
+        <a href="#properties" class="btn btn-primary">Inquire Now</a>
+        <a href="#contact" class="btn btn-secondary">Contact Us</a>
+      </div>
+    `;
+  }
+
   setDynamicHomepageContent();
 
   const grid = document.getElementById("homepagePropertyGrid");
@@ -20,6 +37,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   populateHomepageAboutSection();
 });
+
+
 
 async function setDynamicHomepageContent() {
   const data = await fetchCompanyDetails();
@@ -58,6 +77,11 @@ async function setDynamicHomepageContent() {
   const hoursEl = document.getElementById("dynamic-company-hours");
   if (hoursEl)
     hoursEl.innerHTML = (company.business_hours || "").replace(/\n/g, "<br>");
+
+  const footerInfoEl = document.querySelector(".footer-info");
+  if (footerInfoEl)
+    footerInfoEl.textContent =
+      "Ready to discover your ideal commercial space? Contact our experienced team today for a personalized consultation and comprehensive property tour.";
 
   // Dynamic tab logo (favicon)
   const favicon = document.querySelector('link[rel="icon"]');
