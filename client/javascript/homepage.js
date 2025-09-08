@@ -45,12 +45,10 @@ async function setDynamicHomepageContent() {
   if (!data || !data[0]) return;
   const company = data[0];
 
-  // Brand name in hero section
   const brandNameEl = document.getElementById("dynamic-company-name");
   if (brandNameEl)
     brandNameEl.textContent = company.company_name || "Ambulo Properties";
 
-  // Contact Info Section
   const emailEl = document.getElementById("dynamic-company-email");
   if (emailEl) emailEl.textContent = company.email || "N/A";
 
@@ -83,13 +81,11 @@ async function setDynamicHomepageContent() {
     footerInfoEl.textContent =
       "Ready to discover your ideal commercial space? Contact our experienced team today for a personalized consultation and comprehensive property tour.";
 
-  // Dynamic tab logo (favicon)
   const favicon = document.querySelector('link[rel="icon"]');
   if (favicon && company.icon_logo_url) {
     favicon.href = company.icon_logo_url;
   }
 
-  // Dynamic tab title
   document.title = company.company_name
     ? `Welcome to ${company.company_name}`
     : "Ambulo Properties - Homepage";
@@ -151,26 +147,26 @@ function getAboutUsSession() {
 }
 
 async function populateHomepageAboutSection() {
-  let about = getAboutUsSession();
-
-  if (!about) {
-    try {
-      const res = await fetch("/api/v1/about-us");
-      const result = await res.json();
-      about = result.data && result.data[0] ? result.data[0] : null;
-      if (about) sessionStorage.setItem("aboutUsData", JSON.stringify(about));
-    } catch (err) {
-      console.error("Failed to load About Us content for homepage.", err);
-      return;
-    }
+  let about = null;
+  try {
+    const res = await fetch("/api/v1/about-us");
+    const result = await res.json();
+    about = result.data && result.data[0] ? result.data[0] : null;
+    if (about) sessionStorage.setItem("aboutUsData", JSON.stringify(about));
+  } catch (err) {
+    console.error("Failed to load About Us content for homepage.", err);
+    // fallback to cache if fetch fails
+    about = getAboutUsSession();
   }
 
   if (!about) return;
 
   const aboutSection = document.querySelector("#about .section-title");
   if (aboutSection) {
-    aboutSection.querySelector("h2").textContent = "About Us";
-    aboutSection.querySelector("p").textContent =
+    const h2 = aboutSection.querySelector("h2");
+    const p = aboutSection.querySelector("p");
+    if (h2) h2.textContent = "About Us";
+    if (p) p.textContent =
       about.homepage_about_subtitle ||
       "Building successful businesses through strategic commercial real estate solutions";
   }

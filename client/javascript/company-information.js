@@ -615,9 +615,11 @@ async function saveCompanyInfo() {
       });
     }
     if (res.ok) {
+      sessionStorage.removeItem("companyDetails");
+
       showNotification("Company information saved successfully!", "success");
       hasUnsavedChanges = false;
-      // If created, get new ID and reload info
+      await loadCompanyInfo();
       if (!companyId) {
         const data = await res.json();
         companyId = data.id;
@@ -1073,7 +1075,6 @@ async function loadAboutUsContent(forceRefresh = false) {
     }
   }
 }
-
 async function saveAboutContent() {
   const saveBtn = document.querySelector("#about .btn-success");
   saveBtn.classList.add("btn-loading");
@@ -1137,6 +1138,8 @@ async function saveAboutContent() {
     }
 
     if (saveRes.ok) {
+      sessionStorage.removeItem("aboutUsData");
+
       showNotification("About Us content saved successfully!", "success");
       hasUnsavedChanges = false;
       await loadAboutUsContent(true);

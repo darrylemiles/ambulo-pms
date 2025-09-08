@@ -1,4 +1,3 @@
-        // Scroll reveal animation
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
@@ -12,12 +11,10 @@
             });
         }, observerOptions);
 
-        // Observe all reveal elements
         document.querySelectorAll('.reveal-element').forEach(el => {
             observer.observe(el);
         });
 
-        // Navbar background on scroll
         window.addEventListener('scroll', () => {
             const navbar = document.querySelector('.navbar');
             if (window.scrollY > 100) {
@@ -27,7 +24,6 @@
             }
         });
 
-        // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -41,7 +37,6 @@
             });
         });
 
-        // Counter animation for stats
         function animateCounters() {
             const counters = document.querySelectorAll('.stat-number');
             const speed = 200;
@@ -68,7 +63,6 @@
             });
         }
 
-        // Trigger counter animation when stats section is visible
         const statsObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -83,7 +77,6 @@
             statsObserver.observe(statsSection);
         }
 
-        // Add hover effects for service cards
         document.querySelectorAll('.service-card').forEach(card => {
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-10px) scale(1.02)';
@@ -94,7 +87,6 @@
             });
         });
 
-        // Add parallax effect to sections
         window.addEventListener('scroll', () => {
             const scrolled = window.pageYOffset;
             const parallaxElements = document.querySelectorAll('.hero::before, .stats-section::before');
