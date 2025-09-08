@@ -1,101 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/spacesDetails.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/assets/favicon/site.webmanifest">
     <title>Property Space Details</title>
 </head>
+
 <body>
     <header id="navbar-placeholder"></header>
-    
+
     <div class="property-detail-wrapper">
         <div class="container">
             <!-- Property Gallery -->
             <div class="property-gallery reveal-element scale-up">
                 <button class="nav-arrow prev" onclick="changeImage(-1)">‹</button>
-                <img id="mainImage" class="main-image" src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Property Main View">
+                <img id="mainImage" class="main-image" src="" alt="Property Main View">
                 <button class="nav-arrow next" onclick="changeImage(1)">›</button>
-                
-                <div class="thumbnail-row">
-                    <img class="thumbnail active" src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Exterior View" onclick="setMainImage(this, 0)">
-                    <img class="thumbnail" src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Living Room" onclick="setMainImage(this, 1)">
-                    <img class="thumbnail" src="https://images.unsplash.com/photo-1556020685-ae41abfc9365?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Kitchen" onclick="setMainImage(this, 2)">
-                    <img class="thumbnail" src="https://images.unsplash.com/photo-1571624436279-b272aff752b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Bedroom" onclick="setMainImage(this, 3)">
-                    <img class="thumbnail" src="https://images.unsplash.com/photo-1507652313519-d4e9174996dd?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Bathroom" onclick="setMainImage(this, 4)">
-                </div>
+                <div class="thumbnail-row"></div>
             </div>
 
             <!-- Property Details -->
             <div class="property-details">
                 <div class="details-left">
+                    <div id="propertyNameSection"></div>
+                    <div id="propertyDescCard"></div>
                     <!-- Specifications -->
                     <div class="section reveal-element">
                         <div class="section-header">Property Space Specifications</div>
-                        <div class="section-content">
-                            <div class="spec-row">
-                                <span class="spec-label">Address:</span>
-                                <span class="spec-value">Silang</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Bathrooms:</span>
-                                <span class="spec-value">1</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Square Feet:</span>
-                                <span class="spec-value">1,250 sq ft</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Floor Level:</span>
-                                <span class="spec-value">2nd Floor</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Parking Spaces:</span>
-                                <span class="spec-value">5</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Lease Term:</span>
-                                <span class="spec-value">12 Months</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Property ID:</span>
-                                <span class="spec-value">SPCS-2024-001</span>
-                            </div>
-                        </div>
+                        <div class="section-content"></div>
                     </div>
-                    
-                    <!-- Requirements -->
-                    <div class="section reveal-element">
-                        <div class="section-header">Lease Requirements</div>
-                        <div class="section-content">
-                            <div class="spec-row">
-                                <span class="spec-label">Minimum Credit Score:</span>
-                                <span class="spec-value">650+</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Income Requirement:</span>
-                                <span class="spec-value">3x Monthly Rent</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Security Deposit:</span>
-                                <span class="spec-value">$2,500</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Application Fee:</span>
-                                <span class="spec-value">$100</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Background Check:</span>
-                                <span class="spec-value">Required</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">References:</span>
-                                <span class="spec-value">2 Required</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Property Policies -->
                     <div class="section reveal-element">
                         <div class="section-header">Property Policies</div>
@@ -105,8 +45,6 @@
                                 <li>Quiet hours enforced from 10 PM to 8 AM</li>
                                 <li>Tenant responsible for all utilities except water and trash</li>
                                 <li>24-hour maintenance request system available</li>
-                                <li>Late rent payment incurs $75 fee after 5-day grace period</li>
-                                <li>Property inspections conducted quarterly with 24-hour notice</li>
                                 <li>Parking spaces assigned and non-transferable</li>
                                 <li>Lease renewal offers extended 60 days before expiration</li>
                             </ul>
@@ -116,37 +54,14 @@
 
                 <!-- Right Sidebar -->
                 <div class="details-right reveal-element">
-
                     <div class="price-section">
-                        <div class="price-main">₱35,000</div>
+                        <div class="price-main"></div>
                         <div class="price-sub">Monthly Rent</div>
                     </div>
-
-                    <div class="deposit-info">
-                        <strong>Security Deposit:</strong> ₱30,000<br>
-                        <small>Refundable upon lease termination, subject to property condition assessment.</small>
-                    </div>
-
+                    <div class="deposit-info"></div>
                     <div class="section">
                         <div class="section-header">Property Status</div>
-                        <div class="section-content">
-                            <div class="spec-row">
-                                <span class="spec-label">Occupancy:</span>
-                                <span class="spec-value"><span class="availability-status occupied">Occupied</span></span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Rent Status:</span>
-                                <span class="spec-value" style="color: #10b981; font-weight: 700;">Paid</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Last Inspection:</span>
-                                <span class="spec-value">Dec 15, 2024</span>
-                            </div>
-                            <div class="spec-row">
-                                <span class="spec-label">Maintenance Issues:</span>
-                                <span class="spec-value" style="color: #10b981; font-weight: 700;">None</span>
-                            </div>
-                        </div>
+                        <div class="section-content"></div>
                     </div>
                     <!-- Contact Form -->
                     <div class="section contact-form-section">
@@ -176,7 +91,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="contactMessage">Message</label>
-                                    <textarea id="contactMessage" name="message" rows="4" placeholder="Please provide details about your inquiry..." required></textarea>
+                                    <textarea id="contactMessage" name="message" rows="4"
+                                        placeholder="Please provide details about your inquiry..." required></textarea>
                                 </div>
                                 <button type="submit" class="btn btn-primary contact-submit-btn">
                                     Send Message
@@ -188,10 +104,12 @@
             </div>
         </div>
     </div>
+
     <!-- Footer Placeholder -->
     <div id="footer-placeholder"></div>
 
-    <script src="/javascript/spacesDetails.js"></script>
-    <script src="/javascript/footer.js"></script>
+    <script type="module" src="/javascript/spacesDetails.js"></script>
+    <script type="module" src="/javascript/footer.js"></script>
 </body>
+
 </html>
