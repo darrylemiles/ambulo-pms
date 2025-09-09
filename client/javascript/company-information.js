@@ -164,8 +164,8 @@ document.addEventListener("DOMContentLoaded", function () {
   setupLogoHandling();
   setupAltLogoHandling();
   setupRealtimeValidation();
-  renderServices();
-  renderAdvantages();
+  // renderServices();
+  // renderAdvantages();
   console.log("CMS initialized successfully");
 });
 
@@ -178,54 +178,54 @@ function setupEventListeners() {
   });
 
   // Form inputs change tracking
-  const inputs = document.querySelectorAll("input, textarea, select");
-  inputs.forEach((input) => {
-    input.addEventListener("input", function () {
-      hasUnsavedChanges = true;
-      showAutoSave();
-    });
-  });
+  // const inputs = document.querySelectorAll("input, textarea, select");
+  // inputs.forEach((input) => {
+  //   input.addEventListener("input", function () {
+  //     hasUnsavedChanges = true;
+  //     showAutoSave();
+  //   });
+  // });
 
   // Service form submission
-  document
-    .getElementById("service-form")
-    .addEventListener("submit", function (e) {
-      e.preventDefault();
-      updateService();
-    });
+  // document
+  //   .getElementById("service-form")
+  //   .addEventListener("submit", function (e) {
+  //     e.preventDefault();
+  //     updateService();
+  //   });
 
-  // Advantage form submission
-  document
-    .getElementById("advantage-form")
-    .addEventListener("submit", function (e) {
-      e.preventDefault();
-      updateAdvantage();
-    });
+  // // Advantage form submission
+  // document
+  //   .getElementById("advantage-form")
+  //   .addEventListener("submit", function (e) {
+  //     e.preventDefault();
+  //     updateAdvantage();
+  //   });
 
   // Close modals when clicking outside
-  document
-    .getElementById("service-modal")
-    .addEventListener("click", function (e) {
-      if (e.target === this) {
-        closeServiceModal();
-      }
-    });
+  // document
+  //   .getElementById("service-modal")
+  //   .addEventListener("click", function (e) {
+  //     if (e.target === this) {
+  //       closeServiceModal();
+  //     }
+  //   });
 
-  document
-    .getElementById("advantage-modal")
-    .addEventListener("click", function (e) {
-      if (e.target === this) {
-        closeAdvantageModal();
-      }
-    });
+  // document
+  //   .getElementById("advantage-modal")
+  //   .addEventListener("click", function (e) {
+  //     if (e.target === this) {
+  //       closeAdvantageModal();
+  //     }
+  //   });
 
-  document
-    .getElementById("preview-modal")
-    .addEventListener("click", function (e) {
-      if (e.target === this) {
-        closePreviewModal();
-      }
-    });
+  // document
+  //   .getElementById("preview-modal")
+  //   .addEventListener("click", function (e) {
+  //     if (e.target === this) {
+  //       closePreviewModal();
+  //     }
+  //   });
 
   // Warn before leaving if there are unsaved changes
   window.addEventListener("beforeunload", function (e) {
@@ -414,16 +414,16 @@ function loadFormData() {
   // Load about data
   document.getElementById("story-title").value = websiteData.about.story.title;
 
-  // Load services data
-  document.getElementById("services-title").value = websiteData.services.title;
-  document.getElementById("services-desc").value =
-    websiteData.services.description;
+  // // Load services data
+  // document.getElementById("services-title").value = websiteData.services.title;
+  // document.getElementById("services-desc").value =
+  //   websiteData.services.description;
 
-  // Load advantages data
-  document.getElementById("advantages-title").value =
-    websiteData.advantages.title;
-  document.getElementById("advantages-desc").value =
-    websiteData.advantages.description;
+  // // Load advantages data
+  // document.getElementById("advantages-title").value =
+  //   websiteData.advantages.title;
+  // document.getElementById("advantages-desc").value =
+  //   websiteData.advantages.description;
 }
 
 function triggerLogoUpload() {
@@ -933,42 +933,42 @@ function createServiceElement(service) {
 
 //#endregion
 
-function renderAdvantages() {
-  const advantagesList = document.getElementById("advantages-list");
-  advantagesList.innerHTML = "";
+// function renderAdvantages() {
+//   const advantagesList = document.getElementById("advantages-list");
+//   advantagesList.innerHTML = "";
 
-  websiteData.advantages.items.forEach((advantage) => {
-    const advantageElement = createAdvantageElement(advantage);
-    advantagesList.appendChild(advantageElement);
-  });
-}
+//   websiteData.advantages.items.forEach((advantage) => {
+//     const advantageElement = createAdvantageElement(advantage);
+//     advantagesList.appendChild(advantageElement);
+//   });
+// }
 
-function createAdvantageElement(advantage) {
-  const div = document.createElement("div");
-  div.className = "advantage-item";
-  div.innerHTML = `
-                <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
-                    <div class="icon-preview">
-                        <i class="${advantage.icon}"></i>
-                    </div>
-                    <div>
-                        <h4>${advantage.title}</h4>
-                    </div>
-                </div>
-                <p>${advantage.description}</p>
-                <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="editAdvantage(${advantage.id})">
-                        <i class="fas fa-edit"></i>
-                        Edit
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteAdvantage(${advantage.id})">
-                        <i class="fas fa-trash"></i>
-                        Delete
-                    </button>
-                </div>
-            `;
-  return div;
-}
+// function createAdvantageElement(advantage) {
+//   const div = document.createElement("div");
+//   div.className = "advantage-item";
+//   div.innerHTML = `
+//                 <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+//                     <div class="icon-preview">
+//                         <i class="${advantage.icon}"></i>
+//                     </div>
+//                     <div>
+//                         <h4>${advantage.title}</h4>
+//                     </div>
+//                 </div>
+//                 <p>${advantage.description}</p>
+//                 <div class="action-buttons">
+//                     <button class="btn btn-primary" onclick="editAdvantage(${advantage.id})">
+//                         <i class="fas fa-edit"></i>
+//                         Edit
+//                     </button>
+//                     <button class="btn btn-danger" onclick="deleteAdvantage(${advantage.id})">
+//                         <i class="fas fa-trash"></i>
+//                         Delete
+//                     </button>
+//                 </div>
+//             `;
+//   return div;
+// }
 
 //#region ABOUT US
 document.addEventListener("DOMContentLoaded", function () {
@@ -1245,353 +1245,353 @@ window.removeAboutImage = function (i) {
 
 //#endregion
 
-// Services content functions
-function addService() {
-  // Clear the form and set up for adding new service
-  currentEditingServiceId = "new";
-  document.getElementById("service-title-input").value = "";
-  document.getElementById("service-desc-input").value = "";
-  document.querySelector("#service-modal .modal-title").textContent =
-    "Add New Service";
-  document.querySelector('#service-form button[type="submit"]').innerHTML =
-    '<i class="fas fa-plus"></i> Add Service';
+// // Services content functions
+// function addService() {
+//   // Clear the form and set up for adding new service
+//   currentEditingServiceId = "new";
+//   document.getElementById("service-title-input").value = "";
+//   document.getElementById("service-desc-input").value = "";
+//   document.querySelector("#service-modal .modal-title").textContent =
+//     "Add New Service";
+//   document.querySelector('#service-form button[type="submit"]').innerHTML =
+//     '<i class="fas fa-plus"></i> Add Service';
 
-  document.getElementById("service-modal").classList.add("show");
-}
+//   document.getElementById("service-modal").classList.add("show");
+// }
 
-function editService(id) {
-  const service = websiteData.services.items.find((s) => s.id === id);
-  if (!service) return;
+// function editService(id) {
+//   const service = websiteData.services.items.find((s) => s.id === id);
+//   if (!service) return;
 
-  currentEditingServiceId = id;
-  document.getElementById("service-title-input").value = service.title;
-  document.getElementById("service-desc-input").value = service.description;
-  document.querySelector("#service-modal .modal-title").textContent =
-    "Edit Service";
-  document.querySelector('#service-form button[type="submit"]').innerHTML =
-    '<i class="fas fa-save"></i> Save Service';
+//   currentEditingServiceId = id;
+//   document.getElementById("service-title-input").value = service.title;
+//   document.getElementById("service-desc-input").value = service.description;
+//   document.querySelector("#service-modal .modal-title").textContent =
+//     "Edit Service";
+//   document.querySelector('#service-form button[type="submit"]').innerHTML =
+//     '<i class="fas fa-save"></i> Save Service';
 
-  document.getElementById("service-modal").classList.add("show");
-}
+//   document.getElementById("service-modal").classList.add("show");
+// }
 
-function updateService() {
-  const title = document.getElementById("service-title-input").value.trim();
-  const description = document
-    .getElementById("service-desc-input")
-    .value.trim();
+// function updateService() {
+//   const title = document.getElementById("service-title-input").value.trim();
+//   const description = document
+//     .getElementById("service-desc-input")
+//     .value.trim();
 
-  if (!title || !description) {
-    showNotification("Please fill in both title and description.", "error");
-    return;
-  }
+//   if (!title || !description) {
+//     showNotification("Please fill in both title and description.", "error");
+//     return;
+//   }
 
-  if (currentEditingServiceId === "new") {
-    // Adding new service
-    const newId =
-      websiteData.services.items.length > 0
-        ? Math.max(...websiteData.services.items.map((s) => s.id)) + 1
-        : 1;
-    const newService = {
-      id: newId,
-      title: title,
-      description: description,
-    };
+//   if (currentEditingServiceId === "new") {
+//     // Adding new service
+//     const newId =
+//       websiteData.services.items.length > 0
+//         ? Math.max(...websiteData.services.items.map((s) => s.id)) + 1
+//         : 1;
+//     const newService = {
+//       id: newId,
+//       title: title,
+//       description: description,
+//     };
 
-    websiteData.services.items.push(newService);
-    showNotification("New service added successfully!", "success");
-  } else {
-    // Updating existing service
-    const service = websiteData.services.items.find(
-      (s) => s.id === currentEditingServiceId
-    );
-    if (service) {
-      service.title = title;
-      service.description = description;
-      showNotification("Service updated successfully!", "success");
-    }
-  }
+//     websiteData.services.items.push(newService);
+//     showNotification("New service added successfully!", "success");
+//   } else {
+//     // Updating existing service
+//     const service = websiteData.services.items.find(
+//       (s) => s.id === currentEditingServiceId
+//     );
+//     if (service) {
+//       service.title = title;
+//       service.description = description;
+//       showNotification("Service updated successfully!", "success");
+//     }
+//   }
 
-  renderServices();
-  closeServiceModal();
-  hasUnsavedChanges = true;
-}
+//   renderServices();
+//   closeServiceModal();
+//   hasUnsavedChanges = true;
+// }
 
-function deleteService(id) {
-  const service = websiteData.services.items.find((s) => s.id === id);
-  if (!service) return;
+// function deleteService(id) {
+//   const service = websiteData.services.items.find((s) => s.id === id);
+//   if (!service) return;
 
-  if (
-    confirm(
-      `Are you sure you want to delete the service "${service.title}"? This action cannot be undone.`
-    )
-  ) {
-    websiteData.services.items = websiteData.services.items.filter(
-      (s) => s.id !== id
-    );
-    renderServices();
-    hasUnsavedChanges = true;
-    showNotification("Service deleted successfully!", "success");
-  }
-}
+//   if (
+//     confirm(
+//       `Are you sure you want to delete the service "${service.title}"? This action cannot be undone.`
+//     )
+//   ) {
+//     websiteData.services.items = websiteData.services.items.filter(
+//       (s) => s.id !== id
+//     );
+//     renderServices();
+//     hasUnsavedChanges = true;
+//     showNotification("Service deleted successfully!", "success");
+//   }
+// }
 
-function closeServiceModal() {
-  document.getElementById("service-modal").classList.remove("show");
-  currentEditingServiceId = null;
+// function closeServiceModal() {
+//   document.getElementById("service-modal").classList.remove("show");
+//   currentEditingServiceId = null;
 
-  // Reset form
-  document.getElementById("service-title-input").value = "";
-  document.getElementById("service-desc-input").value = "";
-  document.querySelector("#service-modal .modal-title").textContent =
-    "Edit Service";
-  document.querySelector('#service-form button[type="submit"]').innerHTML =
-    '<i class="fas fa-save"></i> Save Service';
-}
+//   // Reset form
+//   document.getElementById("service-title-input").value = "";
+//   document.getElementById("service-desc-input").value = "";
+//   document.querySelector("#service-modal .modal-title").textContent =
+//     "Edit Service";
+//   document.querySelector('#service-form button[type="submit"]').innerHTML =
+//     '<i class="fas fa-save"></i> Save Service';
+// }
 
-function saveServicesContent() {
-  websiteData.services.title = document.getElementById("services-title").value;
-  websiteData.services.description =
-    document.getElementById("services-desc").value;
+// function saveServicesContent() {
+//   websiteData.services.title = document.getElementById("services-title").value;
+//   websiteData.services.description =
+//     document.getElementById("services-desc").value;
 
-  hasUnsavedChanges = false;
-  showNotification("Services content saved successfully!", "success");
-  console.log("Services data saved:", websiteData.services);
-}
+//   hasUnsavedChanges = false;
+//   showNotification("Services content saved successfully!", "success");
+//   console.log("Services data saved:", websiteData.services);
+// }
 
-function previewServices() {
-  const previewContent = `
-                <div style="font-family: 'Poppins', sans-serif;">
-                    <h2 style="color: #2c3e50; margin-bottom: 10px;">${
-                      websiteData.services.title
-                    }</h2>
-                    <p style="color: #64748b; margin-bottom: 30px;">${
-                      websiteData.services.description
-                    }</p>
+// function previewServices() {
+//   const previewContent = `
+//                 <div style="font-family: 'Poppins', sans-serif;">
+//                     <h2 style="color: #2c3e50; margin-bottom: 10px;">${
+//                       websiteData.services.title
+//                     }</h2>
+//                     <p style="color: #64748b; margin-bottom: 30px;">${
+//                       websiteData.services.description
+//                     }</p>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                        ${websiteData.services.items
-                          .map(
-                            (service) => `
-                            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <h4 style="color: #1e293b; margin-bottom: 10px; font-size: 18px;">${service.title}</h4>
-                                <p style="color: #64748b; line-height: 1.6; font-size: 14px;">${service.description}</p>
-                            </div>
-                        `
-                          )
-                          .join("")}
-                    </div>
-                </div>
-            `;
+//                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+//                         ${websiteData.services.items
+//                           .map(
+//                             (service) => `
+//                             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+//                                 <h4 style="color: #1e293b; margin-bottom: 10px; font-size: 18px;">${service.title}</h4>
+//                                 <p style="color: #64748b; line-height: 1.6; font-size: 14px;">${service.description}</p>
+//                             </div>
+//                         `
+//                           )
+//                           .join("")}
+//                     </div>
+//                 </div>
+//             `;
 
-  showPreview("Services Preview", previewContent);
-}
+//   showPreview("Services Preview", previewContent);
+// }
 
-// Advantages/Why Choose functions
-function addAdvantage() {
-  currentEditingAdvantageId = "new";
-  selectedIcon = "";
-  document.getElementById("advantage-title-input").value = "";
-  document.getElementById("advantage-desc-input").value = "";
-  document.querySelector("#advantage-modal .modal-title").textContent =
-    "Add New Advantage";
-  document.querySelector('#advantage-form button[type="submit"]').innerHTML =
-    '<i class="fas fa-plus"></i> Add Advantage';
+// // Advantages/Why Choose functions
+// function addAdvantage() {
+//   currentEditingAdvantageId = "new";
+//   selectedIcon = "";
+//   document.getElementById("advantage-title-input").value = "";
+//   document.getElementById("advantage-desc-input").value = "";
+//   document.querySelector("#advantage-modal .modal-title").textContent =
+//     "Add New Advantage";
+//   document.querySelector('#advantage-form button[type="submit"]').innerHTML =
+//     '<i class="fas fa-plus"></i> Add Advantage';
 
-  renderIconSelector();
-  document.getElementById("advantage-modal").classList.add("show");
-}
+//   renderIconSelector();
+//   document.getElementById("advantage-modal").classList.add("show");
+// }
 
-function editAdvantage(id) {
-  const advantage = websiteData.advantages.items.find((a) => a.id === id);
-  if (!advantage) return;
+// function editAdvantage(id) {
+//   const advantage = websiteData.advantages.items.find((a) => a.id === id);
+//   if (!advantage) return;
 
-  currentEditingAdvantageId = id;
-  selectedIcon = advantage.icon;
-  document.getElementById("advantage-title-input").value = advantage.title;
-  document.getElementById("advantage-desc-input").value = advantage.description;
-  document.querySelector("#advantage-modal .modal-title").textContent =
-    "Edit Advantage";
-  document.querySelector('#advantage-form button[type="submit"]').innerHTML =
-    '<i class="fas fa-save"></i> Save Advantage';
+//   currentEditingAdvantageId = id;
+//   selectedIcon = advantage.icon;
+//   document.getElementById("advantage-title-input").value = advantage.title;
+//   document.getElementById("advantage-desc-input").value = advantage.description;
+//   document.querySelector("#advantage-modal .modal-title").textContent =
+//     "Edit Advantage";
+//   document.querySelector('#advantage-form button[type="submit"]').innerHTML =
+//     '<i class="fas fa-save"></i> Save Advantage';
 
-  renderIconSelector();
-  document.getElementById("advantage-modal").classList.add("show");
-}
+//   renderIconSelector();
+//   document.getElementById("advantage-modal").classList.add("show");
+// }
 
-function renderIconSelector() {
-  const iconSelector = document.getElementById("icon-selector");
-  iconSelector.innerHTML = "";
+// function renderIconSelector() {
+//   const iconSelector = document.getElementById("icon-selector");
+//   iconSelector.innerHTML = "";
 
-  availableIcons.forEach((iconClass) => {
-    const iconDiv = document.createElement("div");
-    iconDiv.className = `icon-option ${
-      selectedIcon === iconClass ? "selected" : ""
-    }`;
-    iconDiv.innerHTML = `<i class="${iconClass}"></i>`;
-    iconDiv.addEventListener("click", () => selectIcon(iconClass));
-    iconSelector.appendChild(iconDiv);
-  });
-}
+//   availableIcons.forEach((iconClass) => {
+//     const iconDiv = document.createElement("div");
+//     iconDiv.className = `icon-option ${
+//       selectedIcon === iconClass ? "selected" : ""
+//     }`;
+//     iconDiv.innerHTML = `<i class="${iconClass}"></i>`;
+//     iconDiv.addEventListener("click", () => selectIcon(iconClass));
+//     iconSelector.appendChild(iconDiv);
+//   });
+// }
 
-function selectIcon(iconClass) {
-  selectedIcon = iconClass;
-  document.querySelectorAll(".icon-option").forEach((option) => {
-    option.classList.remove("selected");
-  });
-  event.target.closest(".icon-option").classList.add("selected");
-}
+// function selectIcon(iconClass) {
+//   selectedIcon = iconClass;
+//   document.querySelectorAll(".icon-option").forEach((option) => {
+//     option.classList.remove("selected");
+//   });
+//   event.target.closest(".icon-option").classList.add("selected");
+// }
 
-function updateAdvantage() {
-  const title = document.getElementById("advantage-title-input").value.trim();
-  const description = document
-    .getElementById("advantage-desc-input")
-    .value.trim();
+// function updateAdvantage() {
+//   const title = document.getElementById("advantage-title-input").value.trim();
+//   const description = document
+//     .getElementById("advantage-desc-input")
+//     .value.trim();
 
-  if (!title || !description || !selectedIcon) {
-    showNotification(
-      "Please fill in title, description, and select an icon.",
-      "error"
-    );
-    return;
-  }
+//   if (!title || !description || !selectedIcon) {
+//     showNotification(
+//       "Please fill in title, description, and select an icon.",
+//       "error"
+//     );
+//     return;
+//   }
 
-  if (currentEditingAdvantageId === "new") {
-    // Adding new advantage
-    const newId =
-      websiteData.advantages.items.length > 0
-        ? Math.max(...websiteData.advantages.items.map((a) => a.id)) + 1
-        : 1;
-    const newAdvantage = {
-      id: newId,
-      title: title,
-      description: description,
-      icon: selectedIcon,
-    };
+//   if (currentEditingAdvantageId === "new") {
+//     // Adding new advantage
+//     const newId =
+//       websiteData.advantages.items.length > 0
+//         ? Math.max(...websiteData.advantages.items.map((a) => a.id)) + 1
+//         : 1;
+//     const newAdvantage = {
+//       id: newId,
+//       title: title,
+//       description: description,
+//       icon: selectedIcon,
+//     };
 
-    websiteData.advantages.items.push(newAdvantage);
-    showNotification("New advantage added successfully!", "success");
-  } else {
-    // Updating existing advantage
-    const advantage = websiteData.advantages.items.find(
-      (a) => a.id === currentEditingAdvantageId
-    );
-    if (advantage) {
-      advantage.title = title;
-      advantage.description = description;
-      advantage.icon = selectedIcon;
-      showNotification("Advantage updated successfully!", "success");
-    }
-  }
+//     websiteData.advantages.items.push(newAdvantage);
+//     showNotification("New advantage added successfully!", "success");
+//   } else {
+//     // Updating existing advantage
+//     const advantage = websiteData.advantages.items.find(
+//       (a) => a.id === currentEditingAdvantageId
+//     );
+//     if (advantage) {
+//       advantage.title = title;
+//       advantage.description = description;
+//       advantage.icon = selectedIcon;
+//       showNotification("Advantage updated successfully!", "success");
+//     }
+//   }
 
-  renderAdvantages();
-  closeAdvantageModal();
-  hasUnsavedChanges = true;
-}
+//   renderAdvantages();
+//   closeAdvantageModal();
+//   hasUnsavedChanges = true;
+// }
 
-function deleteAdvantage(id) {
-  const advantage = websiteData.advantages.items.find((a) => a.id === id);
-  if (!advantage) return;
+// function deleteAdvantage(id) {
+//   const advantage = websiteData.advantages.items.find((a) => a.id === id);
+//   if (!advantage) return;
 
-  if (
-    confirm(
-      `Are you sure you want to delete the advantage "${advantage.title}"? This action cannot be undone.`
-    )
-  ) {
-    websiteData.advantages.items = websiteData.advantages.items.filter(
-      (a) => a.id !== id
-    );
-    renderAdvantages();
-    hasUnsavedChanges = true;
-    showNotification("Advantage deleted successfully!", "success");
-  }
-}
+//   if (
+//     confirm(
+//       `Are you sure you want to delete the advantage "${advantage.title}"? This action cannot be undone.`
+//     )
+//   ) {
+//     websiteData.advantages.items = websiteData.advantages.items.filter(
+//       (a) => a.id !== id
+//     );
+//     renderAdvantages();
+//     hasUnsavedChanges = true;
+//     showNotification("Advantage deleted successfully!", "success");
+//   }
+// }
 
-function closeAdvantageModal() {
-  document.getElementById("advantage-modal").classList.remove("show");
-  currentEditingAdvantageId = null;
-  selectedIcon = "";
+// function closeAdvantageModal() {
+//   document.getElementById("advantage-modal").classList.remove("show");
+//   currentEditingAdvantageId = null;
+//   selectedIcon = "";
 
-  // Reset form
-  document.getElementById("advantage-title-input").value = "";
-  document.getElementById("advantage-desc-input").value = "";
-  document.querySelector("#advantage-modal .modal-title").textContent =
-    "Edit Advantage";
-  document.querySelector('#advantage-form button[type="submit"]').innerHTML =
-    '<i class="fas fa-save"></i> Save Advantage';
-}
+//   // Reset form
+//   document.getElementById("advantage-title-input").value = "";
+//   document.getElementById("advantage-desc-input").value = "";
+//   document.querySelector("#advantage-modal .modal-title").textContent =
+//     "Edit Advantage";
+//   document.querySelector('#advantage-form button[type="submit"]').innerHTML =
+//     '<i class="fas fa-save"></i> Save Advantage';
+// }
 
-function saveAdvantagesContent() {
-  websiteData.advantages.title =
-    document.getElementById("advantages-title").value;
-  websiteData.advantages.description =
-    document.getElementById("advantages-desc").value;
+// function saveAdvantagesContent() {
+//   websiteData.advantages.title =
+//     document.getElementById("advantages-title").value;
+//   websiteData.advantages.description =
+//     document.getElementById("advantages-desc").value;
 
-  hasUnsavedChanges = false;
-  showNotification("Advantages content saved successfully!", "success");
-  console.log("Advantages data saved:", websiteData.advantages);
-}
+//   hasUnsavedChanges = false;
+//   showNotification("Advantages content saved successfully!", "success");
+//   console.log("Advantages data saved:", websiteData.advantages);
+// }
 
-function previewAdvantages() {
-  const previewContent = `
-                <div style="font-family: 'Poppins', sans-serif;">
-                    <h2 style="color: #2c3e50; margin-bottom: 10px; text-align: center;">${
-                      websiteData.advantages.title
-                    }</h2>
-                    <p style="color: #64748b; margin-bottom: 40px; text-align: center; font-size: 18px;">${
-                      websiteData.advantages.description
-                    }</p>
+// function previewAdvantages() {
+//   const previewContent = `
+//                 <div style="font-family: 'Poppins', sans-serif;">
+//                     <h2 style="color: #2c3e50; margin-bottom: 10px; text-align: center;">${
+//                       websiteData.advantages.title
+//                     }</h2>
+//                     <p style="color: #64748b; margin-bottom: 40px; text-align: center; font-size: 18px;">${
+//                       websiteData.advantages.description
+//                     }</p>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
-                        ${websiteData.advantages.items
-                          .map(
-                            (advantage, index) => `
-                            <div style="background: white; border: 2px solid #e5e7eb; border-radius: 20px; padding: 30px; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; animation: slideInUp 0.6s ease ${
-                              index * 0.1
-                            }s both;">
-                                <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: linear-gradient(45deg, #3b82f6, #60a5fa); border-radius: 50%; opacity: 0.1;"></div>
-                                <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 20px; position: relative; z-index: 1;">
-                                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #60a5fa); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; flex-shrink: 0;">
-                                        <i class="${advantage.icon}"></i>
-                                    </div>
-                                    <div>
-                                        <h4 style="color: #1e293b; margin: 0; font-size: 1.4em; font-weight: 600;">${
-                                          advantage.title
-                                        }</h4>
-                                    </div>
-                                </div>
-                                <p style="color: #64748b; line-height: 1.7; font-size: 1.05em; position: relative; z-index: 1; margin: 0;">${
-                                  advantage.description
-                                }</p>
-                            </div>
-                        `
-                          )
-                          .join("")}
-                    </div>
-                </div>
-                <style>
-                    @keyframes slideInUp {
-                        from {
-                            opacity: 0;
-                            transform: translateY(30px);
-                        }
-                        to {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                    }
-                </style>
-            `;
+//                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
+//                         ${websiteData.advantages.items
+//                           .map(
+//                             (advantage, index) => `
+//                             <div style="background: white; border: 2px solid #e5e7eb; border-radius: 20px; padding: 30px; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; animation: slideInUp 0.6s ease ${
+//                               index * 0.1
+//                             }s both;">
+//                                 <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: linear-gradient(45deg, #3b82f6, #60a5fa); border-radius: 50%; opacity: 0.1;"></div>
+//                                 <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 20px; position: relative; z-index: 1;">
+//                                     <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #60a5fa); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; flex-shrink: 0;">
+//                                         <i class="${advantage.icon}"></i>
+//                                     </div>
+//                                     <div>
+//                                         <h4 style="color: #1e293b; margin: 0; font-size: 1.4em; font-weight: 600;">${
+//                                           advantage.title
+//                                         }</h4>
+//                                     </div>
+//                                 </div>
+//                                 <p style="color: #64748b; line-height: 1.7; font-size: 1.05em; position: relative; z-index: 1; margin: 0;">${
+//                                   advantage.description
+//                                 }</p>
+//                             </div>
+//                         `
+//                           )
+//                           .join("")}
+//                     </div>
+//                 </div>
+//                 <style>
+//                     @keyframes slideInUp {
+//                         from {
+//                             opacity: 0;
+//                             transform: translateY(30px);
+//                         }
+//                         to {
+//                             opacity: 1;
+//                             transform: translateY(0);
+//                         }
+//                     }
+//                 </style>
+//             `;
 
-  showPreview("Why Choose Preview", previewContent);
-}
+//   showPreview("Why Choose Preview", previewContent);
+// }
 
 // Global functions
-function saveAllContent() {
-  saveCompanyInfo();
-  saveAboutContent();
-  saveServicesContent();
-  saveAdvantagesContent();
-  showNotification("All content saved successfully!", "success");
-}
+// function saveAllContent() {
+//   saveCompanyInfo();
+//   saveAboutContent();
+//   saveServicesContent();
+//   saveAdvantagesContent();
+//   showNotification("All content saved successfully!", "success");
+// }
 
 function previewWebsite() {
   const company = websiteData.company;
@@ -1804,56 +1804,56 @@ function showNotification(message, type = "info") {
   }, 4000);
 }
 
-function showAutoSave() {
-  clearTimeout(window.autoSaveTimeout);
-  window.autoSaveTimeout = setTimeout(() => {
-    // Auto-save current data
-    const currentTab = document.querySelector(".tab-button.active").dataset.tab;
+// function showAutoSave() {
+//   clearTimeout(window.autoSaveTimeout);
+//   window.autoSaveTimeout = setTimeout(() => {
+//     // Auto-save current data
+//     const currentTab = document.querySelector(".tab-button.active").dataset.tab;
 
-    if (currentTab === "company") {
-      const nameInput = document.getElementById("company-name");
-      websiteData.company.name = nameInput ? nameInput.value : "";
-    } else if (currentTab === "about") {
-      websiteData.about.story.title =
-        document.getElementById("story-title").value;
-      websiteData.about.mvv.mission =
-        document.getElementById("mission-text").value;
-      websiteData.about.mvv.vision =
-        document.getElementById("vision-text").value;
-      websiteData.about.mvv.values =
-        document.getElementById("values-text").value;
-    } else if (currentTab === "services") {
-      websiteData.services.title =
-        document.getElementById("services-title").value;
-      websiteData.services.description =
-        document.getElementById("services-desc").value;
-    } else if (currentTab === "advantages") {
-      websiteData.advantages.title =
-        document.getElementById("advantages-title").value;
-      websiteData.advantages.description =
-        document.getElementById("advantages-desc").value;
-    }
+//     if (currentTab === "company") {
+//       const nameInput = document.getElementById("company-name");
+//       websiteData.company.name = nameInput ? nameInput.value : "";
+//     } else if (currentTab === "about") {
+//       websiteData.about.story.title =
+//         document.getElementById("story-title").value;
+//       websiteData.about.mvv.mission =
+//         document.getElementById("mission-text").value;
+//       websiteData.about.mvv.vision =
+//         document.getElementById("vision-text").value;
+//       websiteData.about.mvv.values =
+//         document.getElementById("values-text").value;
+//     } else if (currentTab === "services") {
+//       websiteData.services.title =
+//         document.getElementById("services-title").value;
+//       websiteData.services.description =
+//         document.getElementById("services-desc").value;
+//     } else if (currentTab === "advantages") {
+//       websiteData.advantages.title =
+//         document.getElementById("advantages-title").value;
+//       websiteData.advantages.description =
+//         document.getElementById("advantages-desc").value;
+//     }
 
-    console.log("Auto-saved:", websiteData);
+//     console.log("Auto-saved:", websiteData);
 
-    const indicator = document.createElement("div");
-    indicator.className = "auto-save-indicator";
-    indicator.innerHTML = '<i class="fas fa-check"></i> Auto-saved';
+//     const indicator = document.createElement("div");
+//     indicator.className = "auto-save-indicator";
+//     indicator.innerHTML = '<i class="fas fa-check"></i> Auto-saved';
 
-    document.body.appendChild(indicator);
-    setTimeout(() => indicator.classList.add("show"), 100);
-    setTimeout(() => {
-      indicator.classList.remove("show");
-      setTimeout(() => {
-        if (indicator.parentNode) {
-          indicator.parentNode.removeChild(indicator);
-        }
-      }, 300);
-    }, 2000);
+//     document.body.appendChild(indicator);
+//     setTimeout(() => indicator.classList.add("show"), 100);
+//     setTimeout(() => {
+//       indicator.classList.remove("show");
+//       setTimeout(() => {
+//         if (indicator.parentNode) {
+//           indicator.parentNode.removeChild(indicator);
+//         }
+//       }, 300);
+//     }, 2000);
 
-    hasUnsavedChanges = false;
-  }, 3000);
-}
+//     hasUnsavedChanges = false;
+//   }, 3000);
+// }
 
 // Keyboard shortcuts
 document.addEventListener("keydown", function (e) {
@@ -1880,20 +1880,20 @@ document.addEventListener("keydown", function (e) {
 window.closePreviewModal = closePreviewModal;
 window.previewCompanyInfo = previewCompanyInfo;
 window.saveCompanyInfo = saveCompanyInfo;
-window.addService = addService;
+// window.addService = addService;
 window.previewAbout = previewAbout;
 window.saveAboutContent = saveAboutContent;
-window.editService = editService;
-window.updateService = updateService;
-window.deleteService = deleteService;
-window.closeServiceModal = closeServiceModal;
-window.saveServicesContent = saveServicesContent;
-window.previewServices = previewServices;
-window.addAdvantage = addAdvantage;
-window.editAdvantage = editAdvantage;
-window.updateAdvantage = updateAdvantage;
-window.deleteAdvantage = deleteAdvantage;
-window.closeAdvantageModal = closeAdvantageModal;
-window.saveAdvantagesContent = saveAdvantagesContent;
-window.previewAdvantages = previewAdvantages;
-window.saveAllContent = saveAllContent;
+// window.editService = editService;
+// window.updateService = updateService;
+// window.deleteService = deleteService;
+// window.closeServiceModal = closeServiceModal;
+// window.saveServicesContent = saveServicesContent;
+// window.previewServices = previewServices;
+// window.addAdvantage = addAdvantage;
+// window.editAdvantage = editAdvantage;
+// window.updateAdvantage = updateAdvantage;
+// window.deleteAdvantage = deleteAdvantage;
+// window.closeAdvantageModal = closeAdvantageModal;
+// window.saveAdvantagesContent = saveAdvantagesContent;
+// window.previewAdvantages = previewAdvantages;
+// window.saveAllContent = saveAllContent;
