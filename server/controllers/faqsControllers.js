@@ -1,7 +1,7 @@
-import expressAsync from 'express-async-handler';
-import faqsServices from '../services/faqsServices.js';
+import expressAsync from "express-async-handler";
+import faqsServices from "../services/faqsServices.js";
 
-const createFaq = expressAsync(async (req, res) => {
+const createFaq = expressAsync(async (req, res) => { 
   const faqData = req.body;
   const result = await faqsServices.createFaq(faqData);
   res.status(201).json({ message: result });
@@ -36,5 +36,5 @@ export {
   getAllFaqs,
   getSingleFaqById,
   updateFaqById,
-  deleteFaqById
+  deleteFaqById,
 };
