@@ -1,395 +1,591 @@
-        let faqIdCounter = 4; // Start from 4 since we have 3 existing FAQs
-        let currentEditingId = null;
+let faqIdCounter = 0;
+let currentEditingId = null;
+let latestFaqs = [];
+const API_BASE_URL = "/api/v1/faqs";
 
-        function toggleFAQ(element) {
-            const faqItem = element.closest('.faq-item');
-            const isOpen = faqItem.classList.contains('open');
-            
-            // Close all other FAQ items
-            document.querySelectorAll('.faq-item').forEach(item => {
-                item.classList.remove('open');
-            });
-            
-            // Toggle current item
-            if (!isOpen) {
-                faqItem.classList.add('open');
-            }
-        }
+document.addEventListener("DOMContentLoaded", function () {
+  fetchAndRenderFAQs();
+  updateFAQCounter();
 
-        function addFAQ() {
-            currentEditingId = null;
-            document.getElementById('modalTitle').textContent = 'Add New FAQ';
-            document.getElementById('faqQuestion').value = '';
-            document.getElementById('faqAnswer').value = '';
-            document.getElementById('editingFAQId').value = '';
-            document.getElementById('saveFAQBtn').innerHTML = '<i class="fas fa-save"></i> Save FAQ';
-            showModal('faqModal');
-        }
+  document.documentElement.style.scrollBehavior = "smooth";
 
-        function editFAQ(id) {
-            const faqItem = document.querySelector(`[data-id="${id}"]`);
-            if (!faqItem) return;
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === "s") {
+        e.preventDefault();
+        saveFAQContent();
+      } else if (e.key === "n") {
+        e.preventDefault();
+        addFAQ();
+      }
+    }
 
-            const question = faqItem.querySelector('.faq-question h4').textContent;
-            const answer = faqItem.querySelector('.faq-answer p').textContent;
+    if (e.key === "Escape") {
+      const openModals = document.querySelectorAll(".modal-overlay.show");
+      openModals.forEach((modal) => {
+        hideModal(modal.id);
+      });
+    }
+  });
 
-            currentEditingId = id;
-            document.getElementById('modalTitle').textContent = 'Edit FAQ';
-            document.getElementById('faqQuestion').value = question;
-            document.getElementById('faqAnswer').value = answer;
-            document.getElementById('editingFAQId').value = id;
-            document.getElementById('saveFAQBtn').innerHTML = '<i class="fas fa-save"></i> Update FAQ';
-            showModal('faqModal');
-        }
+  setTimeout(() => {
+    showNotification(
+      "Welcome to FAQ Management! Use Ctrl+N to add new FAQ, Ctrl+S to save.",
+      "info"
+    );
+  }, 1000);
+});
 
-        function saveFAQ() {
-            const question = document.getElementById('faqQuestion').value.trim();
-            const answer = document.getElementById('faqAnswer').value.trim();
-            
-            if (!question || !answer) {
-                showNotification('Please fill in both question and answer fields.', 'error');
-                return;
-            }
+async function fetchAndRenderFAQs() {
+  try {
+    const res = await fetch(API_BASE_URL);
+    const data = await res.json();
+    const faqs = Array.isArray(data.message) ? data.message : [];
+    latestFaqs = faqs;
 
-            if (currentEditingId) {
-                // Update existing FAQ
-                updateExistingFAQ(currentEditingId, question, answer);
-                showNotification('FAQ updated successfully!', 'success');
-            } else {
-                // Create new FAQ
-                createNewFAQ(question, answer);
-                showNotification('New FAQ added successfully!', 'success');
-                updateFAQCounter();
-            }
+    const faqList = document.getElementById("faq-list");
+    faqList.innerHTML = "";
 
-            closeFAQModal();
+    faqs.forEach((faq) => {
+      const isActive = String(faq.is_active) === "1";
+      const activeBadge = isActive
+        ? `<span class="faq-active-badge" style="background:#22c55e; color:#fff; font-size:12px; border-radius:6px; padding:2px 8px; margin-right:8px;">Active</span>`
+        : `<span class="faq-active-badge" style="background:#64748b; color:#fff; font-size:12px; border-radius:6px; padding:2px 8px; margin-right:8px;">Inactive</span>`;
+
+      const faqHtml = `
+    <div class="faq-item" data-id="${faq.faq_id}" data-active="${
+        faq.is_active
+      }" data-sort-order="${faq.sort_order}">
+      <div class="faq-question" onclick="toggleFAQ(this)">
+        <h4 style="display: flex; align-items: center;">
+          <span class="faq-sort-order" style="font-size: 0.95em; color: #64748b; margin-right: 10px;">
+            <i class="fas fa-sort-numeric-down"></i> ${faq.sort_order}
+          </span>
+          ${activeBadge}
+          ${escapeHtml(faq.question)}
+        </h4>
+        <span class="faq-icon">
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </div>
+      <div class="faq-answer">
+        <p>${escapeHtml(faq.answer)}</p>
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="editFAQ(${faq.faq_id})">
+            <i class="fas fa-edit"></i>
+            Edit
+          </button>
+          <button class="btn btn-danger" onclick="deleteFAQ(${
+            faq.faq_id
+          }, this)">
+            <i class="fas fa-trash"></i>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+      faqList.insertAdjacentHTML("beforeend", faqHtml);
+    });
+
+    faqIdCounter =
+      faqs.length > 0 ? Math.max(...faqs.map((f) => f.faq_id)) + 1 : 1;
+    updateFAQCounter();
+  } catch (err) {
+    showNotification("Failed to load FAQs from server.", "error");
+    console.error(err);
+  }
+}
+
+function toggleFAQ(element) {
+  const faqItem = element.closest(".faq-item");
+  const isOpen = faqItem.classList.contains("open");
+
+  // Close all other FAQ items
+  document.querySelectorAll(".faq-item").forEach((item) => {
+    item.classList.remove("open");
+  });
+
+  // Toggle current item
+  if (!isOpen) {
+    faqItem.classList.add("open");
+  }
+}
+function addFAQ() {
+  currentEditingId = null;
+  document.getElementById("modalTitle").textContent = "Add New FAQ";
+  document
+    .getElementById("faqQuestion")
+    .parentElement.parentElement.classList.add("full-width");
+  document
+    .getElementById("faqAnswer")
+    .parentElement.parentElement.classList.add("full-width");
+  document.getElementById("editingFAQId").value = "";
+
+  let combinedRow = document.getElementById("faqStatusSortRow");
+  if (combinedRow) combinedRow.remove();
+
+  combinedRow = document.createElement("div");
+  combinedRow.className = "form-row";
+  combinedRow.id = "faqStatusSortRow";
+  combinedRow.innerHTML = `
+    <div class="form-group" style="width: 48%; display: inline-block; margin-right: 4%;">
+      <label class="form-label">Public Page Visibility:</label>
+      <select class="form-input" id="faqIsActive">
+        <option value="1">Active</option>
+        <option value="0">Inactive</option>
+      </select>
+    </div>
+    <div class="form-group" style="width: 48%; display: inline-block;">
+      <label class="form-label">Sort Order:</label>
+      <input type="number" class="form-input" id="faqSortOrder" min="1" value="${faqIdCounter}">
+    </div>
+  `;
+  document.getElementById("faqForm").appendChild(combinedRow);
+
+  document.getElementById("faqIsActive").value = "1";
+  document.getElementById("faqSortOrder").value = faqIdCounter;
+
+  document.getElementById("saveFAQBtn").innerHTML =
+    '<i class="fas fa-save"></i> Save FAQ';
+  showModal("faqModal");
+}
+
+function editFAQ(id) {
+  const faq = latestFaqs.find((f) => String(f.faq_id) === String(id));
+  if (!faq) return;
+
+  currentEditingId = id;
+  document.getElementById("modalTitle").textContent = "Edit FAQ";
+  document.getElementById("faqQuestion").value = faq.question || "";
+  document.getElementById("faqAnswer").value = faq.answer || "";
+  document.getElementById("editingFAQId").value = id;
+
+  document
+    .getElementById("faqQuestion")
+    .parentElement.parentElement.classList.add("full-width");
+  document
+    .getElementById("faqAnswer")
+    .parentElement.parentElement.classList.add("full-width");
+
+  let combinedRow = document.getElementById("faqStatusSortRow");
+  if (combinedRow) combinedRow.remove();
+
+  combinedRow = document.createElement("div");
+  combinedRow.className = "form-row";
+  combinedRow.id = "faqStatusSortRow";
+  combinedRow.innerHTML = `
+    <div class="form-group" style="width: 48%; display: inline-block; margin-right: 4%;">
+      <label class="form-label">Public Page Visibility:</label>
+      <select class="form-input" id="faqIsActive">
+        <option value="1">Active</option>
+        <option value="0">Inactive</option>
+      </select>
+    </div>
+    <div class="form-group" style="width: 48%; display: inline-block;">
+      <label class="form-label">Sort Order:</label>
+      <input type="number" class="form-input" id="faqSortOrder" min="1" value="${faq.sort_order}">
+    </div>
+  `;
+  document.getElementById("faqForm").appendChild(combinedRow);
+
+  document.getElementById("faqIsActive").value = faq.is_active;
+  document.getElementById("faqSortOrder").value = faq.sort_order;
+
+  document.getElementById("saveFAQBtn").innerHTML =
+    '<i class="fas fa-save"></i> Update FAQ';
+  showModal("faqModal");
+}
+
+function saveFAQ() {
+  const question = document.getElementById("faqQuestion").value.trim();
+  const answer = document.getElementById("faqAnswer").value.trim();
+  const sortOrder =
+    parseInt(document.getElementById("faqSortOrder").value, 10) || faqIdCounter;
+  const isActive = document.getElementById("faqIsActive").value;
+
+  if (!question || !answer) {
+    showNotification(
+      "Please fill in both question and answer fields.",
+      "error"
+    );
+    return;
+  }
+
+  if (currentEditingId) {
+    updateExistingFAQ(currentEditingId, question, answer, sortOrder, isActive);
+    showNotification("FAQ updated successfully!", "success");
+  } else {
+    createNewFAQ(question, answer, sortOrder, isActive);
+    showNotification("New FAQ added successfully!", "success");
+    updateFAQCounter();
+  }
+
+  closeFAQModal();
+  triggerAutoSave();
+}
+
+async function updateExistingFAQ(id, question, answer, sortOrder, isActive) {
+  const faqData = {
+    question,
+    answer,
+    sort_order: sortOrder,
+    is_active: isActive,
+  };
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(faqData),
+    });
+    if (!res.ok) throw new Error("Failed to update FAQ");
+    await fetchAndRenderFAQs();
+  } catch (err) {
+    showNotification("Error updating FAQ: " + err.message, "error");
+  }
+}
+
+async function createNewFAQ(question, answer, sortOrder, isActive) {
+  const faqData = {
+    question,
+    answer,
+    sort_order: sortOrder,
+    is_active: isActive,
+  };
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/create-faq`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(faqData),
+    });
+    if (!res.ok) throw new Error("Failed to save FAQ");
+    await fetchAndRenderFAQs();
+  } catch (err) {
+    showNotification("Error saving FAQ: " + err.message, "error");
+  }
+}
+
+function deleteFAQ(id, element) {
+  if (
+    confirm(
+      "Are you sure you want to delete this FAQ? This action cannot be undone."
+    )
+  ) {
+    fetch(`${API_BASE_URL}/${id}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to delete FAQ");
+        const faqItem = element.closest(".faq-item");
+        if (faqItem) {
+          faqItem.style.transform = "translateX(-100%)";
+          faqItem.style.opacity = "0";
+          setTimeout(() => {
+            faqItem.remove();
+            updateFAQCounter();
+            showNotification("FAQ deleted successfully!", "success");
             triggerAutoSave();
+            // Optionally refresh FAQ list from backend
+            fetchAndRenderFAQs();
+          }, 300);
         }
+      })
+      .catch((err) => {
+        showNotification("Error deleting FAQ: " + err.message, "error");
+      });
+  }
+}
 
-        function updateExistingFAQ(id, question, answer) {
-            const faqItem = document.querySelector(`[data-id="${id}"]`);
-            if (faqItem) {
-                faqItem.querySelector('.faq-question h4').textContent = question;
-                faqItem.querySelector('.faq-answer p').textContent = answer;
-            }
-        }
+function updateFAQCounter() {
+  const count = document.querySelectorAll(".faq-item").length;
+  document.getElementById("faqCountBadge").textContent = count;
+}
 
-        function createNewFAQ(question, answer) {
-            const faqHtml = `
-                <div class="faq-item" data-id="${faqIdCounter}" style="opacity: 0; transform: translateY(20px);">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <h4>${escapeHtml(question)}</h4>
-                        <span class="faq-icon">
-                            <i class="fas fa-chevron-down"></i>
-                        </span>
-                    </div>
-                    <div class="faq-answer">
-                        <p>${escapeHtml(answer)}</p>
-                        <div class="action-buttons">
-                            <button class="btn btn-primary" onclick="editFAQ(${faqIdCounter})">
-                                <i class="fas fa-edit"></i>
-                                Edit
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteFAQ(${faqIdCounter}, this)">
-                                <i class="fas fa-trash"></i>
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            const container = document.getElementById('faq-list');
-            container.insertAdjacentHTML('beforeend', faqHtml);
-            
-            // Animate the new item
-            setTimeout(() => {
-                const newItem = container.lastElementChild;
-                newItem.style.opacity = '1';
-                newItem.style.transform = 'translateY(0)';
-                newItem.style.transition = 'all 0.4s ease';
-            }, 100);
-            
-            faqIdCounter++;
-        }
+function filterFAQs() {
+  const searchTerm = document
+    .getElementById("faqSearchInput")
+    .value.toLowerCase();
 
-        function deleteFAQ(id, element) {
-            if (confirm('Are you sure you want to delete this FAQ? This action cannot be undone.')) {
-                const faqItem = element.closest('.faq-item');
-                if (faqItem) {
-                    faqItem.style.transform = 'translateX(-100%)';
-                    faqItem.style.opacity = '0';
-                    setTimeout(() => {
-                        faqItem.remove();
-                        updateFAQCounter();
-                        showNotification('FAQ deleted successfully!', 'success');
-                        triggerAutoSave();
-                    }, 300);
-                }
-            }
-        }
+  const filteredFaqs = latestFaqs
+    .filter(
+      (faq) =>
+        faq.question.toLowerCase().includes(searchTerm) ||
+        faq.answer.toLowerCase().includes(searchTerm)
+    )
+    .sort((a, b) => a.sort_order - b.sort_order);
 
-        function updateFAQCounter() {
-            const count = document.querySelectorAll('.faq-item').length;
-            document.getElementById('faqCountBadge').textContent = count;
-        }
+  const faqList = document.getElementById("faq-list");
+  faqList.innerHTML = "";
 
-        function filterFAQs() {
-            const searchTerm = document.getElementById('faqSearchInput').value.toLowerCase();
-            const faqItems = document.querySelectorAll('.faq-item');
-            
-            faqItems.forEach(item => {
-                const question = item.querySelector('.faq-question h4').textContent.toLowerCase();
-                const answer = item.querySelector('.faq-answer p').textContent.toLowerCase();
-                
-                if (question.includes(searchTerm) || answer.includes(searchTerm)) {
-                    item.style.display = 'block';
-                    item.style.animation = 'slideInFAQ 0.3s ease';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        }
+  filteredFaqs.forEach((faq) => {
+    const faqHtml = `
+      <div class="faq-item" data-id="${faq.faq_id}" data-active="${
+      faq.is_active
+    }" data-sort-order="${faq.sort_order}">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <h4>${escapeHtml(faq.question)}</h4>
+          <span class="faq-icon">
+            <i class="fas fa-chevron-down"></i>
+          </span>
+        </div>
+        <div class="faq-answer">
+          <p>${escapeHtml(faq.answer)}</p>
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="editFAQ(${faq.faq_id})">
+              <i class="fas fa-edit"></i>
+              Edit
+            </button>
+            <button class="btn btn-danger" onclick="deleteFAQ(${
+              faq.faq_id
+            }, this)">
+              <i class="fas fa-trash"></i>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    faqList.insertAdjacentHTML("beforeend", faqHtml);
+  });
 
-        function saveFAQContent() {
-            const faqData = {
-                title: document.getElementById('faq-title').value,
-                description: document.getElementById('faq-desc').value,
-                faqs: []
-            };
-            
-            // Collect all FAQ data
-            document.querySelectorAll('.faq-item').forEach(item => {
-                const id = item.getAttribute('data-id');
-                const question = item.querySelector('.faq-question h4').textContent;
-                const answer = item.querySelector('.faq-answer p').textContent;
-                
-                faqData.faqs.push({
-                    id: id,
-                    question: question,
-                    answer: answer
-                });
-            });
-            
-            // Simulate API call
-            showButtonLoading('saveFAQContent');
-            setTimeout(() => {
-                hideButtonLoading('saveFAQContent');
-                showNotification('All FAQ content saved successfully!', 'success');
-                console.log('Saving FAQ data:', faqData);
-            }, 1500);
-        }
+  updateFAQCounter();
+}
 
-        function previewFAQ() {
-            generatePreview();
-            showModal('previewModal');
-        }
+function saveFAQContent() {
+  const faqData = {
+    title: document.getElementById("faq-title").value,
+    description: document.getElementById("faq-desc").value,
+    faqs: [],
+  };
 
-        function generatePreview() {
-            const title = document.getElementById('faq-title').value || 'Frequently Asked Questions';
-            const description = document.getElementById('faq-desc').value || 'Find answers to common questions';
-            
-            let previewHTML = `
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <h2 style="font-size: 32px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">${escapeHtml(title)}</h2>
-                    <p style="font-size: 16px; color: #64748b; line-height: 1.6;">${escapeHtml(description)}</p>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 20px;">
-            `;
-            
-            document.querySelectorAll('.faq-item').forEach(item => {
-                const question = item.querySelector('.faq-question h4').textContent;
-                const answer = item.querySelector('.faq-answer p').textContent;
-                
-                previewHTML += `
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
-                        <h4 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 12px;">${escapeHtml(question)}</h4>
-                        <p style="font-size: 15px; color: #64748b; line-height: 1.6; margin: 0;">${escapeHtml(answer)}</p>
-                    </div>
-                `;
-            });
-            
-            previewHTML += '</div>';
-            document.getElementById('previewContent').innerHTML = previewHTML;
-        }
+  document.querySelectorAll(".faq-item").forEach((item) => {
+    const id = item.getAttribute("data-id");
+    const question = item.querySelector(".faq-question h4").textContent;
+    const answer = item.querySelector(".faq-answer p").textContent;
 
-        function exportFAQ() {
-            const faqData = {
-                title: document.getElementById('faq-title').value,
-                description: document.getElementById('faq-desc').value,
-                faqs: [],
-                exportDate: new Date().toISOString()
-            };
-            
-            document.querySelectorAll('.faq-item').forEach(item => {
-                const id = item.getAttribute('data-id');
-                const question = item.querySelector('.faq-question h4').textContent;
-                const answer = item.querySelector('.faq-answer p').textContent;
-                
-                faqData.faqs.push({
-                    id: id,
-                    question: question,
-                    answer: answer
-                });
-            });
-            
-            const dataStr = JSON.stringify(faqData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'faq-content.json';
-            link.click();
-            
-            showNotification('FAQ content exported successfully!', 'success');
-        }
+    faqData.faqs.push({
+      id: id,
+      question: question,
+      answer: answer,
+    });
+  });
 
-        function showModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
+  showButtonLoading("saveFAQContent");
+  setTimeout(() => {
+    hideButtonLoading("saveFAQContent");
+    showNotification("All FAQ content saved successfully!", "success");
+    console.log("Saving FAQ data:", faqData);
+  }, 1500);
+}
 
-        function closeFAQModal() {
-            hideModal('faqModal');
-        }
+function previewFAQ() {
+  generatePreview();
+  showModal("previewModal");
+}
 
-        function closePreviewModal() {
-            hideModal('previewModal');
-        }
+function generatePreview() {
+  const title =
+    document.getElementById("faq-title")?.value || "Frequently Asked Questions";
+  const description =
+    document.getElementById("faq-desc")?.value ||
+    "Find answers to common questions";
 
-        function hideModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove('show');
-            document.body.style.overflow = 'auto';
-        }
+  let previewHTML = `
+    <div style="text-align: center; margin-bottom: 40px;">
+      <h2 style="font-size: 32px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">${escapeHtml(
+        title
+      )}</h2>
+      <p style="font-size: 16px; color: #64748b; line-height: 1.6;">${escapeHtml(
+        description
+      )}</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+  `;
 
-        function goBack() {
-            showNotification('Returning to dashboard...', 'info');
-            // Simulate navigation
-            setTimeout(() => {
-                window.location.href = '#dashboard';
-            }, 1000);
-        }
+  latestFaqs
+    .filter((faq) => String(faq.is_active) === "1")
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .forEach((faq) => {
+      previewHTML += `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+          <h4 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 12px;">${escapeHtml(
+            faq.question
+          )}</h4>
+          <p style="font-size: 15px; color: #64748b; line-height: 1.6; margin: 0;">${escapeHtml(
+            faq.answer
+          )}</p>
+        </div>
+      `;
+    });
 
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+  previewHTML += "</div>";
+  document.getElementById("previewContent").innerHTML = previewHTML;
+}
+
+function exportFAQ() {
+  const faqData = {
+    title: document.getElementById("faq-title").value,
+    description: document.getElementById("faq-desc").value,
+    faqs: [],
+    exportDate: new Date().toISOString(),
+  };
+
+  document.querySelectorAll(".faq-item").forEach((item) => {
+    const id = item.getAttribute("data-id");
+    const question = item.querySelector(".faq-question h4").textContent;
+    const answer = item.querySelector(".faq-answer p").textContent;
+
+    faqData.faqs.push({
+      id: id,
+      question: question,
+      answer: answer,
+    });
+  });
+
+  const dataStr = JSON.stringify(faqData, null, 2);
+  const dataBlob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(dataBlob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "faq-content.json";
+  link.click();
+
+  showNotification("FAQ content exported successfully!", "success");
+}
+
+function showModal(modalId) {
+  const modal = document.getElementById(modalId);
+  modal.classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeFAQModal() {
+  hideModal("faqModal");
+}
+
+function closePreviewModal() {
+  hideModal("previewModal");
+}
+
+function hideModal(modalId) {
+  const modal = document.getElementById(modalId);
+  modal.classList.remove("show");
+  document.body.style.overflow = "auto";
+}
+
+function goBack() {
+  showNotification("Returning to dashboard...", "info");
+  // Simulate navigation
+  setTimeout(() => {
+    window.location.href = "#dashboard";
+  }, 1000);
+}
+
+function showNotification(message, type = "info") {
+  const notification = document.createElement("div");
+  notification.className = `notification ${type}`;
+  notification.innerHTML = `
+                <i class="fas fa-${
+                  type === "success"
+                    ? "check-circle"
+                    : type === "error"
+                    ? "exclamation-triangle"
+                    : "info-circle"
+                }"></i>
                 ${message}
             `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 100);
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 400);
-            }, 4500);
-        }
 
-        function showButtonLoading(buttonId) {
-            const button = document.querySelector(`[onclick*="${buttonId}"]`);
-            if (button) {
-                button.disabled = true;
-                button.style.opacity = '0.7';
-                const originalHTML = button.innerHTML;
-                button.innerHTML = `<div class="loading-spinner"></div> Saving...`;
-                button.setAttribute('data-original-html', originalHTML);
-            }
-        }
+  document.body.appendChild(notification);
 
-        function hideButtonLoading(buttonId) {
-            const button = document.querySelector(`[onclick*="${buttonId}"]`);
-            if (button && button.hasAttribute('data-original-html')) {
-                button.disabled = false;
-                button.style.opacity = '1';
-                button.innerHTML = button.getAttribute('data-original-html');
-                button.removeAttribute('data-original-html');
-            }
-        }
+  setTimeout(() => {
+    notification.classList.add("show");
+  }, 100);
 
-        function triggerAutoSave() {
-            const indicator = document.createElement('div');
-            indicator.className = 'auto-save-indicator show';
-            indicator.innerHTML = '<i class="fas fa-check"></i> Auto-saved';
-            
-            document.body.appendChild(indicator);
-            
-            setTimeout(() => {
-                indicator.classList.remove('show');
-                setTimeout(() => {
-                    if (indicator.parentNode) {
-                        indicator.parentNode.removeChild(indicator);
-                    }
-                }, 300);
-            }, 2500);
-        }
+  setTimeout(() => {
+    notification.classList.remove("show");
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 400);
+  }, 4500);
+}
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+function showButtonLoading(buttonId) {
+  const button = document.querySelector(`[onclick*="${buttonId}"]`);
+  if (button) {
+    button.disabled = true;
+    button.style.opacity = "0.7";
+    const originalHTML = button.innerHTML;
+    button.innerHTML = `<div class="loading-spinner"></div> Saving...`;
+    button.setAttribute("data-original-html", originalHTML);
+  }
+}
 
-        // Auto-save functionality
-        let autoSaveTimeout;
-        const inputs = document.querySelectorAll('#faq-title, #faq-desc');
-        inputs.forEach(input => {
-            input.addEventListener('input', function() {
-                clearTimeout(autoSaveTimeout);
-                autoSaveTimeout = setTimeout(() => {
-                    triggerAutoSave();
-                }, 2000);
-            });
-        });
+function hideButtonLoading(buttonId) {
+  const button = document.querySelector(`[onclick*="${buttonId}"]`);
+  if (button && button.hasAttribute("data-original-html")) {
+    button.disabled = false;
+    button.style.opacity = "1";
+    button.innerHTML = button.getAttribute("data-original-html");
+    button.removeAttribute("data-original-html");
+  }
+}
 
-        // Close modal when clicking outside
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal-overlay')) {
-                const modalId = e.target.id;
-                hideModal(modalId);
-            }
-        });
+function triggerAutoSave() {
+  const indicator = document.createElement("div");
+  indicator.className = "auto-save-indicator show";
+  indicator.innerHTML = '<i class="fas fa-check"></i> Auto-saved';
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateFAQCounter();
-            
-            // Add smooth scrolling for better UX
-            document.documentElement.style.scrollBehavior = 'smooth';
-            
-            // Add keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey || e.metaKey) {
-                    if (e.key === 's') {
-                        e.preventDefault();
-                        saveFAQContent();
-                    } else if (e.key === 'n') {
-                        e.preventDefault();
-                        addFAQ();
-                    }
-                }
-                
-                if (e.key === 'Escape') {
-                    const openModals = document.querySelectorAll('.modal-overlay.show');
-                    openModals.forEach(modal => {
-                        hideModal(modal.id);
-                    });
-                }
-            });
-            
-            // Show welcome message
-            setTimeout(() => {
-                showNotification('Welcome to FAQ Management! Use Ctrl+N to add new FAQ, Ctrl+S to save.', 'info');
-            }, 1000);
-        });
+  document.body.appendChild(indicator);
+
+  setTimeout(() => {
+    indicator.classList.remove("show");
+    setTimeout(() => {
+      if (indicator.parentNode) {
+        indicator.parentNode.removeChild(indicator);
+      }
+    }, 300);
+  }, 2500);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+let autoSaveTimeout;
+const inputs = document.querySelectorAll("#faq-title, #faq-desc");
+inputs.forEach((input) => {
+  input.addEventListener("input", function () {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+      triggerAutoSave();
+    }, 2000);
+  });
+});
+
+document.addEventListener("click", function (e) {
+  if (e.target.classList.contains("modal-overlay")) {
+    const modalId = e.target.id;
+    hideModal(modalId);
+  }
+});
+
+window.toggleFAQ = toggleFAQ;
+window.addFAQ = addFAQ;
+window.editFAQ = editFAQ;
+window.deleteFAQ = deleteFAQ;
+window.closeFAQModal = closeFAQModal;
+window.previewFAQ = previewFAQ;
+window.saveFAQ = saveFAQ;
+window.updateExistingFAQ = updateExistingFAQ;
+window.createNewFAQ = createNewFAQ;
+window.exportFAQ = exportFAQ;
+window.filterFAQs = filterFAQs;
+window.saveFAQContent = saveFAQContent;
+window.goBack = goBack;
+window.closePreviewModal = closePreviewModal;
