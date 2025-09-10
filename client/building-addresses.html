@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/building-addresses.css">
+    <title>Website Content Management</title>
+</head>
+
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div id="sidebarContainer"></div>
+
+    <div class="main-card-wrapper">
+        <div class="container">
+            <a href="/contentManagement.html" class="back-button" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+                Back to Content Management
+            </a>
+
+            <div class="header">
+                <h1 class="title">Building Address Management</h1>
+                <p class="description">
+                    Add, edit, and manage building addresses for your website.
+                </p>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-button" onclick="switchTab('buildings')" data-tab="buildings">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Building Addresses
+                    </button>
+                </div>
+
+                <!-- Building Addresses Tab -->
+                <div class="tab-content" id="buildings-tab">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Building Addresses
+                        </h3>
+                        <span class="status-indicator">
+                            <i class="fas fa-check"></i>
+                            Live
+                        </span>
+                    </div>
+
+                    <div class="action-buttons" style="margin-bottom: 24px;">
+                        <button class="btn btn-primary" onclick="addNewBuildingCard()">
+                            <i class="fas fa-plus"></i>
+                            Add New Address
+                        </button>
+                    </div>
+
+                    <div id="buildings-container">
+                        <!-- Buildings will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="preview-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Preview</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="preview-content" id="preview-content">
+                <!-- Preview content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="auto-save-indicator" id="auto-save-indicator">
+        <i class="fas fa-check"></i>
+        Auto-saved
+    </div>
+
+    <script src="/javascript/bootstrap.bundle.min.js"></script>
+    <script src="/javascript/building-addresses.js"></script>
+    <script src="/javascript/sidebar.js"></script>
+</body>
+
+</html>
