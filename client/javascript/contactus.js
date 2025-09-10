@@ -1,6 +1,8 @@
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+const API_BASE_URL = "/api/v1";
 
-// Scroll reveal animation
+document.addEventListener("DOMContentLoaded", fetchAndRenderContactFAQs);
+
 const observerOptions = {
   threshold: 0.1,
   rootMargin: "0px 0px -50px 0px",
@@ -14,7 +16,6 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, observerOptions);
 
-// Observe all reveal elements
 document.querySelectorAll(".reveal-element").forEach((el) => {
   observer.observe(el);
 });
@@ -30,32 +31,27 @@ window.addEventListener("scroll", () => {
   }
 });
 
-// FAQ Accordion
 document.querySelectorAll(".faq-question").forEach((question) => {
   question.addEventListener("click", () => {
     const faqItem = question.parentElement;
     const isActive = faqItem.classList.contains("active");
 
-    // Close all other FAQ items
     document.querySelectorAll(".faq-item").forEach((item) => {
       item.classList.remove("active");
     });
 
-    // Toggle current item
     if (!isActive) {
       faqItem.classList.add("active");
     }
   });
 });
 
-// Form submission
 document.getElementById("contactForm").addEventListener("submit", function (e) {
   e.preventDefault();
 
   const submitBtn = document.getElementById("submitBtn");
   const originalText = submitBtn.textContent;
 
-  // Get form data
   const formData = new FormData(this);
   const firstName = formData.get("firstName");
   const lastName = formData.get("lastName");
@@ -81,19 +77,15 @@ document.getElementById("contactForm").addEventListener("submit", function (e) {
   submitBtn.disabled = true;
 
   setTimeout(() => {
-    // Success message
     alert(
       `Thank you, ${firstName}! Your inquiry has been received. We'll contact you within 24 hours regarding your commercial space requirements.`
     );
 
-    // Reset form
     this.reset();
 
-    // Reset button
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
 
-    // Show additional success message based on business type
     if (businessType) {
       setTimeout(() => {
         alert(
@@ -104,7 +96,6 @@ document.getElementById("contactForm").addEventListener("submit", function (e) {
   }, 2000);
 });
 
-// Smooth scrolling for navigation links
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", function (e) {
     e.preventDefault();
@@ -118,7 +109,6 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   });
 });
 
-// Form field animations
 document.querySelectorAll("input, textarea, select").forEach((field) => {
   field.addEventListener("focus", function () {
     this.parentElement.style.transform = "scale(1.02)";
@@ -129,7 +119,6 @@ document.querySelectorAll("input, textarea, select").forEach((field) => {
   });
 });
 
-// Contact item hover effects
 document.querySelectorAll(".contact-item").forEach((item) => {
   item.addEventListener("mouseenter", function () {
     this.style.background = "rgba(255, 255, 255, 0.1)";
@@ -140,7 +129,6 @@ document.querySelectorAll(".contact-item").forEach((item) => {
   });
 });
 
-// Auto-expand message textarea
 const messageTextarea = document.getElementById("message");
 messageTextarea.addEventListener("input", function () {
   this.style.height = "auto";
@@ -149,7 +137,6 @@ messageTextarea.addEventListener("input", function () {
 
 
 
-// Add float animation keyframes
 const style = document.createElement("style");
 style.textContent = `
             @keyframes float {
@@ -159,7 +146,6 @@ style.textContent = `
         `;
 document.head.appendChild(style);
 
-// Enhanced form validation with real-time feedback
 const inputs = document.querySelectorAll("input, textarea, select");
 inputs.forEach((input) => {
   input.addEventListener("blur", function () {
@@ -171,7 +157,6 @@ function validateField(field) {
   const value = field.value.trim();
   const isRequired = field.hasAttribute("required");
 
-  // Remove existing validation classes
   field.classList.remove("valid", "invalid");
 
   if (isRequired && !value) {
@@ -194,7 +179,6 @@ function validateField(field) {
   return true;
 }
 
-// Add validation styles
 const validationStyle = document.createElement("style");
 validationStyle.textContent = `
             .form-group input.valid, 
@@ -218,7 +202,6 @@ async function setDynamicContactInfo() {
   if (!data || !data[0]) return;
   const company = data[0];
 
-  // Phone Number (with alt phone)
   const phoneBoxes = document.querySelectorAll(
     ".contact-item-box .contact-item-content h4"
   );
@@ -227,7 +210,6 @@ async function setDynamicContactInfo() {
       const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
       if (icon) icon.innerHTML = `<i class="fa-solid fa-phone"></i>`;
       const pList = h4.parentElement.querySelectorAll("p");
-      // Main phone
       if (pList[0]) {
         let phoneText = company.phone_number || "";
         if (company.alt_phone_number) {
@@ -235,18 +217,15 @@ async function setDynamicContactInfo() {
         }
         pList[0].innerHTML = phoneText;
       }
-      // Availability
       if (pList[1]) {
         pList[1].innerHTML = `<span>Available during business hours</span>`;
       }
-      // Improve header separation
       h4.style.marginBottom = "0.25em";
       if (pList[0]) pList[0].style.marginTop = "0.25em";
       if (pList[1]) pList[1].style.marginTop = "0.1em";
     }
   });
 
-  // Email Address
   phoneBoxes.forEach((h4) => {
     if (h4.textContent.includes("Email Address")) {
       const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
@@ -260,7 +239,6 @@ async function setDynamicContactInfo() {
     }
   });
 
-  // Office Location
   phoneBoxes.forEach((h4) => {
     if (h4.textContent.includes("Office Location")) {
       const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
@@ -274,7 +252,6 @@ async function setDynamicContactInfo() {
     }
   });
 
-  // Business Hours
   phoneBoxes.forEach((h4) => {
     if (h4.textContent.includes("Business Hours")) {
       const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
@@ -291,13 +268,11 @@ async function setDynamicContactInfo() {
     }
   });
 
-  // Dynamic tab logo (favicon)
   const favicon = document.querySelector('link[rel="icon"]');
   if (favicon && company.icon_logo_url) {
     favicon.href = company.icon_logo_url;
   }
 
-  // Dynamic tab title
   document.title = company.company_name
     ? `Contact Us`
     : "Ambulo Properties - Contact Us";
@@ -311,3 +286,66 @@ async function setDynamicContactInfo() {
 document.addEventListener("DOMContentLoaded", () => {
   setDynamicContactInfo();
 });
+
+
+async function fetchAndRenderContactFAQs() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/faqs/`);
+        const data = await res.json();
+        const faqs = Array.isArray(data.message) ? data.message : [];
+
+        const faqContainer = document.getElementById("faq-container");
+        faqContainer.innerHTML = "";
+
+        faqs
+            .filter(faq => String(faq.is_active) === "1")
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .forEach((faq, idx) => {
+                const faqHtml = `
+                    <div class="faq-item reveal-element" style="transition-delay: ${0.1 + idx * 0.1}s;">
+                        <div class="faq-question">
+                            <h4>${escapeHtml(faq.question)}</h4>
+                            <span class="faq-icon">▼</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p></br>${escapeHtml(faq.answer)}</p>
+                        </div>
+                    </div>
+                `;
+                faqContainer.insertAdjacentHTML("beforeend", faqHtml);
+            });
+
+        attachFAQListeners();
+
+    } catch (err) {
+        document.getElementById("faq-container").innerHTML =
+            "<div style='color: #e53e3e; padding: 16px;'>Unable to load FAQs at this time.</div>";
+    }
+}
+
+function attachFAQListeners() {
+    document.querySelectorAll(".faq-question").forEach((question) => {
+        question.addEventListener("click", () => {
+            const faqItem = question.parentElement;
+            const isActive = faqItem.classList.contains("active");
+
+            document.querySelectorAll(".faq-item").forEach((item) => {
+                item.classList.remove("active");
+            });
+
+            if (!isActive) {
+                faqItem.classList.add("active");
+            }
+        });
+    });
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
