@@ -15,6 +15,7 @@ import usersRoutes from './routes/usersRoutes.js';
 import propertiesRoutes from './routes/propertiesRoutes.js';
 import ticketsRoutes from './routes/ticketsRoutes.js';
 import companyDetailsRoutes from './routes/companyDetailsRoutes.js';
+import addressesRoutes from './routes/addressesRoutes.js';
 import faqsRoutes from './routes/faqsRoutes.js';
 import leaseRoutes from './routes/leaseRoutes.js'
 import aboutUsRoutes from './routes/aboutUsRoutes.js'
@@ -58,6 +59,7 @@ app.use(`/api/${API_VERSION}/users`, usersRoutes);
 app.use(`/api/${API_VERSION}/properties`, propertiesRoutes);
 app.use(`/api/${API_VERSION}/tickets`, ticketsRoutes);
 app.use(`/api/${API_VERSION}/company-details`, companyDetailsRoutes);
+app.use(`/api/${API_VERSION}/addresses`, addressesRoutes);
 app.use(`/api/${API_VERSION}/faqs`, faqsRoutes);
 app.use(`/api/${API_VERSION}/leases`, leaseRoutes);
 app.use(`/api/${API_VERSION}/about-us`, aboutUsRoutes);
