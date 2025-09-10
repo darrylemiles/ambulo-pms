@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-router.post("/create-address", createAddress);
+router.post("/create-address", protect, createAddress);
 router.get("/", getAllAddresses);
 router.get("/:id", getSingleAddressById);
-router.patch("/:id", updateAddressById);
-router.delete("/:id", deleteAddressById);
+router.patch("/:id", protect, updateAddressById);
+router.delete("/:id", protect, deleteAddressById);
 
 export default router;
