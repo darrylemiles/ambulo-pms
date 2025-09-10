@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (e.ctrlKey || e.metaKey) {
       if (e.key === "s") {
         e.preventDefault();
-        saveFAQContent();
       } else if (e.key === "n") {
         e.preventDefault();
         addFAQ();
@@ -101,12 +100,10 @@ function toggleFAQ(element) {
   const faqItem = element.closest(".faq-item");
   const isOpen = faqItem.classList.contains("open");
 
-  // Close all other FAQ items
   document.querySelectorAll(".faq-item").forEach((item) => {
     item.classList.remove("open");
   });
 
-  // Toggle current item
   if (!isOpen) {
     faqItem.classList.add("open");
   }
@@ -114,6 +111,11 @@ function toggleFAQ(element) {
 function addFAQ() {
   currentEditingId = null;
   document.getElementById("modalTitle").textContent = "Add New FAQ";
+
+  document.getElementById("faqQuestion").value = "";
+  document.getElementById("faqAnswer").value = "";
+  document.getElementById("editingFAQId").value = "";
+
   document
     .getElementById("faqQuestion")
     .parentElement.parentElement.classList.add("full-width");
@@ -353,33 +355,6 @@ function filterFAQs() {
   updateFAQCounter();
 }
 
-function saveFAQContent() {
-  const faqData = {
-    title: document.getElementById("faq-title").value,
-    description: document.getElementById("faq-desc").value,
-    faqs: [],
-  };
-
-  document.querySelectorAll(".faq-item").forEach((item) => {
-    const id = item.getAttribute("data-id");
-    const question = item.querySelector(".faq-question h4").textContent;
-    const answer = item.querySelector(".faq-answer p").textContent;
-
-    faqData.faqs.push({
-      id: id,
-      question: question,
-      answer: answer,
-    });
-  });
-
-  showButtonLoading("saveFAQContent");
-  setTimeout(() => {
-    hideButtonLoading("saveFAQContent");
-    showNotification("All FAQ content saved successfully!", "success");
-    console.log("Saving FAQ data:", faqData);
-  }, 1500);
-}
-
 function previewFAQ() {
   generatePreview();
   showModal("previewModal");
@@ -426,21 +401,19 @@ function generatePreview() {
 
 function exportFAQ() {
   const faqData = {
-    title: document.getElementById("faq-title").value,
-    description: document.getElementById("faq-desc").value,
+    title: document.getElementById("faq-title")?.value || "",
+    description: document.getElementById("faq-desc")?.value || "",
     faqs: [],
     exportDate: new Date().toISOString(),
   };
 
-  document.querySelectorAll(".faq-item").forEach((item) => {
-    const id = item.getAttribute("data-id");
-    const question = item.querySelector(".faq-question h4").textContent;
-    const answer = item.querySelector(".faq-answer p").textContent;
-
+  latestFaqs.forEach(faq => {
     faqData.faqs.push({
-      id: id,
-      question: question,
-      answer: answer,
+      id: faq.faq_id,
+      question: faq.question,
+      answer: faq.answer,
+      is_active: faq.is_active,
+      sort_order: faq.sort_order
     });
   });
 
@@ -455,6 +428,54 @@ function exportFAQ() {
 
   showNotification("FAQ content exported successfully!", "success");
 }
+
+function importFAQ(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    try {
+      const imported = JSON.parse(event.target.result);
+      if (!Array.isArray(imported.faqs)) {
+        showNotification("Invalid FAQ file format.", "error");
+        return;
+      }
+      let importedCount = 0;
+      let failedCount = 0;
+      const promises = imported.faqs.map(faq =>
+        fetch(`${API_BASE_URL}/create-faq`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: faq.question,
+            answer: faq.answer,
+            sort_order: faq.sort_order,
+            is_active: faq.is_active
+          })
+        })
+        .then(res => {
+          if (res.ok) importedCount++;
+          else failedCount++;
+        })
+        .catch(() => { failedCount++; })
+      );
+      Promise.all(promises).then(() => {
+        fetchAndRenderFAQs();
+        showNotification(
+          `Import complete: ${importedCount} added, ${failedCount} failed.`,
+          failedCount === 0 ? "success" : "error"
+        );
+      });
+    } catch (err) {
+      showNotification("Failed to import FAQs: " + err.message, "error");
+    }
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById("faqImportInput").addEventListener("change", function (e) {
+  importFAQ(e.target.files[0]);
+});
 
 function showModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -478,7 +499,7 @@ function hideModal(modalId) {
 
 function goBack() {
   showNotification("Returning to dashboard...", "info");
-  // Simulate navigation
+
   setTimeout(() => {
     window.location.href = "#dashboard";
   }, 1000);
@@ -586,6 +607,5 @@ window.updateExistingFAQ = updateExistingFAQ;
 window.createNewFAQ = createNewFAQ;
 window.exportFAQ = exportFAQ;
 window.filterFAQs = filterFAQs;
-window.saveFAQContent = saveFAQContent;
 window.goBack = goBack;
 window.closePreviewModal = closePreviewModal;
