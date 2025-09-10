@@ -141,26 +141,22 @@ const getProperties = async (queryObj = {}) => {
 
     const values = [];
 
-    // --- Address filter (always base) ---
     if (queryObj.address_id && queryObj.address_id !== "all") {
       query += ` AND p.address_id = ?`;
       values.push(queryObj.address_id);
     }
 
-    // --- Status filter ---
     if (queryObj.property_status && queryObj.property_status !== "all") {
       query += ` AND p.property_status = ?`;
       values.push(queryObj.property_status);
     }
 
-    // --- Search filter ---
     if (queryObj.search) {
       query += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ? OR p.description LIKE ?)`;
       const searchTerm = `%${queryObj.search}%`;
       values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
-    // ...other filters (min/max rent/area/city)...
     if (queryObj.min_rent) {
       query += ` AND p.base_rent >= ?`;
       values.push(parseFloat(queryObj.min_rent));
@@ -193,7 +189,6 @@ const getProperties = async (queryObj = {}) => {
 
     const [rows] = await pool.query(query, values);
 
-    // Fetch images for all properties in one query
     const propertyIds = rows.map(r => r.property_id);
     let picturesMap = {};
     if (propertyIds.length > 0) {
@@ -203,7 +198,7 @@ const getProperties = async (queryObj = {}) => {
          WHERE property_id IN (${propertyIds.map(() => '?').join(',')})`,
         propertyIds
       );
-      // Group images by property_id
+
       picturesMap = pictures.reduce((acc, pic) => {
         if (!acc[pic.property_id]) acc[pic.property_id] = [];
         acc[pic.property_id].push({
@@ -222,7 +217,6 @@ const getProperties = async (queryObj = {}) => {
       property_pictures: picturesMap[row.property_id] || []
     }));
 
-    // --- Count query (for pagination) ---
     let countQuery = `
       SELECT COUNT(DISTINCT p.property_id) as total 
       FROM properties p
@@ -278,180 +272,6 @@ const getProperties = async (queryObj = {}) => {
     throw new Error(error.message || "Failed to get properties");
   }
 };
-// const getProperties = async (queryObj = {}) => {
-//   try {
-//     let query = `
-//       SELECT 
-//         p.property_id,
-//         p.property_name,
-//         p.floor_area_sqm,
-//         p.description,
-//         p.display_image,
-//         p.property_status,
-//         p.base_rent,
-//         p.advance_months,
-//         p.security_deposit_months,
-//         p.minimum_lease_term_months,
-//         p.address_id,
-//         p.created_at,
-//         p.updated_at,
-//         a.building_name,
-//         a.street,
-//         a.barangay,
-//         a.city,
-//         a.province,
-//         a.postal_code,
-//         a.country,
-//         a.latitude,
-//         a.longitude,
-//         JSON_ARRAYAGG(
-//           CASE 
-//             WHEN pp.image_url IS NOT NULL 
-//             THEN JSON_OBJECT(
-//               'id', pp.image_id,
-//               'image_url', pp.image_url,
-//               'image_desc', pp.image_desc
-//             )
-//             ELSE NULL
-//           END
-//         ) as property_pictures
-//       FROM properties p
-//       LEFT JOIN addresses a ON p.address_id = a.address_id
-//       LEFT JOIN properties_pictures pp ON p.property_id = pp.property_id
-//       WHERE p.property_status != 'deleted'
-//     `;
-
-//     const values = [];
-
-    
-
-//     // --- Address filter (always base) ---
-//     if (queryObj.address_id && queryObj.address_id !== "all") {
-//       query += ` AND p.address_id = ?`;
-//       values.push(queryObj.address_id);
-//     }
-
-//     // --- Status filter ---
-//     if (queryObj.property_status && queryObj.property_status !== "all") {
-//       query += ` AND p.property_status = ?`;
-//       values.push(queryObj.property_status);
-//     }
-
-//     // --- Search filter ---
-//     if (queryObj.search) {
-//       query += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ? OR p.description LIKE ?)`;
-//       const searchTerm = `%${queryObj.search}%`;
-//       values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
-//     }
-
-//     // ...other filters (min/max rent/area/city)...
-//     if (queryObj.min_rent) {
-//       query += ` AND p.base_rent >= ?`;
-//       values.push(parseFloat(queryObj.min_rent));
-//     }
-//     if (queryObj.max_rent) {
-//       query += ` AND p.base_rent <= ?`;
-//       values.push(parseFloat(queryObj.max_rent));
-//     }
-//     if (queryObj.min_area) {
-//       query += ` AND p.floor_area_sqm >= ?`;
-//       values.push(parseFloat(queryObj.min_area));
-//     }
-//     if (queryObj.max_area) {
-//       query += ` AND p.floor_area_sqm <= ?`;
-//       values.push(parseFloat(queryObj.max_area));
-//     }
-//     if (queryObj.city) {
-//       query += ` AND a.city = ?`;
-//       values.push(queryObj.city);
-//     }
-
-//     query += ` GROUP BY p.property_id`;
-
-//     const page = parseInt(queryObj.page) > 0 ? parseInt(queryObj.page) : 1;
-//     const limit = parseInt(queryObj.limit) > 0 ? parseInt(queryObj.limit) : 6;
-//     const offset = (page - 1) * limit;
-
-//     query += ` LIMIT ? OFFSET ?`;
-//     values.push(limit, offset);
-
-//     const [rows] = await pool.query(query, values);
-
-//     const processedRows = rows.map(row => {
-//       let pictures = [];
-//       try {
-//         pictures = JSON.parse(row.property_pictures).filter(Boolean);
-//       } catch {
-//         pictures = [];
-//       }
-//       return {
-//         ...row,
-//         property_pictures: pictures
-//       };
-//     });
-
-//     // --- Count query (for pagination) ---
-//     let countQuery = `
-//       SELECT COUNT(DISTINCT p.property_id) as total 
-//       FROM properties p
-//       LEFT JOIN addresses a ON p.address_id = a.address_id
-//       WHERE p.property_status != 'deleted'
-//     `;
-//     const countValues = [];
-//     if (queryObj.address_id && queryObj.address_id !== "all") {
-//       countQuery += ` AND p.address_id = ?`;
-//       countValues.push(queryObj.address_id);
-//     }
-//     if (queryObj.property_status && queryObj.property_status !== "all") {
-//       countQuery += ` AND p.property_status = ?`;
-//       countValues.push(queryObj.property_status);
-//     }
-//     if (queryObj.search) {
-//       countQuery += ` AND (p.property_name LIKE ? OR a.building_name LIKE ? OR a.street LIKE ? OR a.city LIKE ? OR p.description LIKE ?)`;
-//       const searchTerm = `%${queryObj.search}%`;
-//       countValues.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
-//     }
-
-//     if (queryObj.min_rent) {
-//       countQuery += ` AND p.base_rent >= ?`;
-//       countValues.push(parseFloat(queryObj.min_rent));
-//     }
-
-//     if (queryObj.max_rent) {
-//       countQuery += ` AND p.base_rent <= ?`;
-//       countValues.push(parseFloat(queryObj.max_rent));
-//     }
-
-//     if (queryObj.min_area) {
-//       countQuery += ` AND p.floor_area_sqm >= ?`;
-//       countValues.push(parseFloat(queryObj.min_area));
-//     }
-
-//     if (queryObj.max_area) {
-//       countQuery += ` AND p.floor_area_sqm <= ?`;
-//       countValues.push(parseFloat(queryObj.max_area));
-//     }
-
-//     if (queryObj.city) {
-//       countQuery += ` AND a.city = ?`;
-//       countValues.push(queryObj.city);
-//     }
-
-//     const [countResult] = await pool.query(countQuery, countValues);
-    
-
-//     return {
-//       message: "Properties retrieved successfully",
-//       properties: processedRows,
-//       total: countResult[0].total,
-//       page: queryObj.page || 1,
-//       limit: queryObj.limit || processedRows.length,
-//     };
-//   } catch (error) {
-//     console.error("Error getting properties:", error);
-//     throw new Error(error.message || "Failed to get properties");
-//   }
-// };
 
 const getSinglePropertyById = async (property_id = "") => {
   try {
@@ -482,7 +302,6 @@ const getSinglePropertyById = async (property_id = "") => {
       throw new Error("Property not found");
     }
 
-    // Updated pictures query - using image_id as the primary key
     const picturesQuery = `
             SELECT image_id as id, image_url, image_desc, created_at, updated_at
             FROM properties_pictures
@@ -549,7 +368,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
 
     let finalAddressId = address_id;
 
-    // Address creation logic (existing)
     if (!address_id && (street || city)) {
       const newAddress = {
         building_name: building_name || null,
@@ -580,7 +398,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       finalAddressId = addressResult.insertId;
     }
 
-    // Property update logic (existing)
     const updateFields = [];
     const values = [];
 
@@ -616,7 +433,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
             otherPropertyData[field] ? parseInt(otherPropertyData[field]) : null
           );
         } else if (field === "display_image") {
-          // Handle display image removal - allow null values
           values.push(otherPropertyData[field]);
         } else {
           values.push(otherPropertyData[field]);
@@ -629,7 +445,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       values.push(finalAddressId);
     }
 
-    // Check if we have any updates to make
     const hasPropertyUpdates = updateFields.length > 0;
     const hasNewImages =
       Array.isArray(showcase_images) && showcase_images.length > 0;
@@ -647,7 +462,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       throw new Error("No valid fields to update");
     }
 
-    // Update property if there are property fields to update
     if (hasPropertyUpdates) {
       updateFields.push("updated_at = NOW()");
 
@@ -666,15 +480,12 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       }
     }
 
-    // Handle showcase images
     let newImagesCreated = 0;
     let existingImagesUpdated = 0;
     let deletedImagesCount = 0;
 
-    // Process deleted images first
     if (hasImageDeletions) {
       for (const imageId of deleted_image_ids) {
-        // Validate imageId is a valid number
         const validImageId = parseInt(imageId);
         if (isNaN(validImageId) || validImageId <= 0) {
           console.warn(`Skipping invalid image ID for deletion: ${imageId}`);
@@ -701,7 +512,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       }
     }
 
-    // Process new showcase images
     if (hasNewImages) {
       for (let i = 0; i < showcase_images.length; i++) {
         const imageUrl = showcase_images[i];
@@ -721,13 +531,11 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       }
     }
 
-    // Process existing image description updates
     if (hasImageUpdates) {
       for (let i = 0; i < existing_image_ids.length; i++) {
         const imageId = existing_image_ids[i];
         const description = existing_descriptions[i] || "";
 
-        // Validate imageId is a valid number
         const validImageId = parseInt(imageId);
         if (isNaN(validImageId) || validImageId <= 0) {
           console.warn(`Skipping invalid image ID: ${imageId}`);
@@ -756,7 +564,6 @@ const editPropertyById = async (property_id = "", propertyData = {}) => {
       }
     }
 
-    // Get updated property
     const updatedProperty = await getSinglePropertyById(property_id);
 
     return {
@@ -780,15 +587,12 @@ const deletePropertyById = async (property_id = "") => {
       throw new Error("Property ID is required");
     }
 
-    // First get the property to return in response and check its status
     const property = await getSinglePropertyById(property_id);
 
-    // Check if property status is Available
     if (property.property.property_status !== "Available") {
       throw new Error("Only properties with 'Available' status can be deleted");
     }
 
-    // Soft delete - update status instead of actual deletion
     const softDeleteQuery = `
             UPDATE properties 
             SET property_status = 'deleted', updated_at = NOW() 
