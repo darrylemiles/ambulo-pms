@@ -11,6 +11,29 @@
             color: #333;
         }
 
+        /* Main Content - Updated for sidebar integration */
+        .main-content {
+            padding: 25px;
+            margin-left: 280px; /* Default expanded sidebar width */
+            margin-top: 80px;   /* Adjusted for top navbar */
+            overflow-y: auto;
+            transition: margin-left 0.3s ease; /* Smooth transition */
+        }
+
+        /* When sidebar is collapsed */
+        .sidebar.collapsed ~ .main-content {
+            margin-left: 80px;
+        }
+
+        /* Mobile responsive - no left margin on mobile */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0 !important;
+                margin-top: 80px;
+                padding: 15px 12px;
+            }
+        }
+        
         /* Main Container */
         .messages-container {
             max-width: 1800px;
