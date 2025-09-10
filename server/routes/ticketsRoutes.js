@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken, requireRole } from '../middlewares/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 import {
   createTicket,
   updateTicketStatuses,
@@ -14,7 +14,6 @@ import createUploadMiddleware from '../middlewares/multer/uploadMiddleware.js';
 
 const router = express.Router();
 
-router.use(authenticateToken);
 
 router.post(
     '/create-ticket',
@@ -25,7 +24,7 @@ router.post(
     fieldFolders: {
       attachments: 'ticket_attachments',
     },
-  }),
+  }), protect,
     createTicket
 );
 
@@ -43,8 +42,9 @@ router.patch('/:ticket_id', createUploadMiddleware({
       attachments: 'ticket_attachments',
     },
   }),
+    protect,
     updateTicketById);
 
-router.delete('/:ticket_id', deleteTicket);
+router.delete('/:ticket_id', protect, deleteTicket);
 
 export default router;

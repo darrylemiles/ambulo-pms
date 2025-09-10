@@ -1,4 +1,5 @@
 import express from "express";
+import { protect } from "../middlewares/authMiddleware.js";
 import {
   createProperty,
   getProperties,
@@ -21,7 +22,7 @@ router.post("/create-property", createUploadMiddleware({
   fieldFolders: {
     display_image: 'property_images',
   },
-}), createProperty);
+}), protect, createProperty);
 router.get("/", getProperties);
 router.get("/addresses", getAddresses);
 router.get("/:property_id", getSinglePropertyById);
@@ -34,8 +35,8 @@ router.patch("/:property_id", createUploadMiddleware({
     display_image: 'property_images',
     showcase_images: 'property_images',
   },
-}), editPropertyById);
-router.delete("/:property_id", deletePropertyById);
+}), protect, editPropertyById);
+router.delete("/:property_id", protect, deletePropertyById);
 
 
 export default router;

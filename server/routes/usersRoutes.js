@@ -1,8 +1,8 @@
 import express from 'express';
-import { authenticateToken, requireRole } from '../middlewares/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 import { 
   authUser,
-  logoutUser, // ADD THIS
+  logoutUser,
   createUser, 
   getUsers, 
   getSingleUserById, 
@@ -13,7 +13,7 @@ import createUploadMiddleware from '../middlewares/multer/uploadMiddleware.js';
 const router = express.Router();
 
 router.post('/login', authUser);
-router.post('/logout', logoutUser); // ADD THIS LINE
+router.post('/logout', logoutUser);
 
 router.post(
   '/create-user',
@@ -27,10 +27,11 @@ router.post(
       tenant_id_file: 'tenant_id_files'
     },
   }),
+  protect,
   createUser
 );
 
-router.get('/', authenticateToken, getUsers);
+router.get('/', getUsers);
 router.get('/:user_id', getSingleUserById);
 
 router.patch(
@@ -45,9 +46,10 @@ router.patch(
       tenant_id_file: 'tenant_id_files'
     },
   }),
+  protect,
   updateSingleUserById
 );
 
-router.delete('/:user_id', deleteUserById);
+router.delete('/:user_id', protect, deleteUserById);
 
 export default router;

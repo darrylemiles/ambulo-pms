@@ -1,4 +1,5 @@
 import express from "express";
+import { protect } from "../middlewares/authMiddleware.js";
 import createUploadMiddleware from "../middlewares/multer/uploadMiddleware.js";
 import {
     createAboutUs,
@@ -9,7 +10,7 @@ import {
 const router = express.Router();
 
 router.post(
-    "/create-about-us",
+    "/create-about-us", 
     createUploadMiddleware({
         fields: [
             { name: 'about_img1', maxCount: 1 },
@@ -24,6 +25,7 @@ router.post(
             about_img4: 'about_images'
         }
     }),
+    protect,
     createAboutUs
 );
 
@@ -45,6 +47,7 @@ router.patch(
             about_img4: 'about_images'
         }
     }),
+    protect,
     updateAboutUs
 );
 

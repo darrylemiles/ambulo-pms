@@ -1,4 +1,5 @@
 import express from "express";
+import { protect } from "../middlewares/authMiddleware.js";
 import {
   createCompanyDetails,
   getCompanyDetails,
@@ -20,6 +21,7 @@ router.post(
       alt_logo_url: "company_logos"
     },
   }),
+  protect,
   createCompanyDetails
 );
 
@@ -37,6 +39,7 @@ router.patch(
       alt_logo_url: "company_logos"
     },
   }),
+  protect,
   updateCompanyDetails
 );
 

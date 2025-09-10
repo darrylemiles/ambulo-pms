@@ -1,4 +1,5 @@
 import express from 'express';
+import { protect } from '../middlewares/authMiddleware.js';
 import {
     createFaq,
     getAllFaqs,
@@ -9,10 +10,10 @@ import {
 
 const router = express.Router();
 
-router.post('/create-faq', createFaq);
+router.post('/create-faq', protect, createFaq);
 router.get('/', getAllFaqs);
 router.get('/:id', getSingleFaqById);
-router.patch('/:id', updateFaqById);
-router.delete('/:id', deleteFaqById);
+router.patch('/:id', protect, updateFaqById);
+router.delete('/:id', protect, deleteFaqById);
 
 export default router;
