@@ -5,18 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/tenantDashboard.css">
-    <link rel="stylesheet" href="/css/navbarTenant.css">
+    <link rel="stylesheet" href="/css/sidebarTenant.css">
     <title>Tenant Dashboard</title>
 </head>
 <body>
-    <header id="navbar-tenant-placeholder"></header>
-
-    <!-- Header -->
-    <div class="header">
-        <div class="header-content">
-            <h1>Dashboard</h1>
-        </div>
-    </div>
+    <div class="overlay" id="overlay"></div>
+    <div id="sidebarContainer-tenant"></div>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -103,7 +97,7 @@
                     <a href="#" class="see-all">See All</a>
                 </div>
                 <div class="maintenance-item">
-                    <div class="maintenance-icon">🔧</div>
+                    <div class="maintenance-icon"><i class="fa-solid fa-wrench"></i></div>
                     <div class="maintenance-details">
                         <div class="maintenance-type">Plumbing</div>
                         <div class="maintenance-id">Request ID: RR-001</div>
@@ -112,7 +106,7 @@
                     <div class="status processing">Processing</div>
                 </div>
                 <div class="maintenance-item">
-                    <div class="maintenance-icon">⚡</div>
+                    <div class="maintenance-icon"><i class="fa-solid fa-bolt"></i></div>
                     <div class="maintenance-details">
                         <div class="maintenance-type">Electrical</div>
                         <div class="maintenance-id">Request ID: RR-002</div>
@@ -121,7 +115,7 @@
                     <div class="status done">Done</div>
                 </div>
                 <div class="maintenance-item">
-                    <div class="maintenance-icon">🚿</div>
+                    <div class="maintenance-icon"><i class="fa-solid fa-toilet"></i></div>
                     <div class="maintenance-details">
                         <div class="maintenance-type">Plumbing</div>
                         <div class="maintenance-id">Request ID: RR-003</div>
@@ -138,7 +132,7 @@
                     <a href="#" class="see-all">See All</a>
                 </div>
                 <div class="transaction-item">
-                    <div class="transaction-icon">🏠</div>
+                    <div class="transaction-icon"><i class="fa-solid fa-house"></i></div>
                     <div class="transaction-details">
                         <div class="transaction-type">Rent Payment</div>
                         <div class="transaction-date">15 April 2025, 9:25 AM</div>
@@ -146,7 +140,7 @@
                     <div class="transaction-category payment">Payment</div>
                 </div>
                 <div class="transaction-item">
-                    <div class="transaction-icon">⚡</div>
+                    <div class="transaction-icon"><i class="fa-solid fa-bolt"></i></div>
                     <div class="transaction-details">
                         <div class="transaction-type">Electrical Maintenance</div>
                         <div class="transaction-date">15 April 2025, 9:25 AM</div>
@@ -218,8 +212,8 @@
             </div>
         </div>
     </div>
-
-    <script src="/javascript/navbarTenant.js"></script>
+    
+    <script src="/javascript/sidebarTenant.js"></script>
     <script src="/javascript/tenantDashboard.js"></script>
 </body>
 </html>
