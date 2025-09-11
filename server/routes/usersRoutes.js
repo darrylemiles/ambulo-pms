@@ -2,7 +2,6 @@ import express from 'express';
 import { protect } from '../middlewares/authMiddleware.js';
 import { 
   authUser,
-  logoutUser,
   createUser, 
   getUsers, 
   getSingleUserById, 
