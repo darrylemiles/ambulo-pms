@@ -32,7 +32,7 @@ const authUser = expressAsync(async (req, res) => {
 const createUser = expressAsync(async (req, res) => {
   try {
     const avatar = req.files && req.files['avatar'] ? req.files['avatar'][0].path : "";
-    // FIX: Map all uploaded files for tenant_id_file
+
     const tenant_id_file = req.files && req.files['tenant_id_file']
       ? req.files['tenant_id_file'].map(file => ({ id_url: file.path }))
       : [];
@@ -73,10 +73,8 @@ const getSingleUserById = expressAsync(async (req, res) => {
 
 const updateSingleUserById = expressAsync(async (req, res) => {
   try {
-    // 1. Get the current user from DB (to get existing files)
     const currentUser = await usersServices.getSingleUserById(req.params.user_id);
 
-    // 2. Parse the list of files the client wants to keep
     let keepFiles = [];
     if (req.body.tenant_id_files) {
       keepFiles = typeof req.body.tenant_id_files === "string"
@@ -84,13 +82,11 @@ const updateSingleUserById = expressAsync(async (req, res) => {
         : req.body.tenant_id_files;
     }
 
-    // 3. Add new uploaded files
     let newFiles = [];
     if (req.files && req.files["tenant_id_file"]) {
       newFiles = req.files["tenant_id_file"].map((file) => ({ id_url: file.path }));
     }
 
-    // 4. Merge: keepFiles (from client) + newFiles 
     let mergedFiles = [];
     if (Array.isArray(keepFiles)) {
       const prevFiles = Array.isArray(currentUser.tenant_id_files) ? currentUser.tenant_id_files : [];
@@ -100,20 +96,17 @@ const updateSingleUserById = expressAsync(async (req, res) => {
     }
     mergedFiles = mergedFiles.concat(newFiles);
 
-    // 5. Avatar logic 
     const avatar =
       req.files && req.files["avatar"] && req.files["avatar"][0]
         ? req.files["avatar"][0].path
         : req.body.avatar || currentUser.avatar || "";
 
-    // 6. Build payload
     const payload = {
       ...req.body,
       avatar,
       tenant_id_files: mergedFiles,
     };
 
-    // 7. Update user
     const response = await usersServices.updateSingleUserById(
       req.params.user_id,
       payload
@@ -124,6 +117,7 @@ const updateSingleUserById = expressAsync(async (req, res) => {
     throw new Error(error.message || "Failed to update user");
   }
 });
+
 const deleteUserById = expressAsync(async (req, res) => {
   try {
     const response = await usersServices.deleteUserById(req.params.user_id);
@@ -134,40 +128,8 @@ const deleteUserById = expressAsync(async (req, res) => {
   }
 });
 
-const logoutUser = expressAsync(async (req, res) => {
-  try {
-    // Clear the session if using sessions
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('Error destroying session:', err);
-        }
-      });
-    }
-
-    // Clear cookies
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
-    });
-
-    res.clearCookie('connect.sid'); // Default session cookie name
-
-    res.status(200).json({
-      message: "Logged out successfully"
-    });
-  } catch (error) {
-    console.error("Error during logout:", error);
-    res.status(500).json({
-      message: "Error during logout"
-    });
-  }
-});
-
 export {
   authUser,
-  logoutUser,
   createUser,
   getUsers,
   getSingleUserById,

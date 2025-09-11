@@ -13,7 +13,6 @@ import createUploadMiddleware from '../middlewares/multer/uploadMiddleware.js';
 const router = express.Router();
 
 router.post('/login', authUser);
-router.post('/logout', logoutUser);
 
 router.post(
   '/create-user',

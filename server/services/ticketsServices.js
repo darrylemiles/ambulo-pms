@@ -5,10 +5,6 @@ const pool = await conn();
 
 
 const createTicket = async (ticketData = {}, currentUserId = null) => {
-  console.log("=== Creating ticket with data ===");
-  console.log("ticketData:", ticketData);
-  console.log("currentUserId:", currentUserId);
-  
   const {
     ticket_title,
     description,
@@ -31,7 +27,6 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
   try {
     const finalUserId = user_id || currentUserId;
     
-    // Determine initial ticket status based on assigned_to field
     let ticket_status;
     if (!assigned_to || assigned_to.trim() === '') {
       ticket_status = 'PENDING';
@@ -48,7 +43,7 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
       assigned_to,
       user_id: finalUserId,
       unit_no,
-      ticket_status, // Use the determined status
+      ticket_status,
       start_date,
       end_date: null,
       start_time,
@@ -60,9 +55,6 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
       updated_at: now
     };
 
-    console.log("New ticket object:", newTicket);
-
-    // Remove undefined values
     Object.keys(newTicket).forEach(
       (key) => newTicket[key] === undefined && delete newTicket[key]
     );
@@ -87,16 +79,12 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
   }
 };
 
-// Replace the updateTicketStatuses function with this corrected version
+
 const updateTicketStatuses = async () => {
   try {
     const now = new Date();
     const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
-    
-    console.log(`=== Updating Ticket Statuses ===`);
-    console.log(`Current Date: ${currentDate}`);
-    console.log(`Current Time: ${currentTime}`);
     
     const checkQuery = `
       SELECT 
@@ -115,8 +103,6 @@ const updateTicketStatuses = async () => {
     
     const [eligibleTickets] = await pool.query(checkQuery);
     
-    
-    // Update tickets to IN_PROGRESS - ONLY if they have someone assigned
     const updateToInProgressQuery = `
       UPDATE tickets 
       SET ticket_status = 'IN_PROGRESS', updated_at = NOW()
@@ -159,8 +145,7 @@ const updateTicketStatuses = async () => {
       
       const [updatedTickets] = await pool.query(updatedTicketsQuery);
     }
-    
-    // Update to COMPLETED (only for tickets that are already IN_PROGRESS)
+
     const updateToCompletedQuery = `
       UPDATE tickets 
       SET ticket_status = 'COMPLETED', updated_at = NOW()
@@ -361,14 +346,13 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("No data provided for update");
     }
 
-    // ADDED ticket_status to allowed fields
     const allowedFields = [
       'ticket_title',
       'description', 
       'priority',
       'request_type',
       'assigned_to',
-      'ticket_status', // <- ADDED THIS
+      'ticket_status', 
       'start_date',
       'end_date',
       'start_time',
@@ -450,9 +434,6 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
 
 const deleteTicket = async (ticketId) => {
   try {
-    console.log(`Attempting to delete ticket: ${ticketId}`);
-    
-    // First check if ticket exists
     const checkQuery = `SELECT ticket_id, ticket_title, ticket_status FROM tickets WHERE ticket_id = ?`;
     const [existingTickets] = await pool.query(checkQuery, [ticketId]);
     
@@ -463,12 +444,10 @@ const deleteTicket = async (ticketId) => {
     const ticket = existingTickets[0];
     console.log(`Found ticket to delete: ${ticket.ticket_title} (Status: ${ticket.ticket_status})`);
     
-    // Optional: Prevent deletion of completed tickets
     if (ticket.ticket_status === 'COMPLETED') {
       throw new Error("Cannot delete completed tickets. Archive instead if needed.");
     }
     
-    // Delete the ticket
     const deleteQuery = `DELETE FROM tickets WHERE ticket_id = ?`;
     const [result] = await pool.query(deleteQuery, [ticketId]);
     
