@@ -6,37 +6,39 @@ import {
   getSinglePropertyById,
   editPropertyById,
   deletePropertyById,
-  getAddresses
 } from "../controllers/propertiesControllers.js";
-
 import createUploadMiddleware from "../middlewares/multer/uploadMiddleware.js";
 
 const router = express.Router();
 
-
-
-router.post("/create-property", createUploadMiddleware({
-  fields: [
-    { name: 'display_image', maxCount: 1 },
-  ],
-  fieldFolders: {
-    display_image: 'property_images',
-  },
-}), protect, createProperty);
+router.post(
+  "/create-property",
+  createUploadMiddleware({
+    fields: [{ name: "display_image", maxCount: 1 }],
+    fieldFolders: {
+      display_image: "property_images",
+    },
+  }),
+  protect,
+  createProperty
+);
 router.get("/", getProperties);
-router.get("/addresses", getAddresses);
 router.get("/:property_id", getSinglePropertyById);
-router.patch("/:property_id", createUploadMiddleware({
-  fields: [
-    { name: 'display_image', maxCount: 1 },
-    { name: 'showcase_images', maxCount: 10 },
-  ],
-  fieldFolders: {
-    display_image: 'property_images',
-    showcase_images: 'property_images',
-  },
-}), protect, editPropertyById);
+router.patch(
+  "/:property_id",
+  createUploadMiddleware({
+    fields: [
+      { name: "display_image", maxCount: 1 },
+      { name: "showcase_images", maxCount: 10 },
+    ],
+    fieldFolders: {
+      display_image: "property_images",
+      showcase_images: "property_images",
+    },
+  }),
+  protect,
+  editPropertyById
+);
 router.delete("/:property_id", protect, deletePropertyById);
-
 
 export default router;

@@ -3,7 +3,6 @@ import propertiesServices from '../services/propertiesServices.js';
 
 const createProperty = expressAsync(async (req, res) => {
   try {
-    // Handle image upload similar to how tickets handles attachments
     const display_image = req.files && req.files['display_image'] 
       ? req.files['display_image'][0].path 
       : "";
@@ -60,31 +59,26 @@ const getSinglePropertyById = expressAsync(async (req, res) => {
 
 const editPropertyById = expressAsync(async (req, res) => {
     try {
-        // Handle display image upload
         const display_image = req.files && req.files['display_image'] 
           ? req.files['display_image'][0].path 
           : "";
 
-        // Handle showcase images upload
         const showcase_images = req.files && req.files['showcase_images']
           ? req.files['showcase_images'].map(file => file.path)
           : [];
 
         let payload = { ...req.body };
         
-        // Handle display image - either new image or removal
         if (display_image) {
             payload.display_image = display_image;
         } else if (payload.remove_display_image === 'true') {
-            payload.display_image = null; // Set to null to remove
+            payload.display_image = null; 
         }
 
-        // Add showcase images if any were uploaded
         if (showcase_images.length > 0) {
             payload.showcase_images = showcase_images;
         }
 
-        // Process showcase descriptions
         if (payload.showcase_descriptions) {
             if (!Array.isArray(payload.showcase_descriptions)) {
                 payload.showcase_descriptions = [payload.showcase_descriptions];
@@ -93,12 +87,10 @@ const editPropertyById = expressAsync(async (req, res) => {
             payload.showcase_descriptions = [];
         }
 
-        // Process existing image IDs
         if (payload.existing_image_ids) {
             if (!Array.isArray(payload.existing_image_ids)) {
                 payload.existing_image_ids = [payload.existing_image_ids];
             }
-            // Filter out invalid IDs and convert to integers
             payload.existing_image_ids = payload.existing_image_ids
                 .map(id => parseInt(id))
                 .filter(id => !isNaN(id) && id > 0);
@@ -106,7 +98,6 @@ const editPropertyById = expressAsync(async (req, res) => {
             payload.existing_image_ids = [];
         }
 
-        // Process existing descriptions
         if (payload.existing_descriptions) {
             if (!Array.isArray(payload.existing_descriptions)) {
                 payload.existing_descriptions = [payload.existing_descriptions];
@@ -115,12 +106,10 @@ const editPropertyById = expressAsync(async (req, res) => {
             payload.existing_descriptions = [];
         }
 
-        // Process deleted image IDs
         if (payload.deleted_image_ids) {
             if (!Array.isArray(payload.deleted_image_ids)) {
                 payload.deleted_image_ids = [payload.deleted_image_ids];
             }
-            // Filter out invalid deleted IDs and convert to integers
             payload.deleted_image_ids = payload.deleted_image_ids
                 .map(id => parseInt(id))
                 .filter(id => !isNaN(id) && id > 0);
@@ -180,24 +169,10 @@ const deletePropertyById = expressAsync(async (req, res) => {
     }
 });
 
-const getAddresses = expressAsync(async (req, res) => {
-    try {
-        const response = await propertiesServices.getAddresses(req.query);
-        res.json({ addresses: response });
-    } catch (error) {
-        console.error("Error fetching addresses:", error);
-        res.status(500).json({
-            message: "Failed to fetch addresses",
-            error: error.message
-        });
-    }
-});
-
 export {
   createProperty,
   getProperties,
   getSinglePropertyById,
   editPropertyById,
   deletePropertyById,
-  getAddresses
 }

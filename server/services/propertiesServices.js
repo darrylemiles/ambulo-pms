@@ -615,37 +615,10 @@ const deletePropertyById = async (property_id = "") => {
   }
 };
 
-
-const getAddresses = async () => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT 
-        address_id,
-        building_name,
-        street,
-        barangay,
-        city,
-        province,
-        postal_code,
-        country,
-        latitude,
-        longitude,
-        created_at,
-        updated_at
-      FROM addresses
-    `);
-    return rows;
-  } catch (error) {
-    console.error("Error fetching addresses:", error);
-    throw new Error(error.message || "Failed to fetch addresses");
-  }
-};
-
 export default {
   createProperty,
   getProperties,
   getSinglePropertyById,
   editPropertyById,
   deletePropertyById,
-  getAddresses,
 };
