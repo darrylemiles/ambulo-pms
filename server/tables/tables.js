@@ -23,6 +23,7 @@ import companyInfoTable from "./companyInfoTable.js";
 import companyAddressTable from "./companyAddressTable.js";
 import aboutUsTable from "./aboutUsTable.js";
 import faqsTable from "./faqsTable.js";
+import contactSubmissionsTable from "./contactSubmissionsTable.js";
 
 //payment-related
 import chargesTable from "./chargesTable.js";
@@ -56,6 +57,7 @@ const tables = async (dbConnection) => {
     companyAddressTable,
     aboutUsTable,
     faqsTable,
+    contactSubmissionsTable,
 
     //payment-related
     chargesTable,
