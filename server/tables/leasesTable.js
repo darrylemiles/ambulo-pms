@@ -33,13 +33,15 @@ const leasesTable = `CREATE TABLE IF NOT EXISTS leases (
     rent_increase_on_renewal DECIMAL (5,2) not null, -- 10.00
 
     notes TEXT,
+    lease_contract_id int,
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP(),
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
 
     CONSTRAINT fk_lease_users FOREIGN KEY (user_id) REFERENCES users(user_id),
     CONSTRAINT fk_lease_properties FOREIGN KEY (property_id) REFERENCES properties(property_id),
-    CONSTRAINT fk_lease_parent FOREIGN KEY (parent_lease_id) REFERENCES leases(lease_id)
+    CONSTRAINT fk_lease_parent FOREIGN KEY (parent_lease_id) REFERENCES leases(lease_id),
+    CONSTRAINT fk_lease_contract FOREIGN KEY (lease_contract_id) REFERENCES lease_contracts(lease_contract_id) ON DELETE CASCADE
 );`;
 
 export default leasesTable;
