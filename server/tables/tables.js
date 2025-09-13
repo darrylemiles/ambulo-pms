@@ -26,7 +26,7 @@ import faqsTable from "./faqsTable.js";
 //payment-related
 import chargesTable from "./chargesTable.js";
 import paymentsTable from "./paymentsTable.js";
-
+import paymentProofTable from "./paymentProofTable.js";
 
 const tables = async (dbConnection) => {
   const queries = [
@@ -57,7 +57,8 @@ const tables = async (dbConnection) => {
 
     //payment-related
     chargesTable,
-    paymentsTable
+    paymentsTable,
+    paymentProofTable
   ];
 
   for (const query of queries) {
