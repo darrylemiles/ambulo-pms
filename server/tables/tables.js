@@ -23,6 +23,9 @@ import companyAddressTable from "./companyAddressTable.js";
 import aboutUsTable from "./aboutUsTable.js";
 import faqsTable from "./faqsTable.js";
 
+//payment-related
+import chargesTable from "./chargesTable.js";
+
 
 const tables = async (dbConnection) => {
   const queries = [
@@ -50,6 +53,9 @@ const tables = async (dbConnection) => {
     companyAddressTable,
     aboutUsTable,
     faqsTable,
+
+    //payment-related
+    chargesTable
   ];
 
   for (const query of queries) {
