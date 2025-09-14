@@ -1,4 +1,5 @@
-// Data storage using in-memory objects
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js"; 
+
 let companyId = null;
 
 // API Configuration
@@ -6,25 +7,6 @@ const API_BASE_URL = "/api/v1/company-details";
 const ABOUT_API_URL = "/api/v1/about-us";
 
 let websiteData = {
-  company: {
-    name: "Ambulo Properties",
-    tagline: "Commercial Real Estate Excellence",
-    founded: 2018,
-    logo: null,
-  },
-  about: {
-    story: {
-      title: "Our Story",
-    },
-    mvv: {
-      mission:
-        "To empower local entrepreneurs and businesses by providing premium commercial spaces that foster growth, innovation, and community connection in Silang, Cavite.",
-      vision:
-        "To be the premier commercial real estate destination in Cavite, known for our commitment to tenant success, community development, and innovative property management solutions.",
-      values:
-        "Integrity, Innovation, Community Focus, and Tenant Success. We believe in building lasting relationships and creating value for all stakeholders in our commercial ecosystem.",
-    },
-  },
   services: {
     title: "Our Services",
     description:
@@ -67,63 +49,7 @@ let websiteData = {
           "Modern technology solutions to streamline operations and enhance the commercial leasing experience.",
       },
     ],
-  },
-  advantages: {
-    title: "Why Choose Ambulo Properties",
-    description:
-      "Discover the competitive advantages that make us Silang's preferred commercial real estate partner",
-    items: [
-      {
-        id: 1,
-        title: "Prime Strategic Location",
-        description:
-          "Situated on Kapt. Sayas Street in the heart of Silang, offering high visibility, excellent foot traffic, and easy accessibility for customers and clients.",
-        icon: "fas fa-map-marker-alt",
-      },
-      {
-        id: 2,
-        title: "Proven Track Record",
-        description:
-          "Five years of successful property management with 100% occupancy rate, demonstrating our commitment to tenant satisfaction and business success.",
-        icon: "fas fa-chart-line",
-      },
-      {
-        id: 3,
-        title: "Premium Facilities",
-        description:
-          "Modern, well-maintained commercial spaces with professional amenities, reliable utilities, and contemporary design that enhances your business image.",
-        icon: "fas fa-building",
-      },
-      {
-        id: 4,
-        title: "Security & Safety",
-        description:
-          "Comprehensive security measures, safe environment, and 24/7 monitoring to ensure the protection of your business and customers.",
-        icon: "fas fa-shield-alt",
-      },
-      {
-        id: 5,
-        title: "Competitive Pricing",
-        description:
-          "Flexible lease terms with competitive rates that provide excellent value for money, helping your business maintain healthy profit margins.",
-        icon: "fas fa-dollar-sign",
-      },
-      {
-        id: 6,
-        title: "Exceptional Service",
-        description:
-          "Dedicated property management team providing responsive support, proactive maintenance, and personalized attention to each tenant's needs.",
-        icon: "fas fa-concierge-bell",
-      },
-      {
-        id: 7,
-        title: "Business Growth Support",
-        description:
-          "We're invested in your success, offering consultation, networking opportunities, and resources to help your business thrive and expand.",
-        icon: "fas fa-rocket",
-      },
-    ],
-  },
+  }
 };
 
 const availableIcons = [
@@ -148,86 +74,26 @@ const availableIcons = [
   "fas fa-check-circle",
   "fas fa-award",
 ];
-
-let currentEditingServiceId = null;
-let currentEditingAdvantageId = null;
-let selectedIcon = "";
 let hasUnsavedChanges = false;
 
-// Initialize the app
 document.addEventListener("DOMContentLoaded", function () {
   loadCompanyInfo().then(() => {
     setupRealtimeValidation();
   });
-  loadFormData();
   setupEventListeners();
   setupLogoHandling();
   setupAltLogoHandling();
   setupRealtimeValidation();
-  // renderServices();
-  // renderAdvantages();
   console.log("CMS initialized successfully");
 });
 
 function setupEventListeners() {
-  // Tab functionality
   document.querySelectorAll(".tab-button").forEach((button) => {
     button.addEventListener("click", () => {
       switchTab(button.dataset.tab);
     });
   });
 
-  // Form inputs change tracking
-  // const inputs = document.querySelectorAll("input, textarea, select");
-  // inputs.forEach((input) => {
-  //   input.addEventListener("input", function () {
-  //     hasUnsavedChanges = true;
-  //     showAutoSave();
-  //   });
-  // });
-
-  // Service form submission
-  // document
-  //   .getElementById("service-form")
-  //   .addEventListener("submit", function (e) {
-  //     e.preventDefault();
-  //     updateService();
-  //   });
-
-  // // Advantage form submission
-  // document
-  //   .getElementById("advantage-form")
-  //   .addEventListener("submit", function (e) {
-  //     e.preventDefault();
-  //     updateAdvantage();
-  //   });
-
-  // Close modals when clicking outside
-  // document
-  //   .getElementById("service-modal")
-  //   .addEventListener("click", function (e) {
-  //     if (e.target === this) {
-  //       closeServiceModal();
-  //     }
-  //   });
-
-  // document
-  //   .getElementById("advantage-modal")
-  //   .addEventListener("click", function (e) {
-  //     if (e.target === this) {
-  //       closeAdvantageModal();
-  //     }
-  //   });
-
-  // document
-  //   .getElementById("preview-modal")
-  //   .addEventListener("click", function (e) {
-  //     if (e.target === this) {
-  //       closePreviewModal();
-  //     }
-  //   });
-
-  // Warn before leaving if there are unsaved changes
   window.addEventListener("beforeunload", function (e) {
     if (hasUnsavedChanges) {
       e.preventDefault();
@@ -241,7 +107,6 @@ function setupLogoHandling() {
   const logoInput = document.getElementById("logo-input");
   const logoPreview = document.getElementById("logo-preview");
 
-  // File input change event
   logoInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
@@ -249,7 +114,6 @@ function setupLogoHandling() {
     }
   });
 
-  // Drag and drop functionality
   logoPreview.addEventListener("click", () => {
     if (!logoPreview.classList.contains("has-image")) {
       logoInput.click();
@@ -287,8 +151,6 @@ function setupAltLogoHandling() {
       handleAltLogoFile(file);
     }
   });
-
-  // Drag and drop functionality
   altLogoPreview.addEventListener("click", () => {
     if (!altLogoPreview.classList.contains("has-image")) {
       altLogoInput.click();
@@ -315,13 +177,11 @@ function setupAltLogoHandling() {
 }
 
 function handleAltLogoFile(file) {
-  // Validate file size (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
     showNotification("Alternate logo file size must be less than 5MB", "error");
     return;
   }
 
-  // Validate file type
   const allowedTypes = [
     "image/jpeg",
     "image/jpg",
@@ -340,7 +200,6 @@ function handleAltLogoFile(file) {
   const reader = new FileReader();
   reader.onload = function (e) {
     const altLogoData = e.target.result;
-    websiteData.company.altLogo = altLogoData;
     displayAltLogo(altLogoData);
     hasUnsavedChanges = true;
     showNotification("Alternate logo uploaded successfully!", "success");
@@ -371,7 +230,6 @@ function removeAltLogo() {
         `;
     altLogoPreview.classList.remove("has-image");
     removeAltLogoBtn.style.display = "none";
-    websiteData.company.altLogo = null;
     hasUnsavedChanges = true;
     showNotification("Alternate logo removed successfully!", "success");
   }
@@ -382,7 +240,6 @@ function triggerAltLogoUpload() {
 }
 
 function switchTab(tabId) {
-  // Remove active class from all tabs and content
   document
     .querySelectorAll(".tab-button")
     .forEach((b) => b.classList.remove("active"));
@@ -390,54 +247,23 @@ function switchTab(tabId) {
     .querySelectorAll(".tab-content")
     .forEach((c) => c.classList.remove("active"));
 
-  // Add active class to clicked tab
   document.querySelector(`[data-tab="${tabId}"]`).classList.add("active");
   document.getElementById(tabId).classList.add("active");
 
   showNotification(`Switched to ${tabId} management`, "info");
 }
 
-function loadFormData() {
-  // Load company data
-  document.getElementById("company-name").value = websiteData.company.name;
-
-  // Load logo if exists
-  if (websiteData.company.logo) {
-    displayLogo(websiteData.company.logo);
-  }
-
-  // Load alternate logo if exists
-  if (websiteData.company.altLogo) {
-    displayAltLogo(websiteData.company.altLogo);
-  }
-
-  // Load about data
-  document.getElementById("story-title").value = websiteData.about.story.title;
-
-  // // Load services data
-  // document.getElementById("services-title").value = websiteData.services.title;
-  // document.getElementById("services-desc").value =
-  //   websiteData.services.description;
-
-  // // Load advantages data
-  // document.getElementById("advantages-title").value =
-  //   websiteData.advantages.title;
-  // document.getElementById("advantages-desc").value =
-  //   websiteData.advantages.description;
-}
 
 function triggerLogoUpload() {
   document.getElementById("logo-input").click();
 }
 
 function handleLogoFile(file) {
-  // Validate file size (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
     showNotification("Logo file size must be less than 5MB", "error");
     return;
   }
 
-  // Validate file type
   const allowedTypes = [
     "image/jpeg",
     "image/jpg",
@@ -456,7 +282,6 @@ function handleLogoFile(file) {
   const reader = new FileReader();
   reader.onload = function (e) {
     const logoData = e.target.result;
-    websiteData.company.logo = logoData;
     displayLogo(logoData);
     hasUnsavedChanges = true;
     showNotification("Logo uploaded successfully!", "success");
@@ -487,128 +312,87 @@ function removeLogo() {
                 `;
     logoPreview.classList.remove("has-image");
     removeLogo.style.display = "none";
-    websiteData.company.logo = null;
     hasUnsavedChanges = true;
     showNotification("Logo removed successfully!", "success");
   }
 }
 
 //#region Company Information
-
-// Company information functions
 async function loadCompanyInfo() {
   try {
-    const res = await fetch(`${API_BASE_URL}`);
-    const companies = await res.json();
-    const company = companies[0];
-    if (company) {
-      companyId = company.id;
-      document.getElementById("company-name").value =
-        company.company_name || "";
-      document.getElementById("company-email").value = company.email || "";
-      document.getElementById("company-phone").value =
-        company.phone_number || "";
-      document.getElementById("company-alt-phone").value =
-        company.alt_phone_number || "";
-      document.getElementById("company-description").value =
-        company.business_desc || "";
-      document.getElementById("company-business-hours").value =
-        company.business_hours || "";
+    const company = await fetchCompanyDetails();
+    console.log("Company info loaded:", company);
 
-      // Address fields
-      document.getElementById("company-house-no").value =
-        company.house_no || "";
-      document.getElementById("company-street-address").value =
-        company.street_address || "";
-      document.getElementById("company-city").value = company.city || "";
-      document.getElementById("company-province").value =
-        company.province || "";
-      document.getElementById("company-zip-code").value =
-        company.zip_code || "";
-      document.getElementById("company-country").value = company.country || "";
-
-      if (company.icon_logo_url) displayLogo(company.icon_logo_url);
-      if (company.alt_logo_url) displayAltLogo(company.alt_logo_url);
+    const data = company[0] || company;
+    if (data && typeof data === "object") {
+      companyId = data.id;
+      document.getElementById("company-name").value = data.company_name || "";
+      document.getElementById("company-email").value = data.email || "";
+      document.getElementById("company-phone").value = data.phone_number || "";
+      document.getElementById("company-alt-phone").value = data.alt_phone_number || "";
+      document.getElementById("company-description").value = data.business_desc || "";
+      document.getElementById("company-business-hours").value = data.business_hours || "";
+      document.getElementById("company-house-no").value = data.house_no || "";
+      document.getElementById("company-street-address").value = data.street_address || "";
+      document.getElementById("company-city").value = data.city || "";
+      document.getElementById("company-province").value = data.province || "";
+      document.getElementById("company-zip-code").value = data.zip_code || "";
+      document.getElementById("company-country").value = data.country || "";
+      if (data.icon_logo_url) displayLogo(data.icon_logo_url);
+      if (data.alt_logo_url) displayAltLogo(data.alt_logo_url);
     }
   } catch (err) {
     showNotification("Failed to load company info.", "error");
   }
 }
-
 async function saveCompanyInfo() {
   const saveBtn = document.getElementById("save-company-btn");
   if (!validateCompanyInfoForm()) return;
 
-  // Show loading spinner
   saveBtn.classList.add("btn-loading");
   saveBtn.disabled = true;
   saveBtn.innerHTML = `<span class="spinner"></span>Saving...`;
 
   const formData = new FormData();
-  formData.append(
-    "company_name",
-    document.getElementById("company-name").value.trim()
-  );
-  formData.append(
-    "email",
-    document.getElementById("company-email").value.trim()
-  );
-  formData.append(
-    "phone_number",
-    document.getElementById("company-phone").value.trim()
-  );
-  formData.append(
-    "alt_phone_number",
-    document.getElementById("company-alt-phone").value.trim()
-  );
-  formData.append(
-    "business_desc",
-    document.getElementById("company-description").value.trim()
-  );
-  formData.append(
-    "business_hours",
-    document.getElementById("company-business-hours").value.trim()
-  );
-  // Address fields
-  formData.append(
-    "house_no",
-    document.getElementById("company-house-no").value.trim()
-  );
-  formData.append(
-    "street_address",
-    document.getElementById("company-street-address").value.trim()
-  );
+  formData.append("company_name", document.getElementById("company-name").value.trim());
+  formData.append("email", document.getElementById("company-email").value.trim());
+  formData.append("phone_number", document.getElementById("company-phone").value.trim());
+  formData.append("alt_phone_number", document.getElementById("company-alt-phone").value.trim());
+  formData.append("business_desc", document.getElementById("company-description").value.trim());
+  formData.append("business_hours", document.getElementById("company-business-hours").value.trim());
+  formData.append("house_no", document.getElementById("company-house-no").value.trim());
+  formData.append("street_address", document.getElementById("company-street-address").value.trim());
   formData.append("city", document.getElementById("company-city").value.trim());
-  formData.append(
-    "province",
-    document.getElementById("company-province").value.trim()
-  );
-  formData.append(
-    "zip_code",
-    document.getElementById("company-zip-code").value.trim()
-  );
-  formData.append(
-    "country",
-    document.getElementById("company-country").value.trim()
-  );
+  formData.append("province", document.getElementById("company-province").value.trim());
+  formData.append("zip_code", document.getElementById("company-zip-code").value.trim());
+  formData.append("country", document.getElementById("company-country").value.trim());
 
-  // Handle logo files
   const logoInput = document.getElementById("logo-input");
-  if (logoInput.files[0]) formData.append("icon_logo_url", logoInput.files[0]);
   const altLogoInput = document.getElementById("alt-logo-input");
-  if (altLogoInput.files[0])
+
+  const currentLogoUrl = document.getElementById("logo-preview").querySelector("img")?.src || "";
+  const currentAltLogoUrl = document.getElementById("alt-logo-preview").querySelector("img")?.src || "";
+
+  if (logoInput.files[0]) {
+    formData.append("icon_logo_url", logoInput.files[0]);
+  } else if (currentLogoUrl) {
+    formData.append("icon_logo_url", currentLogoUrl);
+  }
+
+  if (altLogoInput.files[0]) {
     formData.append("alt_logo_url", altLogoInput.files[0]);
+  } else if (currentAltLogoUrl) {
+    formData.append("alt_logo_url", currentAltLogoUrl);
+  }
 
   try {
     let res;
     if (companyId) {
-      // Update existing company info
       res = await fetch(`${API_BASE_URL}/${companyId}`, {
         method: "PATCH",
         body: formData,
       });
     } else {
-      // Create new company info
       res = await fetch(`${API_BASE_URL}/create`, {
         method: "POST",
         body: formData,
@@ -631,7 +415,6 @@ async function saveCompanyInfo() {
   } catch (err) {
     showNotification("Error saving company info.", "error");
   } finally {
-    // Restore button state
     saveBtn.classList.remove("btn-loading");
     saveBtn.disabled = false;
     saveBtn.innerHTML = `<i class="fas fa-save"></i> Save Company Info`;
@@ -655,7 +438,6 @@ function previewCompanyInfo() {
     .getElementById("alt-logo-preview")
     .querySelector("img")?.src;
 
-  // Address fields
   const houseNo = document.getElementById("company-house-no").value.trim();
   const streetAddress = document
     .getElementById("company-street-address")
@@ -827,7 +609,6 @@ function setupRealtimeValidation() {
     }
   }
 
-  // Validate on logo changes
   document
     .getElementById("logo-input")
     .addEventListener("change", validateLogoPreview);
@@ -835,7 +616,6 @@ function setupRealtimeValidation() {
     .getElementById("alt-logo-input")
     .addEventListener("change", validateAltLogoPreview);
 
-  // Also validate on displayLogo/displayAltLogo calls
   const origDisplayLogo = window.displayLogo;
   window.displayLogo = function (...args) {
     origDisplayLogo.apply(this, args);
@@ -847,7 +627,6 @@ function setupRealtimeValidation() {
     validateAltLogoPreview();
   };
 
-  // Initial validation
   requiredFields.forEach((field) => {
     const input = document.getElementById(field.id);
     input.dispatchEvent(new Event("input"));
@@ -855,51 +634,6 @@ function setupRealtimeValidation() {
   validateLogoPreview();
   validateAltLogoPreview();
 }
-
-// function resetCompanyInfo() {
-//   if (
-//     confirm(
-//       "Are you sure you want to reset all company information to default values? This will also remove the uploaded logo."
-//     )
-//   ) {
-//     // Reset to default values
-//     websiteData.company = {
-//       name: "Ambulo Properties",
-//       logo: null,
-//     };
-
-//     loadFormData();
-
-//     const logoPreview = document.getElementById("logo-preview");
-//     const removeLogoBtn = document.getElementById("remove-logo-btn");
-//     logoPreview.innerHTML = `
-//                     <div class="logo-placeholder">
-//                         <i class="fas fa-building"></i>
-//                         <p>No logo uploaded</p>
-//                         <small>Click to upload or drag & drop</small>
-//                     </div>
-//                 `;
-//     logoPreview.classList.remove("has-image");
-//     removeLogoBtn.style.display = "none";
-
-//     websiteData.company.altLogo = null;
-//     // Reset alt logo display
-//     const altLogoPreview = document.getElementById("alt-logo-preview");
-//     const removeAltLogoBtn = document.getElementById("remove-alt-logo-btn");
-//     altLogoPreview.innerHTML = `
-//     <div class="logo-placeholder">
-//         <i class="fas fa-image"></i>
-//         <p>No alternate logo uploaded</p>
-//         <small>Click to upload or drag & drop</small>
-//     </div>
-// `;
-//     altLogoPreview.classList.remove("has-image");
-//     removeAltLogoBtn.style.display = "none";
-
-//     hasUnsavedChanges = true;
-//     showNotification("Company information reset to defaults!", "success");
-//   }
-// }
 
 function renderServices() {
   const servicesList = document.getElementById("services-list");
@@ -933,42 +667,6 @@ function createServiceElement(service) {
 
 //#endregion
 
-// function renderAdvantages() {
-//   const advantagesList = document.getElementById("advantages-list");
-//   advantagesList.innerHTML = "";
-
-//   websiteData.advantages.items.forEach((advantage) => {
-//     const advantageElement = createAdvantageElement(advantage);
-//     advantagesList.appendChild(advantageElement);
-//   });
-// }
-
-// function createAdvantageElement(advantage) {
-//   const div = document.createElement("div");
-//   div.className = "advantage-item";
-//   div.innerHTML = `
-//                 <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
-//                     <div class="icon-preview">
-//                         <i class="${advantage.icon}"></i>
-//                     </div>
-//                     <div>
-//                         <h4>${advantage.title}</h4>
-//                     </div>
-//                 </div>
-//                 <p>${advantage.description}</p>
-//                 <div class="action-buttons">
-//                     <button class="btn btn-primary" onclick="editAdvantage(${advantage.id})">
-//                         <i class="fas fa-edit"></i>
-//                         Edit
-//                     </button>
-//                     <button class="btn btn-danger" onclick="deleteAdvantage(${advantage.id})">
-//                         <i class="fas fa-trash"></i>
-//                         Delete
-//                     </button>
-//                 </div>
-//             `;
-//   return div;
-// }
 
 //#region ABOUT US
 document.addEventListener("DOMContentLoaded", function () {
@@ -1125,7 +823,6 @@ async function saveAboutContent() {
 
     let saveRes;
     if (!exists) {
-      // Insert new row
       saveRes = await fetch(`${ABOUT_API_URL}/create-about-us`, {
         method: "POST",
         body: formData,
@@ -1158,20 +855,20 @@ async function saveAboutContent() {
 function previewAbout() {
   const previewContent = `
                 <div style="font-family: 'Poppins', sans-serif; line-height: 1.6;">
-                    <h2 style="color: #2c3e50; margin-bottom: 20px;">${websiteData.about.story.title}</h2>
+                    <h2 style="color: #2c3e50; margin-bottom: 20px;">${about.story.title}</h2>
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px;">
                         <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
                             <h4 style="color: #3b82f6; margin-bottom: 10px;">Mission</h4>
-                            <p style="color: #64748b; font-size: 14px;">${websiteData.about.mvv.mission}</p>
+                            <p style="color: #64748b; font-size: 14px;">${about.mvv.mission}</p>
                         </div>
                         <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
                             <h4 style="color: #3b82f6; margin-bottom: 10px;">Vision</h4>
-                            <p style="color: #64748b; font-size: 14px;">${websiteData.about.mvv.vision}</p>
+                            <p style="color: #64748b; font-size: 14px;">${about.mvv.vision}</p>
                         </div>
                         <div style="background: #f8fafc; padding: 20px; border-radius: 12px;">
                             <h4 style="color: #3b82f6; margin-bottom: 10px;">Values</h4>
-                            <p style="color: #64748b; font-size: 14px;">${websiteData.about.mvv.values}</p>
+                            <p style="color: #64748b; font-size: 14px;">${about.mvv.values}</p>
                         </div>
                     </div>
                 </div>
@@ -1206,7 +903,6 @@ function generateAboutImageUploads() {
     `;
     grid.appendChild(imageContainer);
 
-    // Add preview handler for this input
     setTimeout(() => {
       const fileInput = document.getElementById(`aboutImage${i}`);
       const img = document.getElementById(`aboutImage${i}Current`);
@@ -1245,356 +941,9 @@ window.removeAboutImage = function (i) {
 
 //#endregion
 
-// // Services content functions
-// function addService() {
-//   // Clear the form and set up for adding new service
-//   currentEditingServiceId = "new";
-//   document.getElementById("service-title-input").value = "";
-//   document.getElementById("service-desc-input").value = "";
-//   document.querySelector("#service-modal .modal-title").textContent =
-//     "Add New Service";
-//   document.querySelector('#service-form button[type="submit"]').innerHTML =
-//     '<i class="fas fa-plus"></i> Add Service';
-
-//   document.getElementById("service-modal").classList.add("show");
-// }
-
-// function editService(id) {
-//   const service = websiteData.services.items.find((s) => s.id === id);
-//   if (!service) return;
-
-//   currentEditingServiceId = id;
-//   document.getElementById("service-title-input").value = service.title;
-//   document.getElementById("service-desc-input").value = service.description;
-//   document.querySelector("#service-modal .modal-title").textContent =
-//     "Edit Service";
-//   document.querySelector('#service-form button[type="submit"]').innerHTML =
-//     '<i class="fas fa-save"></i> Save Service';
-
-//   document.getElementById("service-modal").classList.add("show");
-// }
-
-// function updateService() {
-//   const title = document.getElementById("service-title-input").value.trim();
-//   const description = document
-//     .getElementById("service-desc-input")
-//     .value.trim();
-
-//   if (!title || !description) {
-//     showNotification("Please fill in both title and description.", "error");
-//     return;
-//   }
-
-//   if (currentEditingServiceId === "new") {
-//     // Adding new service
-//     const newId =
-//       websiteData.services.items.length > 0
-//         ? Math.max(...websiteData.services.items.map((s) => s.id)) + 1
-//         : 1;
-//     const newService = {
-//       id: newId,
-//       title: title,
-//       description: description,
-//     };
-
-//     websiteData.services.items.push(newService);
-//     showNotification("New service added successfully!", "success");
-//   } else {
-//     // Updating existing service
-//     const service = websiteData.services.items.find(
-//       (s) => s.id === currentEditingServiceId
-//     );
-//     if (service) {
-//       service.title = title;
-//       service.description = description;
-//       showNotification("Service updated successfully!", "success");
-//     }
-//   }
-
-//   renderServices();
-//   closeServiceModal();
-//   hasUnsavedChanges = true;
-// }
-
-// function deleteService(id) {
-//   const service = websiteData.services.items.find((s) => s.id === id);
-//   if (!service) return;
-
-//   if (
-//     confirm(
-//       `Are you sure you want to delete the service "${service.title}"? This action cannot be undone.`
-//     )
-//   ) {
-//     websiteData.services.items = websiteData.services.items.filter(
-//       (s) => s.id !== id
-//     );
-//     renderServices();
-//     hasUnsavedChanges = true;
-//     showNotification("Service deleted successfully!", "success");
-//   }
-// }
-
-// function closeServiceModal() {
-//   document.getElementById("service-modal").classList.remove("show");
-//   currentEditingServiceId = null;
-
-//   // Reset form
-//   document.getElementById("service-title-input").value = "";
-//   document.getElementById("service-desc-input").value = "";
-//   document.querySelector("#service-modal .modal-title").textContent =
-//     "Edit Service";
-//   document.querySelector('#service-form button[type="submit"]').innerHTML =
-//     '<i class="fas fa-save"></i> Save Service';
-// }
-
-// function saveServicesContent() {
-//   websiteData.services.title = document.getElementById("services-title").value;
-//   websiteData.services.description =
-//     document.getElementById("services-desc").value;
-
-//   hasUnsavedChanges = false;
-//   showNotification("Services content saved successfully!", "success");
-//   console.log("Services data saved:", websiteData.services);
-// }
-
-// function previewServices() {
-//   const previewContent = `
-//                 <div style="font-family: 'Poppins', sans-serif;">
-//                     <h2 style="color: #2c3e50; margin-bottom: 10px;">${
-//                       websiteData.services.title
-//                     }</h2>
-//                     <p style="color: #64748b; margin-bottom: 30px;">${
-//                       websiteData.services.description
-//                     }</p>
-                    
-//                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-//                         ${websiteData.services.items
-//                           .map(
-//                             (service) => `
-//                             <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-//                                 <h4 style="color: #1e293b; margin-bottom: 10px; font-size: 18px;">${service.title}</h4>
-//                                 <p style="color: #64748b; line-height: 1.6; font-size: 14px;">${service.description}</p>
-//                             </div>
-//                         `
-//                           )
-//                           .join("")}
-//                     </div>
-//                 </div>
-//             `;
-
-//   showPreview("Services Preview", previewContent);
-// }
-
-// // Advantages/Why Choose functions
-// function addAdvantage() {
-//   currentEditingAdvantageId = "new";
-//   selectedIcon = "";
-//   document.getElementById("advantage-title-input").value = "";
-//   document.getElementById("advantage-desc-input").value = "";
-//   document.querySelector("#advantage-modal .modal-title").textContent =
-//     "Add New Advantage";
-//   document.querySelector('#advantage-form button[type="submit"]').innerHTML =
-//     '<i class="fas fa-plus"></i> Add Advantage';
-
-//   renderIconSelector();
-//   document.getElementById("advantage-modal").classList.add("show");
-// }
-
-// function editAdvantage(id) {
-//   const advantage = websiteData.advantages.items.find((a) => a.id === id);
-//   if (!advantage) return;
-
-//   currentEditingAdvantageId = id;
-//   selectedIcon = advantage.icon;
-//   document.getElementById("advantage-title-input").value = advantage.title;
-//   document.getElementById("advantage-desc-input").value = advantage.description;
-//   document.querySelector("#advantage-modal .modal-title").textContent =
-//     "Edit Advantage";
-//   document.querySelector('#advantage-form button[type="submit"]').innerHTML =
-//     '<i class="fas fa-save"></i> Save Advantage';
-
-//   renderIconSelector();
-//   document.getElementById("advantage-modal").classList.add("show");
-// }
-
-// function renderIconSelector() {
-//   const iconSelector = document.getElementById("icon-selector");
-//   iconSelector.innerHTML = "";
-
-//   availableIcons.forEach((iconClass) => {
-//     const iconDiv = document.createElement("div");
-//     iconDiv.className = `icon-option ${
-//       selectedIcon === iconClass ? "selected" : ""
-//     }`;
-//     iconDiv.innerHTML = `<i class="${iconClass}"></i>`;
-//     iconDiv.addEventListener("click", () => selectIcon(iconClass));
-//     iconSelector.appendChild(iconDiv);
-//   });
-// }
-
-// function selectIcon(iconClass) {
-//   selectedIcon = iconClass;
-//   document.querySelectorAll(".icon-option").forEach((option) => {
-//     option.classList.remove("selected");
-//   });
-//   event.target.closest(".icon-option").classList.add("selected");
-// }
-
-// function updateAdvantage() {
-//   const title = document.getElementById("advantage-title-input").value.trim();
-//   const description = document
-//     .getElementById("advantage-desc-input")
-//     .value.trim();
-
-//   if (!title || !description || !selectedIcon) {
-//     showNotification(
-//       "Please fill in title, description, and select an icon.",
-//       "error"
-//     );
-//     return;
-//   }
-
-//   if (currentEditingAdvantageId === "new") {
-//     // Adding new advantage
-//     const newId =
-//       websiteData.advantages.items.length > 0
-//         ? Math.max(...websiteData.advantages.items.map((a) => a.id)) + 1
-//         : 1;
-//     const newAdvantage = {
-//       id: newId,
-//       title: title,
-//       description: description,
-//       icon: selectedIcon,
-//     };
-
-//     websiteData.advantages.items.push(newAdvantage);
-//     showNotification("New advantage added successfully!", "success");
-//   } else {
-//     // Updating existing advantage
-//     const advantage = websiteData.advantages.items.find(
-//       (a) => a.id === currentEditingAdvantageId
-//     );
-//     if (advantage) {
-//       advantage.title = title;
-//       advantage.description = description;
-//       advantage.icon = selectedIcon;
-//       showNotification("Advantage updated successfully!", "success");
-//     }
-//   }
-
-//   renderAdvantages();
-//   closeAdvantageModal();
-//   hasUnsavedChanges = true;
-// }
-
-// function deleteAdvantage(id) {
-//   const advantage = websiteData.advantages.items.find((a) => a.id === id);
-//   if (!advantage) return;
-
-//   if (
-//     confirm(
-//       `Are you sure you want to delete the advantage "${advantage.title}"? This action cannot be undone.`
-//     )
-//   ) {
-//     websiteData.advantages.items = websiteData.advantages.items.filter(
-//       (a) => a.id !== id
-//     );
-//     renderAdvantages();
-//     hasUnsavedChanges = true;
-//     showNotification("Advantage deleted successfully!", "success");
-//   }
-// }
-
-// function closeAdvantageModal() {
-//   document.getElementById("advantage-modal").classList.remove("show");
-//   currentEditingAdvantageId = null;
-//   selectedIcon = "";
-
-//   // Reset form
-//   document.getElementById("advantage-title-input").value = "";
-//   document.getElementById("advantage-desc-input").value = "";
-//   document.querySelector("#advantage-modal .modal-title").textContent =
-//     "Edit Advantage";
-//   document.querySelector('#advantage-form button[type="submit"]').innerHTML =
-//     '<i class="fas fa-save"></i> Save Advantage';
-// }
-
-// function saveAdvantagesContent() {
-//   websiteData.advantages.title =
-//     document.getElementById("advantages-title").value;
-//   websiteData.advantages.description =
-//     document.getElementById("advantages-desc").value;
-
-//   hasUnsavedChanges = false;
-//   showNotification("Advantages content saved successfully!", "success");
-//   console.log("Advantages data saved:", websiteData.advantages);
-// }
-
-// function previewAdvantages() {
-//   const previewContent = `
-//                 <div style="font-family: 'Poppins', sans-serif;">
-//                     <h2 style="color: #2c3e50; margin-bottom: 10px; text-align: center;">${
-//                       websiteData.advantages.title
-//                     }</h2>
-//                     <p style="color: #64748b; margin-bottom: 40px; text-align: center; font-size: 18px;">${
-//                       websiteData.advantages.description
-//                     }</p>
-                    
-//                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
-//                         ${websiteData.advantages.items
-//                           .map(
-//                             (advantage, index) => `
-//                             <div style="background: white; border: 2px solid #e5e7eb; border-radius: 20px; padding: 30px; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; animation: slideInUp 0.6s ease ${
-//                               index * 0.1
-//                             }s both;">
-//                                 <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: linear-gradient(45deg, #3b82f6, #60a5fa); border-radius: 50%; opacity: 0.1;"></div>
-//                                 <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 20px; position: relative; z-index: 1;">
-//                                     <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #60a5fa); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; flex-shrink: 0;">
-//                                         <i class="${advantage.icon}"></i>
-//                                     </div>
-//                                     <div>
-//                                         <h4 style="color: #1e293b; margin: 0; font-size: 1.4em; font-weight: 600;">${
-//                                           advantage.title
-//                                         }</h4>
-//                                     </div>
-//                                 </div>
-//                                 <p style="color: #64748b; line-height: 1.7; font-size: 1.05em; position: relative; z-index: 1; margin: 0;">${
-//                                   advantage.description
-//                                 }</p>
-//                             </div>
-//                         `
-//                           )
-//                           .join("")}
-//                     </div>
-//                 </div>
-//                 <style>
-//                     @keyframes slideInUp {
-//                         from {
-//                             opacity: 0;
-//                             transform: translateY(30px);
-//                         }
-//                         to {
-//                             opacity: 1;
-//                             transform: translateY(0);
-//                         }
-//                     }
-//                 </style>
-//             `;
-
-//   showPreview("Why Choose Preview", previewContent);
-// }
-
-// Global functions
-// function saveAllContent() {
-//   saveCompanyInfo();
-//   saveAboutContent();
-//   saveServicesContent();
-//   saveAdvantagesContent();
-//   showNotification("All content saved successfully!", "success");
-// }
 
 function previewWebsite() {
-  const company = websiteData.company;
+  const company = company.company_name;
   const logoDisplay = company.logo
     ? `<img src="${company.logo}" alt="${company.name} Logo" style="height: 60px; width: auto; margin-right: 15px;">`
     : `<i class="fas fa-building" style="font-size: 3rem; color: #3b82f6; margin-right: 15px;"></i>`;
@@ -1620,7 +969,7 @@ function previewWebsite() {
                     
                     <section style="margin-bottom: 60px;">
                         <h2 style="color: #2c3e50; margin-bottom: 30px; text-align: center; font-size: 2.5em;">${
-                          websiteData.about.story.title
+                          about.story.title
                         }</h2>
                     </section>
                     
@@ -1629,51 +978,21 @@ function previewWebsite() {
                             <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; border-radius: 20px;">
                                 <h3 style="margin-bottom: 20px; font-size: 1.8em;">Mission</h3>
                                 <p style="line-height: 1.7; font-size: 1.05em;">${
-                                  websiteData.about.mvv.mission
+                                  about.mvv.mission
                                 }</p>
                             </div>
                             <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, #10b981, #34d399); color: white; border-radius: 20px;">
                                 <h3 style="margin-bottom: 20px; font-size: 1.8em;">Vision</h3>
                                 <p style="line-height: 1.7; font-size: 1.05em;">${
-                                  websiteData.about.mvv.vision
+                                  about.mvv.vision
                                 }</p>
                             </div>
                             <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; border-radius: 20px;">
                                 <h3 style="margin-bottom: 20px; font-size: 1.8em;">Values</h3>
                                 <p style="line-height: 1.7; font-size: 1.05em;">${
-                                  websiteData.about.mvv.values
+                                  about.mvv.values
                                 }</p>
                             </div>
-                        </div>
-                    </section>
-
-                    <section style="margin-bottom: 60px; background: #f8fafc; padding: 60px 40px; border-radius: 24px;">
-                        <h2 style="color: #2c3e50; margin-bottom: 15px; text-align: center; font-size: 2.5em;">${
-                          websiteData.advantages.title
-                        }</h2>
-                        <p style="color: #64748b; margin-bottom: 50px; text-align: center; font-size: 1.2em; max-width: 700px; margin-left: auto; margin-right: auto; margin-bottom: 50px;">${
-                          websiteData.advantages.description
-                        }</p>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 30px; max-width: 1400px; margin: 0 auto;">
-                            ${websiteData.advantages.items
-                              .map(
-                                (advantage) => `
-                                <div style="background: white; border: 2px solid #e5e7eb; border-radius: 20px; padding: 30px; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
-                                    <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: linear-gradient(45deg, #3b82f6, #60a5fa); border-radius: 50%; opacity: 0.1;"></div>
-                                    <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 20px; position: relative; z-index: 1;">
-                                        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #60a5fa); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; flex-shrink: 0;">
-                                            <i class="${advantage.icon}"></i>
-                                        </div>
-                                        <div>
-                                            <h4 style="color: #1e293b; margin: 0; font-size: 1.4em; font-weight: 600;">${advantage.title}</h4>
-                                        </div>
-                                    </div>
-                                    <p style="color: #64748b; line-height: 1.7; font-size: 1.05em; position: relative; z-index: 1; margin: 0;">${advantage.description}</p>
-                                </div>
-                            `
-                              )
-                              .join("")}
                         </div>
                     </section>
                     
@@ -1705,56 +1024,17 @@ function previewWebsite() {
   showPreview("Complete Website Preview", fullPreviewContent);
 }
 
-function publishChanges() {
-  if (hasUnsavedChanges) {
-    if (!confirm("You have unsaved changes. Save before publishing?")) {
-      return;
-    }
-    saveAllContent();
-  }
-
-  if (
-    confirm("Are you sure you want to publish all changes to the live website?")
-  ) {
-    showNotification("Publishing changes to live website...", "info");
-
-    // Simulate publishing process with progress
-    const steps = [
-      "Validating content...",
-      "Generating pages...",
-      "Optimizing assets...",
-      "Deploying to server...",
-      "Updating cache...",
-    ];
-
-    let currentStep = 0;
-    const publishInterval = setInterval(() => {
-      if (currentStep < steps.length) {
-        showNotification(steps[currentStep], "info");
-        currentStep++;
-      } else {
-        clearInterval(publishInterval);
-        showNotification(
-          "Website published successfully! Changes are now live.",
-          "success"
-        );
-        hasUnsavedChanges = false;
-      }
-    }, 800);
-  }
-}
-
-function goBack() {
-  if (hasUnsavedChanges) {
-    if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-      showNotification("Returning to dashboard...", "info");
-      // In a real app, this would navigate back
-    }
-  } else {
-    showNotification("Returning to dashboard...", "info");
-    // In a real app, this would navigate back
-  }
-}
+// function goBack() {
+//   if (hasUnsavedChanges) {
+//     if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
+//       showNotification("Returning to dashboard...", "info");
+//       // In a real app, this would navigate back
+//     }
+//   } else {
+//     showNotification("Returning to dashboard...", "info");
+//     // In a real app, this would navigate back
+//   }
+// }
 
 function showPreview(title, content) {
   document.querySelector("#preview-modal .modal-title").textContent = title;
@@ -1767,7 +1047,6 @@ function closePreviewModal() {
 }
 
 function showNotification(message, type = "info") {
-  // Remove any existing notifications
   const existingNotifications = document.querySelectorAll(".notification");
   existingNotifications.forEach((notification) => {
     if (notification.parentNode) {
@@ -1804,57 +1083,6 @@ function showNotification(message, type = "info") {
   }, 4000);
 }
 
-// function showAutoSave() {
-//   clearTimeout(window.autoSaveTimeout);
-//   window.autoSaveTimeout = setTimeout(() => {
-//     // Auto-save current data
-//     const currentTab = document.querySelector(".tab-button.active").dataset.tab;
-
-//     if (currentTab === "company") {
-//       const nameInput = document.getElementById("company-name");
-//       websiteData.company.name = nameInput ? nameInput.value : "";
-//     } else if (currentTab === "about") {
-//       websiteData.about.story.title =
-//         document.getElementById("story-title").value;
-//       websiteData.about.mvv.mission =
-//         document.getElementById("mission-text").value;
-//       websiteData.about.mvv.vision =
-//         document.getElementById("vision-text").value;
-//       websiteData.about.mvv.values =
-//         document.getElementById("values-text").value;
-//     } else if (currentTab === "services") {
-//       websiteData.services.title =
-//         document.getElementById("services-title").value;
-//       websiteData.services.description =
-//         document.getElementById("services-desc").value;
-//     } else if (currentTab === "advantages") {
-//       websiteData.advantages.title =
-//         document.getElementById("advantages-title").value;
-//       websiteData.advantages.description =
-//         document.getElementById("advantages-desc").value;
-//     }
-
-//     console.log("Auto-saved:", websiteData);
-
-//     const indicator = document.createElement("div");
-//     indicator.className = "auto-save-indicator";
-//     indicator.innerHTML = '<i class="fas fa-check"></i> Auto-saved';
-
-//     document.body.appendChild(indicator);
-//     setTimeout(() => indicator.classList.add("show"), 100);
-//     setTimeout(() => {
-//       indicator.classList.remove("show");
-//       setTimeout(() => {
-//         if (indicator.parentNode) {
-//           indicator.parentNode.removeChild(indicator);
-//         }
-//       }, 300);
-//     }, 2000);
-
-//     hasUnsavedChanges = false;
-//   }, 3000);
-// }
-
 // Keyboard shortcuts
 document.addEventListener("keydown", function (e) {
   // Ctrl+S or Cmd+S to save
@@ -1880,20 +1108,5 @@ document.addEventListener("keydown", function (e) {
 window.closePreviewModal = closePreviewModal;
 window.previewCompanyInfo = previewCompanyInfo;
 window.saveCompanyInfo = saveCompanyInfo;
-// window.addService = addService;
 window.previewAbout = previewAbout;
 window.saveAboutContent = saveAboutContent;
-// window.editService = editService;
-// window.updateService = updateService;
-// window.deleteService = deleteService;
-// window.closeServiceModal = closeServiceModal;
-// window.saveServicesContent = saveServicesContent;
-// window.previewServices = previewServices;
-// window.addAdvantage = addAdvantage;
-// window.editAdvantage = editAdvantage;
-// window.updateAdvantage = updateAdvantage;
-// window.deleteAdvantage = deleteAdvantage;
-// window.closeAdvantageModal = closeAdvantageModal;
-// window.saveAdvantagesContent = saveAdvantagesContent;
-// window.previewAdvantages = previewAdvantages;
-// window.saveAllContent = saveAllContent;
