@@ -1,6 +1,7 @@
 import conn from "./../config/db.js";
 
-// Create company details and address if not exists
+const pool = await conn();
+
 const createCompanyDetails = async (companyData) => {
   const {
     company_name,
@@ -19,9 +20,6 @@ const createCompanyDetails = async (companyData) => {
     country,
   } = companyData;
 
-  const pool = await conn();
-
-  // Insert into company_info
   const companyQuery = `
     INSERT INTO company_info (
       company_name, icon_logo_url, alt_logo_url, email, phone_number, alt_phone_number,
@@ -40,7 +38,6 @@ const createCompanyDetails = async (companyData) => {
   ]);
   const companyId = companyResult.insertId;
 
-  // Insert into company_address
   const addressQuery = `
     INSERT INTO company_address (
       company_id, house_no, street_address, city, province, zip_code, country
@@ -59,9 +56,7 @@ const createCompanyDetails = async (companyData) => {
   return companyId;
 };
 
-// Get company details and address
 const getCompanyDetails = async (companyId) => {
-  const pool = await conn();
   const query = `
     SELECT ci.*, ca.house_no, ca.street_address, ca.city, ca.province, ca.zip_code, ca.country
     FROM company_info ci
@@ -72,7 +67,6 @@ const getCompanyDetails = async (companyId) => {
   return rows;
 };
 
-// Update company details and address
 const updateCompanyDetails = async (companyId, companyData) => {
   const allowedFields = [
     "company_name",
@@ -106,9 +100,6 @@ const updateCompanyDetails = async (companyId, companyData) => {
 
   setClauses.push("updated_at = NOW()");
 
-  const pool = await conn();
-
-  // Update company_info
   if (setClauses.length > 1) {
     const companyQuery = `
       UPDATE company_info SET
@@ -119,14 +110,12 @@ const updateCompanyDetails = async (companyId, companyData) => {
     await pool.query(companyQuery, values);
   }
 
-  // Check if address exists
   const [addressRows] = await pool.query(
     "SELECT id FROM company_address WHERE company_id = ?",
     [companyId]
   );
 
   if (addressRows.length === 0) {
-    // Insert new address
     const addressQuery = `
       INSERT INTO company_address (
         company_id, house_no, street_address, city, province, zip_code, country
