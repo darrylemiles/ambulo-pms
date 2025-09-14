@@ -1,16 +1,35 @@
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+
 const API_BASE_URL = "/api/v1";
 const contactData = {
   buildings: [],
 };
+
+async function setDynamicInfo() {
+  const company = await fetchCompanyDetails();
+  if (!company) return;
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon && company.icon_logo_url) {
+    favicon.href = company.icon_logo_url;
+  }
+
+  document.title = company.company_name
+    ? `Manage Building Addresses - ${company.company_name}`
+    : "Manage Building Addresses";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setDynamicInfo();
+});
 
 async function fetchAddresses() {
   try {
     const response = await fetch(`${API_BASE_URL}/addresses`);
     if (!response.ok) throw new Error("Failed to fetch addresses");
     const data = await response.json();
-    console.log("API response:", data);
 
-    const addresses = Array.isArray(data.message) ? data.message : [];
+    const addresses = Array.isArray(data.addresses) ? data.addresses : [];
 
     if (!Array.isArray(addresses)) throw new Error("Addresses is not an array");
 
@@ -37,7 +56,6 @@ async function fetchAddresses() {
     console.error(error);
   }
 }
-
 document.addEventListener("DOMContentLoaded", function () {
   setupAutoSave();
   setupKeyboardShortcuts();

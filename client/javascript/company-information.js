@@ -103,6 +103,24 @@ function setupEventListeners() {
   });
 }
 
+async function setDynamicInfo() {
+  const company = await fetchCompanyDetails();
+  if (!company) return;
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon && company.icon_logo_url) {
+    favicon.href = company.icon_logo_url;
+  }
+
+  document.title = company.company_name
+    ? `Manage Company Information`
+    : "Manage Company Information";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setDynamicInfo();
+});
+
 function setupLogoHandling() {
   const logoInput = document.getElementById("logo-input");
   const logoPreview = document.getElementById("logo-preview");
