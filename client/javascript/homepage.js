@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <span class="brand" id="dynamic-company-name"></span>
         </h1>
       </div>
+      <div id="dynamic-company-logo"></div>
       <p>Every Property Has a Story. Start Yours Here.</p>
       <div class="cta-buttons">
         <a href="#properties" class="btn btn-primary">Inquire Now</a>
@@ -18,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  setDynamicHomepageContent();
+  await setDynamicHomepageContent();
 
   const grid = document.getElementById("homepagePropertyGrid");
   if (grid) {
@@ -38,16 +39,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   populateHomepageAboutSection();
 });
 
-
-
 async function setDynamicHomepageContent() {
   const data = await fetchCompanyDetails();
-  if (!data || !data[0]) return;
-  const company = data[0];
+  if (!data) return;
+  const company = data;
 
   const brandNameEl = document.getElementById("dynamic-company-name");
   if (brandNameEl)
-    brandNameEl.textContent = company.company_name || "Ambulo Properties";
+    brandNameEl.textContent = company.company_name || "Your Company";
+
+  // const logoEl = document.getElementById("dynamic-company-logo");
+  // if (logoEl) logoEl.innerHTML = company.logoHtml || "";
 
   const emailEl = document.getElementById("dynamic-company-email");
   if (emailEl) emailEl.textContent = company.email || "N/A";
