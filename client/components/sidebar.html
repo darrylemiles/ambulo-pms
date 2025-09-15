@@ -9,120 +9,769 @@
 </head>
 
 <body>
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <img src="https://res.cloudinary.com/degn0zm6s/image/upload/v1754146538/ambulo_logo_f2rloe.png" alt="Ambulo Logo"
-        class="sidebar-logo" />
-      <div class="sidebar-title">Ambulo PMS</div>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="https://res.cloudinary.com/degn0zm6s/image/upload/v1754146538/ambulo_logo_f2rloe.png" 
+                 alt="Ambulo Logo" class="sidebar-logo" />
+            <div class="sidebar-title">Ambulo PMS</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/adminDashboard.html" class="nav-link active" data-tooltip="Dashboard" data-page="dashboard">
+                    <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="/inbox.html" class="nav-link" data-tooltip="Inbox" data-page="inbox">
+                    <div class="nav-icon"><i class="fa-solid fa-inbox"></i></div>
+                    <span class="nav-text">Inbox</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Property Management</div>
+            </div>
+
+            <div class="nav-item">
+                <a href="/propertyAdmin.html" class="nav-link" data-tooltip="Properties" data-page="propertyAdmin">
+                    <div class="nav-icon"><i class="fas fa-building"></i></div>
+                    <span class="nav-text">Properties</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="/tenants.html" class="nav-link" data-tooltip="Tenants" data-page="tenants">
+                    <div class="nav-icon"><i class="fas fa-users"></i></div>
+                    <span class="nav-text">Tenants</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="/documents.html" class="nav-link" data-tooltip="Documents" data-page="documents">
+                    <div class="nav-icon"><i class="fa-solid fa-folder"></i></div>
+                    <span class="nav-text">Documents</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="/leaseAdmin.html" class="nav-link" data-tooltip="Leases" data-page="leases">
+                    <div class="nav-icon"><i class="fas fa-file-contract"></i></div>
+                    <span class="nav-text">Leases</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Operations</div>
+            </div>
+
+            <div class="nav-item">
+                <a href="/maintenance.html" class="nav-link" data-tooltip="Maintenance" data-page="maintenance">
+                    <div class="nav-icon"><i class="fas fa-tools"></i></div>
+                    <span class="nav-text">Maintenance</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="/paymentAdmin.html" class="nav-link" data-tooltip="Payments" data-page="payments">
+                    <div class="nav-icon"><i class="fas fa-credit-card"></i></div>
+                    <span class="nav-text">Payments</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="#" class="nav-link" data-tooltip="Reports" data-page="reports">
+                    <div class="nav-icon"><i class="fas fa-chart-bar"></i></div>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Content Management</div>
+            </div>
+
+            <div class="nav-item">
+                <a href="/contentManagement.html" class="nav-link" data-tooltip="Manage Content" data-page="content">
+                    <div class="nav-icon"><i class="fa-solid fa-gears"></i></div>
+                    <span class="nav-text">Manage Content</span>
+                </a>
+            </div>
+        </nav>
+
+        <button id="sidebarToggle" class="sidebar-toggle" title="Toggle Sidebar">
+            <i class="fas fa-chevron-left"></i>
+        </button>
     </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-item">
-        <a href="/adminDashboard.html" class="nav-link" data-tooltip="Dashboard" data-page="dashboard">
-          <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
-          <span class="nav-text">Dashboard</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="/inbox.html" class="nav-link" data-tooltip="Inbox" data-page="inbox">
-          <div class="nav-icon"><i class="fa-solid fa-inbox"></i></div>
-          <span class="nav-text">Inbox</span>
-        </a>
-      </div>
-
-      <div class="nav-section">
-        <div class="nav-section-title">Property Management</div>
-      </div>
-
-      <div class="nav-item">
-        <a href="/propertyAdmin.html" class="nav-link functional" data-tooltip="Properties" data-page="propertyAdmin">
-          <div class="nav-icon"><i class="fas fa-building"></i></div>
-          <span class="nav-text">Properties</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="/tenants.html" class="nav-link" data-tooltip="Tenants" data-page="tenants">
-          <div class="nav-icon"><i class="fas fa-users"></i></div>
-          <span class="nav-text">Tenants</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="/documents.html" class="nav-link" data-tooltip="Documents" data-page="documents">
-          <div class="nav-icon"><i class="fa-solid fa-folder"></i></div>
-          <span class="nav-text">Documents</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="/leaseAdmin.html" class="nav-link" data-tooltip="Leases" data-page="leases">
-          <div class="nav-icon"><i class="fas fa-file-contract"></i></div>
-          <span class="nav-text">Leases</span>
-        </a>
-      </div>
-
-      <div class="nav-section">
-        <div class="nav-section-title">Operations</div>
-      </div>
-
-      <div class="nav-item">
-        <a href="/maintenance.html" class="nav-link functional" data-tooltip="Maintenance" data-page="maintenance">
-          <div class="nav-icon"><i class="fas fa-tools"></i></div>
-          <span class="nav-text">Maintenance</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="/paymentAdmin.html" class="nav-link" data-tooltip="Payments" data-page="payments">
-          <div class="nav-icon"><i class="fas fa-credit-card"></i></div>
-          <span class="nav-text">Payments</span>
-        </a>
-      </div>
-
-      <div class="nav-item">
-        <a href="#" class="nav-link" data-tooltip="Reports" data-page="reports">
-          <div class="nav-icon"><i class="fas fa-chart-bar"></i></div>
-          <span class="nav-text">Reports</span>
-        </a>
-      </div>
-
-      <div class="nav-section">
-        <div class="nav-section-title">Content Management</div>
-      </div>
-
-      <div class="nav-item">
-        <a href="/contentManagement.html" class="nav-link" data-tooltip="Manage Content" data-page="Manage Content">
-          <div class="nav-icon"><i class="fa-solid fa-gears"></i></div>
-          <span class="nav-text">Manage Content</span>
-        </a>
-      </div>
-    </nav>
     <div id="overlay" class="overlay"></div>
-  </div>
 
-  <div class="sidebar-bottom-container">
-      <button id="sidebarToggle" class="sidebar-bottom-toggle" title="Collapse Sidebar">
-        <i class="fas fa-chevron-left"></i> 
-      </button>
+    <!-- Top Navigation Bar -->
+    <div class="top-navbar">
+        <div class="navbar-content">
+            <div class="navbar-left">
+                <h1 class="page-title" id="pageTitle">Dashboard</h1>
+            </div>
+            
+            <div class="navbar-right">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search anything..." id="searchInput">
+                </div>
+                
+                <!-- Notifications Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-icon-btn" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notificationBadge">5</span>
+                    </button>
+                    <div class="dropdown-menu" id="notificationMenu">
+                        <div class="dropdown-header">
+                            <div class="dropdown-title">Notifications</div>
+                            <div class="dropdown-subtitle">You have 5 unread notifications</div>
+                        </div>
+                        <div class="dropdown-item">
+                            <div class="dropdown-item-icon notification-maintenance">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="dropdown-item-content">
+                                <div class="dropdown-item-title">Urgent Maintenance Request</div>
+                                <div class="dropdown-item-text">Unit 3B - Water leak reported, requires immediate attention</div>
+                                <div class="dropdown-item-time">15 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="dropdown-item">
+                            <div class="dropdown-item-icon notification-payment">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="dropdown-item-content">
+                                <div class="dropdown-item-title">Payment Received</div>
+                                <div class="dropdown-item-text">Tenant John Smith - $1,500 rent payment processed</div>
+                                <div class="dropdown-item-time">2 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="dropdown-item">
+                            <div class="dropdown-item-icon notification-system">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="dropdown-item-content">
+                                <div class="dropdown-item-title">New Tenant Application</div>
+                                <div class="dropdown-item-text">Application submitted for Unit 2A - Review required</div>
+                                <div class="dropdown-item-time">4 hours ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Messages Dropdown -->
+                <div class="inbox-dropdown">
+                    <button class="nav-icon-btn" id="inboxBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span class="badge" id="messagesBadge">3</span>
+                    </button>
+                    <div class="inbox-dropdown-menu" id="inboxDropdown">
+                        <div class="inbox-header">
+                            <div class="inbox-header-content">
+                                <h3 class="inbox-title">Messages</h3>
+                                <span class="inbox-badge" id="inboxBadge">3 New</span>
+                            </div>
+                        </div>
+                        <div class="inbox-content" id="inboxContent">
+                            <!-- Messages will be populated by JavaScript -->
+                        </div>
+                        <div class="inbox-footer">
+                            <a href="/inbox.html" class="view-all-btn">View All Messages</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="profile-btn" id="profileBtn">A</button>
+                    <div class="dropdown-menu profile-dropdown" id="profileMenu">
+                        <div class="profile-info">
+                            <div class="profile-avatar">A</div>
+                            <div class="profile-details">
+                                <h4>Admin User</h4>
+                                <p>Property Administrator</p>
+                            </div>
+                        </div>
+                        <div class="profile-menu-item" onclick="openProfileSettings()">
+                            <i class="fas fa-user profile-menu-icon"></i>
+                            <span>My Profile</span>
+                        </div>
+                        <div class="profile-menu-item" onclick="openAccountSettings()">
+                            <i class="fas fa-cog profile-menu-icon"></i>
+                            <span>Account Settings</span>
+                        </div>
+                        <div class="profile-menu-item" onclick="openPreferences()">
+                            <i class="fas fa-palette profile-menu-icon"></i>
+                            <span>Preferences</span>
+                        </div>
+                        <div class="profile-menu-item" onclick="openHelp()">
+                            <i class="fas fa-question-circle profile-menu-icon"></i>
+                            <span>Help & Support</span>
+                        </div>
+                        <div class="profile-menu-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt profile-menu-icon"></i>
+                            <span>Sign Out</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
   <script>
-    // Auto-detect current page and set active state
-    document.addEventListener('DOMContentLoaded', function() {
-      const currentPage = window.location.pathname.split('/').pop().split('.')[0] || 'adminDashboard';
-      const navLinks = document.querySelectorAll('.nav-link');
-      
-      navLinks.forEach(link => {
-        const linkPage = link.getAttribute('data-page');
-        if (linkPage === currentPage || 
-            (currentPage === 'adminDashboard' && linkPage === 'dashboard') ||
-            (currentPage === 'propertyAdmin' && linkPage === 'propertyAdmin')) {
-          link.classList.add('active');
+    // Enhanced admin dashboard functionality with unified sidebar system
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const overlay = document.getElementById('overlay');
+    const topNavbar = document.querySelector('.top-navbar');
+    const mainContent = document.querySelector('.main-content');
+    const pageTitle = document.getElementById('pageTitle');
+    const searchInput = document.getElementById('searchInput');
+    
+    // Dropdown elements
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationMenu = document.getElementById('notificationMenu');
+    const inboxBtn = document.getElementById('inboxBtn');
+    const inboxDropdown = document.getElementById('inboxDropdown');
+    const profileBtn = document.getElementById('profileBtn');
+    const profileMenu = document.getElementById('profileMenu');
+
+    // Page title mapping for admin pages
+    const pageTitles = {
+        // File-based mapping
+        "adminDashboard.html": "Admin Dashboard",
+        "adminDashboard": "Admin Dashboard",
+        "propertyAdmin.html": "Properties",
+        "propertyAdmin": "Properties",
+        "tenants.html": "Tenants",
+        "tenants": "Tenants",
+        "leaseAdmin.html": "Leases",
+        "leaseAdmin": "Leases",
+        "paymentAdmin.html": "Payments",
+        "paymentAdmin": "Payments",
+        "maintenance.html": "Maintenance",
+        "maintenance": "Maintenance",
+        "inbox.html": "Inbox",
+        "inbox": "Inbox",
+        "documents.html": "Documents",
+        "documents": "Documents",
+        "contentManagement.html": "Manage Content",
+        "contentManagement": "Manage Content",
+
+        // Data-page attribute mapping
+        dashboard: 'Admin Dashboard',
+        propertyAdmin: 'Properties',
+        tenants: 'Tenants',
+        leases: 'Leases',
+        payments: 'Payments',
+        maintenance: 'Maintenance',
+        inbox: 'Inbox',
+        documents: 'Documents',
+        reports: 'Reports',
+        content: 'Manage Content',
+
+        // Default fallbacks
+        index: 'Admin Dashboard',
+        "": 'Admin Dashboard'
+    };
+
+    // Sample admin inbox messages
+    const inboxMessages = [
+        {
+            id: 1,
+            sender: "Tenant Support",
+            subject: "Urgent: Water Leak in Unit 3B",
+            preview: "Emergency maintenance request submitted. Tenant reports significant water leak in bathroom. Immediate response required to prevent property damage.",
+            time: "15 minutes ago",
+            unread: true,
+            priority: "high"
+        },
+        {
+            id: 2,
+            sender: "Property Inspector",
+            subject: "Monthly Inspection Report - Building A",
+            preview: "Completed monthly safety inspection for Building A. Found minor issues with fire extinguishers on floors 2 and 4. Detailed report attached.",
+            time: "2 hours ago",
+            unread: true,
+            priority: "medium"
+        },
+        {
+            id: 3,
+            sender: "Legal Department",
+            subject: "Lease Agreement Updates Required",
+            preview: "New city regulations require updates to standard lease agreements. Please review the attached amendments and implement by next month.",
+            time: "1 day ago",
+            unread: false,
+            priority: "medium"
+        },
+        {
+            id: 4,
+            sender: "Accounting",
+            subject: "Monthly Financial Summary",
+            preview: "Revenue collection at 94% for the month. Three units pending payment follow-up. Overall property performance exceeding projections.",
+            time: "2 days ago",
+            unread: false,
+            priority: "low"
+        },
+        {
+            id: 5,
+            sender: "Facilities Management",
+            subject: "HVAC System Maintenance Scheduled",
+            preview: "Annual HVAC maintenance scheduled for next week. All units will be notified 48 hours in advance. Expect temporary service interruptions.",
+            time: "3 days ago",
+            unread: false,
+            priority: "medium"
         }
-      });
+    ];
+
+    // Sidebar state management
+    let isCollapsed = false;
+    let isMobile = window.innerWidth <= 768;
+
+    // === INBOX MESSAGING FUNCTIONS ===
+    
+    function populateInbox() {
+        const inboxContent = document.getElementById('inboxContent');
+        const inboxBadge = document.getElementById('inboxBadge');
+        const messagesBadge = document.getElementById('messagesBadge');
+        
+        if (!inboxContent) return;
+        
+        const unreadCount = inboxMessages.filter(msg => msg.unread).length;
+        
+        // Update badges
+        if (inboxBadge) {
+            if (unreadCount > 0) {
+                inboxBadge.textContent = `${unreadCount} New`;
+                if (messagesBadge) {
+                    messagesBadge.textContent = unreadCount;
+                    messagesBadge.style.display = 'flex';
+                }
+            } else {
+                inboxBadge.textContent = 'All Read';
+                if (messagesBadge) {
+                    messagesBadge.style.display = 'none';
+                }
+            }
+        }
+        
+        if (inboxMessages.length === 0) {
+            inboxContent.innerHTML = `
+                <div class="empty-inbox">
+                    <div class="empty-inbox-icon">📭</div>
+                    <div class="empty-inbox-text">No messages yet</div>
+                    <div class="empty-inbox-subtext">You're all caught up!</div>
+                </div>
+            `;
+        } else {
+            inboxContent.innerHTML = inboxMessages.map(message => `
+                <div class="inbox-item ${message.unread ? 'unread' : ''}" onclick="openMessage(${message.id})">
+                    <div class="inbox-item-header">
+                        <div class="inbox-sender-section">
+                            <span class="inbox-sender">${message.sender}</span>
+                            ${message.priority ? `<div class="inbox-priority ${message.priority}"></div>` : ''}
+                        </div>
+                        <span class="inbox-time">${message.time}</span>
+                    </div>
+                    <div class="inbox-subject">${message.subject}</div>
+                    <div class="inbox-preview">${message.preview}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    function openMessage(messageId) {
+        const message = inboxMessages.find(msg => msg.id === messageId);
+        if (message && message.unread) {
+            message.unread = false;
+            populateInbox();
+        }
+        alert(`Opening message: "${message.subject}" from ${message.sender}`);
+    }
+
+    // === SIDEBAR MANAGEMENT FUNCTIONS ===
+    
+    function saveCollapsedState() {
+        try {
+            if (!isMobile) {
+                localStorage.setItem("adminSidebarCollapsed", isCollapsed.toString());
+            }
+        } catch (e) {
+            // Fallback if localStorage is not available
+            console.warn("localStorage not available, sidebar state will not persist");
+        }
+    }
+
+    function loadCollapsedState() {
+        try {
+            const saved = localStorage.getItem("adminSidebarCollapsed");
+            if (saved !== null && !isMobile) {
+                isCollapsed = saved === "true";
+                if (isCollapsed) {
+                    sidebar.classList.add("collapsed");
+                    updateToggleIcon();
+                    updateContentLayout();
+                }
+            }
+        } catch (e) {
+            console.warn("Could not load sidebar state from localStorage");
+        }
+    }
+
+    function updateToggleIcon() {
+        const icon = sidebarToggle.querySelector("i");
+        if (!icon) return;
+
+        if (isMobile) {
+            // Mobile toggle icons
+            if (sidebar.classList.contains("mobile-open")) {
+                icon.className = "fas fa-times";
+                sidebarToggle.title = "Close Menu";
+            } else {
+                icon.className = "fas fa-bars";
+                sidebarToggle.title = "Open Menu";
+            }
+        } else {
+            // Desktop toggle icons
+            if (isCollapsed) {
+                icon.className = "fas fa-chevron-right";
+                sidebarToggle.title = "Expand Sidebar";
+            } else {
+                icon.className = "fas fa-chevron-left";
+                sidebarToggle.title = "Collapse Sidebar";
+            }
+        }
+    }
+
+    function updateContentLayout() {
+        if (!isMobile) {
+            // Update top navbar position
+            if (topNavbar) {
+                topNavbar.style.left = isCollapsed ? "80px" : "280px";
+            }
+            
+            // Update main content margin
+            if (mainContent) {
+                mainContent.style.marginLeft = isCollapsed ? "80px" : "280px";
+            }
+        }
+    }
+
+    function updateLayout() {
+        const wasMobile = isMobile;
+        isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {
+            // Mobile layout
+            sidebar.classList.remove("collapsed");
+            sidebar.classList.remove("mobile-open");
+            overlay.classList.remove("active");
+            
+            // Reset positions for mobile
+            if (topNavbar) {
+                topNavbar.style.left = "0";
+            }
+            if (mainContent) {
+                mainContent.style.marginLeft = "0";
+            }
+        } else {
+            // Desktop layout
+            sidebar.classList.remove("mobile-open");
+            overlay.classList.remove("active");
+            
+            // Restore collapsed state on desktop
+            if (isCollapsed) {
+                sidebar.classList.add("collapsed");
+            }
+            
+            updateContentLayout();
+        }
+        
+        updateToggleIcon();
+    }
+
+    function updatePageTitle(page) {
+        if (pageTitle && pageTitles[page]) {
+            pageTitle.textContent = pageTitles[page];
+            document.title = pageTitles[page] + " | Ambulo PMS";
+            console.log('Page title updated to:', pageTitles[page]);
+        }
+    }
+
+    function setActiveNavItem(targetPage = null) {
+        let currentPage = targetPage;
+        
+        if (!currentPage) {
+            currentPage = window.location.pathname.split("/").pop();
+            if (currentPage.includes('.')) {
+                currentPage = currentPage.split(".")[0];
+            }
+            if (!currentPage || currentPage === 'index') {
+                currentPage = 'dashboard';
+            }
+        }
+
+        const navLinks = document.querySelectorAll(".nav-link");
+
+        navLinks.forEach((link) => link.classList.remove("active"));
+
+        navLinks.forEach((link) => {
+            const linkPage = link.getAttribute("data-page");
+            const linkHref = link.getAttribute("href");
+            let linkFileName = "";
+            
+            if (linkHref) {
+                linkFileName = linkHref.split("/").pop().split(".")[0];
+            }
+
+            if (
+                linkPage === currentPage ||
+                linkFileName === currentPage ||
+                (currentPage === "adminDashboard" && linkPage === "dashboard") ||
+                (currentPage === "propertyAdmin" && linkPage === "propertyAdmin") ||
+                (currentPage === "index" && linkPage === "dashboard") ||
+                (currentPage === "dashboard" && (linkPage === "dashboard" || linkFileName === "adminDashboard"))
+            ) {
+                link.classList.add("active");
+                const pageKey = linkPage || linkFileName || currentPage;
+                updatePageTitle(pageKey);
+            }
+        });
+    }
+
+    // === DROPDOWN FUNCTIONALITY ===
+    
+    function toggleDropdown(menu, button) {
+        if (!menu) return;
+        
+        document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
+            if (dropdown !== menu) {
+                dropdown.classList.remove('show', 'active');
+            }
+        });
+        
+        if (menu.classList.contains('inbox-dropdown-menu')) {
+            menu.classList.toggle('active');
+        } else {
+            menu.classList.toggle('show');
+        }
+    }
+
+    // === EVENT LISTENERS ===
+    
+    sidebarToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        
+        if (isMobile) {
+            sidebar.classList.toggle("mobile-open");
+            overlay.classList.toggle("active");
+        } else {
+            isCollapsed = !isCollapsed;
+            sidebar.classList.toggle("collapsed", isCollapsed);
+            updateContentLayout();
+            saveCollapsedState();
+        }
+        updateToggleIcon();
+        
+        sidebarToggle.classList.add('hover-effect');
+        setTimeout(() => {
+            sidebarToggle.classList.remove('hover-effect');
+        }, 300);
     });
+
+    overlay.addEventListener("click", function () {
+        if (isMobile) {
+            sidebar.classList.remove("mobile-open");
+            overlay.classList.remove("active");
+            updateToggleIcon();
+        }
+    });
+
+    // Dropdown event listeners
+    if (notificationBtn && notificationMenu) {
+        notificationBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown(notificationMenu, notificationBtn);
+        });
+    }
+
+    if (inboxBtn && inboxDropdown) {
+        inboxBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown(inboxDropdown, inboxBtn);
+        });
+    }
+
+    if (profileBtn && profileMenu) {
+        profileBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown(profileMenu, profileBtn);
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown') && !e.target.closest('.inbox-dropdown')) {
+            document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
+                dropdown.classList.remove('show', 'active');
+            });
+        }
+    });
+
+    document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(menu => {
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            if (searchTerm) {
+                console.log('Searching for:', searchTerm);
+            }
+        });
+    }
+
+    document.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", function (e) {
+            if (this.getAttribute("href") === "#") {
+                e.preventDefault();
+            }
+
+            document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+            this.classList.add("active");
+            
+            const page = this.dataset.page || this.getAttribute("href").split("/").pop().split(".")[0];
+            updatePageTitle(page);
+
+            if (isMobile && sidebar.classList.contains("mobile-open")) {
+                sidebar.classList.remove("mobile-open");
+                overlay.classList.remove("active");
+                updateToggleIcon();
+            }
+        });
+    });
+
+    window.addEventListener("popstate", function() {
+        setActiveNavItem();
+    });
+
+    window.addEventListener("resize", function() {
+        updateLayout();
+    });
+
+    // === PROFILE MENU FUNCTIONS ===
+    
+    function openProfileSettings() {
+        console.log('Opening profile settings...');
+        if (profileMenu) profileMenu.classList.remove('show');
+        alert('Admin profile settings would open here');
+    }
+
+    function openAccountSettings() {
+        console.log('Opening account settings...');
+        if (profileMenu) profileMenu.classList.remove('show');
+        alert('Account settings would open here');
+    }
+
+    function openPreferences() {
+        console.log('Opening preferences...');
+        if (profileMenu) profileMenu.classList.remove('show');
+        alert('Admin preferences would open here');
+    }
+
+    function openHelp() {
+        console.log('Opening help & support...');
+        if (profileMenu) profileMenu.classList.remove('show');
+        alert('Admin help & support would open here');
+    }
+
+    function logout() {
+        console.log('Admin logging out...');
+        if (profileMenu) profileMenu.classList.remove('show');
+        if (confirm('Are you sure you want to sign out?')) {
+            alert('Redirecting to admin login page...');
+        }
+    }
+
+    // Make functions globally accessible
+    window.openProfileSettings = openProfileSettings;
+    window.openAccountSettings = openAccountSettings;
+    window.openPreferences = openPreferences;
+    window.openHelp = openHelp;
+    window.logout = logout;
+
+    // Notification interactions
+    setTimeout(() => {
+        document.querySelectorAll('#notificationMenu .dropdown-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const titleElement = this.querySelector('.dropdown-item-title');
+                if (titleElement) {
+                    console.log('Notification clicked:', titleElement.textContent);
+                }
+                this.style.opacity = '0.7';
+                
+                const badge = document.getElementById('notificationBadge');
+                if (badge) {
+                    let count = parseInt(badge.textContent);
+                    if (count > 0) {
+                        count--;
+                        badge.textContent = count;
+                        if (count === 0) {
+                            badge.style.display = 'none';
+                            const subtitle = document.querySelector('#notificationMenu .dropdown-subtitle');
+                            if (subtitle) {
+                                subtitle.textContent = 'No unread notifications';
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    }, 100);
+
+    // === KEYBOARD SHORTCUTS ===
+    
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+            e.preventDefault();
+            sidebarToggle.click();
+        }
+        
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (searchInput) searchInput.focus();
+        }
+        
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
+                dropdown.classList.remove('show', 'active');
+            });
+        }
+    });
+
+    // === INITIALIZATION ===
+    
+    document.documentElement.style.scrollBehavior = 'smooth';
+    
+    window.addEventListener('load', function() {
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 0.3s ease';
+        
+        setTimeout(() => {
+            document.body.style.opacity = '1';
+        }, 100);
+    });
+
+    loadCollapsedState();
+    updateLayout();
+    setActiveNavItem();
+    populateInbox();
   </script>
 </body>
 

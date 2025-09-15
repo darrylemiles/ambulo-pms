@@ -10,78 +10,77 @@
     <title>Content Management</title>
 </head>
 <body>
+<body class="compact-mode">
     <div class="overlay" id="overlay"></div>
     
     <div id="sidebarContainer"></div>
+    
+  <div class="main-content">
+     <div class="main-container">
+        <div class="main-card-wrapper">
+            <div class="content-header">
+                <h1 class="content-title">Content Management</h1>
+                <p class="content-description">
+                    Choose a category below to manage different aspects of your website content.
+                </p>
+            </div>
 
-    <!-- Main White Card Wrapper -->
-    <div class="main-card-wrapper">
-        <div class="container">
-            <!-- Main Content -->
-            <main class="main-content">
-                <div class="content-header">
-                    <h1 class="content-title">Content Management</h1>
-                    <p class="content-description">
-                        Choose a category below to manage different aspects of your website content.
+            <div class="categories-grid">
+                <a href="/company-information.html" class="category-card" data-category="company-information">
+                    <div class="category-icon"><i class="fa-solid fa-building"></i></div>
+                    <h3 class="category-title">Company Information</h3>
+                    <p class="category-description">
+                        Manage your company details including name, logo, contact information, and business profile.
                     </p>
-                </div>
+                    <div class="category-features">
+                        <span class="feature-badge">Company Name</span>
+                        <span class="feature-badge">Logo</span>
+                        <span class="feature-badge">Contact Info</span>
+                    </div>
+                </a>
 
-                <div class="categories-grid">
-                    <a href="/company-information.html" class="category-card" onclick="navigateToCategory(event, 'company-information')">
-                        <div class="category-icon"><i class="fa-solid fa-building"></i></div>
-                        <h3 class="category-title">Company Information</h3>
-                        <p class="category-description">
-                            Manage your company details including name, logo, contact information, and business profile.
-                        </p>
-                        <div class="category-features">
-                            <span class="feature-badge">Company Name</span>
-                            <span class="feature-badge">Logo</span>
-                            <span class="feature-badge">Contact Info</span>
-                        </div>
-                    </a>
+                <a href="/building-addresses.html" class="category-card" data-category="building-addresses">
+                    <div class="category-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+                    <h3 class="category-title">Building Addresses</h3>
+                    <p class="category-description">
+                        Add, edit, and manage building addresses for your properties and locations.
+                    </p>
+                    <div class="category-features">
+                        <span class="feature-badge">Add</span>
+                        <span class="feature-badge">Edit</span>
+                        <span class="feature-badge">Manage</span>
+                    </div>
+                </a>
 
-                    <a href="/building-addresses.html" class="category-card" onclick="navigateToCategory(event, 'building-addresses')">
-                        <div class="category-icon"><i class="fa-solid fa-address-book"></i></div>
-                        <h3 class="category-title">Building Addresses</h3>
-                        <p class="category-description">
-                            Add, edit, and manage building addresses
-                        </p>
-                        <div class="category-features">
-                            <span class="feature-badge">Add</span>
-                            <span class="feature-badge">Edit</span>
-                            <span class="feature-badge">Manage</span>
-                        </div>
-                    </a>
+                <a href="/FAQs.html" class="category-card" data-category="faqs">
+                    <div class="category-icon"><i class="fa-solid fa-circle-question"></i></div>
+                    <h3 class="category-title">FAQs</h3>
+                    <p class="category-description">
+                        Manage frequently asked questions to help your customers find answers quickly.
+                    </p>
+                    <div class="category-features">
+                        <span class="feature-badge">Questions</span>
+                        <span class="feature-badge">Answers</span>
+                        <span class="feature-badge">Categories</span>
+                    </div>
+                </a>
 
-                    <a href="/FAQs.html" class="category-card" onclick="navigateToCategory(event, 'faqs')">
-                        <div class="category-icon"><i class="fa-solid fa-circle-question"></i></div>
-                        <h3 class="category-title">FAQs</h3>
-                        <p class="category-description">
-                            Manage frequently asked questions to help your customers find answers quickly.
-                        </p>
-                        <div class="category-features">
-                            <span class="feature-badge">Questions</span>
-                            <span class="feature-badge">Answers</span>
-                            <span class="feature-badge">Categories</span>
-                        </div>
-                    </a>
-
-                    <a href="#" class="category-card">
-                        <div class="category-icon"><i class="fa-solid fa-house"></i></div>
-                        <h3 class="category-title">Lease Terms</h3>
-                        <p class="category-description">
-                            Manage default values for when creating a lease term.
-                        </p>
-                        <div class="category-features">
-                            <span class="feature-badge">Lease</span>
-                            <span class="feature-badge">Fees</span>
-                            <span class="feature-badge">Financial Terms</span>
-                        </div>
-                    </a>
-                </div>
-            </main>
+                <a href="/lease-terms-cms.html" class="category-card" data-category="lease-terms">
+                    <div class="category-icon"><i class="fa-solid fa-file-contract"></i></div>
+                    <h3 class="category-title">Lease Terms</h3>
+                    <p class="category-description">
+                        Manage default values for when creating a lease term and financial agreements.
+                    </p>
+                    <div class="category-features">
+                        <span class="feature-badge">Lease</span>
+                        <span class="feature-badge">Fees</span>
+                        <span class="feature-badge">Financial Terms</span>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
+</div>
 
     <script src="/javascript/contentManagement.js"></script>
     <script src="/javascript/sidebar.js"></script>

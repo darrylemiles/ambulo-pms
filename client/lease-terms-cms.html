@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/lease-terms-cms.css">
+    <title>Manage Lease Term</title>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div id="sidebarContainer"></div>
+
+    <div class="main-content">
+    <div class="main-card-wrapper">
+        <div class="container">
+            <a href="/contentManagement.html" class="back-button" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+                Back to Content Management
+            </a>
+
+            <div class="header">
+                <h1 class="title">Lease Terms Management</h1>
+                <p class="description">
+                    Add, edit, and manage lease term configurations and settings for your rental properties.
+                </p>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-button active" onclick="switchTab('lease-terms')" data-tab="lease-terms">
+                        <i class="fas fa-file-contract"></i>
+                        Lease Terms Configuration
+                    </button>
+                </div>
+
+                <!-- Lease Terms Tab -->
+                <div class="tab-content active" id="lease-terms-tab">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-contract"></i>
+                            Lease Terms Configuration
+                        </h3>
+                        <span class="status-indicator">
+                            <i class="fas fa-check"></i>
+                            Active
+                        </span>
+                    </div>
+
+                    <div class="action-buttons" style="margin-bottom: 24px;">
+                        <button class="btn btn-primary" onclick="addNewLeaseTerm()">
+                            <i class="fas fa-plus"></i>
+                            Add New Lease Term
+                        </button>
+                    </div>
+
+                    <div id="lease-terms-container">
+                        <!-- Lease terms table will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Modal for Add/Edit Lease Term -->
+    <div class="modal" id="lease-term-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Add New Lease Term</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="lease-term-form">
+                <div class="form-group">
+                    <label class="form-label" for="setting_key">Setting Key *</label>
+                    <input type="text" id="setting_key" class="form-input" required>
+                    <div class="field-error" id="setting_key_error"></div>
+                </div>
+
+                <div class="two-column">
+                    <div class="form-group">
+                        <label class="form-label" for="setting_value">Setting Value *</label>
+                        <input type="text" id="setting_value" class="form-input" required>
+                        <div class="field-error" id="setting_value_error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="data_type">Data Type</label>
+                        <select id="data_type" class="form-input">
+                            <option value="number">Number</option>
+                            <option value="text">Text</option>
+                            <option value="boolean">Boolean</option>
+                            <option value="percentage">Percentage</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">Description *</label>
+                    <textarea id="description" class="form-input" rows="3" placeholder="Enter a detailed description of this lease term setting" required></textarea>
+                    <div class="field-error" id="description_error"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i>
+                        Save Lease Term
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Deletion</h3>
+                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <p style="margin-bottom: 30px; color: #64748b; line-height: 1.6;">
+                Are you sure you want to delete this lease term setting? This action cannot be undone.
+            </p>
+            <div class="action-buttons">
+                <button class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i>
+                    Delete
+                </button>
+                <button class="btn btn-outline" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/javascript/bootstrap.bundle.min.js"></script>
+    <script src="/javascript/lease-terms-cms.js"></script>
+    <script src="/javascript/sidebar.js"></script>
+</body>
+</html>
