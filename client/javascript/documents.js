@@ -1,4 +1,5 @@
-// Global state for document management
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+
 let currentView = 'list';
 let currentPath = '';
 let fileSystem = {};
@@ -10,12 +11,26 @@ let contextItem = null;
 let selectedFiles = [];
 let selectedAttachments = [];
 
-// Initialize document management when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('itemsContainer')) {
         setupDocumentManagement();
     }
+    setDynamicInfo();
 });
+
+async function setDynamicInfo() {
+  const company = await fetchCompanyDetails();
+  if (!company) return;
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon && company.icon_logo_url) {
+    favicon.href = company.icon_logo_url;
+  }
+
+  document.title = company.company_name
+    ? `Documents - ${company.company_name}`
+    : "Ambulo Properties Admin Dashboard";
+}
 
 function setupDocumentManagement() {
     setupEventListeners();
@@ -114,68 +129,6 @@ function addSampleData() {
             });
         }
 
-function setupEventListeners() {
-    // File input changes
-    const fileInput = document.getElementById('fileInput');
-    const attachmentInput = document.getElementById('attachmentInput');
-    
-    if (fileInput) fileInput.addEventListener('change', handleFileSelect);
-    if (attachmentInput) attachmentInput.addEventListener('change', handleAttachmentSelect);
-
-    // Drag and drop
-    const dropZone = document.getElementById('dropZone');
-    if (dropZone) {
-        dropZone.addEventListener('dragover', handleDragOver);
-        dropZone.addEventListener('dragleave', handleDragLeave);
-        dropZone.addEventListener('drop', handleDrop);
-    }
-
-    const attachmentDropZone = document.getElementById('attachmentDropZone');
-    if (attachmentDropZone) {
-        attachmentDropZone.addEventListener('dragover', handleAttachmentDragOver);
-        attachmentDropZone.addEventListener('dragleave', handleAttachmentDragLeave);
-        attachmentDropZone.addEventListener('drop', handleAttachmentDrop);
-    }
-
-    // Enter key handlers
-    const folderNameInput = document.getElementById('folderName');
-    const newNameInput = document.getElementById('newName');
-    
-    if (folderNameInput) {
-        folderNameInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') createFolder();
-        });
-    }
-    
-    if (newNameInput) {
-        newNameInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') confirmRename();
-        });
-    }
-
-    // Click outside handlers
-    window.addEventListener('click', function(e) {
-        if (e.target.classList.contains('modal')) {
-            closeModal(e.target.id);
-        }
-        
-        if (!e.target.closest('.dropdown') && !e.target.closest('.btn-add')) {
-            document.querySelectorAll('.dropdown-content, .add-dropdown-content').forEach(dropdown => {
-                dropdown.style.display = 'none';
-            });
-        }
-        
-        if (!e.target.closest('.context-menu') && !e.target.closest('.more-icon')) {
-            const contextMenu = document.getElementById('contextMenu');
-            if (contextMenu) contextMenu.style.display = 'none';
-        }
-    });
-
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-    });
-}
-
 function toggleAddMenu() {
     const menu = document.getElementById('addMenu');
     if (!menu) return;
@@ -252,39 +205,6 @@ function switchView(view) {
     renderItems();
 }
 
-function showContextMenu(event, itemPath) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    contextItem = itemPath;
-    const contextMenu = document.getElementById('contextMenu');
-    if (!contextMenu) return;
-    
-    contextMenu.style.display = 'block';
-    contextMenu.style.left = event.pageX + 'px';
-    contextMenu.style.top = event.pageY + 'px';
-}
-
-function openItem() {
-    if (!contextItem) return;
-    
-    const item = fileSystem[contextItem];
-    if (!item) return;
-    
-    if (item.type === 'folder') {
-        navigateToFolder(item.path);
-    } else {
-        openFile(item.path);
-    }
-    
-    const contextMenu = document.getElementById('contextMenu');
-    if (contextMenu) contextMenu.style.display = 'none';
-    contextItem = null;
-}
-
-// Enhanced Rename and Delete Functions
-
-// Function to show rename modal
 function renameItem() {
     if (!contextItem) return;
     
@@ -307,115 +227,6 @@ function renameItem() {
     if (contextMenu) contextMenu.style.display = 'none';
 }
 
-// Direct rename function for list view buttons
-function renameItemDirect(itemPath) {
-    contextItem = itemPath;
-    renameItem();
-}
-
-// Function to confirm rename with validation
-function confirmRename() {
-    const newNameInput = document.getElementById('newName');
-    if (!newNameInput || !contextItem) return;
-    
-    const newName = newNameInput.value.trim();
-    
-    // Clear any existing error states
-    clearInputError(newNameInput);
-    
-    // Validation
-    if (!newName) {
-        showInputError(newNameInput, 'Name cannot be empty');
-        return;
-    }
-    
-    if (newName.length > 100) {
-        showInputError(newNameInput, 'Name is too long (maximum 100 characters)');
-        return;
-    }
-    
-    // Check for invalid characters in Windows/common file systems
-    const invalidChars = /[<>:"/\\|?*\x00-\x1f]/g;
-    if (invalidChars.test(newName)) {
-        showInputError(newNameInput, 'Name contains invalid characters: < > : " / \\ | ? *');
-        return;
-    }
-    
-    // Check if name starts or ends with spaces/dots (Windows restriction)
-    if (newName.startsWith(' ') || newName.endsWith(' ') || newName.endsWith('.')) {
-        showInputError(newNameInput, 'Name cannot start/end with spaces or end with a dot');
-        return;
-    }
-    
-    const item = fileSystem[contextItem];
-    if (!item) return;
-    
-    const parentPath = item.parentPath;
-    const newPath = parentPath ? `${parentPath}/${newName}` : newName;
-    
-    // Check for duplicate names (case-insensitive)
-    const existingItem = Object.values(fileSystem).find(existingItem => 
-        existingItem.parentPath === parentPath && 
-        existingItem.name.toLowerCase() === newName.toLowerCase() &&
-        existingItem.path !== contextItem
-    );
-    
-    if (existingItem) {
-        showInputError(newNameInput, 'An item with this name already exists');
-        return;
-    }
-    
-    // Show loading state
-    const renameBtn = document.querySelector('#renameModal .btn-primary');
-    const cancelBtn = document.querySelector('#renameModal .btn-cancel');
-    
-    if (renameBtn) {
-        renameBtn.classList.add('loading');
-        renameBtn.disabled = true;
-        renameBtn.textContent = 'Renaming...';
-    }
-    if (cancelBtn) cancelBtn.disabled = true;
-    
-    // Simulate async operation for better UX
-    setTimeout(() => {
-        const oldName = item.name;
-        const oldPath = item.path;
-        
-        // Update item properties
-        item.name = newName;
-        item.path = newPath;
-        item.lastModified = new Date();
-        
-        // Update file system mapping if path changed
-        if (newPath !== contextItem) {
-            fileSystem[newPath] = item;
-            delete fileSystem[contextItem];
-            
-            // If it's a folder, update all children paths recursively
-            if (item.type === 'folder') {
-                updateChildrenPaths(contextItem, newPath);
-            }
-        }
-        
-        // Reset button states
-        if (renameBtn) {
-            renameBtn.classList.remove('loading');
-            renameBtn.disabled = false;
-            renameBtn.textContent = 'Rename';
-        }
-        if (cancelBtn) cancelBtn.disabled = false;
-        
-        // Close modal and update UI
-        closeModal('renameModal');
-        renderItems();
-        contextItem = null;
-        
-        // Show success notification
-        showNotification(`"${oldName}" renamed to "${newName}"`, 'success');
-    }, 500);
-}
-
-// Recursive function to update children paths when parent folder is renamed
 function updateChildrenPaths(oldParentPath, newParentPath) {
     Object.keys(fileSystem).forEach(path => {
         const item = fileSystem[path];
@@ -474,66 +285,6 @@ function deleteItem() {
     if (contextMenu) contextMenu.style.display = 'none';
 }
 
-// Direct delete function for list view buttons
-function deleteItemDirect(itemPath) {
-    contextItem = itemPath;
-    deleteItem();
-}
-
-// Function to confirm deletion
-function confirmDelete() {
-    if (!contextItem) return;
-    
-    const item = fileSystem[contextItem];
-    if (!item) return;
-    
-    // Show loading state
-    const deleteBtn = document.querySelector('#deleteModal .btn-danger');
-    const cancelBtn = document.querySelector('#deleteModal .btn-cancel');
-    
-    if (deleteBtn) {
-        deleteBtn.classList.add('loading');
-        deleteBtn.disabled = true;
-        deleteBtn.textContent = 'Deleting...';
-    }
-    if (cancelBtn) cancelBtn.disabled = true;
-    
-    // Simulate async operation
-    setTimeout(() => {
-        const itemName = item.name;
-        const itemType = item.type;
-        let deletedCount = 1;
-        
-        // If it's a folder, delete all children recursively
-        if (item.type === 'folder') {
-            deletedCount = deleteChildren(contextItem) + 1;
-        }
-        
-        // Delete the item itself
-        delete fileSystem[contextItem];
-        
-        // Reset button states
-        if (deleteBtn) {
-            deleteBtn.classList.remove('loading');
-            deleteBtn.disabled = false;
-            deleteBtn.textContent = 'Delete';
-        }
-        if (cancelBtn) cancelBtn.disabled = false;
-        
-        // Close modal and update UI
-        closeModal('deleteModal');
-        renderItems();
-        contextItem = null;
-        
-        // Show success notification with count if multiple items deleted
-        const message = itemType === 'folder' && deletedCount > 1 
-            ? `Folder "${itemName}" and ${deletedCount - 1} item${deletedCount - 1 > 1 ? 's' : ''} deleted`
-            : `"${itemName}" deleted successfully`;
-        showNotification(message, 'success');
-    }, 800);
-}
-
-// Recursive function to delete all children of a folder
 function deleteChildren(folderPath) {
     let deletedCount = 0;
     const childrenToDelete = [];
@@ -751,102 +502,11 @@ const errorStyles = `
 }
 `;
 
-// Inject error styles if not already present
 if (!document.getElementById('error-styles')) {
     const styleSheet = document.createElement('style');
     styleSheet.id = 'error-styles';
     styleSheet.textContent = errorStyles;
     document.head.appendChild(styleSheet);
-}
-
-function showNewFolderModal() {
-    const addMenu = document.getElementById('addMenu');
-    const folderModal = document.getElementById('folderModal');
-    const folderNameInput = document.getElementById('folderName');
-    
-    if (addMenu) addMenu.style.display = 'none';
-    if (folderModal) folderModal.style.display = 'block';
-    if (folderNameInput) folderNameInput.focus();
-}
-
-function showUploadModal() {
-    const addMenu = document.getElementById('addMenu');
-    const uploadModal = document.getElementById('uploadModal');
-    
-    if (addMenu) addMenu.style.display = 'none';
-    if (uploadModal) uploadModal.style.display = 'block';
-    selectedFiles = [];
-    updateSelectedFilesDisplay();
-}
-
-function showAttachmentModal() {
-    const addMenu = document.getElementById('addMenu');
-    const attachmentModal = document.getElementById('attachmentModal');
-    
-    if (addMenu) addMenu.style.display = 'none';
-    if (attachmentModal) attachmentModal.style.display = 'block';
-    selectedAttachments = [];
-    updateSelectedAttachmentsDisplay();
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-    
-    modal.style.display = 'none';
-    
-    switch(modalId) {
-        case 'folderModal':
-            const folderNameInput = document.getElementById('folderName');
-            if (folderNameInput) folderNameInput.value = '';
-            break;
-        case 'uploadModal':
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput) fileInput.value = '';
-            selectedFiles = [];
-            updateSelectedFilesDisplay();
-            break;
-        case 'attachmentModal':
-            const attachmentInput = document.getElementById('attachmentInput');
-            if (attachmentInput) attachmentInput.value = '';
-            selectedAttachments = [];
-            updateSelectedAttachmentsDisplay();
-            break;
-        case 'renameModal':
-            const newNameInput = document.getElementById('newName');
-            if (newNameInput) newNameInput.value = '';
-            contextItem = null;
-            break;
-        case 'deleteModal':
-            contextItem = null;
-            break;
-    }
-}
-
-function createFolder() {
-    const folderNameInput = document.getElementById('folderName');
-    if (!folderNameInput) return;
-    
-    const folderName = folderNameInput.value.trim();
-    if (!folderName) return;
-
-    const folderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-    
-    if (fileSystem[folderPath]) {
-        alert('Folder already exists!');
-        return;
-    }
-
-    fileSystem[folderPath] = {
-        type: 'folder',
-        name: folderName,
-        created: new Date(),
-        path: folderPath,
-        parentPath: currentPath
-    };
-
-    closeModal('folderModal');
-    renderItems();
 }
 
 function getFileType(fileName) {
@@ -986,59 +646,6 @@ function handleAttachmentDrop(event) {
     const files = Array.from(event.dataTransfer.files);
     selectedAttachments = [...selectedAttachments, ...files];
     updateSelectedAttachmentsDisplay();
-}
-
-function uploadFiles() {
-    if (selectedFiles.length === 0) return;
-
-    selectedFiles.forEach(file => {
-        const filePath = currentPath ? `${currentPath}/${file.name}` : file.name;
-        
-        if (fileSystem[filePath]) {
-            if (!confirm(`File "${file.name}" already exists. Replace it?`)) {
-                return;
-            }
-        }
-        
-        fileSystem[filePath] = {
-            type: 'file',
-            name: file.name,
-            size: file.size,
-            lastModified: new Date(file.lastModified),
-            created: new Date(),
-            path: filePath,
-            parentPath: currentPath,
-            file: file
-        };
-    });
-
-    closeModal('uploadModal');
-    renderItems();
-}
-
-function attachFiles() {
-    if (selectedAttachments.length === 0) return;
-
-    selectedAttachments.forEach(file => {
-        const timestamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
-        const attachmentName = `attachment_${timestamp}_${file.name}`;
-        const filePath = currentPath ? `${currentPath}/${attachmentName}` : attachmentName;
-        
-        fileSystem[filePath] = {
-            type: 'file',
-            name: attachmentName,
-            size: file.size,
-            lastModified: new Date(file.lastModified),
-            created: new Date(),
-            path: filePath,
-            parentPath: currentPath,
-            file: file,
-            isAttachment: true
-        };
-    });
-
-    closeModal('attachmentModal');
-    renderItems();
 }
 
 function navigateToFolder(path) {
@@ -1587,37 +1194,6 @@ function attachFiles() {
         
         showNotification(`${fileCount} attachment${fileCount > 1 ? 's' : ''} added successfully`, 'success');
     }, 800);
-}
-
-// Input validation helper
-function showInputError(input, message) {
-    input.classList.add('error');
-    
-    // Remove existing error message
-    const existingError = input.parentNode.querySelector('.error-message');
-    if (existingError) {
-        existingError.remove();
-    }
-    
-    // Add new error message
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.textContent = message;
-    errorDiv.style.color = '#ef4444';
-    errorDiv.style.fontSize = '12px';
-    errorDiv.style.marginTop = '4px';
-    
-    input.parentNode.appendChild(errorDiv);
-    
-    // Clear error on input
-    input.addEventListener('input', function clearError() {
-        input.classList.remove('error');
-        const errorMsg = input.parentNode.querySelector('.error-message');
-        if (errorMsg) {
-            errorMsg.remove();
-        }
-        input.removeEventListener('input', clearError);
-    });
 }
 
 // Notification system

@@ -1,7 +1,27 @@
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+
 let faqIdCounter = 0;
 let currentEditingId = null;
 let latestFaqs = [];
 const API_BASE_URL = "/api/v1/faqs";
+
+async function setDynamicInfo() {
+  const company = await fetchCompanyDetails();
+  if (!company) return;
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon && company.icon_logo_url) {
+    favicon.href = company.icon_logo_url;
+  }
+
+  document.title = company.company_name
+    ? `Manage FAQs - ${company.company_name}`
+    : "Manage FAQs";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setDynamicInfo();
+});
 
 document.addEventListener("DOMContentLoaded", function () {
   fetchAndRenderFAQs();

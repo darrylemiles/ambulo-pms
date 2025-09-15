@@ -1,6 +1,4 @@
-
-
-
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
 async function fetchAboutUsData() {
   try {
@@ -11,6 +9,25 @@ async function fetchAboutUsData() {
     console.error("Failed to fetch About Us data:", err);
     return null;
   }
+}
+
+async function setDynamicCompanyInfo() {
+  const company = await fetchCompanyDetails();
+  if (!company) return;
+
+  const heroTitle = document.querySelector(".hero-content h1 .dynamic-company-name");
+  if (heroTitle) {
+    heroTitle.textContent = company.company_name || "Ambulo Properties";
+  }
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon && company.icon_logo_url) {
+    favicon.href = company.icon_logo_url;
+  }
+
+  document.title = company.company_name
+    ? `About ${company.company_name}`
+    : "About";
 }
 
 async function populateAboutUsPage() {
@@ -27,29 +44,27 @@ async function populateAboutUsPage() {
     storyContent.innerHTML = about.story_content || "";
   }
 
-//   const storyImage = document.querySelector(".story-image img");
-//   if (storyImage && about.about_img1) {
-//     storyImage.src = about.about_img1;
-//   }
-
-  // Mission, Vision, Values
-  const mvvCards = document.querySelectorAll(".mvv-card");
-  if (mvvCards.length >= 3) {
-    mvvCards[0].querySelector("h3").textContent = "Our Mission";
-    mvvCards[0].querySelector("p").innerHTML = about.mission || "";
-    mvvCards[1].querySelector("h3").textContent = "Our Vision";
-    mvvCards[1].querySelector("p").innerHTML = about.vision || "";
-    mvvCards[2].querySelector("h3").textContent = "Our Values";
-    mvvCards[2].querySelector("p").innerHTML = about.core_values || "";
+  const missionCard = document.getElementById("mission-card");
+  if (missionCard) {
+    missionCard.querySelector("h3").textContent = "Our Mission";
+    missionCard.querySelector("p").innerHTML = about.mission || "";
+  }
+  const visionCard = document.getElementById("vision-card");
+  if (visionCard) {
+    visionCard.querySelector("h3").textContent = "Our Vision";
+    visionCard.querySelector("p").innerHTML = about.vision || "";
+  }
+  const valuesCard = document.getElementById("values-card");
+  if (valuesCard) {
+    valuesCard.querySelector("h3").textContent = "Our Values";
+    valuesCard.querySelector("p").innerHTML = about.core_values || "";
   }
 }
 
-
-
 document.addEventListener("DOMContentLoaded", () => {
+  setDynamicCompanyInfo();
   populateAboutUsPage();
 
-  // ...existing code below...
   const observerOptions = {
     threshold: 0.1,
     rootMargin: "0px 0px -50px 0px",

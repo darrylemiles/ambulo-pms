@@ -1,5 +1,6 @@
 import formatAddress from "../utils/formatAddress.js";
 import formatDate from "../utils/formatDate.js";
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
 let properties = [];
 let filteredProperties = [];
@@ -31,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
   populateAddressFilterDropdown(); 
   loadProperties(1, pageSize);
   setupEventListeners();
+  setDynamicInfo();
 
   const addressFilterDropdown = document.getElementById(
     "addressFilterDropdown"
@@ -54,6 +56,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
+async function setDynamicInfo() {
+  const company = await fetchCompanyDetails();
+  if (!company) return;
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon && company.icon_logo_url) {
+    favicon.href = company.icon_logo_url;
+  }
+
+  document.title = company.company_name
+    ? `Properties - ${company.company_name}`
+    : "Properties";
+}
+
 
 async function loadProperties(page = 1, limit = pageSize) {
   try {

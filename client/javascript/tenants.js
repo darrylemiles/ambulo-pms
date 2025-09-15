@@ -1,7 +1,7 @@
 import formatDate from "../utils/formatDate.js";
 import formatStatus from "../utils/formatStatus.js";
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js"
 
-// Global variables
 let tenants = [];
 let allTenants = [];
 let selectedTenants = new Set();
@@ -17,7 +17,6 @@ const USER_ROLES = window.AppConstants.USER_ROLES;
 // API Configuration
 const API_BASE_URL = "/api/v1";
 
-// Initialize the page
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, checking elements...");
 
@@ -100,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadTenants();
   updateSelectAllButton();
   setupEventListeners();
+  setDynamicInfo();
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -133,7 +133,20 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// Load tenants from backend
+async function setDynamicInfo() {
+  const company = await fetchCompanyDetails();
+  if (!company) return;
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon && company.icon_logo_url) {
+    favicon.href = company.icon_logo_url;
+  }
+
+  document.title = company.company_name
+    ? `Tenants - ${company.company_name}`
+    : "Tenants";
+}
+
 async function loadTenants(page = 1, filters = {}) {
   if (isLoading) return;
 
@@ -141,7 +154,6 @@ async function loadTenants(page = 1, filters = {}) {
     isLoading = true;
     showLoadingState();
 
-    // Add sort to filters if set
     if (currentSort) {
       filters.sort = currentSort;
     }
@@ -208,7 +220,6 @@ function renderTenants() {
   updateBulkActionsBar();
 }
 
-// Render grid view
 function renderGridView() {
   const container = document.getElementById("gridView");
 
@@ -219,7 +230,6 @@ function renderGridView() {
 
   const cardsHTML = tenants
     .map((tenant) => {
-      // Include suffix if present
       const suffix = tenant.suffix ? ` ${tenant.suffix}` : "";
       const fullName = `${tenant.first_name || ""} ${
         tenant.last_name || ""
@@ -304,7 +314,6 @@ function renderListView() {
 
   const rowsHTML = tenants
     .map((tenant) => {
-      // Include suffix if present
       const suffix = tenant.suffix ? ` ${tenant.suffix}` : "";
       const fullName = `${tenant.first_name || ""} ${
         tenant.last_name || ""
@@ -412,7 +421,6 @@ function updateBulkActionsBar() {
   }
 }
 
-// NEW: Clear all selections
 function clearSelection() {
   selectedTenants.clear();
   document.querySelectorAll(".tenant-card").forEach((card) => {
@@ -430,7 +438,6 @@ function clearSelection() {
   updateBulkActionsBar();
 }
 
-// NEW: Message selected tenants
 function messageSelected() {
   if (selectedTenants.size === 0) {
     alert("Please select tenants to message.");
@@ -528,7 +535,6 @@ function showEmptyState() {
   document.getElementById("listView").style.display = "none";
 }
 
-// View toggle function
 function toggleView(viewType) {
   const buttons = document.querySelectorAll(".view-btn");
   const gridView = document.getElementById("gridView");
@@ -538,7 +544,6 @@ function toggleView(viewType) {
   const targetBtn = document.querySelector(`[data-view="${viewType}"]`);
   if (targetBtn) targetBtn.classList.add("active");
 
-  // Update global view state
   currentView = viewType;
 
   if (viewType === "list") {
@@ -570,7 +575,6 @@ function setupEventListeners() {
     });
   }
 
-  // Status filter
   const statusFilter = document.getElementById("statusFilter");
   if (statusFilter) {
     statusFilter.addEventListener("change", searchTenants);
@@ -621,7 +625,6 @@ function setupListEventListeners() {
         e.target.type === "checkbox" ||
         e.target.closest(".action-btn")
       ) {
-        // Added closest check for icon clicks
         return;
       }
 
@@ -639,7 +642,6 @@ function setupGridEventListeners() {
   const tenantCards = document.querySelectorAll(".tenant-card");
   tenantCards.forEach((card) => {
     card.addEventListener("click", function (e) {
-      // Prevent selection if clicking an action button
       if (e.target.closest(".action-btn")) return;
       const tenantId = card.dataset.tenant;
       if (selectedTenants.has(tenantId)) {
@@ -652,7 +654,6 @@ function setupGridEventListeners() {
       updateSelectAllButton();
       updateBulkActionsBar();
     });
-    // Optional: keyboard accessibility
     card.addEventListener("keydown", function (e) {
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
@@ -684,7 +685,7 @@ function toggleSelectAll() {
 
   updateSelectAllButton();
   updateListSelectAll();
-  updateBulkActionsBar(); // Added this
+  updateBulkActionsBar();
 }
 
 function updateListSelectAll() {
@@ -741,14 +742,11 @@ function updateSelectAllButton() {
 }
 
 function selectAll() {
-  // Check current state
   const allSelected = selectedTenants.size === tenants.length;
 
   if (allSelected) {
-    // Deselect all
     clearSelection();
   } else {
-    // Select all
     selectedTenants.clear();
     tenants.forEach((tenant) => selectedTenants.add(tenant.user_id));
 
@@ -770,7 +768,6 @@ function selectAll() {
   }
 }
 
-// Render pagination (unchanged)
 function renderPagination() {
   const container = document.getElementById("pagination");
 
@@ -783,7 +780,6 @@ function renderPagination() {
 
   let paginationHTML = "";
 
-  // Previous button
   paginationHTML += `
     <button class="pagination-btn" ${
       currentPage === 1 ? "disabled" : ""
@@ -792,7 +788,6 @@ function renderPagination() {
     </button>
   `;
 
-  // Page numbers
   for (let i = 1; i <= totalPages; i++) {
     if (
       i === 1 ||
@@ -811,7 +806,6 @@ function renderPagination() {
     }
   }
 
-  // Next button
   paginationHTML += `
     <button class="pagination-btn" ${
       currentPage === totalPages ? "disabled" : ""
@@ -823,7 +817,6 @@ function renderPagination() {
   container.innerHTML = paginationHTML;
 }
 
-// Utility functions (unchanged)
 function getInitials(firstName, lastName) {
   const first = (firstName || "").charAt(0).toUpperCase();
   const last = (lastName || "").charAt(0).toUpperCase();
@@ -839,17 +832,14 @@ function goToPage(page) {
 function deleteTenant(tenantId) {
   if (confirm("Are you sure you want to delete this tenant?")) {
     console.log("Delete tenant:", tenantId);
-    // Implement delete functionality
   }
 }
 
 function openCreateAccountInline() {
   document.getElementById("createAccountInlineContainer").style.display =
     "block";
-  // Hide the controls row
   const controlsRow = document.querySelector(".controls-row");
   if (controlsRow) controlsRow.style.display = "none";
-  // Update breadcrumb for form
   const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
   if (breadcrumb) {
     breadcrumb.innerHTML = `
@@ -874,7 +864,6 @@ function openCreateAccountInline() {
   if (document.getElementById("listView"))
     document.getElementById("listView").style.display = "none";
 
-  // --- Always reset to first step and clear avatar preview ---
   currentStep = 1;
   updateStepDisplay();
   const profilePreview = document.querySelector(".profile-preview");
@@ -887,10 +876,8 @@ function openCreateAccountInline() {
 function closeCreateAccountInline() {
   document.getElementById("createAccountInlineContainer").style.display =
     "none";
-  // Show the controls row again
   const controlsRow = document.querySelector(".controls-row");
   if (controlsRow) controlsRow.style.display = "";
-  // Restore breadcrumb
   const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
   if (breadcrumb) {
     breadcrumb.innerHTML = `
@@ -905,13 +892,11 @@ function closeCreateAccountInline() {
     document.getElementById("pagination").style.display = "";
   if (document.getElementById("gridView"))
     document.getElementById("gridView").style.display = "";
-  // Optionally show emptyState if needed
 }
 
 function isCreateAccountFormDirty() {
   const form = document.getElementById("createAccountForm");
   if (!form) return false;
-  // Check if any input, textarea, or select has a value
   return Array.from(form.elements).some(
     (el) =>
       (el.tagName === "INPUT" ||
@@ -926,7 +911,6 @@ function isCreateAccountFormDirty() {
 }
 
 function updateStepDisplay() {
-  // Update step indicators
   for (let i = 1; i <= 3; i++) {
     const step = document.getElementById(`step${i}`);
     const connector = document.getElementById(`connector${i}`);
@@ -943,7 +927,6 @@ function updateStepDisplay() {
       if (connector) connector.className = "step-connector";
     }
 
-    // Show/hide form steps
     if (i === currentStep) {
       formStep.classList.add("active");
     } else {
@@ -951,7 +934,6 @@ function updateStepDisplay() {
     }
   }
 
-  // Update buttons
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const confirmBtn = document.getElementById("confirmBtn");
@@ -996,7 +978,6 @@ function validateCurrentStep() {
     }
   }
 
-  // Additional validation for step 3 (password confirmation)
   if (currentStep === 3) {
     const password = document.getElementById("defaultPassword").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
@@ -1019,7 +1000,6 @@ function validateCurrentStep() {
 
 function confirmAccount() {
   if (validateCurrentStep()) {
-    // Collect form data
     const formData = new FormData(document.getElementById("createAccountForm"));
     const accountData = {};
 
@@ -1027,13 +1007,11 @@ function confirmAccount() {
       accountData[key] = value;
     }
 
-    // Show success message
     alert("Tenant account created successfully!");
     console.log("New tenant data:", accountData);
 
-    // Close modal and reload tenants
     closeCreateAccountModal();
-    loadTenants(); // Reload to show new tenant
+    loadTenants(); 
   }
 }
 
@@ -1050,7 +1028,6 @@ function togglePassword(fieldId, toggleBtn) {
   }
 }
 
-// Avatar functions (unchanged)
 function handleAvatarError(imgElement, initials) {
   imgElement.style.display = "none";
   const avatarContainer = imgElement.parentElement;
@@ -1116,7 +1093,6 @@ function generateAvatarHTML(tenant, size = "normal") {
   `;
 }
 
-// --- Real-time Inline Validation ---
 function validateName(input) {
   if (!input.value.trim()) {
     showError(input, "This field is required.");
@@ -1318,7 +1294,6 @@ function setupCreateAccountInlineForm() {
     }
   }
 
-  // --- Profile Picture Preview ---
   const profileUpload = document.getElementById("profileUpload");
   if (profileUpload) {
     profileUpload.addEventListener("change", function (e) {
@@ -1334,7 +1309,6 @@ function setupCreateAccountInlineForm() {
     });
   }
 
-  // --- Birthdate Min/Max ---
   const birthDate = document.getElementById("birthDate");
   if (birthDate) {
     const today = new Date();
@@ -1348,7 +1322,6 @@ function setupCreateAccountInlineForm() {
     birthDate.min = `${minYear}-01-01`;
   }
 
-  // --- Password Generation ---
   const genBtn = document.getElementById("generatePasswordBtn");
   if (genBtn) {
     genBtn.addEventListener("click", function () {
@@ -1362,12 +1335,10 @@ function setupCreateAccountInlineForm() {
     const pwd = generatePassword();
     form.defaultPassword.value = pwd;
     form.confirmPassword.value = pwd;
-    // Trigger validation after setting values
     form.defaultPassword.dispatchEvent(new Event("input"));
     form.confirmPassword.dispatchEvent(new Event("input"));
   });
 
-  // --- Cancel/Reset ---
   const cancelBtn = document.getElementById("cancelBtn");
   if (cancelBtn) {
     cancelBtn.addEventListener("click", function (e) {
@@ -1409,7 +1380,6 @@ function setupCreateAccountInlineForm() {
   if (form.zipCode) form.zipCode.addEventListener("input", filterNumberInput);
   if (form.mobileNumber)
     form.mobileNumber.addEventListener("input", function (e) {
-      // Allow + and numbers only
       e.target.value = e.target.value.replace(/[^0-9\+]/g, "");
     });
   if (form.altMobileNumber)
@@ -1449,7 +1419,6 @@ function setupCreateAccountInlineForm() {
     });
   }
 
-  // --- Submit Handler ---
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -1460,7 +1429,6 @@ function setupCreateAccountInlineForm() {
       createBtn.innerHTML = `<span class="spinner"></span>Creating...`;
     }
 
-    // Validate all fields before submit
     let valid =
       validateName(form.firstName) &
       validateName(form.lastName) &
@@ -1474,7 +1442,6 @@ function setupCreateAccountInlineForm() {
       return;
     }
 
-    // --- Build address object ---
     const address = {
       house_no: form.houseNo ? form.houseNo.value : "",
       street_address: form.street ? form.street.value : "",
@@ -1484,7 +1451,6 @@ function setupCreateAccountInlineForm() {
       country: form.country ? form.country.value : "",
     };
 
-    // --- Build emergency contacts array (single contact for now) ---
     const emergency_contacts = [];
     if (
       (form.emergencyName && form.emergencyName.value) ||
@@ -1500,7 +1466,6 @@ function setupCreateAccountInlineForm() {
       });
     }
 
-    // --- Prepare FormData with correct backend keys ---
     const formData = new FormData();
 
     formData.append("first_name", form.firstName.value);
@@ -1524,7 +1489,6 @@ function setupCreateAccountInlineForm() {
     formData.append("address", JSON.stringify(address));
     formData.append("emergency_contacts", JSON.stringify(emergency_contacts));
 
-    // --- Files ---
     if (profileUpload && profileUpload.files.length > 0) {
       formData.append("avatar", profileUpload.files[0]);
     }
@@ -1573,7 +1537,7 @@ function setupCreateAccountInlineForm() {
       showTenantSnackbar(
         "An error occurred while creating the tenant.",
         "error"
-      ); // <-- Show error snackbar
+      );
       console.error(err);
       if (createBtn) {
         createBtn.classList.remove("btn-loading");
@@ -1602,12 +1566,11 @@ function generatePassword(length = 12) {
     pwd.push(all[Math.floor(Math.random() * all.length)]);
   }
 
-  // Shuffle the password
   pwd = pwd.sort(() => Math.random() - 0.5);
 
   return pwd.join("");
 }
-// Auto-save functions (keeping your existing code)
+
 function autoSaveFormData() {
   const form = document.getElementById("createAccountForm");
   if (!form) return;
@@ -1652,7 +1615,6 @@ function clearSavedFormData() {
 }
 
 function showTenantSnackbar(message, type = "success") {
-  // Remove any existing snackbar
   const existing = document.getElementById("tenantSnackbar");
   if (existing) existing.remove();
 
@@ -1745,7 +1707,6 @@ function attachTenantsBreadcrumbHandler() {
  * @param {string} tenantId
  */
 async function openTenantDetailsInlineForm(tenantId) {
-  // Hide main views and controls
   document.getElementById("gridView").style.display = "none";
   document.getElementById("listView").style.display = "none";
   const controlsRow = document.querySelector(".controls-row");
@@ -1757,11 +1718,9 @@ async function openTenantDetailsInlineForm(tenantId) {
   const emptyState = document.getElementById("emptyState");
   if (emptyState) emptyState.style.display = "none";
 
-  // Show the inline form
   const formContainer = document.getElementById("tenantDetailsInlineForm");
   if (formContainer) formContainer.style.display = "block";
 
-  // Update breadcrumb
   const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
   if (breadcrumb) {
     breadcrumb.innerHTML = `
@@ -1776,7 +1735,6 @@ async function openTenantDetailsInlineForm(tenantId) {
     attachTenantsBreadcrumbHandler();
   }
 
-  // --- Fetch full tenant details from backend ---
   try {
     const response = await fetch(`/api/v1/users/${tenantId}`, {
       method: "GET",
@@ -1811,11 +1769,9 @@ function renderTenantIdFiles(files, editable = false) {
   if (!container) return;
   container.innerHTML = "";
 
-  // Start the list wrapper
   const listDiv = document.createElement("div");
   listDiv.className = "tenant-id-files-list";
 
-  // Render existing files with remove button if editable
   files.forEach((file, idx) => {
     const ext = file.id_url.split(".").pop().toLowerCase();
     const fileName = file.id_url.split("/").pop();
@@ -1842,7 +1798,6 @@ function renderTenantIdFiles(files, editable = false) {
       `;
     }
 
-    // Add remove button if editable
     if (editable) {
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
@@ -1864,7 +1819,6 @@ function renderTenantIdFiles(files, editable = false) {
     listDiv.appendChild(fileThumb);
   });
 
-  // Add upload thumbnail if editable
   if (editable) {
     const uploadThumb = document.createElement("div");
     uploadThumb.className = "tenant-id-file-thumb";
@@ -1879,7 +1833,6 @@ function renderTenantIdFiles(files, editable = false) {
       <input type="file" id="editTenantIdFileInput" accept="image/*,application/pdf" style="display:none" multiple>
     </label>
   `;
-    // Handle file input
     uploadThumb.querySelector("input").addEventListener("change", function (e) {
       const newFiles = Array.from(e.target.files);
       newFiles.forEach((file) => {
@@ -1893,8 +1846,8 @@ function renderTenantIdFiles(files, editable = false) {
         files.push({
           id_url,
           name: file.name,
-          _file: file, // keep the File object for upload on save
-          _isNew: true, // mark as new for preview
+          _file: file, 
+          _isNew: true, 
         });
       });
       renderTenantIdFiles(files, true);
@@ -1909,10 +1862,9 @@ function renderEditAvatarPreview(avatarUrl, firstName, lastName) {
   const preview = document.getElementById("editAvatarPreview");
   if (!preview) return;
 
-  preview.innerHTML = ""; // Clear previous content
+  preview.innerHTML = ""; 
 
   if (avatarUrl && avatarUrl.trim() !== "") {
-    // Show the avatar image directly
     const img = document.createElement("img");
     img.src = avatarUrl;
     img.alt = "Avatar";
@@ -1929,7 +1881,6 @@ function renderEditAvatarPreview(avatarUrl, firstName, lastName) {
     };
     preview.appendChild(img);
   } else {
-    // Show the Add Photo overlay
     preview.innerHTML = `
       <div class="profile-preview-content">
         <i class="fas fa-user-plus"></i>
@@ -1939,7 +1890,6 @@ function renderEditAvatarPreview(avatarUrl, firstName, lastName) {
   }
 }
 
-// Helper to populate the form with full tenant data
 function populateEditTenantFormWithFullData(tenant) {
   document.querySelector('[data-field="firstName"]').textContent =
     tenant.first_name || "";
@@ -1982,7 +1932,6 @@ function populateEditTenantFormWithFullData(tenant) {
   document.querySelector('[data-field="role"]').textContent =
     tenant.role || USER_ROLES.TENANT;
 
-  // Set header
   renderEditAvatarPreview(tenant.avatar, tenant.first_name, tenant.last_name);
   document.getElementById("tenantNameDisplay").textContent =
     `${tenant.first_name || ""} ${tenant.last_name || ""}`.trim() ||
@@ -1990,7 +1939,6 @@ function populateEditTenantFormWithFullData(tenant) {
   document.getElementById("tenantEmailDisplay").textContent =
     tenant.email || "";
 
-  // Set input fields (for edit mode)
   const form = document.getElementById("editTenantForm");
   if (!form) return;
   form.setAttribute("data-tenant-id", tenant.user_id || "");
@@ -2031,7 +1979,6 @@ function setTenantDetailsEditMode(editable) {
     el.disabled = !editable;
   });
 
-  // --- Avatar upload ---
   const avatarUploadWrapper = document.getElementById(
     "editAvatarUploadWrapper"
   );
@@ -2108,24 +2055,18 @@ function toggleEditTenantForm(editable) {
  * Handler for Delete button in details view.
  */
 function deleteTenantFromDetails() {
-  // You can call your deleteTenant logic here, e.g.:
   const email = document.getElementById("tenantEmailDisplay").textContent;
   if (confirm(`Are you sure you want to delete this tenant (${email})?`)) {
-    // Find tenantId by email (or store tenantId in a variable)
     const tenant = tenants.find((t) => t.email === email);
     if (tenant) deleteTenant(tenant.user_id);
   }
 }
 
-/**
- * Hide the inline tenant details form and restore main UI.
- */
+
 function closeTenantDetailsInlineForm() {
-  // Hide the inline form
   const formContainer = document.getElementById("tenantDetailsInlineForm");
   if (formContainer) formContainer.style.display = "none";
 
-  // Show main views and controls
   if (currentView === "grid") {
     document.getElementById("gridView").style.display = "grid";
     document.getElementById("listView").style.display = "none";
@@ -2139,9 +2080,7 @@ function closeTenantDetailsInlineForm() {
   if (bulkActionsBar) bulkActionsBar.style.display = "";
   const pagination = document.getElementById("pagination");
   if (pagination) pagination.style.display = "";
-  // Optionally show empty state if needed
 
-  // Restore breadcrumb
   const breadcrumb = document.getElementById("tenantsBreadcrumbNav");
   if (breadcrumb) {
     breadcrumb.innerHTML = `
@@ -2176,7 +2115,6 @@ async function handleEditTenantFormSubmit(e) {
   formData.set("alt_phone_number", form.altPhoneNumber.value);
   formData.set("status", form.status.value);
 
-  // --- Address ---
   const address = {
     house_no: form.houseNo.value,
     street_address: form.street.value,
@@ -2187,7 +2125,6 @@ async function handleEditTenantFormSubmit(e) {
   };
   formData.set("address", JSON.stringify(address));
 
-  // --- Emergency contacts ---
   const emergency_contacts = [
     {
       contact_name: form.emergencyName.value,
@@ -2197,27 +2134,22 @@ async function handleEditTenantFormSubmit(e) {
   ];
   formData.set("emergency_contacts", JSON.stringify(emergency_contacts));
 
-  // --- Avatar: Only send if changed ---
   const avatarInput = document.getElementById("editAvatarUpload");
   if (avatarInput && avatarInput.files && avatarInput.files.length > 0) {
     formData.set("avatar", avatarInput.files[0]);
   }
-  // If not changed, do NOT set "avatar" at all
 
-  // --- Tenant ID Files: Always send all (existing + new) ---
   let tenantIdFiles = [];
   if (window.currentTenantFiles && window.currentTenantFiles.length > 0) {
-    // Existing files (no _file property)
     tenantIdFiles = window.currentTenantFiles
       .filter((f) => f.id_url && !f._file)
       .map((f) => ({ id_url: f.id_url }));
 
-    // New files (with _file property)
     window.currentTenantFiles
       .filter((f) => f._file)
       .forEach((f) => {
         formData.append("tenant_id_file", f._file);
-        tenantIdFiles.push({ id_url: f.id_url }); // id_url is a blob URL, but backend will replace with real URL after upload
+        tenantIdFiles.push({ id_url: f.id_url });
       });
   }
   formData.set("tenant_id_files", JSON.stringify(tenantIdFiles));
@@ -2281,13 +2213,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const editForm = document.getElementById("editTenantForm");
     if (!editForm) return false;
 
-    // Only validate fields that are visible and enabled
     const visibleFields = Array.from(
       editForm.querySelectorAll("input, select")
     ).filter(
       (el) =>
-        el.offsetParent !== null && // visible
-        !el.disabled // enabled
+        el.offsetParent !== null &&
+        !el.disabled 
     );
 
     visibleFields.forEach((field) => {
@@ -2320,7 +2251,6 @@ document.addEventListener("DOMContentLoaded", function () {
           if (!validateProvince(field)) allValid = false;
           break;
         case "zipCode":
-          // Only validate if required or not empty
           if (field.required || field.value.trim() !== "") {
             if (!validateZipCode(field)) allValid = false;
           } else {
@@ -2336,8 +2266,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (saveBtn) saveBtn.disabled = !allValid;
     return allValid;
   }
-
-  // Attach validation events using existing functions
+  
   if (editForm.firstName)
     editForm.firstName.addEventListener("input", function () {
       validateName(editForm.firstName);

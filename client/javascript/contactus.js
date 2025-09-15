@@ -198,9 +198,8 @@ validationStyle.textContent = `
 document.head.appendChild(validationStyle);
 
 async function setDynamicContactInfo() {
-  const data = await fetchCompanyDetails();
-  if (!data || !data[0]) return;
-  const company = data[0];
+  const company = await fetchCompanyDetails();
+  if (!company) return;
 
   const phoneBoxes = document.querySelectorAll(
     ".contact-item-box .contact-item-content h4"
@@ -232,7 +231,7 @@ async function setDynamicContactInfo() {
       if (icon) icon.innerHTML = `<i class="fa-solid fa-envelope"></i>`;
       const pList = h4.parentElement.querySelectorAll("p");
       if (pList[0]) pList[0].innerHTML = `<strong>${company.email || ""}</strong>`;
-      if (pList[1]) pList[1].innerHTML = `<span;">We respond within 24 hours</span>`;
+      if (pList[1]) pList[1].innerHTML = `<span>We respond within 24 hours</span>`;
       h4.style.marginBottom = "0.25em";
       if (pList[0]) pList[0].style.marginTop = "0.25em";
       if (pList[1]) pList[1].style.marginTop = "0.1em";

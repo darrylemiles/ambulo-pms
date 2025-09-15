@@ -10,11 +10,9 @@ fetch("/components/footer.html")
   .catch((error) => {
     console.error("Error loading footer:", error);
   });
-
 async function setDynamicFooterContent() {
-  const data = await fetchCompanyDetails();
-  if (!data || !data[0]) return;
-  const company = data[0];
+  const company = await fetchCompanyDetails();
+  if (!company) return;
 
   const nameEl = document.getElementById("ft-dynamic-company-name");
   if (nameEl) nameEl.textContent = company.company_name || "Ambulo Properties";

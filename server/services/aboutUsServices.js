@@ -18,7 +18,6 @@ const createAboutUs = async (aboutUsData = {}) => {
     } = aboutUsData || {};
 
     try {
-        // Remove undefined fields
         const newAboutUs = {
             story_section_title,
             story_content,
