@@ -4,7 +4,7 @@ import leaseDefaultsServices from "../services/leaseDefaultsServices.js";
 const getLeaseDefaults = expressAsync(async (req, res) => {
   try {
     const defaults = await leaseDefaultsServices.getLeaseDefaults();
-    res.status(200).json(defaults);
+    res.status(200).json({defaults});
   } catch (error) {
     console.error("Error getting lease defaults:", error);
     res.status(400).json({ message: error.message || "Failed to get lease defaults" });
