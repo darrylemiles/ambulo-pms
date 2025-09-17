@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setDynamicInfo();
 });
 
-//#region Dropdown population
+//#region Populate Fields
 
 async function populateTenantDropdown() {
   const tenantSelect = document.getElementById("tenantId");
@@ -74,18 +74,131 @@ async function populatePropertyDropdown() {
     console.error("Failed to load properties:", error);
   }
 }
+async function populateFinancialDefaults() {
+  try {
+    const res = await fetch("/api/v1/lease-defaults");
+    const data = await res.json();
+    const defaults = data.defaults || {};
+
+    const setDefault = (id, value) => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = value;
+    };
+
+    setDefault("paymentFrequency", defaults.payment_frequency || "Monthly");
+    setDefault("quarterlyTax", defaults.quarterly_tax_percentage || "");
+    setDefault("securityDeposit", defaults.security_deposit_months || "");
+    setDefault("advancePayment", defaults.advance_payment_months || "");
+    setDefault("lateFee", defaults.late_fee_percentage || "");
+    setDefault("gracePeriod", defaults.grace_period_days || "");
+
+    setDefault("autoTerminationMonths", defaults.auto_termination_after_months || "");
+    setDefault("terminationTriggerDays", defaults.termination_trigger_days || "");
+    setDefault("noticeCancelDays", defaults.notice_before_cancel_days || "");
+    setDefault("noticeRenewalDays", defaults.notice_before_renewal_days || "");
+    setDefault("rentIncreaseRenewal", defaults.rent_increase_on_renewal || "");
+    document.getElementById("isSecurityRefundable").checked = defaults.is_security_deposit_refundable === "1";
+    document.getElementById("advanceForfeited").checked = defaults.advance_payment_forfeited_on_cancel === "1";
+  } catch (error) {
+    console.error("Failed to load lease defaults:", error);
+  }
+}
+
+document.getElementById("keepDefaultsFinancial").addEventListener("change", function () {
+    const disabled = this.checked;
+    const fields = [
+        "paymentFrequency",
+        "quarterlyTax",
+        "securityDeposit",
+        "advancePayment",
+        "lateFee",
+        "gracePeriod"
+    ];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+});
+
+function setFinancialFieldsDisabled() {
+    const disabled = document.getElementById("keepDefaultsFinancial").checked;
+    ["paymentFrequency","quarterlyTax","securityDeposit","advancePayment","lateFee","gracePeriod"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+}
+
+document.getElementById("keepDefaultsRules").addEventListener("change", function () {
+    const disabled = this.checked;
+    const fields = [
+        "isSecurityRefundable",
+        "advanceForfeited",
+        "autoTerminationMonths",
+        "terminationTriggerDays",
+        "noticeCancelDays",
+        "noticeRenewalDays",
+        "rentIncreaseRenewal"
+    ];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+});
+
+function setRulesFieldsDisabled() {
+    const disabled = document.getElementById("keepDefaultsRules").checked;
+    [
+        "isSecurityRefundable",
+        "advanceForfeited",
+        "autoTerminationMonths",
+        "terminationTriggerDays",
+        "noticeCancelDays",
+        "noticeRenewalDays",
+        "rentIncreaseRenewal"
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+}
+document.addEventListener("DOMContentLoaded", setRulesFieldsDisabled);
+document.addEventListener("DOMContentLoaded", setFinancialFieldsDisabled);
+
 //#endregion
 
-// Lease Data Manager
-
-// Navigation Functions
 function showListView() {
   document.getElementById("listView").classList.remove("hidden");
   document.getElementById("formView").classList.add("hidden");
   document.getElementById("detailView").classList.add("hidden");
   loadLeaseTable();
 }
-
 
 function showCreateView() {
   document.getElementById("listView").classList.add("hidden");
@@ -95,6 +208,7 @@ function showCreateView() {
   clearErrors();
   populateTenantDropdown();
   populatePropertyDropdown();
+  populateFinancialDefaults();
 }
 
 function showAccordionSection(sectionId) {
@@ -727,38 +841,73 @@ function confirmDelete() {
   hideDeleteModal();
 }
 
-// File Upload Functions
+//#region File Upload
+let uploadedFiles = [];
+
 function handleFileUpload() {
   document.getElementById("fileInput").click();
 }
 
 function handleFileSelection(event) {
   const files = Array.from(event.target.files);
-  files.forEach((file) => {
+  if (files.length > 0) {
+    const file = files[0];
     if (file.size > 10 * 1024 * 1024) {
-      // 10MB limit
       showToast("File size should be less than 10MB", "error");
+      event.target.value = "";
       return;
     }
-
-    leaseManager.uploadedFiles.push({
-      name: file.name,
-      size: formatFileSize(file.size),
-      type: file.type,
-      uploadDate: new Date().toISOString(),
-    });
-  });
+    uploadedFiles = [file]; 
+  } else {
+    uploadedFiles = [];
+  }
 
   updateUploadedFilesList();
-  event.target.value = ""; // Reset input
+  event.target.value = "";
 }
 
 function updateUploadedFilesList() {
   const container = document.getElementById("uploadedFiles");
+  container.innerHTML = "";
+
+  if (!uploadedFiles.length) {
+    container.innerHTML = '<div style="color:#6b7280;font-size:13px;">No files uploaded.</div>';
+    return;
+  }
+
+  uploadedFiles.forEach((file, idx) => {
+    let preview = "";
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      preview = `<img src="${url}" alt="${file.name}" style="max-width:60px;max-height:60px;border-radius:6px;margin-right:10px;">`;
+    } else if (file.type === "application/pdf") {
+      preview = `<i class="fa-solid fa-file-pdf" style="font-size:32px;color:#e53e3e;margin-right:10px;"></i>`;
+    } else if (
+      file.type === "application/msword" ||
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      preview = `<i class="fa-solid fa-file-word" style="font-size:32px;color:#2563eb;margin-right:10px;"></i>`;
+    } else {
+      preview = `<i class="fa-solid fa-file" style="font-size:32px;color:#6b7280;margin-right:10px;"></i>`;
+    }
+
+    container.innerHTML += `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        ${preview}
+        <div style="flex:1;">
+          <div style="font-weight:500;">${file.name}</div>
+          <div style="font-size:12px;color:#6b7280;">${formatFileSize(file.size)}</div>
+        </div>
+        <button class="action-btn" style="color:#ef4444;" onclick="removeFile(${idx})" title="Remove">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    `;
+  });
 }
 
 function removeFile(index) {
-  leaseManager.uploadedFiles.splice(index, 1);
+  uploadedFiles = [];
   updateUploadedFilesList();
 }
 
@@ -770,7 +919,8 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-// Toast Notification
+//#endregion
+
 function showToast(message, type = "success") {
   const toast = document.getElementById("toast");
   const title = document.getElementById("toastTitle");

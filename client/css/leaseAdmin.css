@@ -1456,7 +1456,7 @@ li.breadcrumb-item:hover {
 
 .btn-primary,
 .btn-secondary {
-  min-width: 120px;
+  min-width: 90px;
   font-size: 15px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
@@ -1490,4 +1490,11 @@ li.breadcrumb-item:hover {
   opacity: 1;
   overflow: visible;
   transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
+}
+
+.field-disabled {
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+    cursor: not-allowed;
+    opacity: 1;
 }
