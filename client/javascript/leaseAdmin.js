@@ -21,6 +21,63 @@ document.addEventListener("DOMContentLoaded", () => {
   setDynamicInfo();
 });
 
+//#region Dropdown population
+
+async function populateTenantDropdown() {
+  const tenantSelect = document.getElementById("tenantId");
+  tenantSelect.innerHTML = '<option value="">Select a tenant</option>';
+
+  try {
+    const res = await fetch("/api/v1/users?role=TENANT");
+    const data = await res.json();
+    const tenants = data.users || [];
+
+    tenants.forEach(user => {
+      const option = document.createElement("option");
+      option.value = user.user_id;
+      option.textContent = `${user.first_name} ${user.last_name} (${user.email})`;
+      tenantSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Failed to load tenants:", error);
+  }
+}
+
+async function populatePropertyDropdown() {
+  const propertySelect = document.getElementById("propertyId");
+  propertySelect.innerHTML = '<option value="">Select a property</option>';
+
+  try {
+    const res = await fetch("/api/v1/properties?status=Available&limit=1000");
+    const data = await res.json();
+    let properties = data.properties || [];
+
+    const leaseRes = await fetch("/api/v1/leases");
+    const leaseData = await leaseRes.json();
+    const leases = leaseData.leases || [];
+
+    const leasedPropertyIds = leases
+      .filter(lease => ["ACTIVE", "PENDING"].includes(lease.lease_status))
+      .map(lease => lease.property_id);
+
+    properties = properties.filter(
+      prop => !leasedPropertyIds.includes(prop.property_id)
+    );
+
+    properties.forEach(prop => {
+      const option = document.createElement("option");
+      option.value = prop.property_id;
+      option.textContent = `${prop.property_name} - ${prop.city || prop.building_name || ""}`;
+      propertySelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Failed to load properties:", error);
+  }
+}
+//#endregion
+
+// Lease Data Manager
+
 // Navigation Functions
 function showListView() {
   document.getElementById("listView").classList.remove("hidden");
@@ -29,12 +86,15 @@ function showListView() {
   loadLeaseTable();
 }
 
+
 function showCreateView() {
   document.getElementById("listView").classList.add("hidden");
   document.getElementById("formView").classList.remove("hidden");
   document.getElementById("detailView").classList.add("hidden");
   clearForm();
   clearErrors();
+  populateTenantDropdown();
+  populatePropertyDropdown();
 }
 
 function showAccordionSection(sectionId) {
@@ -435,13 +495,13 @@ function showCancelModal() {
   const modal = document.getElementById("cancelModal");
   const message = document.getElementById("cancelModalMessage");
 
-  if (leaseManager.editMode) {
-    message.textContent =
-      "Are you sure you want to cancel editing this lease? Any unsaved changes will be lost.";
-  } else {
-    message.textContent =
-      "Are you sure you want to cancel creating this lease? Any entered data will be lost.";
-  }
+  // if (leaseManager.editMode) {
+  //   message.textContent =
+  //     "Are you sure you want to cancel editing this lease? Any unsaved changes will be lost.";
+  // } else {
+  //   message.textContent =
+  //     "Are you sure you want to cancel creating this lease? Any entered data will be lost.";
+  // }
 
   modal.classList.add("show");
 }
@@ -727,7 +787,6 @@ function showToast(message, type = "success") {
   }, 4000);
 }
 
-// Quick Actions (placeholders for demo)
 function generateContract() {
   showToast("Contract generation feature coming soon!");
 }
