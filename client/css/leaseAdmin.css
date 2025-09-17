@@ -15,29 +15,27 @@ body {
 /* Main Content - Maximized responsive layout */
 .main-content {
     flex: 1;
-    padding: 16px 12px 16px 20px; /* Reduced right padding */
+    padding: 16px 12px 16px 20px; 
     overflow-y: auto;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin: 80px 12px 24px 280px; /* Reduced right margin significantly */
-    width: calc(100vw - 292px); /* Adjusted width calculation */
+    margin: 80px 12px 24px 280px; 
+    width: calc(100vw - 292px); 
     min-height: calc(100vh - 80px);
 }
 
-/* When sidebar is collapsed */
 body:has(.sidebar.collapsed) .main-content,
 .sidebar.collapsed ~ .main-content {
     margin-left: 104px;
-    width: calc(100vw - 116px); /* Maximized width when collapsed */
+    width: calc(100vw - 116px);
 }
 
-/* Main White Card Wrapper - Full width utilization */
 .main-card-wrapper {
     background: white;
     border-radius: 24px;
     box-shadow: 0 10px 10px rgba(0, 0, 0, 0.15), 0 10px 24px rgba(0, 0, 0, 0.08);
     max-width: 100%;
     width: 100%;
-    padding: 40px 32px 40px 40px; /* Reduced right padding */
+    padding: 40px 32px 40px 30px; 
     position: relative;
     overflow: hidden;
     min-height: calc(100vh - 20px);
@@ -69,9 +67,7 @@ body:has(.sidebar.collapsed) .main-content,
     align-items: center;
     margin-bottom: 32px;
     background: transparent;
-    padding: 24px 16px 24px 32px; /* Minimal right padding */
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
 }
 
 .header h1 {
@@ -122,6 +118,7 @@ body:has(.sidebar.collapsed) .main-content,
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    font-weight: 600;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -133,11 +130,14 @@ body:has(.sidebar.collapsed) .main-content,
     background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
     color: white;
     box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4);
+    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #374151 0%, #6b7280 100%);
+    color: #60a5fa; /* Use a bright blue for contrast */
     box-shadow: 0 8px 25px rgba(107, 114, 128, 0.6);
+    border: 1.5px solid #60a5fa;
 }
 
 .btn-success {
@@ -675,7 +675,7 @@ body:has(.sidebar.collapsed) .main-content,
 /* Large Desktop - 1400px and above */
 @media (min-width: 1400px) {
     .main-content {
-        margin: 80px 16px 24px 288px; /* Further reduced right margin */
+        margin: 80px 16px 24px 288px;
         width: calc(100vw - 304px);
     }
     
@@ -686,14 +686,14 @@ body:has(.sidebar.collapsed) .main-content,
     }
     
     .main-card-wrapper {
-        padding: 48px 36px 48px 48px; /* Reduced right padding */
+        padding: 30px 36px 48px 30px;
     }
 }
 
 /* Medium Desktop - 1200px to 1399px */
 @media (max-width: 1399px) {
     .main-content {
-        margin: 80px 16px 24px 288px; /* Reduced right margin */
+        margin: 80px 16px 24px 288px;
         width: calc(100vw - 304px);
     }
     
@@ -704,7 +704,7 @@ body:has(.sidebar.collapsed) .main-content,
     }
     
     .main-card-wrapper {
-        padding: 36px 28px 36px 36px; /* Reduced right padding */
+        padding: 25px 28px 36px 30px; 
     }
 }
 
@@ -723,7 +723,7 @@ body:has(.sidebar.collapsed) .main-content,
     }
     
     .main-card-wrapper {
-        padding: 32px 24px 32px 32px;
+        padding: 25px 24px 32px 30px;
         border-radius: 20px;
     }
     
@@ -763,7 +763,7 @@ body:has(.sidebar.collapsed) .main-content,
     }
     
     .main-card-wrapper {
-        padding: 28px 20px 28px 28px;
+        padding: 25px 20px 28px 25px;
         margin: 20px auto;
         border-radius: 18px;
         min-height: calc(100vh - 40px);
@@ -1272,4 +1272,8 @@ body:has(.sidebar.collapsed) .main-content,
     .tab-btn:hover {
         transform: none;
     }
+}
+
+li.breadcrumb-item:hover {
+    color: var(--primary-color);
 }

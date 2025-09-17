@@ -1567,17 +1567,17 @@ body.modal-open {
 
 /* Breadcrumb Styles */
 .breadcrumb-container {
-  padding: 0 20px 5px 20px; /* Reduced bottom padding from 20px to 5px */
+  padding: 0 20px 5px 0; 
   background: transparent;
 }
 
 .breadcrumb {
-  background: transparent; /* Removed the gradient background */
-  border-radius: 0; /* Removed border radius */
-  padding: 8px 0; /* Reduced padding and removed horizontal padding */
-  margin: 0 0 5px 0; /* Reduced bottom margin from 20px to 5px */
-  border: none; /* Removed border */
-  box-shadow: none; /* Removed box shadow */
+  background: transparent; 
+  border-radius: 0;
+  padding: 8px 0; 
+  margin: 0 0 5px 0; 
+  border: none;
+  box-shadow: none;
 }
 
 .breadcrumb-item {

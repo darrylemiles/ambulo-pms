@@ -218,7 +218,7 @@ function showCreateView() {
   document.getElementById("listView").classList.add("hidden");
   document.getElementById("formView").classList.remove("hidden");
   document.getElementById("detailView").classList.add("hidden");
-  document.getElementById("formTitle").textContent = "Create New Lease";
+  // document.getElementById("formTitle").textContent = "Create New Lease";
   leaseManager.editMode = false;
   clearForm();
   clearErrors();
@@ -697,7 +697,7 @@ function resetFormState() {
   leaseManager.uploadedFiles = [];
 
   // Reset form title
-  document.getElementById("formTitle").textContent = "Create New Lease";
+  // document.getElementById("formTitle").textContent = "Create New Lease";
 }
 
 // Detail View Functions
@@ -1014,3 +1014,27 @@ window.addEventListener("click", function (event) {
 
 // Initialize the application
 showListView();
+
+window.showCreateView = showCreateView;
+window.saveLease = saveLease;
+window.cancelForm = cancelForm;
+window.editCurrentLease = editCurrentLease;
+window.applyFilters = applyFilters;
+window.clearFilters = clearFilters;
+window.confirmCancel = confirmCancel;
+window.hideCancelModal = hideCancelModal;
+window.showDeleteModal = showDeleteModal;
+window.hideDeleteModal = hideDeleteModal; 
+window.confirmDelete = confirmDelete;
+window.handleFileUpload = handleFileUpload;
+window.removeFile = removeFile;
+window.generateContract = generateContract;
+window.sendReminder = sendReminder;
+window.terminateLease = terminateLease;
+window.viewPaymentHistory = viewPaymentHistory;
+window.viewAllActivity = viewAllActivity;
+window.downloadDocument = downloadDocument;
+window.uploadNewDocument = uploadNewDocument;
+window.showEditView = showEditView;
+window.showDetailView = showDetailView;
+window.showListView = showListView;
