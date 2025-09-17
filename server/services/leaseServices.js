@@ -115,25 +115,21 @@ const getAllLeases = async (queryObj = {}) => {
 
     const values = [];
 
-    // Status filter
     if (queryObj.status && queryObj.status !== "all") {
       query += ` AND l.lease_status = ?`;
       values.push(queryObj.status);
     }
 
-    // Property filter
     if (queryObj.property_id && queryObj.property_id !== "all") {
       query += ` AND l.property_id = ?`;
       values.push(queryObj.property_id);
     }
 
-    // Tenant/User filter
     if (queryObj.user_id && queryObj.user_id !== "all") {
       query += ` AND l.user_id = ?`;
       values.push(queryObj.user_id);
     }
 
-    // Search filter (tenant name or property name)
     if (queryObj.search) {
       query += ` AND (
         CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) LIKE ?
@@ -143,13 +139,11 @@ const getAllLeases = async (queryObj = {}) => {
       values.push(searchTerm, searchTerm);
     }
 
-    // Date filter (lease active on date)
     if (queryObj.date) {
       query += ` AND (l.lease_start_date <= ? AND l.lease_end_date >= ?)`;
       values.push(queryObj.date, queryObj.date);
     }
 
-    // Rent filters
     if (queryObj.min_rent) {
       query += ` AND l.monthly_rent >= ?`;
       values.push(parseFloat(queryObj.min_rent));
@@ -161,7 +155,6 @@ const getAllLeases = async (queryObj = {}) => {
 
     query += ` ORDER BY l.created_at DESC`;
 
-    // Pagination
     const page = parseInt(queryObj.page) > 0 ? parseInt(queryObj.page) : 1;
     const limit = parseInt(queryObj.limit) > 0 ? parseInt(queryObj.limit) : 10;
     const offset = (page - 1) * limit;
@@ -171,7 +164,6 @@ const getAllLeases = async (queryObj = {}) => {
 
     const [rows] = await pool.query(query, values);
 
-    // Count query for pagination
     let countQuery = `
       SELECT COUNT(DISTINCT l.lease_id) as total
       FROM leases l
