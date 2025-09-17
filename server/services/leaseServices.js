@@ -227,12 +227,21 @@ const getAllLeases = async (queryObj = {}) => {
     throw new Error(error.message || "Failed to get leases");
   }
 };
-
 const getSingleLeaseById = async (leaseId) => {
   try {
-    const [rows] = await pool.query(`SELECT * FROM leases WHERE lease_id = ?`, [
-      leaseId,
-    ]);
+    const [rows] = await pool.query(`
+      SELECT 
+        l.*,
+        CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) AS tenant_name,
+        u.user_id,
+        p.property_name,
+        p.property_id
+      FROM leases l
+      LEFT JOIN users u ON l.user_id = u.user_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE l.lease_id = ?
+      LIMIT 1
+    `, [leaseId]);
     if (rows.length === 0) throw new Error("Lease not found");
     const lease = rows[0];
 
