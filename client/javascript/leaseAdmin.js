@@ -33,11 +33,17 @@ function showCreateView() {
   document.getElementById("listView").classList.add("hidden");
   document.getElementById("formView").classList.remove("hidden");
   document.getElementById("detailView").classList.add("hidden");
-  // document.getElementById("formTitle").textContent = "Create New Lease";
-  leaseManager.editMode = false;
   clearForm();
   clearErrors();
-  showTab("details");
+}
+
+function showAccordionSection(sectionId) {
+  document.querySelectorAll('#leaseFormAccordion .accordion-collapse').forEach(el => {
+    el.classList.remove('show');
+  });
+
+  const section = document.getElementById(sectionId);
+  if (section) section.classList.add('show');
 }
 
 function showEditView(leaseId) {
@@ -51,46 +57,15 @@ function showEditView(leaseId) {
   document.getElementById("formView").classList.remove("hidden");
   document.getElementById("detailView").classList.add("hidden");
   document.getElementById("formTitle").textContent = "Edit Lease";
-  leaseManager.editMode = true;
-  leaseManager.currentLease = lease;
-  loadForm(lease);
+  // leaseManager.editMode = true;
+  // leaseManager.currentLease = lease;
+  // loadForm(lease);
   clearErrors();
   showTab("details");
 }
 
-// Tab Management
-function showTab(tabName) {
-  // Hide all tab contents
-  document.querySelectorAll(".tab-content").forEach((tab) => {
-    tab.classList.add("hidden");
-  });
-
-  // Remove active class from all tab buttons
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.classList.remove("active");
-  });
-
-  // Show selected tab content
-  document.getElementById(tabName + "Tab").classList.remove("hidden");
-
-  // Add active class to clicked tab button
-  document.querySelector(`[data-tab="${tabName}"]`).classList.add("active");
-}
-
-// Initialize tab event listeners
 document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const tabName = this.getAttribute("data-tab");
-      showTab(tabName);
-    });
-  });
-
-  // Set up file input handler
-  document
-    .getElementById("fileInput")
-    .addEventListener("change", handleFileSelection);
-
+  document.getElementById("fileInput").addEventListener("change", handleFileSelection);
   showListView();
 });
 
@@ -369,7 +344,6 @@ function clearForm() {
   document.getElementById("noticeRenewalDays").value = "";
   document.getElementById("rentIncreaseRenewal").value = "";
   document.getElementById("notes").value = "";
-  leaseManager.uploadedFiles = [];
   updateUploadedFilesList();
 }
 
@@ -521,9 +495,9 @@ function resetFormState() {
   clearForm();
   clearErrors();
 
-  leaseManager.editMode = false;
-  leaseManager.currentLease = null;
-  leaseManager.uploadedFiles = [];
+  // leaseManager.editMode = false;
+  // leaseManager.currentLease = null;
+  // leaseManager.uploadedFiles = [];
 
 }
 
@@ -721,25 +695,6 @@ function handleFileSelection(event) {
 
 function updateUploadedFilesList() {
   const container = document.getElementById("uploadedFiles");
-
-  if (leaseManager.uploadedFiles.length === 0) {
-    container.innerHTML = "";
-    return;
-  }
-
-  container.innerHTML = leaseManager.uploadedFiles
-    .map(
-      (file, index) => `
-                <div class="file-item">
-                    <div class="file-info">
-                        <span class="file-name">${file.name}</span>
-                        <span class="file-size">${file.size}</span>
-                    </div>
-                    <button class="action-btn action-delete" onclick="removeFile(${index})" title="Remove file">🗑️</button>
-                </div>
-            `
-    )
-    .join("");
 }
 
 function removeFile(index) {
@@ -842,3 +797,4 @@ window.uploadNewDocument = uploadNewDocument;
 window.showEditView = showEditView;
 window.showDetailView = showDetailView;
 window.showListView = showListView;
+window.showAccordionSection = showAccordionSection;
