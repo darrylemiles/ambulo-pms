@@ -40,20 +40,6 @@ function showCreateView() {
   showTab("details");
 }
 
-function showDetailView(leaseId) {
-  const lease = leaseManager.getLeaseById(leaseId);
-  if (!lease) {
-    showToast("Lease not found", "error");
-    return;
-  }
-
-  document.getElementById("listView").classList.add("hidden");
-  document.getElementById("formView").classList.add("hidden");
-  document.getElementById("detailView").classList.remove("hidden");
-  leaseManager.currentLease = lease;
-  loadDetailView(lease);
-}
-
 function showEditView(leaseId) {
   const lease = leaseManager.getLeaseById(leaseId);
   if (!lease) {
@@ -172,6 +158,13 @@ function clearErrors() {
 document.addEventListener("DOMContentLoaded", function () {
   loadLeaseTable();
 });
+
+async function fetchLeaseById(leaseId) {
+  const res = await fetch(`${API_BASE_URL}/${leaseId}`);
+  if (!res.ok) throw new Error("Failed to fetch lease details");
+  const data = await res.json();
+  return data.lease;
+}
 
 async function fetchLeases(filters = {}) {
   const params = [];
@@ -525,152 +518,138 @@ function checkForUnsavedChanges() {
 }
 
 function resetFormState() {
-  // Clear form data
   clearForm();
   clearErrors();
 
-  // Reset manager state
   leaseManager.editMode = false;
   leaseManager.currentLease = null;
   leaseManager.uploadedFiles = [];
 
-  // Reset form title
-  // document.getElementById("formTitle").textContent = "Create New Lease";
 }
 
-// Detail View Functions
-function loadDetailView(lease) {
-  document.getElementById("detailTitle").textContent = `Lease ${lease.id}`;
-  document.getElementById(
-    "detailSubtitle"
-  ).textContent = `${lease.tenantName} • ${lease.propertyName}`;
+async function showDetailView(leaseId) {
+  try {
+    const lease = await fetchLeaseById(leaseId);
+    if (!lease) {
+      showToast("Lease not found", "error");
+      return;
+    }
 
-  // Basic Info
+    document.getElementById("listView").classList.add("hidden");
+    document.getElementById("formView").classList.add("hidden");
+    document.getElementById("detailView").classList.remove("hidden");
+    loadDetailView(lease);
+  } catch (error) {
+    showToast("Failed to load lease details", "error");
+  }
+}
+
+function loadDetailView(lease) {
+  document.getElementById("detailTitle").textContent = `Lease ${lease.lease_id}`;
+  document.getElementById("detailSubtitle").textContent = `${lease.tenant_name} • ${lease.property_name}`;
+
   document.getElementById("basicInfo").innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">Lease ID</div>
-                    <div class="info-value">${lease.id}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Status</div>
-                    <div class="info-value">
-                        <span class="status-badge status-${lease.status.toLowerCase()}">${
-    lease.status
-  }</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Tenant</div>
-                    <div class="info-value">${lease.tenantName}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Property</div>
-                    <div class="info-value">${lease.propertyName}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Start Date</div>
-                    <div class="info-value">${formatDate(lease.startDate)}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">End Date</div>
-                    <div class="info-value">${formatDate(lease.endDate)}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Duration</div>
-                    <div class="info-value">${getDuration(
-                      lease.startDate,
-                      lease.endDate
-                    )}</div>
-                </div>
-            `;
+    <div class="info-item">
+      <div class="info-label">Lease ID</div>
+      <div class="info-value">${lease.lease_id}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Status</div>
+      <div class="info-value">
+        <span class="status-badge status-${lease.lease_status.toLowerCase()}">${lease.lease_status}</span>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Tenant</div>
+      <div class="info-value">${lease.tenant_name}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Property</div>
+      <div class="info-value">${lease.property_name}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Start Date</div>
+      <div class="info-value">${formatDate(lease.lease_start_date)}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">End Date</div>
+      <div class="info-value">${formatDate(lease.lease_end_date)}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Duration</div>
+      <div class="info-value">${getDuration(lease.lease_start_date, lease.lease_end_date)}</div>
+    </div>
+  `;
 
   // Financial Info
   document.getElementById("financialInfo").innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">Monthly Rent</div>
-                    <div class="info-value" style="font-size: 20px; font-weight: 700; color: #059669;">
-                        ₱${lease.monthlyRent.toLocaleString()}
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Payment Frequency</div>
-                    <div class="info-value">${lease.paymentFrequency}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Quarterly Tax</div>
-                    <div class="info-value">${lease.quarterlyTax}%</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Security Deposit</div>
-                    <div class="info-value">${
-                      lease.securityDeposit
-                    } month(s)</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Advance Payment</div>
-                    <div class="info-value">${
-                      lease.advancePayment
-                    } month(s)</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Late Fee</div>
-                    <div class="info-value">${lease.lateFee}%</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Grace Period</div>
-                    <div class="info-value">${lease.gracePeriod} days</div>
-                </div>
-            `;
+    <div class="info-item">
+      <div class="info-label">Monthly Rent</div>
+      <div class="info-value" style="font-size: 20px; font-weight: 700; color: #059669;">
+        ₱${Number(lease.monthly_rent).toLocaleString()}
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Payment Frequency</div>
+      <div class="info-value">${lease.payment_frequency}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Quarterly Tax</div>
+      <div class="info-value">${lease.quarterly_tax_percentage}%</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Security Deposit</div>
+      <div class="info-value">${lease.security_deposit_months} month(s)</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Advance Payment</div>
+      <div class="info-value">${lease.advance_payment_months} month(s)</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Late Fee</div>
+      <div class="info-value">${lease.late_fee_percentage}%</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Grace Period</div>
+      <div class="info-value">${lease.grace_period_days} days</div>
+    </div>
+  `;
 
   // Rules Info
   document.getElementById("rulesInfo").innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">Security Refundable</div>
-                    <div class="info-value">${
-                      lease.isSecurityRefundable ? "Yes" : "No"
-                    }</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Advance Forfeited</div>
-                    <div class="info-value">${
-                      lease.advanceForfeited ? "Yes" : "No"
-                    }</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Auto-Termination</div>
-                    <div class="info-value">${
-                      lease.autoTerminationMonths
-                    } month(s)</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Termination Trigger</div>
-                    <div class="info-value">${
-                      lease.terminationTriggerDays
-                    } days</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Cancel Notice</div>
-                    <div class="info-value">${lease.noticeCancelDays} days</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Renewal Notice</div>
-                    <div class="info-value">${
-                      lease.noticeRenewalDays
-                    } days</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Rent Increase</div>
-                    <div class="info-value">${lease.rentIncreaseRenewal}%</div>
-                </div>
-            `;
+    <div class="info-item">
+      <div class="info-label">Security Refundable</div>
+      <div class="info-value">${lease.is_security_deposit_refundable ? "Yes" : "No"}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Advance Forfeited</div>
+      <div class="info-value">${lease.advance_payment_forfeited_on_cancel ? "Yes" : "No"}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Auto-Termination</div>
+      <div class="info-value">${lease.auto_termination_after_months} month(s)</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Termination Trigger</div>
+      <div class="info-value">${lease.termination_trigger_days} days</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Cancel Notice</div>
+      <div class="info-value">${lease.notice_before_cancel_days} days</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Renewal Notice</div>
+      <div class="info-value">${lease.notice_before_renewal_days} days</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Rent Increase</div>
+      <div class="info-value">${lease.rent_increase_on_renewal}%</div>
+    </div>
+  `;
 
   // Update payment info in sidebar
-  document.getElementById("nextDueDate").textContent = getNextDueDate(
-    lease
-  ).replace(/<[^>]*>/g, "");
-  document.getElementById(
-    "amountDue"
-  ).textContent = `₱${lease.monthlyRent.toLocaleString()}`;
+  document.getElementById("nextDueDate").textContent = getNextDueDate(lease).replace(/<[^>]*>/g, "");
+  document.getElementById("amountDue").textContent = `₱${Number(lease.monthly_rent).toLocaleString()}`;
 
   // Show/hide notes card
   const notesCard = document.getElementById("notesCard");
