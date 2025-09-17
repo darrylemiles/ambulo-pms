@@ -57,14 +57,10 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Search Tenant</label>
-                                    <input type="text" class="form-input" id="filterTenant"
-                                        placeholder="Enter tenant name..." oninput="applyFilters()">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Search Property</label>
-                                    <input type="text" class="form-input" id="filterProperty"
-                                        placeholder="Enter property name..." oninput="applyFilters()">
+                                    <label class="form-label">Search</label>
+                                    <input type="text" class="form-input" id="filterSearch"
+                                        placeholder="Search tenant, property, etc..."
+                                        oninput="applyFilters()">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Date Filter</label>
@@ -81,7 +77,7 @@
                             <table class="table" id="leaseTable">
                                 <thead>
                                     <tr>
-                                        <th>Lease ID</th>
+                                        <th></th>
                                         <th>Tenant</th>
                                         <th>Property</th>
                                         <th>Lease Period</th>

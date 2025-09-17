@@ -1,4 +1,7 @@
+import formatDate from "../utils/formatDate.js";
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+
+const API_BASE_URL = "/api/v1/leases";
 
 async function setDynamicInfo() {
   const company = await fetchCompanyDetails();
@@ -17,194 +20,6 @@ async function setDynamicInfo() {
 document.addEventListener("DOMContentLoaded", () => {
   setDynamicInfo();
 });
-
-class LeaseManager {
-  constructor() {
-    this.leases = this.getInitialData();
-    this.currentLease = null;
-    this.editMode = false;
-    this.leaseIdCounter = Math.max(
-      ...this.leases.map((l) => parseInt(l.id.replace("LSE", ""))),
-      0
-    );
-    this.uploadedFiles = [];
-    this.tenantNames = {
-      1: "John Smith",
-      2: "Sarah Johnson",
-      3: "Mike Davis",
-      4: "Lisa Wilson",
-      5: "Robert Chen",
-    };
-    this.propertyNames = {
-      1: "Sunset Apartments - Unit 2A",
-      2: "Downtown Plaza - Office 301",
-      3: "Garden View Complex - Unit 1B",
-      4: "Ocean Breeze Tower - Unit 5C",
-      5: "City Center Mall - Shop 12",
-    };
-  }
-
-  getInitialData() {
-    return [
-      {
-        id: "LSE001",
-        tenantId: 1,
-        tenantName: "John Smith",
-        propertyId: 1,
-        propertyName: "Sunset Apartments - Unit 2A",
-        startDate: "2024-01-15",
-        endDate: "2024-12-15",
-        status: "ACTIVE",
-        monthlyRent: 25000,
-        paymentFrequency: "Monthly",
-        quarterlyTax: 5,
-        securityDeposit: 2,
-        advancePayment: 1,
-        lateFee: 10,
-        gracePeriod: 5,
-        isSecurityRefundable: true,
-        advanceForfeited: false,
-        autoTerminationMonths: 3,
-        terminationTriggerDays: 61,
-        noticeCancelDays: 30,
-        noticeRenewalDays: 60,
-        rentIncreaseRenewal: 5,
-        notes:
-          "Reliable tenant with excellent payment history. Property includes parking space.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "LSE002",
-        tenantId: 2,
-        tenantName: "Sarah Johnson",
-        propertyId: 2,
-        propertyName: "Downtown Plaza - Office 301",
-        startDate: "2023-06-01",
-        endDate: "2024-05-31",
-        status: "EXPIRED",
-        monthlyRent: 45000,
-        paymentFrequency: "Monthly",
-        quarterlyTax: 7,
-        securityDeposit: 3,
-        advancePayment: 2,
-        lateFee: 15,
-        gracePeriod: 7,
-        isSecurityRefundable: true,
-        advanceForfeited: true,
-        autoTerminationMonths: 2,
-        terminationTriggerDays: 61,
-        noticeCancelDays: 60,
-        noticeRenewalDays: 90,
-        rentIncreaseRenewal: 8,
-        notes:
-          "Commercial lease for small business. Needs renewal discussion for extension.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "LSE003",
-        tenantId: 3,
-        tenantName: "Mike Davis",
-        propertyId: 3,
-        propertyName: "Garden View Complex - Unit 1B",
-        startDate: "2024-03-01",
-        endDate: "2025-02-28",
-        status: "ACTIVE",
-        monthlyRent: 18000,
-        paymentFrequency: "Monthly",
-        quarterlyTax: 4,
-        securityDeposit: 2,
-        advancePayment: 1,
-        lateFee: 8,
-        gracePeriod: 3,
-        isSecurityRefundable: true,
-        advanceForfeited: false,
-        autoTerminationMonths: 3,
-        terminationTriggerDays: 61,
-        noticeCancelDays: 30,
-        noticeRenewalDays: 45,
-        rentIncreaseRenewal: 3,
-        notes:
-          "First-time renter, requires occasional follow-up on payment schedules.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-  }
-
-  getAllLeases() {
-    return [...this.leases];
-  }
-
-  getLeaseById(id) {
-    return this.leases.find((lease) => lease.id === id);
-  }
-
-  addLease(leaseData) {
-    this.leaseIdCounter++;
-    const newLease = {
-      ...leaseData,
-      id: `LSE${String(this.leaseIdCounter).padStart(3, "0")}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    this.leases.push(newLease);
-    return newLease;
-  }
-
-  updateLease(id, leaseData) {
-    const index = this.leases.findIndex((lease) => lease.id === id);
-    if (index !== -1) {
-      this.leases[index] = {
-        ...leaseData,
-        id,
-        createdAt: this.leases[index].createdAt,
-        updatedAt: new Date().toISOString(),
-      };
-      return this.leases[index];
-    }
-    return null;
-  }
-
-  deleteLease(id) {
-    const index = this.leases.findIndex((lease) => lease.id === id);
-    if (index !== -1) {
-      const deleted = this.leases.splice(index, 1)[0];
-      return deleted;
-    }
-    return null;
-  }
-
-  filterLeases(filters) {
-    return this.leases.filter((lease) => {
-      if (filters.status && lease.status !== filters.status) return false;
-      if (
-        filters.tenant &&
-        !lease.tenantName.toLowerCase().includes(filters.tenant.toLowerCase())
-      )
-        return false;
-      if (
-        filters.property &&
-        !lease.propertyName
-          .toLowerCase()
-          .includes(filters.property.toLowerCase())
-      )
-        return false;
-      if (filters.date) {
-        const filterDate = new Date(filters.date);
-        const startDate = new Date(lease.startDate);
-        const endDate = new Date(lease.endDate);
-        if (filterDate < startDate || filterDate > endDate) return false;
-      }
-      return true;
-    });
-  }
-}
-
-// Initialize the system
-const leaseManager = new LeaseManager();
-let deleteLeaseId = null;
 
 // Navigation Functions
 function showListView() {
@@ -293,7 +108,6 @@ document.addEventListener("DOMContentLoaded", function () {
   showListView();
 });
 
-// Form Validation
 function validateForm() {
   let isValid = true;
   clearErrors();
@@ -316,7 +130,6 @@ function validateForm() {
     }
   });
 
-  // Validate date range
   const startDate = new Date(document.getElementById("startDate").value);
   const endDate = new Date(document.getElementById("endDate").value);
 
@@ -354,106 +167,130 @@ function clearErrors() {
   });
 }
 
-// Data Loading and Display
-function loadLeaseTable() {
+//#region Lease - Home
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadLeaseTable();
+});
+
+async function fetchLeases(filters = {}) {
+  const params = [];
+  if (filters.status) params.push(`status=${encodeURIComponent(filters.status)}`);
+  if (filters.search) params.push(`search=${encodeURIComponent(filters.search)}`);
+  if (filters.date) params.push(`date=${encodeURIComponent(filters.date)}`);
+  if (filters.page) params.push(`page=${filters.page}`);
+  const url = `${API_BASE_URL}${params.length ? "?" + params.join("&") : ""}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch leases");
+  return await res.json();
+}
+
+async function loadLeaseTable() {
   const tableBody = document.getElementById("leaseTableBody");
   const emptyState = document.getElementById("emptyState");
-  const leases = getFilteredLeases();
 
-  tableBody.innerHTML = "";
-
-  if (leases.length === 0) {
-    emptyState.classList.remove("hidden");
-    return;
-  }
-
-  emptyState.classList.add("hidden");
-
-  leases.forEach((lease) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-                    <td>
-                        <strong style="color: #1f2937; font-weight: 700;">${
-                          lease.id
-                        }</strong>
-                    </td>
-                    <td>
-                        <div style="font-weight: 600; color: #111827;">${
-                          lease.tenantName
-                        }</div>
-                        <div style="font-size: 12px; color: #6b7280;">ID: ${
-                          lease.tenantId
-                        }</div>
-                    </td>
-                    <td>
-                        <div style="font-weight: 500; color: #111827;">${
-                          lease.propertyName
-                        }</div>
-                        <div style="font-size: 12px; color: #6b7280;">Property ID: ${
-                          lease.propertyId
-                        }</div>
-                    </td>
-                    <td>
-                        <div style="font-size: 13px; font-weight: 500;">${formatDate(
-                          lease.startDate
-                        )}</div>
-                        <div style="font-size: 12px; color: #6b7280;">to ${formatDate(
-                          lease.endDate
-                        )}</div>
-                        <div style="font-size: 11px; color: #9ca3af;">${getDuration(
-                          lease.startDate,
-                          lease.endDate
-                        )}</div>
-                    </td>
-                    <td>
-                        <span class="status-badge status-${lease.status.toLowerCase()}">${
-      lease.status
-    }</span>
-                    </td>
-                    <td>
-                        <div style="font-weight: 700; color: #059669; font-size: 16px;">₱${lease.monthlyRent.toLocaleString()}</div>
-                        <div style="font-size: 12px; color: #6b7280;">${
-                          lease.paymentFrequency
-                        }</div>
-                    </td>
-                    <td>
-                        <div style="font-weight: 500;">${getNextDueDate(
-                          lease
-                        )}</div>
-                    </td>
-                    <td>
-                        <button class="action-btn action-view" onclick="showDetailView('${
-                          lease.id
-                        }')" title="View Details"><i class="fa-solid fa-eye"></i></button>
-                        <button class="action-btn action-edit" onclick="showEditView('${
-                          lease.id
-                        }')" title="Edit Lease"><i class="fa-solid fa-pen"></i></button>
-                        <button class="action-btn action-delete" onclick="showDeleteModal('${
-                          lease.id
-                        }')" title="Delete Lease"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-    tableBody.appendChild(row);
-  });
-}
-
-function getFilteredLeases() {
   const filters = {
-    status: document.getElementById("filterStatus").value,
-    tenant: document.getElementById("filterTenant").value,
-    property: document.getElementById("filterProperty").value,
-    date: document.getElementById("filterDate").value,
+    status: document.getElementById("filterStatus").value || "",
+    search: document.getElementById("filterSearch").value || "",
+    date: document.getElementById("filterDate").value || "",
+    page: 1,
   };
 
-  return leaseManager.filterLeases(filters);
+  try {
+    const data = await fetchLeases(filters);
+    const leases = data.leases || [];
+
+    tableBody.innerHTML = "";
+
+    if (leases.length === 0) {
+      emptyState.classList.remove("hidden");
+      return;
+    }
+
+    emptyState.classList.add("hidden");
+
+    leases.forEach((lease, idx) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+          <td>
+            <strong style="color: #1f2937; font-weight: 700;">${
+              idx + 1 + (filters.page - 1) * 10
+            }</strong>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: #111827;">${
+              lease.tenant_name || ""
+            }</div>
+            <div style="font-size: 12px; color: #6b7280;">User ID: ${
+              lease.user_id || ""
+            }</div>
+          </td>
+          <td>
+            <div style="font-weight: 500; color: #111827;">${
+              lease.property_name || ""
+            }</div>
+            <div style="font-size: 12px; color: #6b7280;">Property ID: ${
+              lease.property_id || ""
+            }</div>
+          </td>
+          <td>
+            <div style="font-size: 13px; font-weight: 500;">${formatDate(
+              lease.lease_start_date
+            )}</div>
+            <div style="font-size: 12px; color: #6b7280;">to ${formatDate(
+              lease.lease_end_date
+            )}</div>
+            <div style="font-size: 11px; color: #9ca3af;">${getDuration(
+              lease.lease_start_date,
+              lease.lease_end_date
+            )}</div>
+          </td>
+          <td>
+            <span class="status-badge status-${(
+              lease.lease_status || ""
+            ).toLowerCase()}">${lease.lease_status || ""}</span>
+          </td>
+          <td>
+            <div style="font-weight: 700; color: #059669; font-size: 16px;">₱${(
+              lease.monthly_rent || 0
+            ).toLocaleString()}</div>
+            <div style="font-size: 12px; color: #6b7280;">${
+              lease.payment_frequency || ""
+            }</div>
+          </td>
+          <td>
+            <div style="font-weight: 500;">${getNextDueDate(lease)}</div>
+          </td>
+          <td>
+            <button class="action-btn action-view" onclick="showDetailView('${
+              lease.lease_id
+            }')" title="View Details"><i class="fa-solid fa-eye"></i></button>
+            <button class="action-btn action-edit" onclick="showEditView('${
+              lease.lease_id
+            }')" title="Edit Lease"><i class="fa-solid fa-pen"></i></button>
+            <button class="action-btn action-delete" onclick="showDeleteModal('${
+              lease.lease_id
+            }')" title="Delete Lease"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        `;
+      tableBody.appendChild(row);
+    });
+  } catch (error) {
+    showToast("Failed to load leases", "error");
+    tableBody.innerHTML = "";
+    emptyState.classList.remove("hidden");
+  }
 }
 
-function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+function applyFilters() {
+  loadLeaseTable();
+}
+
+function clearFilters() {
+  document.getElementById("filterStatus").value = "";
+  document.getElementById("filterSearch").value = "";
+  document.getElementById("filterDate").value = "";
+  loadLeaseTable();
 }
 
 function getDuration(startDate, endDate) {
@@ -476,13 +313,14 @@ function getNextDueDate(lease) {
   const startDay = new Date(lease.startDate).getDate();
   let nextDue = new Date(today.getFullYear(), today.getMonth(), startDay);
 
-  // If we've passed this month's due date, move to next month
   if (today.getDate() > startDay) {
     nextDue.setMonth(nextDue.getMonth() + 1);
   }
 
   return formatDate(nextDue.toISOString().split("T")[0]);
 }
+
+//#endregion
 
 // Form Management
 function loadForm(lease) {
@@ -852,19 +690,6 @@ function editCurrentLease() {
   }
 }
 
-// Filter Functions
-function applyFilters() {
-  loadLeaseTable();
-}
-
-function clearFilters() {
-  document.getElementById("filterStatus").value = "";
-  document.getElementById("filterTenant").value = "";
-  document.getElementById("filterProperty").value = "";
-  document.getElementById("filterDate").value = "";
-  loadLeaseTable();
-}
-
 // Modal Functions
 function showDeleteModal(leaseId) {
   deleteLeaseId = leaseId;
@@ -1024,7 +849,7 @@ window.clearFilters = clearFilters;
 window.confirmCancel = confirmCancel;
 window.hideCancelModal = hideCancelModal;
 window.showDeleteModal = showDeleteModal;
-window.hideDeleteModal = hideDeleteModal; 
+window.hideDeleteModal = hideDeleteModal;
 window.confirmDelete = confirmDelete;
 window.handleFileUpload = handleFileUpload;
 window.removeFile = removeFile;
