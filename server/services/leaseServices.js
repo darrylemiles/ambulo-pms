@@ -23,7 +23,7 @@ const createLease = async (leaseData = {}, contractFile = null) => {
     const [existingLeaseRows] = await conn.query(
       "SELECT lease_id FROM leases WHERE property_id = ? AND (lease_status = 'ACTIVE' OR lease_status = 'PENDING')",
       [leaseData.property_id]
-    ); 
+    );
     if (existingLeaseRows.length > 0) {
       await conn.rollback();
       conn.release();
@@ -94,12 +94,15 @@ const createLease = async (leaseData = {}, contractFile = null) => {
     } else if (leaseData.lease_status === "ACTIVE") {
       newPropertyStatus = "Occupied";
     }
-    if (newPropertyStatus) {
-      await propertiesServices.editPropertyById(leaseData.property_id, { property_status: newPropertyStatus });
-    }
 
     await conn.commit();
     conn.release();
+
+    if (newPropertyStatus) {
+      await propertiesServices.editPropertyById(leaseData.property_id, {
+        property_status: newPropertyStatus,
+      });
+    }
 
     return { message: "Lease created successfully", lease_id };
   } catch (error) {
@@ -233,7 +236,8 @@ const getAllLeases = async (queryObj = {}) => {
 
 const getSingleLeaseById = async (leaseId) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+      `
       SELECT 
         l.*,
         CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) AS tenant_name,
@@ -245,7 +249,9 @@ const getSingleLeaseById = async (leaseId) => {
       LEFT JOIN properties p ON l.property_id = p.property_id
       WHERE l.lease_id = ?
       LIMIT 1
-    `, [leaseId]);
+    `,
+      [leaseId]
+    );
     if (rows.length === 0) throw new Error("Lease not found");
     const lease = rows[0];
 
@@ -359,15 +365,21 @@ const updateLeaseById = async (
       newPropertyStatus = "Reserved";
     } else if (leaseData.lease_status === "ACTIVE") {
       newPropertyStatus = "Occupied";
-    } else if (leaseData.lease_status === "TERMINATED" || leaseData.lease_status === "CANCELLED") {
+    } else if (
+      leaseData.lease_status === "TERMINATED" ||
+      leaseData.lease_status === "CANCELLED"
+    ) {
       newPropertyStatus = "Available";
-    }
-    if (newPropertyStatus && lease.property_id) {
-      await propertiesServices.editPropertyById(lease.property_id, { property_status: newPropertyStatus });
     }
 
     await conn.commit();
     conn.release();
+
+    if (newPropertyStatus && lease.property_id) {
+      await propertiesServices.editPropertyById(lease.property_id, {
+        property_status: newPropertyStatus,
+      });
+    }
 
     return { message: "Lease updated successfully" };
   } catch (error) {
