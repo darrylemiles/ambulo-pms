@@ -485,21 +485,29 @@ function getDuration(startDate, endDate) {
 }
 
 function getNextDueDate(lease) {
+  const [startY, startM, startD] = lease.lease_start_date.split("T")[0].split("-");
+  const dueDay = Number(startD);
+
   const today = new Date();
-  const endDate = new Date(lease.lease_end_date);
+  let dueYear = today.getFullYear();
+  let dueMonth = today.getMonth() + 1;
 
-  if (today > endDate) return '<span style="color: #ef4444;">Expired</span>';
-  if (lease.lease_status !== "ACTIVE")
-    return '<span style="color: #6b7280;">N/A</span>';
-
-  const startDay = new Date(lease.lease_start_date).getDate();
-  let nextDue = new Date(today.getFullYear(), today.getMonth(), startDay);
-
-  if (today.getDate() > startDay) {
-    nextDue.setMonth(nextDue.getMonth() + 1);
+  dueMonth += 1;
+  if (dueMonth > 12) {
+    dueMonth = 1;
+    dueYear += 1;
   }
 
-  return formatDate(nextDue.toISOString().split("T")[0]);
+  let nextDueStr = `${dueYear}-${String(dueMonth).padStart(2, "0")}-${String(dueDay).padStart(2, "0")}`;
+
+  const [endY, endM, endD] = lease.lease_end_date.split("T")[0].split("-");
+  const nextDueUTC = Date.UTC(dueYear, dueMonth - 1, dueDay);
+  const endUTC = Date.UTC(Number(endY), Number(endM) - 1, Number(endD));
+  if (nextDueUTC > endUTC) {
+    nextDueStr = `${endY}-${endM}-${endD}`;
+  }
+
+  return formatDate(nextDueStr);
 }
 
 //#endregion
