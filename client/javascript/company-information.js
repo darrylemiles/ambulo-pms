@@ -1,4 +1,4 @@
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js"; 
+import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
 let companyId = null;
 
@@ -49,7 +49,7 @@ let websiteData = {
           "Modern technology solutions to streamline operations and enhance the commercial leasing experience.",
       },
     ],
-  }
+  },
 };
 
 const availableIcons = [
@@ -271,7 +271,6 @@ function switchTab(tabId) {
   showNotification(`Switched to ${tabId} management`, "info");
 }
 
-
 function triggerLogoUpload() {
   document.getElementById("logo-input").click();
 }
@@ -347,11 +346,15 @@ async function loadCompanyInfo() {
       document.getElementById("company-name").value = data.company_name || "";
       document.getElementById("company-email").value = data.email || "";
       document.getElementById("company-phone").value = data.phone_number || "";
-      document.getElementById("company-alt-phone").value = data.alt_phone_number || "";
-      document.getElementById("company-description").value = data.business_desc || "";
-      document.getElementById("company-business-hours").value = data.business_hours || "";
+      document.getElementById("company-alt-phone").value =
+        data.alt_phone_number || "";
+      document.getElementById("company-description").value =
+        data.business_desc || "";
+      document.getElementById("company-business-hours").value =
+        data.business_hours || "";
       document.getElementById("company-house-no").value = data.house_no || "";
-      document.getElementById("company-street-address").value = data.street_address || "";
+      document.getElementById("company-street-address").value =
+        data.street_address || "";
       document.getElementById("company-city").value = data.city || "";
       document.getElementById("company-province").value = data.province || "";
       document.getElementById("company-zip-code").value = data.zip_code || "";
@@ -363,7 +366,52 @@ async function loadCompanyInfo() {
     showNotification("Failed to load company info.", "error");
   }
 }
+
 async function saveCompanyInfo() {
+  const saveBtn = document.getElementById("save-company-btn");
+  if (!validateCompanyInfoForm()) return;
+
+  const adminEmailInput = document.getElementById("admin-email-input");
+  const adminEmail = localStorage.getItem("admin_email"); 
+  if (adminEmailInput && adminEmail) {
+    adminEmailInput.value = adminEmail;
+  }
+
+  const modal = document.getElementById("admin-password-modal");
+  modal.style.display = "block";
+
+  return new Promise((resolve) => {
+    document.getElementById("admin-password-confirm-btn").onclick =
+      async function () {
+        const adminEmail = document.getElementById("admin-email-input").value;
+        const adminPassword = document.getElementById(
+          "admin-password-input"
+        ).value;
+        modal.style.display = "none";
+        if (!adminEmail || !adminPassword || adminPassword.trim() === "") {
+          showNotification(
+            "Admin email and password are required to save changes.",
+            "error"
+          );
+          saveBtn.classList.remove("btn-loading");
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = `<i class="fas fa-save"></i> Save Company Info`;
+          return;
+        }
+        await continueSaveCompanyInfo(adminEmail, adminPassword);
+        resolve();
+      };
+    document.getElementById("admin-password-cancel-btn").onclick = function () {
+      modal.style.display = "none";
+      saveBtn.classList.remove("btn-loading");
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `<i class="fas fa-save"></i> Save Company Info`;
+      resolve();
+    };
+  });
+}
+
+async function continueSaveCompanyInfo(adminEmail, adminPassword) {
   const saveBtn = document.getElementById("save-company-btn");
   if (!validateCompanyInfoForm()) return;
 
@@ -372,24 +420,62 @@ async function saveCompanyInfo() {
   saveBtn.innerHTML = `<span class="spinner"></span>Saving...`;
 
   const formData = new FormData();
-  formData.append("company_name", document.getElementById("company-name").value.trim());
-  formData.append("email", document.getElementById("company-email").value.trim());
-  formData.append("phone_number", document.getElementById("company-phone").value.trim());
-  formData.append("alt_phone_number", document.getElementById("company-alt-phone").value.trim());
-  formData.append("business_desc", document.getElementById("company-description").value.trim());
-  formData.append("business_hours", document.getElementById("company-business-hours").value.trim());
-  formData.append("house_no", document.getElementById("company-house-no").value.trim());
-  formData.append("street_address", document.getElementById("company-street-address").value.trim());
+  formData.append(
+    "company_name",
+    document.getElementById("company-name").value.trim()
+  );
+  formData.append(
+    "email",
+    document.getElementById("company-email").value.trim()
+  );
+  formData.append(
+    "phone_number",
+    document.getElementById("company-phone").value.trim()
+  );
+  formData.append(
+    "alt_phone_number",
+    document.getElementById("company-alt-phone").value.trim()
+  );
+  formData.append(
+    "business_desc",
+    document.getElementById("company-description").value.trim()
+  );
+  formData.append(
+    "business_hours",
+    document.getElementById("company-business-hours").value.trim()
+  );
+  formData.append(
+    "house_no",
+    document.getElementById("company-house-no").value.trim()
+  );
+  formData.append(
+    "street_address",
+    document.getElementById("company-street-address").value.trim()
+  );
   formData.append("city", document.getElementById("company-city").value.trim());
-  formData.append("province", document.getElementById("company-province").value.trim());
-  formData.append("zip_code", document.getElementById("company-zip-code").value.trim());
-  formData.append("country", document.getElementById("company-country").value.trim());
+  formData.append(
+    "province",
+    document.getElementById("company-province").value.trim()
+  );
+  formData.append(
+    "zip_code",
+    document.getElementById("company-zip-code").value.trim()
+  );
+  formData.append(
+    "country",
+    document.getElementById("company-country").value.trim()
+  );
+
+  formData.append("admin_email", adminEmail);
+  formData.append("admin_password", adminPassword);
 
   const logoInput = document.getElementById("logo-input");
   const altLogoInput = document.getElementById("alt-logo-input");
 
-  const currentLogoUrl = document.getElementById("logo-preview").querySelector("img")?.src || "";
-  const currentAltLogoUrl = document.getElementById("alt-logo-preview").querySelector("img")?.src || "";
+  const currentLogoUrl =
+    document.getElementById("logo-preview").querySelector("img")?.src || "";
+  const currentAltLogoUrl =
+    document.getElementById("alt-logo-preview").querySelector("img")?.src || "";
 
   if (logoInput.files[0]) {
     formData.append("icon_logo_url", logoInput.files[0]);
@@ -685,28 +771,27 @@ function createServiceElement(service) {
 
 //#endregion
 
-
 //#region ABOUT US
 document.addEventListener("DOMContentLoaded", function () {
   generateAboutImageUploads();
 
-    if (document.getElementById("story-content-editor")) {
-      window.storyQuill = new Quill("#story-content-editor", {
-        theme: "snow",
-        placeholder: "Write your story here...",
-        modules: {
-          toolbar: [
-            [{ header: [1, 2, false] }],
-            ["bold", "italic", "underline"],
-            ["link", "blockquote", "code-block"],
-            [{ list: "ordered" }, { list: "bullet" }],
-            ["clean"],
-          ],
-        },
-      });
-    }
-  
-    if (document.getElementById("homepage-about-content-editor")) {
+  if (document.getElementById("story-content-editor")) {
+    window.storyQuill = new Quill("#story-content-editor", {
+      theme: "snow",
+      placeholder: "Write your story here...",
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, false] }],
+          ["bold", "italic", "underline"],
+          ["link", "blockquote", "code-block"],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["clean"],
+        ],
+      },
+    });
+  }
+
+  if (document.getElementById("homepage-about-content-editor")) {
     window.homepageAboutQuill = new Quill("#homepage-about-content-editor", {
       theme: "snow",
       placeholder: "Enter About Us content...",
@@ -721,9 +806,8 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     });
   }
-  
-  loadAboutUsContent();
 
+  loadAboutUsContent();
 });
 
 function setAboutUsSession(data) {
@@ -768,7 +852,7 @@ async function loadAboutUsContent(forceRefresh = false) {
   document.getElementById("values-text").value = about.core_values || "";
   document.getElementById("homepage-about-subtitle").value =
     about.homepage_about_subtitle || "";
-  
+
   if (window.homepageAboutQuill && about.homepage_about_content) {
     window.homepageAboutQuill.root.innerHTML = about.homepage_about_content;
   }
@@ -958,7 +1042,6 @@ window.removeAboutImage = function (i) {
 };
 
 //#endregion
-
 
 function previewWebsite() {
   const company = company.company_name;

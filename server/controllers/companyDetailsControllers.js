@@ -1,8 +1,8 @@
 import expressAsync from "express-async-handler";
+import usersServices from "../services/usersServices.js";
 import companyDetailsServices from "../services/companyDetailsServices.js";
 
 const createCompanyDetails = expressAsync(async (req, res) => {
-  // Handle uploaded files
   const iconLogo = req.files?.icon_logo_url?.[0];
   const altLogo = req.files?.alt_logo_url?.[0];
 
@@ -25,6 +25,18 @@ const updateCompanyDetails = expressAsync(async (req, res) => {
   const { id } = req.params;
   const iconLogo = req.files?.icon_logo_url?.[0];
   const altLogo = req.files?.alt_logo_url?.[0];
+  
+  const adminEmail = req.body.admin_email;
+  const adminPassword = req.body.admin_password;
+
+  try {
+    const authResult = await usersServices.authUser(adminEmail, adminPassword);
+    if (!authResult.user || authResult.user.role !== "ADMIN") {
+      return res.status(401).json({ message: "Invalid admin credentials." });
+    }
+  } catch (err) {
+    return res.status(401).json({ message: "Admin authentication failed." });
+  }
 
   const companyData = {
     ...req.body,

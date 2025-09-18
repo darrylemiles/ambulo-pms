@@ -19,32 +19,32 @@
     <div id="sidebarContainer"></div>
 
     <div class="main-content">
-    <div class="main-card-wrapper">
-        <div class="container">
-            <a href="/contentManagement.html" class="back-button" onclick="goBack()">
-                <i class="fas fa-arrow-left"></i>
-                Back to Content Management
-            </a>
+        <div class="main-card-wrapper">
+            <div class="container">
+                <a href="/contentManagement.html" class="back-button" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Content Management
+                </a>
 
-            <div class="header">
-                <h1 class="title">Manage Company Information</h1>
-                <p class="description">
-                    Manage company related content for your website. Edit company information, about us details,
-                    with real-time preview capabilities.
-                </p>
-            </div>
+                <div class="header">
+                    <h1 class="title">Manage Company Information</h1>
+                    <p class="description">
+                        Manage company related content for your website. Edit company information, about us details,
+                        with real-time preview capabilities.
+                    </p>
+                </div>
 
-            <div class="tabs-container">
-                <div class="tabs-nav">
-                    <button class="tab-button active" data-tab="company">
-                        <i class="fas fa-building"></i>
-                        Company Info
-                    </button>
-                    <button class="tab-button" data-tab="about">
-                        <i class="fas fa-info-circle"></i>
-                        About Content
-                    </button>
-                    <!-- <button class="tab-button" data-tab="services">
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-button active" data-tab="company">
+                            <i class="fas fa-building"></i>
+                            Company Info
+                        </button>
+                        <button class="tab-button" data-tab="about">
+                            <i class="fas fa-info-circle"></i>
+                            About Content
+                        </button>
+                        <!-- <button class="tab-button" data-tab="services">
                         <i class="fas fa-cogs"></i>
                         Services
                     </button>
@@ -52,250 +52,260 @@
                         <i class="fas fa-star"></i>
                         Why Choose
                     </button> -->
-                </div>
-
-                <!-- Company Information Tab -->
-                <div class="tab-content active" id="company">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-building"></i>
-                            Company Information
-                        </h3>
-                        <span class="status-indicator">
-                            <i class="fas fa-check"></i>
-                            Live
-                        </span>
                     </div>
 
-                    <!-- Company Logos Row -->
-                    <div class="form-group logos-row" style="display: flex; gap: 32px; align-items: flex-start;">
-                        <!-- Main Logo Upload -->
-                        <div style="flex: 1;">
-                            <h4 class="section-subtitle">Company Logo - Icon</h4>
-                            <label class="form-label">Upload Logo</label>
-                            <div class="logo-upload-container">
-                                <div class="logo-preview" id="logo-preview">
-                                    <span id="logo-preview-warning" class="field-warning"></span>
-                                    <div class="logo-placeholder">
-                                        <i class="fas fa-building"></i>
-                                        <p>No logo uploaded</p>
-                                        <small>Click to upload or drag & drop</small>
+                    <!-- Company Information Tab -->
+                    <div class="tab-content active" id="company">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-building"></i>
+                                Company Information
+                            </h3>
+                            <span class="status-indicator">
+                                <i class="fas fa-check"></i>
+                                Live
+                            </span>
+                        </div>
+
+                        <!-- Company Logos Row -->
+                        <div class="form-group logos-row" style="display: flex; gap: 32px; align-items: flex-start;">
+                            <!-- Main Logo Upload -->
+                            <div style="flex: 1;">
+                                <h4 class="section-subtitle">Company Logo - Icon</h4>
+                                <label class="form-label">Upload Logo</label>
+                                <div class="logo-upload-container">
+                                    <div class="logo-preview" id="logo-preview">
+                                        <span id="logo-preview-warning" class="field-warning"></span>
+                                        <div class="logo-placeholder">
+                                            <i class="fas fa-building"></i>
+                                            <p>No logo uploaded</p>
+                                            <small>Click to upload or drag & drop</small>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="logo-input" accept="image/*" style="display: none;">
+                                    <div class="logo-actions">
+                                        <button type="button" class="btn btn-primary" onclick="triggerLogoUpload()">
+                                            <i class="fas fa-upload"></i>
+                                            Upload Logo
+                                        </button>
+                                        <button type="button" class="btn btn-danger" onclick="removeLogo()"
+                                            id="remove-logo-btn" style="display: none;">
+                                            <i class="fas fa-trash"></i>
+                                            Remove Logo
+                                        </button>
                                     </div>
                                 </div>
-                                <input type="file" id="logo-input" accept="image/*" style="display: none;">
-                                <div class="logo-actions">
-                                    <button type="button" class="btn btn-primary" onclick="triggerLogoUpload()">
-                                        <i class="fas fa-upload"></i>
-                                        Upload Logo
-                                    </button>
-                                    <button type="button" class="btn btn-danger" onclick="removeLogo()"
-                                        id="remove-logo-btn" style="display: none;">
-                                        <i class="fas fa-trash"></i>
-                                        Remove Logo
-                                    </button>
+                            </div>
+                            <!-- Alternate Logo Upload -->
+                            <div style="flex: 1;">
+                                <h4 class="section-subtitle">Alternate Logo</h4>
+                                <label class="form-label">Upload Alternate Logo</label>
+                                <div class="logo-upload-container">
+                                    <div class="logo-preview" id="alt-logo-preview">
+                                        <span id="alt-logo-preview-warning" class="field-warning"></span>
+                                        <div class="logo-placeholder">
+                                            <i class="fas fa-image"></i>
+                                            <p>No alternate logo uploaded</p>
+                                            <small>Click to upload or drag & drop</small>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="alt-logo-input" accept="image/*" style="display: none;">
+                                    <div class="logo-actions">
+                                        <button type="button" class="btn btn-primary" onclick="triggerAltLogoUpload()">
+                                            <i class="fas fa-upload"></i>
+                                            Upload Alternate Logo
+                                        </button>
+                                        <button type="button" class="btn btn-danger" onclick="removeAltLogo()"
+                                            id="remove-alt-logo-btn" style="display: none;">
+                                            <i class="fas fa-trash"></i>
+                                            Remove Alternate Logo
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Alternate Logo Upload -->
-                        <div style="flex: 1;">
-                            <h4 class="section-subtitle">Alternate Logo</h4>
-                            <label class="form-label">Upload Alternate Logo</label>
-                            <div class="logo-upload-container">
-                                <div class="logo-preview" id="alt-logo-preview">
-                                    <span id="alt-logo-preview-warning" class="field-warning"></span>
-                                    <div class="logo-placeholder">
-                                        <i class="fas fa-image"></i>
-                                        <p>No alternate logo uploaded</p>
-                                        <small>Click to upload or drag & drop</small>
-                                    </div>
-                                </div>
-                                <input type="file" id="alt-logo-input" accept="image/*" style="display: none;">
-                                <div class="logo-actions">
-                                    <button type="button" class="btn btn-primary" onclick="triggerAltLogoUpload()">
-                                        <i class="fas fa-upload"></i>
-                                        Upload Alternate Logo
-                                    </button>
-                                    <button type="button" class="btn btn-danger" onclick="removeAltLogo()"
-                                        id="remove-alt-logo-btn" style="display: none;">
-                                        <i class="fas fa-trash"></i>
-                                        Remove Alternate Logo
-                                    </button>
-                                </div>
+
+                        <h4 class="section-subtitle">Basic Company Details</h4>
+
+                        <div class="three-column">
+                            <div class="form-group">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" class="form-input" id="company-name" placeholder="Your Company Name">
+                                <span id="company-name-warning" class="field-warning"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-input" id="company-email"
+                                    placeholder="company@email.com">
+                                <span id="company-email-warning" class="field-warning"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="company-phone" placeholder="e.g. 09123456789">
+                                <span id="company-phone-warning" class="field-warning"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Alternative Phone Number</label>
+                                <input type="tel" class="form-input" id="company-alt-phone"
+                                    placeholder="e.g. 09123456780">
+                                <span id="company-alt-phone-warning" class="field-warning"></span>
                             </div>
                         </div>
-                    </div>
 
-                    <h4 class="section-subtitle">Basic Company Details</h4>
-
-                    <div class="three-column">
-                        <div class="form-group">
-                            <label class="form-label">Company Name</label>
-                            <input type="text" class="form-input" id="company-name" placeholder="Your Company Name">
-                            <span id="company-name-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-input" id="company-email" placeholder="company@email.com">
-                            <span id="company-email-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Phone Number</label>
-                            <input type="tel" class="form-input" id="company-phone" placeholder="e.g. 09123456789">
-                            <span id="company-phone-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Alternative Phone Number</label>
-                            <input type="tel" class="form-input" id="company-alt-phone" placeholder="e.g. 09123456780">
-                            <span id="company-alt-phone-warning" class="field-warning"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="section-subtitle">Company Address</h4>
-                    <div class="three-column">
-                        <div class="form-group">
-                            <label class="form-label">House No.</label>
-                            <input type="text" class="form-input" id="company-house-no" placeholder="House/Unit No.">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Street Address</label>
-                            <input type="text" class="form-input" id="company-street-address"
-                                placeholder="Street Address">
-                            <span id="company-street-address-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">City</label>
-                            <input type="text" class="form-input" id="company-city" placeholder="City">
-                            <span id="company-city-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Province</label>
-                            <input type="text" class="form-input" id="company-province" placeholder="Province">
-                            <span id="company-province-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Zip Code</label>
-                            <input type="text" class="form-input" id="company-zip-code" placeholder="Zip Code">
-                            <span id="company-zip-code-warning" class="field-warning"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Country</label>
-                            <input type="text" class="form-input" id="company-country" placeholder="Country">
-                            <span id="company-country-warning" class="field-warning"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="section-subtitle">Business Information</h4>
-                    <div class="form-group">
-                        <label class="form-label">Business Description</label>
-                        <textarea class="form-input form-textarea" id="company-description" rows="3"
-                            placeholder="Describe your business"></textarea>
-                        <span id="company-description-warning" class="field-warning"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Business Hours</label>
-                        <textarea class="form-input form-textarea" id="company-business-hours" rows="2"
-                            placeholder="e.g. Mon-Fri: 9am - 6pm&#10;Sat: 10am - 4pm&#10;Sun: Closed"></textarea>
-                        <span id="company-business-hours-warning" class="field-warning"></span>
-                    </div>
-
-                    <div class="action-buttons">
-                        <button class="btn btn-success" id="save-company-btn" onclick="saveCompanyInfo()">
-                            <i class="fas fa-save"></i>
-                            Save Company Info
-                        </button>
-                        <button class="btn btn-primary" onclick="previewCompanyInfo()">
-                            <i class="fas fa-eye"></i>
-                            Preview Company Profile
-                        </button>
-                    </div>
-                </div>
-
-                <!-- About Content Tab -->
-                <div class="tab-content" id="about">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-info-circle"></i>
-                            About Page Content
-                        </h3>
-                        <span class="status-indicator">
-                            <i class="fas fa-check"></i>
-                            Live
-                        </span>
-                    </div>
-
-                    <h4 class="section-subtitle">Our Story Section</h4>
-
-                    <div class="form-group">
-                        <label class="form-label">Story Section Title</label>
-                        <input type="text" class="form-input" id="story-title" value="Our Story">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Story Content</label>
-                        <div id="story-content-editor" style="height: 200px;"></div>
-                    </div>
-
-                    <h4 class="section-subtitle">Mission, Vision & Values</h4>
-
-                    <div class="three-column">
-                        <div class="form-group">
-                            <label class="form-label">Mission Statement</label>
-                            <textarea class="form-input form-textarea"
-                                id="mission-text"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Vision Statement</label>
-                            <textarea class="form-input form-textarea"
-                                id="vision-text"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Core Values</label>
-                            <textarea class="form-input form-textarea"
-                                id="values-text"></textarea>
+                        <h4 class="section-subtitle">Company Address</h4>
+                        <div class="three-column">
+                            <div class="form-group">
+                                <label class="form-label">House No.</label>
+                                <input type="text" class="form-input" id="company-house-no"
+                                    placeholder="House/Unit No.">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Street Address</label>
+                                <input type="text" class="form-input" id="company-street-address"
+                                    placeholder="Street Address">
+                                <span id="company-street-address-warning" class="field-warning"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-input" id="company-city" placeholder="City">
+                                <span id="company-city-warning" class="field-warning"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Province</label>
+                                <input type="text" class="form-input" id="company-province" placeholder="Province">
+                                <span id="company-province-warning" class="field-warning"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Zip Code</label>
+                                <input type="text" class="form-input" id="company-zip-code" placeholder="Zip Code">
+                                <span id="company-zip-code-warning" class="field-warning"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Country</label>
+                                <input type="text" class="form-input" id="company-country" placeholder="Country">
+                                <span id="company-country-warning" class="field-warning"></span>
+                            </div>
                         </div>
 
+                        <h4 class="section-subtitle">Business Information</h4>
+                        <div class="form-group">
+                            <label class="form-label">Business Description</label>
+                            <textarea class="form-input form-textarea" id="company-description" rows="3"
+                                placeholder="Describe your business"></textarea>
+                            <span id="company-description-warning" class="field-warning"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Business Hours</label>
+                            <textarea class="form-input form-textarea" id="company-business-hours" rows="2"
+                                placeholder="e.g. Mon-Fri: 9am - 6pm&#10;Sat: 10am - 4pm&#10;Sun: Closed"></textarea>
+                            <span id="company-business-hours-warning" class="field-warning"></span>
+                        </div>
 
-                    </div>
-
-                    <h4 class="section-subtitle">Homepage - About Us Section</h4>
-                    <div class="form-group">
-                        <label class="form-label">About Us - Subtitle</label>
-                        <input type="text" class="form-input" id="homepage-about-subtitle"
-                            placeholder="Enter About Us subtitle">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">About Us - Content</label>
-                        <div id="homepage-about-content-editor" style="height: 200px;"></div>
-                    </div>
-
-                    <h4 class="section-subtitle">About Page Images</h4>
-                    <div class="form-group">
-                        <label class="form-label">About Images (4 images)</label>
-                        <div id="aboutImagesGrid" class="about-images-grid">
+                        <div class="action-buttons">
+                            <button class="btn btn-success" id="save-company-btn" onclick="saveCompanyInfo()">
+                                <i class="fas fa-save"></i>
+                                Save Company Info
+                            </button>
+                            <button class="btn btn-primary" onclick="previewCompanyInfo()">
+                                <i class="fas fa-eye"></i>
+                                Preview Company Profile
+                            </button>
                         </div>
                     </div>
 
+                    <!-- About Content Tab -->
+                    <div class="tab-content" id="about">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-info-circle"></i>
+                                About Page Content
+                            </h3>
+                            <span class="status-indicator">
+                                <i class="fas fa-check"></i>
+                                Live
+                            </span>
+                        </div>
+
+                        <h4 class="section-subtitle">Our Story Section</h4>
+
+                        <div class="form-group">
+                            <label class="form-label">Story Section Title</label>
+                            <input type="text" class="form-input" id="story-title" value="Our Story">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Story Content</label>
+                            <div id="story-content-editor" style="height: 200px;"></div>
+                        </div>
+
+                        <h4 class="section-subtitle">Mission, Vision & Values</h4>
+
+                        <div class="three-column">
+                            <div class="form-group">
+                                <label class="form-label">Mission Statement</label>
+                                <textarea class="form-input form-textarea" id="mission-text"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Vision Statement</label>
+                                <textarea class="form-input form-textarea" id="vision-text"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Core Values</label>
+                                <textarea class="form-input form-textarea" id="values-text"></textarea>
+                            </div>
 
 
-                    <div class="action-buttons">
-                        <button class="btn btn-success" onclick="saveAboutContent()">
-                            <i class="fas fa-save"></i>
-                            Save About Content
-                        </button>
-                        <button class="btn btn-primary" onclick="previewAbout()">
-                            <i class="fas fa-eye"></i>
-                            Preview About Page
-                        </button>
+                        </div>
+
+                        <h4 class="section-subtitle">Homepage - About Us Section</h4>
+                        <div class="form-group">
+                            <label class="form-label">About Us - Subtitle</label>
+                            <input type="text" class="form-input" id="homepage-about-subtitle"
+                                placeholder="Enter About Us subtitle">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">About Us - Content</label>
+                            <div id="homepage-about-content-editor" style="height: 200px;"></div>
+                        </div>
+
+                        <h4 class="section-subtitle">About Page Images</h4>
+                        <div class="form-group">
+                            <label class="form-label">About Images (4 images)</label>
+                            <div id="aboutImagesGrid" class="about-images-grid">
+                            </div>
+                        </div>
+
+
+
+                        <div class="action-buttons">
+                            <button class="btn btn-success" onclick="saveAboutContent()">
+                                <i class="fas fa-save"></i>
+                                Save About Content
+                            </button>
+                            <button class="btn btn-primary" onclick="previewAbout()">
+                                <i class="fas fa-eye"></i>
+                                Preview About Page
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
 
-        <script src="/javascript/bootstrap.bundle.min.js"></script>
-        <script type="module" src="/javascript/company-information.js"></script>
-        <script type="module" src="/javascript/sidebar.js"></script>
-        <script type="module" src="/javascript/navbar.js"></script>
+            <div id="admin-password-modal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <h3>Enter Admin Password</h3>
+                    <input type="email" id="admin-email-input" placeholder="Admin Email" autocomplete="username"
+                        style="display:none;" />
+                    <input type="password" id="admin-password-input" placeholder="Admin Password"/>
+                    <button id="admin-password-confirm-btn" class="btn btn-primary">Confirm</button>
+                    <button id="admin-password-cancel-btn" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+
+            <script src="/javascript/bootstrap.bundle.min.js"></script>
+            <script type="module" src="/javascript/company-information.js"></script>
+            <script type="module" src="/javascript/sidebar.js"></script>
+            <script type="module" src="/javascript/navbar.js"></script>
 </body>
 
 </html>
