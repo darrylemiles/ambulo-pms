@@ -265,20 +265,60 @@ function validateForm() {
     }
   });
 
-  const startDate = new Date(document.getElementById("startDate").value);
-  const endDate = new Date(document.getElementById("endDate").value);
+  const startDateEl = document.getElementById("startDate");
+  const endDateEl = document.getElementById("endDate");
+  const startDate = new Date(startDateEl.value);
+  const endDate = new Date(endDateEl.value);
 
-  if (startDate && endDate && startDate >= endDate) {
-    showError("endDate", "End date must be after start date");
-    isValid = false;
+  if (startDateEl.value && endDateEl.value) {
+    if (startDate >= endDate) {
+      showError("endDate", "End date must be after start date");
+      isValid = false;
+    }
+    if (startDate < new Date()) {
+      showError("startDate", "Start date cannot be in the past");
+      isValid = false;
+    }
   }
 
-  // Validate monthly rent
-  const monthlyRent = parseFloat(document.getElementById("monthlyRent").value);
-  if (monthlyRent && monthlyRent <= 0) {
-    showError("monthlyRent", "Monthly rent must be greater than 0");
-    isValid = false;
+  const monthlyRentEl = document.getElementById("monthlyRent");
+  const monthlyRent = parseFloat(monthlyRentEl.value);
+  if (monthlyRentEl.value) {
+    if (isNaN(monthlyRent) || monthlyRent <= 0) {
+      showError("monthlyRent", "Monthly rent must be a positive number");
+      isValid = false;
+    }
   }
+
+  const numericFields = [
+    { id: "quarterlyTax", min: 0, max: 100, message: "Quarterly tax must be between 0 and 100%" },
+    { id: "securityDeposit", min: 0, max: 36, message: "Security deposit must be 0 or more months" },
+    { id: "advancePayment", min: 0, max: 36, message: "Advance payment must be 0 or more months" },
+    { id: "lateFee", min: 0, max: 100, message: "Late fee must be between 0 and 100%" },
+    { id: "gracePeriod", min: 0, max: 60, message: "Grace period must be 0 or more days" },
+    { id: "autoTerminationMonths", min: 0, max: 36, message: "Auto-termination must be 0 or more months" },
+    { id: "terminationTriggerDays", min: 0, max: 365, message: "Termination trigger must be 0 or more days" },
+    { id: "noticeCancelDays", min: 0, max: 365, message: "Cancel notice must be 0 or more days" },
+    { id: "noticeRenewalDays", min: 0, max: 365, message: "Renewal notice must be 0 or more days" },
+    { id: "rentIncreaseRenewal", min: 0, max: 100, message: "Rent increase must be between 0 and 100%" },
+  ];
+
+  numericFields.forEach(field => {
+    const el = document.getElementById(field.id);
+    if (el && el.value) {
+      const val = parseFloat(el.value);
+      if (isNaN(val) || val < field.min || val > field.max) {
+        showError(field.id, field.message);
+        isValid = false;
+      }
+    }
+  });
+
+  // File validation (optional, only if file is required)
+  // if (uploadedFiles.length === 0) {
+  //   showError("fileInput", "Please upload a contract document");
+  //   isValid = false;
+  // }
 
   return isValid;
 }
@@ -464,7 +504,6 @@ function getNextDueDate(lease) {
 
 //#endregion
 
-// Form Management
 function loadForm(lease) {
   document.getElementById("tenantId").value = lease.tenantId || "";
   document.getElementById("propertyId").value = lease.propertyId || "";
@@ -521,7 +560,7 @@ function clearForm() {
   updateUploadedFilesList();
 }
 
-function saveLease() {
+async function saveLease() {
   if (!validateForm()) {
     showToast("Please correct the errors in the form", "error");
     return;
@@ -530,67 +569,56 @@ function saveLease() {
   const saveBtn = document.getElementById("saveBtn");
   const saveText = document.getElementById("saveText");
 
-  // Show loading state
   saveBtn.disabled = true;
   saveText.textContent = "Saving...";
 
-  setTimeout(() => {
-    const formData = {
-      tenantId: parseInt(document.getElementById("tenantId").value),
-      tenantName:
-        leaseManager.tenantNames[document.getElementById("tenantId").value],
-      propertyId: parseInt(document.getElementById("propertyId").value),
-      propertyName:
-        leaseManager.propertyNames[document.getElementById("propertyId").value],
-      startDate: document.getElementById("startDate").value,
-      endDate: document.getElementById("endDate").value,
-      status: document.getElementById("status").value,
-      monthlyRent: parseFloat(document.getElementById("monthlyRent").value),
-      paymentFrequency: document.getElementById("paymentFrequency").value,
-      quarterlyTax:
-        parseFloat(document.getElementById("quarterlyTax").value) || 0,
-      securityDeposit:
-        parseInt(document.getElementById("securityDeposit").value) || 0,
-      advancePayment:
-        parseInt(document.getElementById("advancePayment").value) || 0,
-      lateFee: parseFloat(document.getElementById("lateFee").value) || 0,
-      gracePeriod: parseInt(document.getElementById("gracePeriod").value) || 0,
-      isSecurityRefundable: document.getElementById("isSecurityRefundable")
-        .checked,
-      advanceForfeited: document.getElementById("advanceForfeited").checked,
-      autoTerminationMonths:
-        parseInt(document.getElementById("autoTerminationMonths").value) || 0,
-      terminationTriggerDays:
-        parseInt(document.getElementById("terminationTriggerDays").value) || 61,
-      noticeCancelDays:
-        parseInt(document.getElementById("noticeCancelDays").value) || 0,
-      noticeRenewalDays:
-        parseInt(document.getElementById("noticeRenewalDays").value) || 0,
-      rentIncreaseRenewal:
-        parseFloat(document.getElementById("rentIncreaseRenewal").value) || 0,
-      notes: document.getElementById("notes").value,
-      uploadedFiles: [...leaseManager.uploadedFiles],
-    };
+  try {
+    const formData = new FormData();
+    formData.append("user_id", document.getElementById("tenantId").value);
+    formData.append("property_id", document.getElementById("propertyId").value);
+    formData.append("lease_start_date", document.getElementById("startDate").value);
+    formData.append("lease_end_date", document.getElementById("endDate").value);
+    formData.append("lease_status", document.getElementById("status").value);
+    formData.append("monthly_rent", document.getElementById("monthlyRent").value);
+    formData.append("payment_frequency", document.getElementById("paymentFrequency").value);
+    formData.append("quarterly_tax_percentage", document.getElementById("quarterlyTax").value);
+    formData.append("security_deposit_months", document.getElementById("securityDeposit").value);
+    formData.append("advance_payment_months", document.getElementById("advancePayment").value);
+    formData.append("late_fee_percentage", document.getElementById("lateFee").value);
+    formData.append("grace_period_days", document.getElementById("gracePeriod").value);
+    formData.append("is_security_deposit_refundable", document.getElementById("isSecurityRefundable").checked ? "1" : "0");
+    formData.append("advance_payment_forfeited_on_cancel", document.getElementById("advanceForfeited").checked ? "1" : "0");
+    formData.append("auto_termination_after_months", document.getElementById("autoTerminationMonths").value);
+    formData.append("termination_trigger_days", document.getElementById("terminationTriggerDays").value);
+    formData.append("notice_before_cancel_days", document.getElementById("noticeCancelDays").value);
+    formData.append("notice_before_renewal_days", document.getElementById("noticeRenewalDays").value);
+    formData.append("rent_increase_on_renewal", document.getElementById("rentIncreaseRenewal").value);
+    formData.append("notes", document.getElementById("notes").value);
 
-    try {
-      if (leaseManager.editMode && leaseManager.currentLease) {
-        leaseManager.updateLease(leaseManager.currentLease.id, formData);
-        showToast("Lease updated successfully!");
-      } else {
-        leaseManager.addLease(formData);
-        showToast("New lease created successfully!");
-      }
-
-      showListView();
-    } catch (error) {
-      showToast("Error saving lease. Please try again.", "error");
-      console.error("Save error:", error);
-    } finally {
-      // Reset button state
-      saveBtn.disabled = false;
-      saveText.textContent = "Save Lease";
+    if (uploadedFiles.length > 0) {
+      formData.append("contract", uploadedFiles[0]);
     }
-  }, 800); // Simulate processing time
+
+    const response = await fetch(`${API_BASE_URL}/create-lease`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to save lease");
+    }
+
+    showToast("Lease created successfully!");
+    resetFormState();
+    showListView();
+  } catch (error) {
+    showToast("Error saving lease. Please try again.", "error");
+    console.error("Save error:", error);
+  } finally {
+    saveBtn.disabled = false;
+    saveText.textContent = "Save Lease";
+  }
 }
 
 function cancelForm() {
@@ -599,7 +627,6 @@ function cancelForm() {
   if (hasUnsavedChanges) {
     showCancelModal();
   } else {
-    // No changes made, just go back immediately
     resetFormState();
     showListView();
   }
