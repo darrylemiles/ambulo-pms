@@ -377,8 +377,7 @@
                                                     <p style="color:#6b7280; font-size:12px;">DOC, DOCX, or PDF
                                                         files accepted</p>
                                                 </div>
-                                                <input type="file" id="fileInput"
-                                                    accept=".pdf,.doc,.docx"
+                                                <input type="file" id="fileInput" accept=".pdf,.doc,.docx"
                                                     style="display: none;">
                                                 <div id="uploadedFiles" class="uploaded-files"></div>
                                             </div>
@@ -401,199 +400,194 @@
                         </div>
                     </div>
 
-                    <!-- Detail View -->
-                    <div id="detailView" class="hidden">
-                        <!-- Breadcrumb Navigation for Detail View -->
-                        <div class="breadcrumb-container" id="leaseDetailBreadcrumbContainer"
-                            style="margin-bottom: 18px;">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb" id="leaseDetailBreadcrumbNav">
-                                    <li class="breadcrumb-item" onclick="showListView()" style="cursor: pointer;">
-                                        <i class="fas fa-file-contract me-2"></i>Lease Management
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">
-                                        <i class="fa-solid fa-eye me-2"></i>Lease Details
-                                    </li>
-                                </ol>
-                            </nav>
+
+                </div>
+
+                <!-- Detail View -->
+                <div id="detailView" class="hidden">
+                    <!-- Breadcrumb Navigation for Detail View -->
+                    <div class="breadcrumb-container" id="leaseDetailBreadcrumbContainer" style="margin-bottom: 18px;">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb" id="leaseDetailBreadcrumbNav">
+                                <li class="breadcrumb-item" onclick="showListView()" style="cursor: pointer;">
+                                    <i class="fas fa-file-contract me-2"></i>Lease Management
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    <i class="fa-solid fa-eye me-2"></i>Lease Details
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="header">
+                        <div>
+                            <h1 id="detailTitle">Lease Details</h1>
+                            <p id="detailSubtitle" style="color: rgba(0, 0, 0, 0.8); font-size: 16px;"></p>
                         </div>
-                        <div class="header">
-                            <div>
-                                <h1 id="detailTitle">Lease Details</h1>
-                                <p id="detailSubtitle" style="color: rgba(0, 0, 0, 0.8); font-size: 16px;"></p>
+                        <div>
+                            <button class="btn btn-secondary" onclick="showListView()">
+                                <i class="fa-solid fa-arrow-left"></i> Back to List
+                            </button>
+                            <button class="btn btn-primary" onclick="editCurrentLease()">
+                                <i class="fa-solid fa-pen"></i> Edit Lease
+                            </button>
+                        </div>
+                    </div>
+                    <div class="detail-grid">
+                        <div>
+                            <!-- Basic Information -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
+                                        Basic Information</h3>
+                                    <div class="info-grid" id="basicInfo"></div>
+                                </div>
                             </div>
-                            <div>
-                                <button class="btn btn-secondary" onclick="showListView()">
-                                    <i class="fa-solid fa-arrow-left"></i> Back to List
-                                </button>
-                                <button class="btn btn-primary" onclick="editCurrentLease()">
-                                    <i class="fa-solid fa-pen"></i> Edit Lease
-                                </button>
+
+                            <!-- Financial Terms -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
+                                        Financial Terms</h3>
+                                    <div class="info-grid" id="financialInfo"></div>
+                                </div>
+                            </div>
+
+                            <!-- Rules & Conditions -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
+                                        Rules & Conditions</h3>
+                                    <div class="info-grid" id="rulesInfo"></div>
+                                </div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="card" id="notesCard" style="display: none;">
+                                <div class="card-body">
+                                    <h3 style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
+                                        Additional Notes</h3>
+                                    <p id="leaseNotes" style="white-space: pre-wrap; line-height: 1.6; color: #4b5563;">
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <div class="detail-grid">
-                            <div>
-                                <!-- Basic Information -->
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h3
-                                            style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
-                                            Basic Information</h3>
-                                        <div class="info-grid" id="basicInfo"></div>
-                                    </div>
-                                </div>
 
-                                <!-- Financial Terms -->
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h3
-                                            style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
-                                            Financial Terms</h3>
-                                        <div class="info-grid" id="financialInfo"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Rules & Conditions -->
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h3
-                                            style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
-                                            Rules & Conditions</h3>
-                                        <div class="info-grid" id="rulesInfo"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Notes -->
-                                <div class="card" id="notesCard" style="display: none;">
-                                    <div class="card-body">
-                                        <h3
-                                            style="margin-bottom: 20px; color: #1f2937; font-size: 20px; font-weight: 700;">
-                                            Additional Notes</h3>
-                                        <p id="leaseNotes"
-                                            style="white-space: pre-wrap; line-height: 1.6; color: #4b5563;">
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Sidebar -->
-                            <div>
-                                <!-- Quick Actions -->
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="sidebar-section">
-                                            <h3>Quick Actions</h3>
-                                            <div style="display: flex; flex-direction: column; gap: 12px;">
-                                                <button class="btn btn-primary" onclick="editCurrentLease()"><i
-                                                        class="fa-solid fa-pen"></i> Edit Lease</button>
-                                                <button class="btn btn-success" onclick="generateContract()"><i
-                                                        class="fa-solid fa-file"></i> Generate Contract</button>
-                                                <button class="btn btn-warning" onclick="sendReminder()"><i
-                                                        class="fa-solid fa-bell"></i> Send Payment Reminder</button>
-                                                <button class="btn btn-danger" onclick="terminateLease()"><i
-                                                        class="fa-solid fa-x"></i> Terminate Lease</button>
-                                            </div>
+                        <!-- Sidebar -->
+                        <div>
+                            <!-- Quick Actions -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="sidebar-section">
+                                        <h3>Quick Actions</h3>
+                                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                                            <button class="btn btn-primary" onclick="editCurrentLease()"><i
+                                                    class="fa-solid fa-pen"></i> Edit Lease</button>
+                                            <button class="btn btn-success" onclick="generateContract()"><i
+                                                    class="fa-solid fa-file"></i> Generate Contract</button>
+                                            <button class="btn btn-warning" onclick="sendReminder()"><i
+                                                    class="fa-solid fa-bell"></i> Send Payment Reminder</button>
+                                            <button class="btn btn-danger" onclick="terminateLease()"><i
+                                                    class="fa-solid fa-x"></i> Terminate Lease</button>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Payment Status -->
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="sidebar-section">
-                                            <h3>Payment Information</h3>
-                                            <div style="display: flex; flex-direction: column; gap: 12px;">
-                                                <div
-                                                    style="display: flex; justify-content: space-between; align-items: center;">
-                                                    <span class="info-label">Next Due Date</span>
-                                                    <span id="nextDueDate" class="info-value"></span>
-                                                </div>
-                                                <div
-                                                    style="display: flex; justify-content: space-between; align-items: center;">
-                                                    <span class="info-label">Amount Due</span>
-                                                    <span id="amountDue" class="info-value"></span>
-                                                </div>
-                                                <div
-                                                    style="display: flex; justify-content: space-between; align-items: center;">
-                                                    <span class="info-label">Payment Status</span>
-                                                    <span class="status-badge status-active">Current</span>
-                                                </div>
-                                                <button class="btn btn-primary" style="margin-top: 12px;"
-                                                    onclick="viewPaymentHistory()">
-                                                    View Payment History
-                                                </button>
+                            <!-- Payment Status -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="sidebar-section">
+                                        <h3>Payment Information</h3>
+                                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span class="info-label">Next Due Date</span>
+                                                <span id="nextDueDate" class="info-value"></span>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Recent Activity -->
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="sidebar-section">
-                                            <h3>Recent Activity</h3>
-                                            <div class="notification-item notification-info">
-                                                <span style="color: #3b82f6;">💳</span>
-                                                <div>
-                                                    <p style="font-size: 12px; font-weight: 600; color: #1e40af;">
-                                                        Payment
-                                                        Received</p>
-                                                    <p style="font-size: 11px; color: #3b82f6;">2 days ago</p>
-                                                </div>
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span class="info-label">Amount Due</span>
+                                                <span id="amountDue" class="info-value"></span>
                                             </div>
-                                            <div class="notification-item notification-success">
-                                                <span style="color: #10b981;">📅</span>
-                                                <div>
-                                                    <p style="font-size: 12px; font-weight: 600; color: #065f46;">Lease
-                                                        Renewed</p>
-                                                    <p style="font-size: 11px; color: #10b981;">1 week ago</p>
-                                                </div>
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span class="info-label">Payment Status</span>
+                                                <span class="status-badge status-active">Current</span>
                                             </div>
-                                            <button
-                                                style="background: none; border: none; color: #667eea; font-size: 12px; cursor: pointer; margin-top: 12px;"
-                                                onclick="viewAllActivity()">
-                                                View All Activity →
+                                            <button class="btn btn-primary" style="margin-top: 12px;"
+                                                onclick="viewPaymentHistory()">
+                                                View Payment History
                                             </button>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Documents -->
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="sidebar-section">
-                                            <h3>Documents</h3>
-                                            <div id="documentsList"
-                                                style="display: flex; flex-direction: column; gap: 8px;">
-                                                <div
-                                                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
-                                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                                        <span>📄</span>
-                                                        <span style="font-size: 12px; font-weight: 500;">Lease
-                                                            Agreement.pdf</span>
-                                                    </div>
-                                                    <button class="action-btn"
-                                                        onclick="downloadDocument('lease-agreement')"
-                                                        title="Download">⬇️</button>
-                                                </div>
-                                                <div
-                                                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
-                                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                                        <span>📋</span>
-                                                        <span style="font-size: 12px; font-weight: 500;">Property
-                                                            Inspection.pdf</span>
-                                                    </div>
-                                                    <button class="action-btn"
-                                                        onclick="downloadDocument('property-inspection')"
-                                                        title="Download">⬇️</button>
-                                                </div>
+                            <!-- Recent Activity -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="sidebar-section">
+                                        <h3>Recent Activity</h3>
+                                        <div class="notification-item notification-info">
+                                            <span style="color: #3b82f6;">💳</span>
+                                            <div>
+                                                <p style="font-size: 12px; font-weight: 600; color: #1e40af;">
+                                                    Payment
+                                                    Received</p>
+                                                <p style="font-size: 11px; color: #3b82f6;">2 days ago</p>
                                             </div>
-                                            <button
-                                                style="background: none; border: none; color: #667eea; font-size: 12px; cursor: pointer; margin-top: 12px;"
-                                                onclick="uploadNewDocument()">
-                                                + Upload New Document
-                                            </button>
                                         </div>
+                                        <div class="notification-item notification-success">
+                                            <span style="color: #10b981;">📅</span>
+                                            <div>
+                                                <p style="font-size: 12px; font-weight: 600; color: #065f46;">Lease
+                                                    Renewed</p>
+                                                <p style="font-size: 11px; color: #10b981;">1 week ago</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            style="background: none; border: none; color: #667eea; font-size: 12px; cursor: pointer; margin-top: 12px;"
+                                            onclick="viewAllActivity()">
+                                            View All Activity →
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Documents -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="sidebar-section">
+                                        <h3>Documents</h3>
+                                        <div id="documentsList"
+                                            style="display: flex; flex-direction: column; gap: 8px;">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <span>📄</span>
+                                                    <span style="font-size: 12px; font-weight: 500;">Lease
+                                                        Agreement.pdf</span>
+                                                </div>
+                                                <button class="action-btn" onclick="downloadDocument('lease-agreement')"
+                                                    title="Download">⬇️</button>
+                                            </div>
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <span>📋</span>
+                                                    <span style="font-size: 12px; font-weight: 500;">Property
+                                                        Inspection.pdf</span>
+                                                </div>
+                                                <button class="action-btn"
+                                                    onclick="downloadDocument('property-inspection')"
+                                                    title="Download">⬇️</button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            style="background: none; border: none; color: #667eea; font-size: 12px; cursor: pointer; margin-top: 12px;"
+                                            onclick="uploadNewDocument()">
+                                            + Upload New Document
+                                        </button>
                                     </div>
                                 </div>
                             </div>

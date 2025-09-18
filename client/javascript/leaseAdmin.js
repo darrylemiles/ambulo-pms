@@ -486,13 +486,13 @@ function getDuration(startDate, endDate) {
 
 function getNextDueDate(lease) {
   const today = new Date();
-  const endDate = new Date(lease.endDate);
+  const endDate = new Date(lease.lease_end_date);
 
   if (today > endDate) return '<span style="color: #ef4444;">Expired</span>';
-  if (lease.status !== "ACTIVE")
+  if (lease.lease_status !== "ACTIVE")
     return '<span style="color: #6b7280;">N/A</span>';
 
-  const startDay = new Date(lease.startDate).getDate();
+  const startDay = new Date(lease.lease_start_date).getDate();
   let nextDue = new Date(today.getFullYear(), today.getMonth(), startDay);
 
   if (today.getDate() > startDay) {
@@ -720,6 +720,7 @@ async function showDetailView(leaseId) {
 }
 
 function loadDetailView(lease) {
+  try {
   document.getElementById("detailTitle").textContent = `Lease ${lease.lease_id}`;
   document.getElementById("detailSubtitle").textContent = `${lease.tenant_name} • ${lease.property_name}`;
 
@@ -836,6 +837,10 @@ function loadDetailView(lease) {
   } else {
     notesCard.style.display = "none";
   }
+  } catch (error) {
+    console.error("Error loading detail view:", error);
+    showToast("Error loading lease details", "error");
+  }
 }
 
 function editCurrentLease() {
@@ -844,7 +849,6 @@ function editCurrentLease() {
   }
 }
 
-// Modal Functions
 function showDeleteModal(leaseId) {
   deleteLeaseId = leaseId;
   document.getElementById("deleteModal").classList.add("show");
