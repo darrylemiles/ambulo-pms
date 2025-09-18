@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard | Ambulo PMS</title>
-  <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
-  <link rel="stylesheet" href="/css/fonts.css" />
-  <link rel="stylesheet" href="/css/sidebarTenant.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | Ambulo PMS</title>
+    <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css" />
+    <link rel="stylesheet" href="/css/sidebarTenant.css" />
 </head>
 
 <body>
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <img src="https://res.cloudinary.com/degn0zm6s/image/upload/v1754146538/ambulo_logo_f2rloe.png" 
-                 alt="Ambulo Logo" class="sidebar-logo" />
+            <img src="https://res.cloudinary.com/degn0zm6s/image/upload/v1754146538/ambulo_logo_f2rloe.png" width="40"
+                alt="Ambulo Logo" class="sidebar-logo" />
             <div class="sidebar-title">Ambulo PMS</div>
         </div>
 
@@ -37,19 +38,20 @@
                 </a>
             </div>
 
-            <div class="nav-item">
+            <!-- <div class="nav-item">
                 <a href="/documentsTenant.html" class="nav-link" data-tooltip="Documents" data-page="documents">
                     <div class="nav-icon"><i class="fas fa-folder"></i></div>
                     <span class="nav-text">Documents</span>
                 </a>
-            </div>
+            </div> -->
 
             <div class="nav-section">
                 <div class="nav-section-title">Operations</div>
             </div>
 
             <div class="nav-item">
-                <a href="/maintenanceTenant.html" class="nav-link" data-tooltip="Maintenance Requests" data-page="maintenance">
+                <a href="/maintenanceTenant.html" class="nav-link" data-tooltip="Maintenance Requests"
+                    data-page="maintenance">
                     <div class="nav-icon"><i class="fas fa-tools"></i></div>
                     <span class="nav-text">Maintenance</span>
                 </a>
@@ -65,7 +67,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">Community</div>
             </div>
-            
+
             <div class="nav-item">
                 <a href="/messages.html" class="nav-link" data-tooltip="Messages" data-page="messages">
                     <div class="nav-icon"><i class="fa-solid fa-comments"></i></div>
@@ -88,12 +90,12 @@
             <div class="navbar-left">
                 <h1 class="page-title" id="pageTitle">Dashboard</h1>
             </div>
-            
+
             <div class="navbar-right">
                 <!-- <div class="search-bar">
                     <input type="text" placeholder="Search anything..." id="searchInput">
                 </div> -->
-                
+
                 <!-- Notifications Dropdown -->
                 <div class="dropdown">
                     <button class="nav-icon-btn" id="notificationBtn">
@@ -111,7 +113,8 @@
                             </div>
                             <div class="dropdown-item-content">
                                 <div class="dropdown-item-title">Maintenance Update</div>
-                                <div class="dropdown-item-text">Your plumbing repair request has been assigned to John Smith</div>
+                                <div class="dropdown-item-text">Your plumbing repair request has been assigned to John
+                                    Smith</div>
                                 <div class="dropdown-item-time">2 hours ago</div>
                             </div>
                         </div>
@@ -137,7 +140,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Enhanced Messages Dropdown -->
                 <div class="inbox-dropdown">
                     <button class="nav-icon-btn" id="inboxBtn">
@@ -159,7 +162,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Profile Dropdown -->
                 <div class="dropdown">
                     <button class="profile-btn" id="profileBtn">R</button>
@@ -197,98 +200,98 @@
         </div>
     </div>
 
-<script>
-    // Enhanced dashboard functionality with inbox messaging system
-    const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const overlay = document.getElementById('overlay');
-    const pageTitle = document.getElementById('pageTitle');
-    const searchInput = document.getElementById('searchInput');
-    
-    // Dropdown elements
-    const notificationBtn = document.getElementById('notificationBtn');
-    const notificationMenu = document.getElementById('notificationMenu');
-    const inboxBtn = document.getElementById('inboxBtn');
-    const inboxDropdown = document.getElementById('inboxDropdown');
-    const profileBtn = document.getElementById('profileBtn');
-    const profileMenu = document.getElementById('profileMenu');
+    <script>
+        // Enhanced dashboard functionality with inbox messaging system
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const overlay = document.getElementById('overlay');
+        const pageTitle = document.getElementById('pageTitle');
+        const searchInput = document.getElementById('searchInput');
 
-    // Sample inbox messages data
-    const inboxMessages = [
-        {
-            id: 1,
-            sender: "Property Manager",
-            subject: "Monthly Rent Reminder",
-            preview: "Your rent payment for this month is due on the 30th. Please ensure timely payment to avoid late fees and maintain your good standing with the property.",
-            time: "2 hours ago",
-            unread: true,
-            priority: "high"
-        },
-        {
-            id: 2,
-            sender: "Maintenance Team",
-            subject: "Work Order #2024-0156 Completed",
-            preview: "The plumbing issue in your apartment has been successfully resolved. Our certified technician completed the work and performed quality checks to ensure everything is functioning properly.",
-            time: "1 day ago",
-            unread: true,
-            priority: "medium"
-        },
-        {
-            id: 3,
-            sender: "Ambulo Properties",
-            subject: "Lease Renewal Opportunity",
-            preview: "Your lease agreement is set to expire in 60 days. We would like to discuss renewal options and updated terms. Please contact us at your earliest convenience.",
-            time: "3 days ago",
-            unread: false,
-            priority: "medium"
-        },
-        {
-            id: 4,
-            sender: "Community Manager",
-            subject: "Exciting Building Amenity Updates",
-            preview: "We're excited to announce new premium amenities coming to your building including a state-of-the-art fitness center, rooftop garden, and co-working spaces.",
-            time: "1 week ago",
-            unread: false,
-            priority: "low"
-        },
-        {
-            id: 5,
-            sender: "Security Office",
-            subject: "Package Delivery Notification",
-            preview: "A package has been delivered to your unit and is currently being held at the front desk. Please bring a valid ID to collect your delivery during office hours.",
-            time: "2 weeks ago",
-            unread: false,
-            priority: "medium"
-        }
-    ];
+        // Dropdown elements
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationMenu = document.getElementById('notificationMenu');
+        const inboxBtn = document.getElementById('inboxBtn');
+        const inboxDropdown = document.getElementById('inboxDropdown');
+        const profileBtn = document.getElementById('profileBtn');
+        const profileMenu = document.getElementById('profileMenu');
 
-    // Populate inbox content
-    function populateInbox() {
-        const inboxContent = document.getElementById('inboxContent');
-        const inboxBadge = document.getElementById('inboxBadge');
-        const messagesBadge = document.getElementById('messagesBadge');
-        const unreadCount = inboxMessages.filter(msg => msg.unread).length;
-        
-        // Update badges
-        if (unreadCount > 0) {
-            inboxBadge.textContent = `${unreadCount} New`;
-            messagesBadge.textContent = unreadCount;
-            messagesBadge.style.display = 'flex';
-        } else {
-            inboxBadge.textContent = 'All Read';
-            messagesBadge.style.display = 'none';
-        }
-        
-        if (inboxMessages.length === 0) {
-            inboxContent.innerHTML = `
+        // Sample inbox messages data
+        const inboxMessages = [
+            {
+                id: 1,
+                sender: "Property Manager",
+                subject: "Monthly Rent Reminder",
+                preview: "Your rent payment for this month is due on the 30th. Please ensure timely payment to avoid late fees and maintain your good standing with the property.",
+                time: "2 hours ago",
+                unread: true,
+                priority: "high"
+            },
+            {
+                id: 2,
+                sender: "Maintenance Team",
+                subject: "Work Order #2024-0156 Completed",
+                preview: "The plumbing issue in your apartment has been successfully resolved. Our certified technician completed the work and performed quality checks to ensure everything is functioning properly.",
+                time: "1 day ago",
+                unread: true,
+                priority: "medium"
+            },
+            {
+                id: 3,
+                sender: "Ambulo Properties",
+                subject: "Lease Renewal Opportunity",
+                preview: "Your lease agreement is set to expire in 60 days. We would like to discuss renewal options and updated terms. Please contact us at your earliest convenience.",
+                time: "3 days ago",
+                unread: false,
+                priority: "medium"
+            },
+            {
+                id: 4,
+                sender: "Community Manager",
+                subject: "Exciting Building Amenity Updates",
+                preview: "We're excited to announce new premium amenities coming to your building including a state-of-the-art fitness center, rooftop garden, and co-working spaces.",
+                time: "1 week ago",
+                unread: false,
+                priority: "low"
+            },
+            {
+                id: 5,
+                sender: "Security Office",
+                subject: "Package Delivery Notification",
+                preview: "A package has been delivered to your unit and is currently being held at the front desk. Please bring a valid ID to collect your delivery during office hours.",
+                time: "2 weeks ago",
+                unread: false,
+                priority: "medium"
+            }
+        ];
+
+        // Populate inbox content
+        function populateInbox() {
+            const inboxContent = document.getElementById('inboxContent');
+            const inboxBadge = document.getElementById('inboxBadge');
+            const messagesBadge = document.getElementById('messagesBadge');
+            const unreadCount = inboxMessages.filter(msg => msg.unread).length;
+
+            // Update badges
+            if (unreadCount > 0) {
+                inboxBadge.textContent = `${unreadCount} New`;
+                messagesBadge.textContent = unreadCount;
+                messagesBadge.style.display = 'flex';
+            } else {
+                inboxBadge.textContent = 'All Read';
+                messagesBadge.style.display = 'none';
+            }
+
+            if (inboxMessages.length === 0) {
+                inboxContent.innerHTML = `
                 <div class="empty-inbox">
                     <div class="empty-inbox-icon">📭</div>
                     <div class="empty-inbox-text">No messages yet</div>
                     <div class="empty-inbox-subtext">You're all caught up!</div>
                 </div>
             `;
-        } else {
-            inboxContent.innerHTML = inboxMessages.map(message => `
+            } else {
+                inboxContent.innerHTML = inboxMessages.map(message => `
                 <div class="inbox-item ${message.unread ? 'unread' : ''}" onclick="openMessage(${message.id})">
                     <div class="inbox-item-header">
                         <div class="inbox-sender-section">
@@ -301,224 +304,225 @@
                     <div class="inbox-preview">${message.preview}</div>
                 </div>
             `).join('');
+            }
         }
-    }
 
-    // Function to handle message click
-    function openMessage(messageId) {
-        const message = inboxMessages.find(msg => msg.id === messageId);
-        if (message && message.unread) {
-            message.unread = false;
-            populateInbox();
+        // Function to handle message click
+        function openMessage(messageId) {
+            const message = inboxMessages.find(msg => msg.id === messageId);
+            if (message && message.unread) {
+                message.unread = false;
+                populateInbox();
+            }
+            alert(`Opening message: "${message.subject}" from ${message.sender}`);
         }
-        alert(`Opening message: "${message.subject}" from ${message.sender}`);
-    }
 
-    // Initialize inbox
-    populateInbox();
+        // Initialize inbox
+        populateInbox();
 
-    // Sidebar toggle functionality
-    sidebarToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleSidebar();
-    });
+        // Sidebar toggle functionality
+        sidebarToggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleSidebar();
+        });
 
-    function toggleSidebar() {
-        sidebar.classList.toggle('collapsed');
-        
-        const toggleIcon = sidebarToggle.querySelector('i');
-        if (sidebar.classList.contains('collapsed')) {
-            toggleIcon.className = 'fas fa-chevron-right';
-            sidebarToggle.title = 'Expand Sidebar';
-        } else {
-            toggleIcon.className = 'fas fa-chevron-left';
-            sidebarToggle.title = 'Collapse Sidebar';
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+
+            const toggleIcon = sidebarToggle.querySelector('i');
+            if (sidebar.classList.contains('collapsed')) {
+                toggleIcon.className = 'fas fa-chevron-right';
+                sidebarToggle.title = 'Expand Sidebar';
+            } else {
+                toggleIcon.className = 'fas fa-chevron-left';
+                sidebarToggle.title = 'Collapse Sidebar';
+            }
+
+            sidebarToggle.classList.add('hover-effect');
+            setTimeout(() => {
+                sidebarToggle.classList.remove('hover-effect');
+            }, 300);
         }
-        
-        sidebarToggle.classList.add('hover-effect');
-        setTimeout(() => {
-            sidebarToggle.classList.remove('hover-effect');
-        }, 300);
-    }
 
-    // Mobile sidebar functionality
-    function toggleMobileSidebar() {
-        if (window.innerWidth <= 768) {
-            sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('active');
+        // Mobile sidebar functionality
+        function toggleMobileSidebar() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('active');
+            }
         }
-    }
 
-    // Close mobile sidebar when clicking overlay
-    overlay.addEventListener('click', function() {
-        sidebar.classList.remove('mobile-open');
-        overlay.classList.remove('active');
-    });
+        // Close mobile sidebar when clicking overlay
+        overlay.addEventListener('click', function () {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        });
 
-    // Dropdown functionality
-    function toggleDropdown(menu, button) {
-        document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
-            if (dropdown !== menu) {
-                dropdown.classList.remove('show', 'active');
+        // Dropdown functionality
+        function toggleDropdown(menu, button) {
+            document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
+                if (dropdown !== menu) {
+                    dropdown.classList.remove('show', 'active');
+                }
+            });
+
+            if (menu.classList.contains('inbox-dropdown-menu')) {
+                menu.classList.toggle('active');
+            } else {
+                menu.classList.toggle('show');
+            }
+        }
+
+        // Notification dropdown
+        notificationBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleDropdown(notificationMenu, notificationBtn);
+        });
+
+        // Inbox dropdown
+        inboxBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleDropdown(inboxDropdown, inboxBtn);
+        });
+
+        // Profile dropdown
+        profileBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleDropdown(profileMenu, profileBtn);
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.dropdown') && !e.target.closest('.inbox-dropdown')) {
+                document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
+                    dropdown.classList.remove('show', 'active');
+                });
             }
         });
-        
-        if (menu.classList.contains('inbox-dropdown-menu')) {
-            menu.classList.toggle('active');
-        } else {
-            menu.classList.toggle('show');
-        }
-    }
 
-    // Notification dropdown
-    notificationBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleDropdown(notificationMenu, notificationBtn);
-    });
-
-    // Inbox dropdown
-    inboxBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleDropdown(inboxDropdown, inboxBtn);
-    });
-
-    // Profile dropdown
-    profileBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleDropdown(profileMenu, profileBtn);
-    });
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown') && !e.target.closest('.inbox-dropdown')) {
-            document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
-                dropdown.classList.remove('show', 'active');
+        // Prevent dropdown close when clicking inside
+        document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(menu => {
+            menu.addEventListener('click', function (e) {
+                e.stopPropagation();
             });
-        }
-    });
-
-    // Prevent dropdown close when clicking inside
-    document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(menu => {
-        menu.addEventListener('click', function(e) {
-            e.stopPropagation();
         });
-    });
 
-    // Search functionality
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        if (searchTerm) {
-            console.log('Searching for:', searchTerm);
+        // Search functionality
+        searchInput.addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            if (searchTerm) {
+                console.log('Searching for:', searchTerm);
+            }
+        });
+
+        // Navigation link functionality
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+
+                const pageName = this.querySelector('.nav-text').textContent;
+                pageTitle.textContent = pageName;
+
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Profile menu functions
+        function openProfileSettings() {
+            console.log('Opening profile settings...');
+            profileMenu.classList.remove('show');
+            alert('Profile settings would open here');
         }
-    });
 
-    // Navigation link functionality
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-            
-            const pageName = this.querySelector('.nav-text').textContent;
-            pageTitle.textContent = pageName;
-            
-            if (window.innerWidth <= 768) {
+        function openAccountSettings() {
+            console.log('Opening account settings...');
+            profileMenu.classList.remove('show');
+            alert('Account settings would open here');
+        }
+
+        function openPreferences() {
+            console.log('Opening preferences...');
+            profileMenu.classList.remove('show');
+            alert('Preferences would open here');
+        }
+
+        function openHelp() {
+            console.log('Opening help & support...');
+            profileMenu.classList.remove('show');
+            alert('Help & Support would open here');
+        }
+
+        function logout() {
+            console.log('Logging out...');
+            profileMenu.classList.remove('show');
+            if (confirm('Are you sure you want to sign out?')) {
+                alert('Redirecting to login page...');
+            }
+        }
+
+        // Notification interactions
+        document.querySelectorAll('#notificationMenu .dropdown-item').forEach(item => {
+            item.addEventListener('click', function () {
+                console.log('Notification clicked:', this.querySelector('.dropdown-item-title').textContent);
+                this.style.opacity = '0.7';
+
+                const badge = document.getElementById('notificationBadge');
+                let count = parseInt(badge.textContent);
+                if (count > 0) {
+                    count--;
+                    badge.textContent = count;
+                    if (count === 0) {
+                        badge.style.display = 'none';
+                        document.querySelector('#notificationMenu .dropdown-subtitle').textContent = 'No unread notifications';
+                    }
+                }
+            });
+        });
+
+        // Window resize handler
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) {
                 sidebar.classList.remove('mobile-open');
                 overlay.classList.remove('active');
             }
         });
-    });
 
-    // Profile menu functions
-    function openProfileSettings() {
-        console.log('Opening profile settings...');
-        profileMenu.classList.remove('show');
-        alert('Profile settings would open here');
-    }
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                toggleSidebar();
+            }
 
-    function openAccountSettings() {
-        console.log('Opening account settings...');
-        profileMenu.classList.remove('show');
-        alert('Account settings would open here');
-    }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
 
-    function openPreferences() {
-        console.log('Opening preferences...');
-        profileMenu.classList.remove('show');
-        alert('Preferences would open here');
-    }
-
-    function openHelp() {
-        console.log('Opening help & support...');
-        profileMenu.classList.remove('show');
-        alert('Help & Support would open here');
-    }
-
-    function logout() {
-        console.log('Logging out...');
-        profileMenu.classList.remove('show');
-        if (confirm('Are you sure you want to sign out?')) {
-            alert('Redirecting to login page...');
-        }
-    }
-
-    // Notification interactions
-    document.querySelectorAll('#notificationMenu .dropdown-item').forEach(item => {
-        item.addEventListener('click', function() {
-            console.log('Notification clicked:', this.querySelector('.dropdown-item-title').textContent);
-            this.style.opacity = '0.7';
-            
-            const badge = document.getElementById('notificationBadge');
-            let count = parseInt(badge.textContent);
-            if (count > 0) {
-                count--;
-                badge.textContent = count;
-                if (count === 0) {
-                    badge.style.display = 'none';
-                    document.querySelector('#notificationMenu .dropdown-subtitle').textContent = 'No unread notifications';
-                }
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
+                    dropdown.classList.remove('show', 'active');
+                });
             }
         });
-    });
 
-    // Window resize handler
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
-        }
-    });
+        // Add smooth scrolling and loading animation
+        document.documentElement.style.scrollBehavior = 'smooth';
 
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-            e.preventDefault();
-            toggleSidebar();
-        }
-        
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            searchInput.focus();
-        }
-        
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
-                dropdown.classList.remove('show', 'active');
-            });
-        }
-    });
+        window.addEventListener('load', function () {
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.3s ease';
 
-    // Add smooth scrolling and loading animation
-    document.documentElement.style.scrollBehavior = 'smooth';
-    
-    window.addEventListener('load', function() {
-        document.body.style.opacity = '0';
-        document.body.style.transition = 'opacity 0.3s ease';
-        
-        setTimeout(() => {
-            document.body.style.opacity = '1';
-        }, 100);
-    });
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
 
-</script>
+    </script>
 </body>
+
 </html>

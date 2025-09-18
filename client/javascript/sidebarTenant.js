@@ -1,4 +1,3 @@
-// Combined Ambulo PMS Dashboard with Enhanced Messaging and Sidebar Management
 fetch("/components/sidebarTenant.html")
   .then((res) => res.text())
   .then((html) => {
@@ -33,8 +32,8 @@ fetch("/components/sidebarTenant.html")
       "paymentTenant": "Payments",
       "maintenanceTenant.html": "Maintenance Requests",
       "maintenanceTenant": "Maintenance Requests",
-      "documentsTenant.html": "Documents",
-      "documentsTenant": "Documents",
+      // "documentsTenant.html": "Documents",
+      // "documentsTenant": "Documents",
 
       // Data-page attribute mapping
       dashboard: 'Dashboard',
@@ -42,7 +41,7 @@ fetch("/components/sidebarTenant.html")
       payments: 'Payments',
       maintenance: 'Maintenance Requests',
       messages: 'Messages',
-      documents: 'Documents',
+      // documents: 'Documents',
       support: 'Support',
 
       // Default fallbacks
