@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import conn from "../config/db.js";
+import propertiesServices from "./propertiesServices.js";
 
 const pool = await conn();
 
@@ -86,6 +87,16 @@ const createLease = async (leaseData = {}, contractFile = null) => {
       `INSERT INTO leases (${fields}) VALUES (${placeholders})`,
       values
     );
+
+    let newPropertyStatus = null;
+    if (leaseData.lease_status === "PENDING") {
+      newPropertyStatus = "Reserved";
+    } else if (leaseData.lease_status === "ACTIVE") {
+      newPropertyStatus = "Occupied";
+    }
+    if (newPropertyStatus) {
+      await propertiesServices.editPropertyById(leaseData.property_id, { property_status: newPropertyStatus });
+    }
 
     await conn.commit();
     conn.release();
@@ -219,6 +230,7 @@ const getAllLeases = async (queryObj = {}) => {
     throw new Error(error.message || "Failed to get leases");
   }
 };
+
 const getSingleLeaseById = async (leaseId) => {
   try {
     const [rows] = await pool.query(`
@@ -261,6 +273,7 @@ const getLeaseByUserId = async (userId) => {
     throw error;
   }
 };
+
 const updateLeaseById = async (
   leaseId,
   leaseData = {},
@@ -339,6 +352,18 @@ const updateLeaseById = async (
         `UPDATE leases SET ${fields}, updated_at = NOW() WHERE lease_id = ?`,
         [...values, leaseId]
       );
+    }
+
+    let newPropertyStatus = null;
+    if (leaseData.lease_status === "PENDING") {
+      newPropertyStatus = "Reserved";
+    } else if (leaseData.lease_status === "ACTIVE") {
+      newPropertyStatus = "Occupied";
+    } else if (leaseData.lease_status === "TERMINATED" || leaseData.lease_status === "CANCELLED") {
+      newPropertyStatus = "Available";
+    }
+    if (newPropertyStatus && lease.property_id) {
+      await propertiesServices.editPropertyById(lease.property_id, { property_status: newPropertyStatus });
     }
 
     await conn.commit();
