@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   const data = await res.json();
   const leases = Array.isArray(data) ? data : data.leases || [];
 
+  window._leases = leases;
+
   renderOverview(user, leases);
   renderProperties(leases);
 });
@@ -86,13 +88,13 @@ function renderProperties(leases) {
           </div>
           <div class="contract-section">
             <div class="contract-header">
-              <div class="contract-title">Lease Contract #${
+              <div class="contract-title">Lease #${
                 lease.lease_id
               }</div>
               <div class="contract-actions">
-                <button class="btn btn-primary" onclick="viewContract('${
+                <button class="btn btn-primary" onclick="viewLeaseDetails('${
                   lease.lease_id
-                }')">View Contract</button>
+                }')">View Lease Details</button>
                 <button class="btn btn-secondary" onclick="viewPayments('${
                   lease.lease_id
                 }')">View Payments</button>
@@ -113,26 +115,98 @@ function renderProperties(leases) {
   });
 }
 
-function viewContract(contractId) {
-  const contract = contracts[contractId];
-  if (!contract) return;
+function viewLeaseDetails(leaseId) {
+  if (!window._leases) return;
+  const lease = window._leases.find((l) => l.lease_id === leaseId);
+  if (!lease) return;
 
   const modal = document.getElementById("contractModal");
   const title = document.getElementById("contractModalTitle");
   const content = document.getElementById("contractContent");
 
-  title.textContent = contract.title;
+  title.textContent = `Lease Details - ${lease.property_name}`;
 
-  let html = `<p style="margin-bottom: 2rem; color: #6b7280; font-size: 16px;"><strong>Property:</strong> ${contract.property}</p>`;
-
-  contract.terms.forEach((term) => {
-    html += `
-                    <div class="term-item">
-                        <span class="term-label">${term.label}:</span>
-                        <span class="term-value">${term.value}</span>
-                    </div>
-                `;
-  });
+  let html = `
+    <div style="padding: 1rem;">
+      <h4 style="margin-bottom: 1rem; color: #44444E;">Property Information</h4>
+      <div class="term-item">
+        <span class="term-label">Property Name:</span>
+        <span class="term-value">${lease.property_name}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Address:</span>
+        <span class="term-value">${lease.property_address || "N/A"}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Lease Status:</span>
+        <span class="term-value">${lease.lease_status}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Lease Period:</span>
+        <span class="term-value">${new Date(lease.lease_start_date).toLocaleDateString()} &ndash; ${new Date(lease.lease_end_date).toLocaleDateString()}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Monthly Rent:</span>
+        <span class="term-value">₱${Number(lease.monthly_rent).toLocaleString()}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Payment Frequency:</span>
+        <span class="term-value">${lease.payment_frequency}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Security Deposit:</span>
+        <span class="term-value">${lease.security_deposit_months} month(s)</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Advance Payment:</span>
+        <span class="term-value">${lease.advance_payment_months} month(s)</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Quarterly Tax (%):</span>
+        <span class="term-value">${lease.quarterly_tax_percentage || "0.00"}%</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Late Fee (%):</span>
+        <span class="term-value">${lease.late_fee_percentage || "0.00"}%</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Grace Period (days):</span>
+        <span class="term-value">${lease.grace_period_days || "0"}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Auto-Termination After (months):</span>
+        <span class="term-value">${lease.auto_termination_after_months || "N/A"}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Advance Forfeited on Cancel:</span>
+        <span class="term-value">${lease.advance_payment_forfeited_on_cancel ? "Yes" : "No"}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Termination After Nonpayment (days):</span>
+        <span class="term-value">${lease.termination_trigger_days || "N/A"}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Notice Before Cancel (days):</span>
+        <span class="term-value">${lease.notice_before_cancel_days || "N/A"}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Notice Before Renewal (days):</span>
+        <span class="term-value">${lease.notice_before_renewal_days || "N/A"}</span>
+      </div>
+      <div class="term-item">
+        <span class="term-label">Rent Increase on Renewal (%):</span>
+        <span class="term-value">${lease.rent_increase_on_renewal || "0.00"}%</span>
+      </div>
+<!--     <div class="term-item">
+        <span class="term-label">Renewal Count:</span>
+        <span class="term-value">${lease.renewal_count || "0"}</span>
+      </div> -->
+      <div class="term-item">
+        <span class="term-label">Notes:</span>
+        <span class="term-value">${lease.notes || "None"}</span>
+      </div>
+    </div>
+  `;
 
   content.innerHTML = html;
   modal.style.display = "block";
@@ -173,7 +247,6 @@ function closeModal(modalId) {
   modal.style.display = "none";
 }
 
-// Close modal when clicking outside
 window.onclick = function (event) {
   const contractModal = document.getElementById("contractModal");
   const paymentModal = document.getElementById("paymentModal");
@@ -186,7 +259,6 @@ window.onclick = function (event) {
   }
 };
 
-// Close modal with Escape key
 document.addEventListener("keydown", function (event) {
   if (event.key === "Escape") {
     const modals = document.querySelectorAll(".modal");
@@ -209,3 +281,7 @@ document.querySelectorAll(".nav-links a").forEach((link) => {
     }
   });
 });
+
+window.viewLeaseDetails = viewLeaseDetails;
+window.viewPayments = viewPayments;
+window.closeModal = closeModal;
