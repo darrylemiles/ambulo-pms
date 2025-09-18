@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/leaseTenant.css">
     <title>Lease - Tenant</title>
 </head>
@@ -17,162 +17,13 @@
     <section class="overview">
         <div class="container">
             <div class="overview-grid">
-                <div class="overview-card">
-                    <h3>Tenant Name</h3>
-                    <div class="value">Rea</div>
-                    <div class="subtitle">Primary Account</div>
-                </div>
-                <div class="overview-card">
-                    <h3>Active Leases</h3>
-                    <div class="value">2</div>
-                    <div class="subtitle">Currently Active</div>
-                </div>
-                <div class="overview-card">
-                    <h3>Total Properties</h3>
-                    <div class="value">2</div>
-                    <div class="subtitle">Under Management</div>
-                </div>
-                <div class="overview-card">
-                    <h3>Next Payment</h3>
-                    <div class="value">Dec 1</div>
-                    <div class="subtitle">2025 - Due Soon</div>
-                </div>
             </div>
         </div>
     </section>
 
     <!-- Properties Section -->
     <section class="properties" id="properties">
-        <div class="container">
-            <h2 class="section-title">My Leased Spaces</h2>
-            
-            <div class="property-card">
-                <div class="property-image-container">
-                    <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop&crop=center" 
-                         alt="Luxury Downtown Apartment" class="property-image">
-                </div>
-                <div class="property-content">
-                    <div class="property-header">
-                        <div>
-                            <div class="property-title">Luxury Downtown Apartment</div>
-                            <div class="property-address">123 Main Street, Suite 4B, Makati, Metro Manila</div>
-                        </div>
-                        <div class="property-status status-active">Active</div>
-                    </div>
-                    
-                    <div class="property-details">
-                        <div class="detail-item">
-                            <div class="detail-label">Bedrooms</div>
-                            <div class="detail-value">3</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Bathrooms</div>
-                            <div class="detail-value">2.5</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Square Feet</div>
-                            <div class="detail-value">1,800</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Monthly Rent</div>
-                            <div class="detail-value price">₱110,000</div>
-                        </div>
-                    </div>
-
-                    <div class="contract-section">
-                        <div class="contract-header">
-                            <div class="contract-title">Lease Contract #LC002</div>
-                            <div class="contract-actions">
-                                <button class="btn btn-primary" onclick="viewContract('LC002')">View Contract</button>
-                                <button class="btn btn-secondary" onclick="viewPayments('LC002')">View Payments</button>
-                            </div>
-                        </div>
-                        
-                        <div class="contract-details">
-                            <div class="contract-item">
-                                <div class="contract-label">Lease Start</div>
-                                <div class="contract-value">March 1, 2025</div>
-                            </div>
-                            <div class="contract-item">
-                                <div class="contract-label">Lease End</div>
-                                <div class="contract-value">February 28, 2026</div>
-                            </div>
-                            <div class="contract-item">
-                                <div class="contract-label">Security Deposit</div>
-                                <div class="contract-value highlight">₱110,000</div>
-                            </div>
-                            <div class="contract-item">
-                                <div class="contract-label">Next Payment Due</div>
-                                <div class="contract-value highlight">December 1, 2025</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="property-card">
-                <div class="property-image-container">
-                    <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=500&fit=crop&crop=center" 
-                         alt="Suburban Family Home" class="property-image">
-                </div>
-                <div class="property-content">
-                    <div class="property-header">
-                        <div>
-                            <div class="property-title">Suburban Family Home</div>
-                            <div class="property-address">456 Oak Avenue, Alabang, Muntinlupa</div>
-                        </div>
-                        <div class="property-status status-active">Active</div>
-                    </div>
-                    
-                    <div class="property-details">
-                        <div class="detail-item">
-                            <div class="detail-label">Bedrooms</div>
-                            <div class="detail-value">2</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Bathrooms</div>
-                            <div class="detail-value">2</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Square Feet</div>
-                            <div class="detail-value">1,200</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Monthly Rent</div>
-                            <div class="detail-value price">₱85,000</div>
-                        </div>
-                    </div>
-
-                    <div class="contract-section">
-                        <div class="contract-header">
-                            <div class="contract-title">Lease Contract #LC001</div>
-                            <div class="contract-actions">
-                                <button class="btn btn-primary" onclick="viewContract('LC001')">View Contract</button>
-                                <button class="btn btn-secondary" onclick="viewPayments('LC001')">View Payments</button>
-                            </div>
-                        </div>
-                        
-                        <div class="contract-details">
-                            <div class="contract-item">
-                                <div class="contract-label">Lease Start</div>
-                                <div class="contract-value">January 1, 2025</div>
-                            </div>
-                            <div class="contract-item">
-                                <div class="contract-label">Lease End</div>
-                                <div class="contract-value">December 31, 2025</div>
-                            </div>
-                            <div class="contract-item">
-                                <div class="contract-label">Security Deposit</div>
-                                <div class="contract-value highlight">₱85,000</div>
-                            </div>
-                            <div class="contract-item">
-                                <div class="contract-label">Next Payment Due</div>
-                                <div class="contract-value highlight">December 1, 2025</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="container" id="propertiesContainer">
         </div>
     </section>
     </div>
@@ -203,7 +54,7 @@
         </div>
     </div>
 
-    <script src="/javascript/sidebarTenant.js"></script>
-    <script src="/javascript/leaseTenant.js"></script>
+    <script type="module" src="/javascript/sidebarTenant.js"></script>
+    <script type="module" src="/javascript/leaseTenant.js"></script>
 </body>
 </html>
