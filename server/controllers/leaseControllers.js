@@ -19,7 +19,7 @@ const createLease = expressAsync(async (req, res) => {
 
 const getAllLeases = expressAsync(async (req, res) => {
   try {
-    const result = await leaseServices.getAllLeases();
+    const result = await leaseServices.getAllLeases(req.query);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error getting leases:", error);
@@ -31,7 +31,7 @@ const getSingleLeaseById = expressAsync(async (req, res) => {
   try {
     const leaseId = req.params.id;
     const result = await leaseServices.getSingleLeaseById(leaseId);
-    res.status(200).json(result);
+    res.status(200).json({ lease: result });
   } catch (error) {
     console.error("Error getting lease:", error);
     res.status(400).json({ message: error.message || "Failed to get lease" });

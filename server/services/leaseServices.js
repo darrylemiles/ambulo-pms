@@ -98,20 +98,142 @@ const createLease = async (leaseData = {}, contractFile = null) => {
   }
 };
 
-const getAllLeases = async () => {
+const getAllLeases = async (queryObj = {}) => {
   try {
-    const [rows] = await pool.query(`SELECT * FROM leases`);
-    return rows;
+    let query = `
+      SELECT 
+        l.*,
+        CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) AS tenant_name,
+        u.user_id,
+        p.property_name,
+        p.property_id
+      FROM leases l
+      LEFT JOIN users u ON l.user_id = u.user_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE 1=1
+    `;
+
+    const values = [];
+
+    if (queryObj.status && queryObj.status !== "all") {
+      query += ` AND l.lease_status = ?`;
+      values.push(queryObj.status);
+    }
+
+    if (queryObj.property_id && queryObj.property_id !== "all") {
+      query += ` AND l.property_id = ?`;
+      values.push(queryObj.property_id);
+    }
+
+    if (queryObj.user_id && queryObj.user_id !== "all") {
+      query += ` AND l.user_id = ?`;
+      values.push(queryObj.user_id);
+    }
+
+    if (queryObj.search) {
+      query += ` AND (
+        CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) LIKE ?
+        OR p.property_name LIKE ?
+      )`;
+      const searchTerm = `%${queryObj.search}%`;
+      values.push(searchTerm, searchTerm);
+    }
+
+    if (queryObj.date) {
+      query += ` AND (l.lease_start_date <= ? AND l.lease_end_date >= ?)`;
+      values.push(queryObj.date, queryObj.date);
+    }
+
+    if (queryObj.min_rent) {
+      query += ` AND l.monthly_rent >= ?`;
+      values.push(parseFloat(queryObj.min_rent));
+    }
+    if (queryObj.max_rent) {
+      query += ` AND l.monthly_rent <= ?`;
+      values.push(parseFloat(queryObj.max_rent));
+    }
+
+    query += ` ORDER BY l.created_at DESC`;
+
+    const page = parseInt(queryObj.page) > 0 ? parseInt(queryObj.page) : 1;
+    const limit = parseInt(queryObj.limit) > 0 ? parseInt(queryObj.limit) : 10;
+    const offset = (page - 1) * limit;
+
+    query += ` LIMIT ? OFFSET ?`;
+    values.push(limit, offset);
+
+    const [rows] = await pool.query(query, values);
+
+    let countQuery = `
+      SELECT COUNT(DISTINCT l.lease_id) as total
+      FROM leases l
+      LEFT JOIN users u ON l.user_id = u.user_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE 1=1
+    `;
+    const countValues = [];
+
+    if (queryObj.status && queryObj.status !== "all") {
+      countQuery += ` AND l.lease_status = ?`;
+      countValues.push(queryObj.status);
+    }
+    if (queryObj.property_id && queryObj.property_id !== "all") {
+      countQuery += ` AND l.property_id = ?`;
+      countValues.push(queryObj.property_id);
+    }
+    if (queryObj.user_id && queryObj.user_id !== "all") {
+      countQuery += ` AND l.user_id = ?`;
+      countValues.push(queryObj.user_id);
+    }
+    if (queryObj.search) {
+      countQuery += ` AND (
+        CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) LIKE ?
+        OR p.property_name LIKE ?
+      )`;
+      const searchTerm = `%${queryObj.search}%`;
+      countValues.push(searchTerm, searchTerm);
+    }
+    if (queryObj.date) {
+      countQuery += ` AND (l.lease_start_date <= ? AND l.lease_end_date >= ?)`;
+      countValues.push(queryObj.date, queryObj.date);
+    }
+    if (queryObj.min_rent) {
+      countQuery += ` AND l.monthly_rent >= ?`;
+      countValues.push(parseFloat(queryObj.min_rent));
+    }
+    if (queryObj.max_rent) {
+      countQuery += ` AND l.monthly_rent <= ?`;
+      countValues.push(parseFloat(queryObj.max_rent));
+    }
+
+    const [countResult] = await pool.query(countQuery, countValues);
+
+    return {
+      leases: rows,
+      total: countResult[0].total,
+      page,
+      limit,
+    };
   } catch (error) {
-    throw error;
+    console.error("Error getting leases:", error);
+    throw new Error(error.message || "Failed to get leases");
   }
 };
-
 const getSingleLeaseById = async (leaseId) => {
   try {
-    const [rows] = await pool.query(`SELECT * FROM leases WHERE lease_id = ?`, [
-      leaseId,
-    ]);
+    const [rows] = await pool.query(`
+      SELECT 
+        l.*,
+        CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) AS tenant_name,
+        u.user_id,
+        p.property_name,
+        p.property_id
+      FROM leases l
+      LEFT JOIN users u ON l.user_id = u.user_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE l.lease_id = ?
+      LIMIT 1
+    `, [leaseId]);
     if (rows.length === 0) throw new Error("Lease not found");
     const lease = rows[0];
 

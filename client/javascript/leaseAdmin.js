@@ -1,4 +1,7 @@
+import formatDate from "../utils/formatDate.js";
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+
+const API_BASE_URL = "/api/v1/leases";
 
 async function setDynamicInfo() {
   const company = await fetchCompanyDetails();
@@ -18,195 +21,178 @@ document.addEventListener("DOMContentLoaded", () => {
   setDynamicInfo();
 });
 
-class LeaseManager {
-  constructor() {
-    this.leases = this.getInitialData();
-    this.currentLease = null;
-    this.editMode = false;
-    this.leaseIdCounter = Math.max(
-      ...this.leases.map((l) => parseInt(l.id.replace("LSE", ""))),
-      0
-    );
-    this.uploadedFiles = [];
-    this.tenantNames = {
-      1: "John Smith",
-      2: "Sarah Johnson",
-      3: "Mike Davis",
-      4: "Lisa Wilson",
-      5: "Robert Chen",
-    };
-    this.propertyNames = {
-      1: "Sunset Apartments - Unit 2A",
-      2: "Downtown Plaza - Office 301",
-      3: "Garden View Complex - Unit 1B",
-      4: "Ocean Breeze Tower - Unit 5C",
-      5: "City Center Mall - Shop 12",
-    };
-  }
+//#region Populate Fields
 
-  getInitialData() {
-    return [
-      {
-        id: "LSE001",
-        tenantId: 1,
-        tenantName: "John Smith",
-        propertyId: 1,
-        propertyName: "Sunset Apartments - Unit 2A",
-        startDate: "2024-01-15",
-        endDate: "2024-12-15",
-        status: "ACTIVE",
-        monthlyRent: 25000,
-        paymentFrequency: "Monthly",
-        quarterlyTax: 5,
-        securityDeposit: 2,
-        advancePayment: 1,
-        lateFee: 10,
-        gracePeriod: 5,
-        isSecurityRefundable: true,
-        advanceForfeited: false,
-        autoTerminationMonths: 3,
-        terminationTriggerDays: 61,
-        noticeCancelDays: 30,
-        noticeRenewalDays: 60,
-        rentIncreaseRenewal: 5,
-        notes:
-          "Reliable tenant with excellent payment history. Property includes parking space.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "LSE002",
-        tenantId: 2,
-        tenantName: "Sarah Johnson",
-        propertyId: 2,
-        propertyName: "Downtown Plaza - Office 301",
-        startDate: "2023-06-01",
-        endDate: "2024-05-31",
-        status: "EXPIRED",
-        monthlyRent: 45000,
-        paymentFrequency: "Monthly",
-        quarterlyTax: 7,
-        securityDeposit: 3,
-        advancePayment: 2,
-        lateFee: 15,
-        gracePeriod: 7,
-        isSecurityRefundable: true,
-        advanceForfeited: true,
-        autoTerminationMonths: 2,
-        terminationTriggerDays: 61,
-        noticeCancelDays: 60,
-        noticeRenewalDays: 90,
-        rentIncreaseRenewal: 8,
-        notes:
-          "Commercial lease for small business. Needs renewal discussion for extension.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "LSE003",
-        tenantId: 3,
-        tenantName: "Mike Davis",
-        propertyId: 3,
-        propertyName: "Garden View Complex - Unit 1B",
-        startDate: "2024-03-01",
-        endDate: "2025-02-28",
-        status: "ACTIVE",
-        monthlyRent: 18000,
-        paymentFrequency: "Monthly",
-        quarterlyTax: 4,
-        securityDeposit: 2,
-        advancePayment: 1,
-        lateFee: 8,
-        gracePeriod: 3,
-        isSecurityRefundable: true,
-        advanceForfeited: false,
-        autoTerminationMonths: 3,
-        terminationTriggerDays: 61,
-        noticeCancelDays: 30,
-        noticeRenewalDays: 45,
-        rentIncreaseRenewal: 3,
-        notes:
-          "First-time renter, requires occasional follow-up on payment schedules.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-  }
+async function populateTenantDropdown() {
+  const tenantSelect = document.getElementById("tenantId");
+  tenantSelect.innerHTML = '<option value="">Select a tenant</option>';
 
-  getAllLeases() {
-    return [...this.leases];
-  }
+  try {
+    const res = await fetch("/api/v1/users?role=TENANT");
+    const data = await res.json();
+    const tenants = data.users || [];
 
-  getLeaseById(id) {
-    return this.leases.find((lease) => lease.id === id);
-  }
-
-  addLease(leaseData) {
-    this.leaseIdCounter++;
-    const newLease = {
-      ...leaseData,
-      id: `LSE${String(this.leaseIdCounter).padStart(3, "0")}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    this.leases.push(newLease);
-    return newLease;
-  }
-
-  updateLease(id, leaseData) {
-    const index = this.leases.findIndex((lease) => lease.id === id);
-    if (index !== -1) {
-      this.leases[index] = {
-        ...leaseData,
-        id,
-        createdAt: this.leases[index].createdAt,
-        updatedAt: new Date().toISOString(),
-      };
-      return this.leases[index];
-    }
-    return null;
-  }
-
-  deleteLease(id) {
-    const index = this.leases.findIndex((lease) => lease.id === id);
-    if (index !== -1) {
-      const deleted = this.leases.splice(index, 1)[0];
-      return deleted;
-    }
-    return null;
-  }
-
-  filterLeases(filters) {
-    return this.leases.filter((lease) => {
-      if (filters.status && lease.status !== filters.status) return false;
-      if (
-        filters.tenant &&
-        !lease.tenantName.toLowerCase().includes(filters.tenant.toLowerCase())
-      )
-        return false;
-      if (
-        filters.property &&
-        !lease.propertyName
-          .toLowerCase()
-          .includes(filters.property.toLowerCase())
-      )
-        return false;
-      if (filters.date) {
-        const filterDate = new Date(filters.date);
-        const startDate = new Date(lease.startDate);
-        const endDate = new Date(lease.endDate);
-        if (filterDate < startDate || filterDate > endDate) return false;
-      }
-      return true;
+    tenants.forEach(user => {
+      const option = document.createElement("option");
+      option.value = user.user_id;
+      option.textContent = `${user.first_name} ${user.last_name} (${user.email})`;
+      tenantSelect.appendChild(option);
     });
+  } catch (error) {
+    console.error("Failed to load tenants:", error);
   }
 }
 
-// Initialize the system
-const leaseManager = new LeaseManager();
-let deleteLeaseId = null;
+async function populatePropertyDropdown() {
+  const propertySelect = document.getElementById("propertyId");
+  propertySelect.innerHTML = '<option value="">Select a property</option>';
 
-// Navigation Functions
+  try {
+    const res = await fetch("/api/v1/properties?status=Available&limit=1000");
+    const data = await res.json();
+    let properties = data.properties || [];
+
+    const leaseRes = await fetch("/api/v1/leases");
+    const leaseData = await leaseRes.json();
+    const leases = leaseData.leases || [];
+
+    const leasedPropertyIds = leases
+      .filter(lease => ["ACTIVE", "PENDING"].includes(lease.lease_status))
+      .map(lease => lease.property_id);
+
+    properties = properties.filter(
+      prop => !leasedPropertyIds.includes(prop.property_id)
+    );
+
+    properties.forEach(prop => {
+      const option = document.createElement("option");
+      option.value = prop.property_id;
+      option.textContent = `${prop.property_name} - ${prop.city || prop.building_name || ""}`;
+      propertySelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Failed to load properties:", error);
+  }
+}
+async function populateFinancialDefaults() {
+  try {
+    const res = await fetch("/api/v1/lease-defaults");
+    const data = await res.json();
+    const defaults = data.defaults || {};
+
+    const setDefault = (id, value) => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = value;
+    };
+
+    setDefault("paymentFrequency", defaults.payment_frequency || "Monthly");
+    setDefault("quarterlyTax", defaults.quarterly_tax_percentage || "");
+    setDefault("securityDeposit", defaults.security_deposit_months || "");
+    setDefault("advancePayment", defaults.advance_payment_months || "");
+    setDefault("lateFee", defaults.late_fee_percentage || "");
+    setDefault("gracePeriod", defaults.grace_period_days || "");
+
+    setDefault("autoTerminationMonths", defaults.auto_termination_after_months || "");
+    setDefault("terminationTriggerDays", defaults.termination_trigger_days || "");
+    setDefault("noticeCancelDays", defaults.notice_before_cancel_days || "");
+    setDefault("noticeRenewalDays", defaults.notice_before_renewal_days || "");
+    setDefault("rentIncreaseRenewal", defaults.rent_increase_on_renewal || "");
+    document.getElementById("isSecurityRefundable").checked = defaults.is_security_deposit_refundable === "1";
+    document.getElementById("advanceForfeited").checked = defaults.advance_payment_forfeited_on_cancel === "1";
+  } catch (error) {
+    console.error("Failed to load lease defaults:", error);
+  }
+}
+
+document.getElementById("keepDefaultsFinancial").addEventListener("change", function () {
+    const disabled = this.checked;
+    const fields = [
+        "paymentFrequency",
+        "quarterlyTax",
+        "securityDeposit",
+        "advancePayment",
+        "lateFee",
+        "gracePeriod"
+    ];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+});
+
+function setFinancialFieldsDisabled() {
+    const disabled = document.getElementById("keepDefaultsFinancial").checked;
+    ["paymentFrequency","quarterlyTax","securityDeposit","advancePayment","lateFee","gracePeriod"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+}
+
+document.getElementById("keepDefaultsRules").addEventListener("change", function () {
+    const disabled = this.checked;
+    const fields = [
+        "isSecurityRefundable",
+        "advanceForfeited",
+        "autoTerminationMonths",
+        "terminationTriggerDays",
+        "noticeCancelDays",
+        "noticeRenewalDays",
+        "rentIncreaseRenewal"
+    ];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+});
+
+function setRulesFieldsDisabled() {
+    const disabled = document.getElementById("keepDefaultsRules").checked;
+    [
+        "isSecurityRefundable",
+        "advanceForfeited",
+        "autoTerminationMonths",
+        "terminationTriggerDays",
+        "noticeCancelDays",
+        "noticeRenewalDays",
+        "rentIncreaseRenewal"
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = disabled;
+            if (disabled) {
+                el.classList.add("field-disabled");
+            } else {
+                el.classList.remove("field-disabled");
+            }
+        }
+    });
+}
+document.addEventListener("DOMContentLoaded", setRulesFieldsDisabled);
+document.addEventListener("DOMContentLoaded", setFinancialFieldsDisabled);
+
+//#endregion
+
 function showListView() {
   document.getElementById("listView").classList.remove("hidden");
   document.getElementById("formView").classList.add("hidden");
@@ -218,25 +204,20 @@ function showCreateView() {
   document.getElementById("listView").classList.add("hidden");
   document.getElementById("formView").classList.remove("hidden");
   document.getElementById("detailView").classList.add("hidden");
-  document.getElementById("formTitle").textContent = "Create New Lease";
-  leaseManager.editMode = false;
   clearForm();
   clearErrors();
-  showTab("details");
+  populateTenantDropdown();
+  populatePropertyDropdown();
+  populateFinancialDefaults();
 }
 
-function showDetailView(leaseId) {
-  const lease = leaseManager.getLeaseById(leaseId);
-  if (!lease) {
-    showToast("Lease not found", "error");
-    return;
-  }
+function showAccordionSection(sectionId) {
+  document.querySelectorAll('#leaseFormAccordion .accordion-collapse').forEach(el => {
+    el.classList.remove('show');
+  });
 
-  document.getElementById("listView").classList.add("hidden");
-  document.getElementById("formView").classList.add("hidden");
-  document.getElementById("detailView").classList.remove("hidden");
-  leaseManager.currentLease = lease;
-  loadDetailView(lease);
+  const section = document.getElementById(sectionId);
+  if (section) section.classList.add('show');
 }
 
 function showEditView(leaseId) {
@@ -250,50 +231,18 @@ function showEditView(leaseId) {
   document.getElementById("formView").classList.remove("hidden");
   document.getElementById("detailView").classList.add("hidden");
   document.getElementById("formTitle").textContent = "Edit Lease";
-  leaseManager.editMode = true;
-  leaseManager.currentLease = lease;
-  loadForm(lease);
+  // leaseManager.editMode = true;
+  // leaseManager.currentLease = lease;
+  // loadForm(lease);
   clearErrors();
   showTab("details");
 }
 
-// Tab Management
-function showTab(tabName) {
-  // Hide all tab contents
-  document.querySelectorAll(".tab-content").forEach((tab) => {
-    tab.classList.add("hidden");
-  });
-
-  // Remove active class from all tab buttons
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.classList.remove("active");
-  });
-
-  // Show selected tab content
-  document.getElementById(tabName + "Tab").classList.remove("hidden");
-
-  // Add active class to clicked tab button
-  document.querySelector(`[data-tab="${tabName}"]`).classList.add("active");
-}
-
-// Initialize tab event listeners
 document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const tabName = this.getAttribute("data-tab");
-      showTab(tabName);
-    });
-  });
-
-  // Set up file input handler
-  document
-    .getElementById("fileInput")
-    .addEventListener("change", handleFileSelection);
-
+  document.getElementById("fileInput").addEventListener("change", handleFileSelection);
   showListView();
 });
 
-// Form Validation
 function validateForm() {
   let isValid = true;
   clearErrors();
@@ -316,7 +265,6 @@ function validateForm() {
     }
   });
 
-  // Validate date range
   const startDate = new Date(document.getElementById("startDate").value);
   const endDate = new Date(document.getElementById("endDate").value);
 
@@ -354,106 +302,137 @@ function clearErrors() {
   });
 }
 
-// Data Loading and Display
-function loadLeaseTable() {
+//#region Lease - Home
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadLeaseTable();
+});
+
+async function fetchLeaseById(leaseId) {
+  const res = await fetch(`${API_BASE_URL}/${leaseId}`);
+  if (!res.ok) throw new Error("Failed to fetch lease details");
+  const data = await res.json();
+  return data.lease;
+}
+
+async function fetchLeases(filters = {}) {
+  const params = [];
+  if (filters.status) params.push(`status=${encodeURIComponent(filters.status)}`);
+  if (filters.search) params.push(`search=${encodeURIComponent(filters.search)}`);
+  if (filters.date) params.push(`date=${encodeURIComponent(filters.date)}`);
+  if (filters.page) params.push(`page=${filters.page}`);
+  const url = `${API_BASE_URL}${params.length ? "?" + params.join("&") : ""}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch leases");
+  return await res.json();
+}
+
+async function loadLeaseTable() {
   const tableBody = document.getElementById("leaseTableBody");
   const emptyState = document.getElementById("emptyState");
-  const leases = getFilteredLeases();
 
-  tableBody.innerHTML = "";
-
-  if (leases.length === 0) {
-    emptyState.classList.remove("hidden");
-    return;
-  }
-
-  emptyState.classList.add("hidden");
-
-  leases.forEach((lease) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-                    <td>
-                        <strong style="color: #1f2937; font-weight: 700;">${
-                          lease.id
-                        }</strong>
-                    </td>
-                    <td>
-                        <div style="font-weight: 600; color: #111827;">${
-                          lease.tenantName
-                        }</div>
-                        <div style="font-size: 12px; color: #6b7280;">ID: ${
-                          lease.tenantId
-                        }</div>
-                    </td>
-                    <td>
-                        <div style="font-weight: 500; color: #111827;">${
-                          lease.propertyName
-                        }</div>
-                        <div style="font-size: 12px; color: #6b7280;">Property ID: ${
-                          lease.propertyId
-                        }</div>
-                    </td>
-                    <td>
-                        <div style="font-size: 13px; font-weight: 500;">${formatDate(
-                          lease.startDate
-                        )}</div>
-                        <div style="font-size: 12px; color: #6b7280;">to ${formatDate(
-                          lease.endDate
-                        )}</div>
-                        <div style="font-size: 11px; color: #9ca3af;">${getDuration(
-                          lease.startDate,
-                          lease.endDate
-                        )}</div>
-                    </td>
-                    <td>
-                        <span class="status-badge status-${lease.status.toLowerCase()}">${
-      lease.status
-    }</span>
-                    </td>
-                    <td>
-                        <div style="font-weight: 700; color: #059669; font-size: 16px;">₱${lease.monthlyRent.toLocaleString()}</div>
-                        <div style="font-size: 12px; color: #6b7280;">${
-                          lease.paymentFrequency
-                        }</div>
-                    </td>
-                    <td>
-                        <div style="font-weight: 500;">${getNextDueDate(
-                          lease
-                        )}</div>
-                    </td>
-                    <td>
-                        <button class="action-btn action-view" onclick="showDetailView('${
-                          lease.id
-                        }')" title="View Details"><i class="fa-solid fa-eye"></i></button>
-                        <button class="action-btn action-edit" onclick="showEditView('${
-                          lease.id
-                        }')" title="Edit Lease"><i class="fa-solid fa-pen"></i></button>
-                        <button class="action-btn action-delete" onclick="showDeleteModal('${
-                          lease.id
-                        }')" title="Delete Lease"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-    tableBody.appendChild(row);
-  });
-}
-
-function getFilteredLeases() {
   const filters = {
-    status: document.getElementById("filterStatus").value,
-    tenant: document.getElementById("filterTenant").value,
-    property: document.getElementById("filterProperty").value,
-    date: document.getElementById("filterDate").value,
+    status: document.getElementById("filterStatus").value || "",
+    search: document.getElementById("filterSearch").value || "",
+    date: document.getElementById("filterDate").value || "",
+    page: 1,
   };
 
-  return leaseManager.filterLeases(filters);
+  try {
+    const data = await fetchLeases(filters);
+    const leases = data.leases || [];
+
+    tableBody.innerHTML = "";
+
+    if (leases.length === 0) {
+      emptyState.classList.remove("hidden");
+      return;
+    }
+
+    emptyState.classList.add("hidden");
+
+    leases.forEach((lease, idx) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+          <td>
+            <strong style="color: #1f2937; font-weight: 700;">${
+              idx + 1 + (filters.page - 1) * 10
+            }</strong>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: #111827;">${
+              lease.tenant_name || ""
+            }</div>
+            <div style="font-size: 12px; color: #6b7280;">User ID: ${
+              lease.user_id || ""
+            }</div>
+          </td>
+          <td>
+            <div style="font-weight: 500; color: #111827;">${
+              lease.property_name || ""
+            }</div>
+            <div style="font-size: 12px; color: #6b7280;">Property ID: ${
+              lease.property_id || ""
+            }</div>
+          </td>
+          <td>
+            <div style="font-size: 13px; font-weight: 500;">${formatDate(
+              lease.lease_start_date
+            )}</div>
+            <div style="font-size: 12px; color: #6b7280;">to ${formatDate(
+              lease.lease_end_date
+            )}</div>
+            <div style="font-size: 11px; color: #9ca3af;">${getDuration(
+              lease.lease_start_date,
+              lease.lease_end_date
+            )}</div>
+          </td>
+          <td>
+            <span class="status-badge status-${(
+              lease.lease_status || ""
+            ).toLowerCase()}">${lease.lease_status || ""}</span>
+          </td>
+          <td>
+            <div style="font-weight: 700; color: #059669; font-size: 16px;">₱${(
+              lease.monthly_rent || 0
+            ).toLocaleString()}</div>
+            <div style="font-size: 12px; color: #6b7280;">${
+              lease.payment_frequency || ""
+            }</div>
+          </td>
+          <td>
+            <div style="font-weight: 500;">${getNextDueDate(lease)}</div>
+          </td>
+          <td>
+            <button class="action-btn action-view" onclick="showDetailView('${
+              lease.lease_id
+            }')" title="View Details"><i class="fa-solid fa-eye"></i></button>
+            <button class="action-btn action-edit" onclick="showEditView('${
+              lease.lease_id
+            }')" title="Edit Lease"><i class="fa-solid fa-pen"></i></button>
+            <button class="action-btn action-delete" onclick="showDeleteModal('${
+              lease.lease_id
+            }')" title="Delete Lease"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        `;
+      tableBody.appendChild(row);
+    });
+  } catch (error) {
+    showToast("Failed to load leases", "error");
+    tableBody.innerHTML = "";
+    emptyState.classList.remove("hidden");
+  }
 }
 
-function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+function applyFilters() {
+  loadLeaseTable();
+}
+
+function clearFilters() {
+  document.getElementById("filterStatus").value = "";
+  document.getElementById("filterSearch").value = "";
+  document.getElementById("filterDate").value = "";
+  loadLeaseTable();
 }
 
 function getDuration(startDate, endDate) {
@@ -476,13 +455,14 @@ function getNextDueDate(lease) {
   const startDay = new Date(lease.startDate).getDate();
   let nextDue = new Date(today.getFullYear(), today.getMonth(), startDay);
 
-  // If we've passed this month's due date, move to next month
   if (today.getDate() > startDay) {
     nextDue.setMonth(nextDue.getMonth() + 1);
   }
 
   return formatDate(nextDue.toISOString().split("T")[0]);
 }
+
+//#endregion
 
 // Form Management
 function loadForm(lease) {
@@ -538,7 +518,6 @@ function clearForm() {
   document.getElementById("noticeRenewalDays").value = "";
   document.getElementById("rentIncreaseRenewal").value = "";
   document.getElementById("notes").value = "";
-  leaseManager.uploadedFiles = [];
   updateUploadedFilesList();
 }
 
@@ -630,13 +609,13 @@ function showCancelModal() {
   const modal = document.getElementById("cancelModal");
   const message = document.getElementById("cancelModalMessage");
 
-  if (leaseManager.editMode) {
-    message.textContent =
-      "Are you sure you want to cancel editing this lease? Any unsaved changes will be lost.";
-  } else {
-    message.textContent =
-      "Are you sure you want to cancel creating this lease? Any entered data will be lost.";
-  }
+  // if (leaseManager.editMode) {
+  //   message.textContent =
+  //     "Are you sure you want to cancel editing this lease? Any unsaved changes will be lost.";
+  // } else {
+  //   message.textContent =
+  //     "Are you sure you want to cancel creating this lease? Any entered data will be lost.";
+  // }
 
   modal.classList.add("show");
 }
@@ -687,152 +666,138 @@ function checkForUnsavedChanges() {
 }
 
 function resetFormState() {
-  // Clear form data
   clearForm();
   clearErrors();
 
-  // Reset manager state
-  leaseManager.editMode = false;
-  leaseManager.currentLease = null;
-  leaseManager.uploadedFiles = [];
+  // leaseManager.editMode = false;
+  // leaseManager.currentLease = null;
+  // leaseManager.uploadedFiles = [];
 
-  // Reset form title
-  document.getElementById("formTitle").textContent = "Create New Lease";
 }
 
-// Detail View Functions
-function loadDetailView(lease) {
-  document.getElementById("detailTitle").textContent = `Lease ${lease.id}`;
-  document.getElementById(
-    "detailSubtitle"
-  ).textContent = `${lease.tenantName} • ${lease.propertyName}`;
+async function showDetailView(leaseId) {
+  try {
+    const lease = await fetchLeaseById(leaseId);
+    if (!lease) {
+      showToast("Lease not found", "error");
+      return;
+    }
 
-  // Basic Info
+    document.getElementById("listView").classList.add("hidden");
+    document.getElementById("formView").classList.add("hidden");
+    document.getElementById("detailView").classList.remove("hidden");
+    loadDetailView(lease);
+  } catch (error) {
+    showToast("Failed to load lease details", "error");
+  }
+}
+
+function loadDetailView(lease) {
+  document.getElementById("detailTitle").textContent = `Lease ${lease.lease_id}`;
+  document.getElementById("detailSubtitle").textContent = `${lease.tenant_name} • ${lease.property_name}`;
+
   document.getElementById("basicInfo").innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">Lease ID</div>
-                    <div class="info-value">${lease.id}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Status</div>
-                    <div class="info-value">
-                        <span class="status-badge status-${lease.status.toLowerCase()}">${
-    lease.status
-  }</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Tenant</div>
-                    <div class="info-value">${lease.tenantName}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Property</div>
-                    <div class="info-value">${lease.propertyName}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Start Date</div>
-                    <div class="info-value">${formatDate(lease.startDate)}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">End Date</div>
-                    <div class="info-value">${formatDate(lease.endDate)}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Duration</div>
-                    <div class="info-value">${getDuration(
-                      lease.startDate,
-                      lease.endDate
-                    )}</div>
-                </div>
-            `;
+    <div class="info-item">
+      <div class="info-label">Lease ID</div>
+      <div class="info-value">${lease.lease_id}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Status</div>
+      <div class="info-value">
+        <span class="status-badge status-${lease.lease_status.toLowerCase()}">${lease.lease_status}</span>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Tenant</div>
+      <div class="info-value">${lease.tenant_name}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Property</div>
+      <div class="info-value">${lease.property_name}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Start Date</div>
+      <div class="info-value">${formatDate(lease.lease_start_date)}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">End Date</div>
+      <div class="info-value">${formatDate(lease.lease_end_date)}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Duration</div>
+      <div class="info-value">${getDuration(lease.lease_start_date, lease.lease_end_date)}</div>
+    </div>
+  `;
 
   // Financial Info
   document.getElementById("financialInfo").innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">Monthly Rent</div>
-                    <div class="info-value" style="font-size: 20px; font-weight: 700; color: #059669;">
-                        ₱${lease.monthlyRent.toLocaleString()}
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Payment Frequency</div>
-                    <div class="info-value">${lease.paymentFrequency}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Quarterly Tax</div>
-                    <div class="info-value">${lease.quarterlyTax}%</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Security Deposit</div>
-                    <div class="info-value">${
-                      lease.securityDeposit
-                    } month(s)</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Advance Payment</div>
-                    <div class="info-value">${
-                      lease.advancePayment
-                    } month(s)</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Late Fee</div>
-                    <div class="info-value">${lease.lateFee}%</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Grace Period</div>
-                    <div class="info-value">${lease.gracePeriod} days</div>
-                </div>
-            `;
+    <div class="info-item">
+      <div class="info-label">Monthly Rent</div>
+      <div class="info-value" style="font-size: 20px; font-weight: 700; color: #059669;">
+        ₱${Number(lease.monthly_rent).toLocaleString()}
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Payment Frequency</div>
+      <div class="info-value">${lease.payment_frequency}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Quarterly Tax</div>
+      <div class="info-value">${lease.quarterly_tax_percentage}%</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Security Deposit</div>
+      <div class="info-value">${lease.security_deposit_months} month(s)</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Advance Payment</div>
+      <div class="info-value">${lease.advance_payment_months} month(s)</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Late Fee</div>
+      <div class="info-value">${lease.late_fee_percentage}%</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Grace Period</div>
+      <div class="info-value">${lease.grace_period_days} days</div>
+    </div>
+  `;
 
   // Rules Info
   document.getElementById("rulesInfo").innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">Security Refundable</div>
-                    <div class="info-value">${
-                      lease.isSecurityRefundable ? "Yes" : "No"
-                    }</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Advance Forfeited</div>
-                    <div class="info-value">${
-                      lease.advanceForfeited ? "Yes" : "No"
-                    }</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Auto-Termination</div>
-                    <div class="info-value">${
-                      lease.autoTerminationMonths
-                    } month(s)</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Termination Trigger</div>
-                    <div class="info-value">${
-                      lease.terminationTriggerDays
-                    } days</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Cancel Notice</div>
-                    <div class="info-value">${lease.noticeCancelDays} days</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Renewal Notice</div>
-                    <div class="info-value">${
-                      lease.noticeRenewalDays
-                    } days</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Rent Increase</div>
-                    <div class="info-value">${lease.rentIncreaseRenewal}%</div>
-                </div>
-            `;
+    <div class="info-item">
+      <div class="info-label">Security Refundable</div>
+      <div class="info-value">${lease.is_security_deposit_refundable ? "Yes" : "No"}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Advance Forfeited</div>
+      <div class="info-value">${lease.advance_payment_forfeited_on_cancel ? "Yes" : "No"}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Auto-Termination</div>
+      <div class="info-value">${lease.auto_termination_after_months} month(s)</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Termination Trigger</div>
+      <div class="info-value">${lease.termination_trigger_days} days</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Cancel Notice</div>
+      <div class="info-value">${lease.notice_before_cancel_days} days</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Renewal Notice</div>
+      <div class="info-value">${lease.notice_before_renewal_days} days</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Rent Increase</div>
+      <div class="info-value">${lease.rent_increase_on_renewal}%</div>
+    </div>
+  `;
 
   // Update payment info in sidebar
-  document.getElementById("nextDueDate").textContent = getNextDueDate(
-    lease
-  ).replace(/<[^>]*>/g, "");
-  document.getElementById(
-    "amountDue"
-  ).textContent = `₱${lease.monthlyRent.toLocaleString()}`;
+  document.getElementById("nextDueDate").textContent = getNextDueDate(lease).replace(/<[^>]*>/g, "");
+  document.getElementById("amountDue").textContent = `₱${Number(lease.monthly_rent).toLocaleString()}`;
 
   // Show/hide notes card
   const notesCard = document.getElementById("notesCard");
@@ -850,19 +815,6 @@ function editCurrentLease() {
   if (leaseManager.currentLease) {
     showEditView(leaseManager.currentLease.id);
   }
-}
-
-// Filter Functions
-function applyFilters() {
-  loadLeaseTable();
-}
-
-function clearFilters() {
-  document.getElementById("filterStatus").value = "";
-  document.getElementById("filterTenant").value = "";
-  document.getElementById("filterProperty").value = "";
-  document.getElementById("filterDate").value = "";
-  loadLeaseTable();
 }
 
 // Modal Functions
@@ -889,57 +841,73 @@ function confirmDelete() {
   hideDeleteModal();
 }
 
-// File Upload Functions
+//#region File Upload
+let uploadedFiles = [];
+
 function handleFileUpload() {
   document.getElementById("fileInput").click();
 }
 
 function handleFileSelection(event) {
   const files = Array.from(event.target.files);
-  files.forEach((file) => {
+  if (files.length > 0) {
+    const file = files[0];
     if (file.size > 10 * 1024 * 1024) {
-      // 10MB limit
       showToast("File size should be less than 10MB", "error");
+      event.target.value = "";
       return;
     }
-
-    leaseManager.uploadedFiles.push({
-      name: file.name,
-      size: formatFileSize(file.size),
-      type: file.type,
-      uploadDate: new Date().toISOString(),
-    });
-  });
+    uploadedFiles = [file]; 
+  } else {
+    uploadedFiles = [];
+  }
 
   updateUploadedFilesList();
-  event.target.value = ""; // Reset input
+  event.target.value = "";
 }
 
 function updateUploadedFilesList() {
   const container = document.getElementById("uploadedFiles");
+  container.innerHTML = "";
 
-  if (leaseManager.uploadedFiles.length === 0) {
-    container.innerHTML = "";
+  if (!uploadedFiles.length) {
+    container.innerHTML = '<div style="color:#6b7280;font-size:13px;">No files uploaded.</div>';
     return;
   }
 
-  container.innerHTML = leaseManager.uploadedFiles
-    .map(
-      (file, index) => `
-                <div class="file-item">
-                    <div class="file-info">
-                        <span class="file-name">${file.name}</span>
-                        <span class="file-size">${file.size}</span>
-                    </div>
-                    <button class="action-btn action-delete" onclick="removeFile(${index})" title="Remove file">🗑️</button>
-                </div>
-            `
-    )
-    .join("");
+  uploadedFiles.forEach((file, idx) => {
+    let preview = "";
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      preview = `<img src="${url}" alt="${file.name}" style="max-width:60px;max-height:60px;border-radius:6px;margin-right:10px;">`;
+    } else if (file.type === "application/pdf") {
+      preview = `<i class="fa-solid fa-file-pdf" style="font-size:32px;color:#e53e3e;margin-right:10px;"></i>`;
+    } else if (
+      file.type === "application/msword" ||
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      preview = `<i class="fa-solid fa-file-word" style="font-size:32px;color:#2563eb;margin-right:10px;"></i>`;
+    } else {
+      preview = `<i class="fa-solid fa-file" style="font-size:32px;color:#6b7280;margin-right:10px;"></i>`;
+    }
+
+    container.innerHTML += `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        ${preview}
+        <div style="flex:1;">
+          <div style="font-weight:500;">${file.name}</div>
+          <div style="font-size:12px;color:#6b7280;">${formatFileSize(file.size)}</div>
+        </div>
+        <button class="action-btn" style="color:#ef4444;" onclick="removeFile(${idx})" title="Remove">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    `;
+  });
 }
 
 function removeFile(index) {
-  leaseManager.uploadedFiles.splice(index, 1);
+  uploadedFiles = [];
   updateUploadedFilesList();
 }
 
@@ -951,7 +919,8 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-// Toast Notification
+//#endregion
+
 function showToast(message, type = "success") {
   const toast = document.getElementById("toast");
   const title = document.getElementById("toastTitle");
@@ -968,7 +937,6 @@ function showToast(message, type = "success") {
   }, 4000);
 }
 
-// Quick Actions (placeholders for demo)
 function generateContract() {
   showToast("Contract generation feature coming soon!");
 }
@@ -1014,3 +982,28 @@ window.addEventListener("click", function (event) {
 
 // Initialize the application
 showListView();
+
+window.showCreateView = showCreateView;
+window.saveLease = saveLease;
+window.cancelForm = cancelForm;
+window.editCurrentLease = editCurrentLease;
+window.applyFilters = applyFilters;
+window.clearFilters = clearFilters;
+window.confirmCancel = confirmCancel;
+window.hideCancelModal = hideCancelModal;
+window.showDeleteModal = showDeleteModal;
+window.hideDeleteModal = hideDeleteModal;
+window.confirmDelete = confirmDelete;
+window.handleFileUpload = handleFileUpload;
+window.removeFile = removeFile;
+window.generateContract = generateContract;
+window.sendReminder = sendReminder;
+window.terminateLease = terminateLease;
+window.viewPaymentHistory = viewPaymentHistory;
+window.viewAllActivity = viewAllActivity;
+window.downloadDocument = downloadDocument;
+window.uploadNewDocument = uploadNewDocument;
+window.showEditView = showEditView;
+window.showDetailView = showDetailView;
+window.showListView = showListView;
+window.showAccordionSection = showAccordionSection;

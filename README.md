@@ -28,7 +28,6 @@
 
 * ![HTML](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 * ![CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
-* ![React](https://img.shields.io/badge/REACT-20232A?logo=react&logoColor=61DAFB)
 * ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
 * ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
 * ![Express.js](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white)
@@ -106,24 +105,15 @@ CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
 ## Project Roadmap
 
 **Week 1**(June 17) - **Week 2** (June 28)
-
-**DESIGN**
-- [x] Login
-- [x] Home Page 
-- [x] Admin Dashboard
-- [ ] User Dashboard
-- [ ] Maintenance Ticketing - Admin side
-- [ ] Maintenance Request - user side
-- [ ] Inbox - send/received messages (both for admin/user)
  
 **FRONT-END**
 - [x] Login
 - [x] Home Page 
-- [ ] Admin Dashboard
-- [ ] User Dashboard
-- [ ] Maintenance Ticketing - Admin side
-- [ ] Maintenance Request - user side
-- [ ] Inbox - send/received messages
+- [x] Admin Dashboard
+- [x] User Dashboard
+- [x] Maintenance Ticketing - Admin side
+- [x] Maintenance Request - user side
+- [x] Inbox - send/received messages
 
 **BACK-END**
 - [x] Users

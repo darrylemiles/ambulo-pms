@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-        // Original JavaScript functions preserved + compact additions
-=======
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
 const appState = {
@@ -98,9 +95,7 @@ function loadUserData() {
     console.log('No user data needed without navigation elements');
 }
 
-// CMS Integration Functions
 const CMS = {
-    // Navigate to category page
     navigateToCategory: function(category) {
         console.log(`Navigating to ${category} management page`);
         const categoryUrls = {
@@ -109,34 +104,26 @@ const CMS = {
             'faqs': '/FAQs.html',
             'website-content': '/website-content.html'
         };
->>>>>>> becb8a589efeca6e230282e032e0cc7a4b5b8c36
         
-        // Global state management
         const appState = {
             currentCategory: null,
             isLoading: false
         };
 
-        // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
         });
 
         function initializeApp() {
-            // Set up event listeners
             setupEventListeners();
             
-            // Initialize search functionality
             initializeSearch();
-            
-            // Load user data (simulated)
             loadUserData();
             
             console.log('Listings CMS initialized successfully');
         }
 
         function setupEventListeners() {
-            // Enhanced event listeners with compact optimizations
             document.querySelectorAll('.category-card').forEach(card => {
                 card.addEventListener('click', function(e) {
                     const category = this.dataset.category || 'unknown';
@@ -151,41 +138,32 @@ const CMS = {
         }
 
         function navigateToCategory(event, category) {
-            // Show loading state
             const card = event.currentTarget;
             
-            // Add loading effect
             card.style.opacity = '0.7';
             card.style.transform = 'scale(0.98)';
             
-            // Log navigation
             console.log('Navigating to category:', category);
             appState.currentCategory = category;
             
-            // Show notification
             showNotification(`Navigating to ${category.replace('-', ' ')}...`, 'info');
             
-            // Navigate after brief delay for visual feedback
             setTimeout(() => {
                 window.location.href = card.href;
             }, 300);
         }
 
-        // Enhanced compact notification system
         function showNotification(message, type = 'info') {
-            // Create notification element
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.textContent = message;
             
             document.body.appendChild(notification);
             
-            // Animate in
             setTimeout(() => {
                 notification.classList.add('show');
             }, 100);
-            
-            // Remove after 3 seconds (shorter for better UX)
+
             setTimeout(() => {
                 notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 300);
@@ -196,7 +174,6 @@ const CMS = {
             console.log('No user data needed without navigation elements');
         }
 
-        // CMS Integration Functions (preserved)
         const CMS = {
             navigateToCategory: function(category) {
                 console.log(`Navigating to ${category} management page`);
@@ -229,10 +206,11 @@ const CMS = {
             }
         };
 
-        // Export for CMS integration
         window.ListingsCMS = {
             appState,
             navigateToCategory,
             CMS,
             showNotification
         };
+    }
+}
