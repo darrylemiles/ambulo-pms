@@ -120,11 +120,11 @@ const getAllLeases = async (queryObj = {}) => {
         CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) AS tenant_name,
         u.user_id,
         p.property_name,
-        p.property_id
+        p.property_id,
+        p.display_image
       FROM leases l
       LEFT JOIN users u ON l.user_id = u.user_id
       LEFT JOIN properties p ON l.property_id = p.property_id
-      WHERE 1=1
     `;
 
     const values = [];
@@ -271,9 +271,12 @@ const getSingleLeaseById = async (leaseId) => {
 
 const getLeaseByUserId = async (userId) => {
   try {
-    const [rows] = await pool.query(`SELECT * FROM leases WHERE user_id = ?`, [
-      userId,
-    ]);
+    const [rows] = await pool.query(`
+      SELECT l.*, p.property_name, p.property_id, p.display_image
+      FROM leases l
+      LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE l.user_id = ?
+    `, [userId]);
     return rows;
   } catch (error) {
     throw error;
