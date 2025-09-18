@@ -550,6 +550,11 @@ body:has(.sidebar.collapsed) .property-container,
   color: white;
 }
 
+.status-reserved {
+  background: rgba(255, 212, 18, 0.9);
+  color: white;
+}
+
 .property-card-body {
   padding-top: 12px; /* Reduce top padding */
   padding-bottom: 12px; /* Reduce bottom padding */
