@@ -317,10 +317,13 @@ function getStatusBadge(status) {
     return `<div class="status-badge status-available">Available</div>`;
   if (status === "Occupied")
     return `<div class="status-badge status-occupied">Occupied</div>`;
+  if (status === "Reserved")
+    return `<div class="status-badge status-reserved">Reserved</div>`;
   if (status === "Maintenance")
     return `<div class="status-badge status-maintenance">Maintenance</div>`;
   return "";
 }
+
 function renderPropertyCard(property) {
   const imageUrl =
     property.display_image ||

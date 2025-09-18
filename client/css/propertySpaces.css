@@ -393,6 +393,11 @@ body {
   color: white;
 }
 
+.status-reserved {
+  background: #fbbf24;
+  color: white;
+}
+
 .property-info {
   padding: 20px;
 }
