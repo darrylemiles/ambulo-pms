@@ -372,8 +372,10 @@ async function saveCompanyInfo() {
   if (!validateCompanyInfoForm()) return;
 
   const adminEmailInput = document.getElementById("admin-email-input");
-  const adminEmail = localStorage.getItem("admin_email"); 
-  if (adminEmailInput && adminEmail) {
+  const userDetails = JSON.parse(localStorage.getItem("user") || "{}");
+  const adminEmail = userDetails.email || "";
+
+  if (adminEmailInput) {
     adminEmailInput.value = adminEmail;
   }
 
@@ -383,12 +385,12 @@ async function saveCompanyInfo() {
   return new Promise((resolve) => {
     document.getElementById("admin-password-confirm-btn").onclick =
       async function () {
-        const adminEmail = document.getElementById("admin-email-input").value;
+        const adminEmailValue = document.getElementById("admin-email-input").value;
         const adminPassword = document.getElementById(
           "admin-password-input"
         ).value;
         modal.style.display = "none";
-        if (!adminEmail || !adminPassword || adminPassword.trim() === "") {
+        if (!adminEmailValue || !adminPassword || adminPassword.trim() === "") {
           showNotification(
             "Admin email and password are required to save changes.",
             "error"
@@ -398,7 +400,7 @@ async function saveCompanyInfo() {
           saveBtn.innerHTML = `<i class="fas fa-save"></i> Save Company Info`;
           return;
         }
-        await continueSaveCompanyInfo(adminEmail, adminPassword);
+        await continueSaveCompanyInfo(adminEmailValue, adminPassword);
         resolve();
       };
     document.getElementById("admin-password-cancel-btn").onclick = function () {
