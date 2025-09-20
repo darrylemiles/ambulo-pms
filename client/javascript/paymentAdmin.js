@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setDynamicInfo();
 });
 
-
 const samplePayments = [
   {
     id: 1,
@@ -53,17 +52,19 @@ const samplePayments = [
 ];
 
 // Toggle dropdown menu
-document.querySelector(".profile").addEventListener("click", function () {
+document.querySelector(".profile")?.addEventListener("click", function () {
   const dropdown = document.querySelector(".dropdown-menu");
-  dropdown.style.display =
-    dropdown.style.display === "block" ? "none" : "block";
+  if (dropdown) {
+    dropdown.style.display =
+      dropdown.style.display === "block" ? "none" : "block";
+  }
 });
 
 // Close dropdown when clicking outside
 document.addEventListener("click", function (event) {
   const dropdown = document.querySelector(".dropdown-menu");
   const profile = document.querySelector(".profile");
-  if (!profile.contains(event.target)) {
+  if (dropdown && profile && !profile.contains(event.target)) {
     dropdown.style.display = "none";
   }
 });
@@ -71,14 +72,18 @@ document.addEventListener("click", function (event) {
 // Modal functions
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
-  modal.classList.add("active");
-  document.body.classList.add("modal-open");
+  if (modal) {
+    modal.classList.add("active");
+    document.body.classList.add("modal-open");
+  }
 }
 
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
-  modal.classList.remove("active");
-  document.body.classList.remove("modal-open");
+  if (modal) {
+    modal.classList.remove("active");
+    document.body.classList.remove("modal-open");
+  }
 }
 
 // Close modal when clicking outside
@@ -158,7 +163,7 @@ function generateReceipt(paymentId) {
 }
 
 function generateAndSendReceipt() {
-  const receiptNumber = document.getElementById("receipt-number").value;
+  const receiptNumber = document.getElementById("receipt-number")?.value || "RCP-2025-001";
   showAlert(
     `Receipt ${receiptNumber} generated and sent successfully!`,
     "success"
@@ -198,12 +203,24 @@ function showAlert(message, type) {
     type === "success" ? "check-circle" : "exclamation-triangle"
   }"></i> ${message}`;
 
-  // Insert at top of body
-  document.body.insertBefore(alert, document.body.firstChild);
+  // Position alert at top of viewport
+  alert.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999999;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  `;
+
+  // Insert into body
+  document.body.appendChild(alert);
 
   // Remove after 3 seconds
   setTimeout(() => {
-    alert.remove();
+    if (alert.parentNode) {
+      alert.remove();
+    }
   }, 3000);
 }
 
@@ -213,9 +230,11 @@ function updatePaymentStatus(paymentId, newStatus) {
   rows.forEach((row) => {
     if (row.dataset.paymentId === paymentId) {
       const statusCell = row.querySelector(".status-badge");
-      statusCell.className = `status-badge ${newStatus}`;
-      statusCell.textContent =
-        newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      if (statusCell) {
+        statusCell.className = `status-badge ${newStatus}`;
+        statusCell.textContent =
+          newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      }
     }
   });
 
@@ -239,11 +258,30 @@ function updateStatistics() {
     }
   });
 
-  document.getElementById("total-payments").textContent = rows.length;
-  document.getElementById("pending-payments").textContent = pending;
-  document.getElementById("paid-payments").textContent = paid;
-  document.getElementById("overdue-payments").textContent = overdue;
+  const totalElement = document.getElementById("total-payments");
+  const pendingElement = document.getElementById("pending-payments");
+  const paidElement = document.getElementById("paid-payments");
+  const overdueElement = document.getElementById("overdue-payments");
+
+  if (totalElement) totalElement.textContent = rows.length;
+  if (pendingElement) pendingElement.textContent = pending;
+  if (paidElement) paidElement.textContent = paid;
+  if (overdueElement) overdueElement.textContent = overdue;
 }
+
+// Make functions available globally for onclick handlers
+window.filterPayments = filterPayments;
+window.viewProof = viewProof;
+window.reviewPayment = reviewPayment;
+window.approvePayment = approvePayment;
+window.rejectPayment = rejectPayment;
+window.generateReceipt = generateReceipt;
+window.generateAndSendReceipt = generateAndSendReceipt;
+window.downloadReceipt = downloadReceipt;
+window.sendReminder = sendReminder;
+window.contactTenant = contactTenant;
+window.editPayment = editPayment;
+window.closeModal = closeModal;
 
 // Initialize the page
 document.addEventListener("DOMContentLoaded", function () {
@@ -251,13 +289,20 @@ document.addEventListener("DOMContentLoaded", function () {
   const today = new Date();
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  document.getElementById("date-from").value = weekAgo
-    .toISOString()
-    .split("T")[0];
-  document.getElementById("date-to").value = today.toISOString().split("T")[0];
+  const dateFromElement = document.getElementById("date-from");
+  const dateToElement = document.getElementById("date-to");
+  const receiptDateElement = document.getElementById("receipt-date");
+
+  if (dateFromElement) {
+    dateFromElement.value = weekAgo.toISOString().split("T")[0];
+  }
+  
+  if (dateToElement) {
+    dateToElement.value = today.toISOString().split("T")[0];
+  }
 
   // Initialize receipt date
-  document.getElementById("receipt-date").value = today
-    .toISOString()
-    .split("T")[0];
+  if (receiptDateElement) {
+    receiptDateElement.value = today.toISOString().split("T")[0];
+  }
 });
