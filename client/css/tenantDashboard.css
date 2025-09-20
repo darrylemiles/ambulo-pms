@@ -82,7 +82,6 @@ body:has(.sidebar.collapsed) .main-content,
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #0ea5e9, #0284c7, #06b6d4);
     transform: scaleX(0);
     transition: transform 0.4s ease;
 }
@@ -92,7 +91,6 @@ body:has(.sidebar.collapsed) .main-content,
     box-shadow: 
         0 12px 40px rgba(14, 165, 233, 0.15),
         0 4px 20px rgba(0, 0, 0, 0.1);
-    border-left-color: #0ea5e9;
 }
 
 .card:hover::before {

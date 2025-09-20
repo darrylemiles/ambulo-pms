@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | Ambulo PMS</title>
+    <link rel="stylesheet" href="/assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="/css/fonts.css" />
+    <link rel="stylesheet" href="/css/navigationsTenant.css" />
+</head>
+
+<body>
+<!-- Tenant Top Navigation Bar Component -->
+<div class="top-navbar">
+    <div class="navbar-content">
+        <div class="navbar-left">
+            <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        </div>
+
+        <div class="navbar-right">
+            <!-- Search bar commented out in original but kept for future use -->
+            <!-- <div class="search-bar">
+                <input type="text" placeholder="Search anything..." id="searchInput">
+            </div> -->
+
+            <!-- Notifications Dropdown -->
+            <div class="dropdown">
+                <button class="nav-icon-btn" id="notificationBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notificationBadge">3</span>
+                </button>
+                <div class="dropdown-menu" id="notificationMenu">
+                    <div class="dropdown-header">
+                        <div class="dropdown-title">Notifications</div>
+                        <div class="dropdown-subtitle">You have 3 unread notifications</div>
+                    </div>
+                    <div class="dropdown-item">
+                        <div class="dropdown-item-icon notification-maintenance">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="dropdown-item-content">
+                            <div class="dropdown-item-title">Maintenance Update</div>
+                            <div class="dropdown-item-text">Your plumbing repair request has been assigned to John Smith</div>
+                            <div class="dropdown-item-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="dropdown-item">
+                        <div class="dropdown-item-icon notification-payment">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="dropdown-item-content">
+                            <div class="dropdown-item-title">Payment Reminder</div>
+                            <div class="dropdown-item-text">Rent payment of $1,200 is due in 3 days</div>
+                            <div class="dropdown-item-time">1 day ago</div>
+                        </div>
+                    </div>
+                    <div class="dropdown-item">
+                        <div class="dropdown-item-icon notification-system">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="dropdown-item-content">
+                            <div class="dropdown-item-title">System Update</div>
+                            <div class="dropdown-item-text">New features have been added to your dashboard</div>
+                            <div class="dropdown-item-time">3 days ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Messages Dropdown -->
+            <div class="inbox-dropdown">
+                <button class="nav-icon-btn" id="inboxBtn">
+                    <i class="fas fa-envelope"></i>
+                    <span class="badge" id="messagesBadge">5</span>
+                </button>
+                <div class="inbox-dropdown-menu" id="inboxDropdown">
+                    <div class="inbox-header">
+                        <div class="inbox-header-content">
+                            <h3 class="inbox-title">Messages</h3>
+                            <span class="inbox-badge" id="inboxBadge">5 New</span>
+                        </div>
+                    </div>
+                    <div class="inbox-content" id="inboxContent">
+                        <!-- Messages will be populated by JavaScript -->
+                    </div>
+                    <div class="inbox-footer">
+                        <a href="/messages.html" class="view-all-btn">View All Messages</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Dropdown -->
+            <div class="dropdown">
+                <button class="profile-btn" id="profileBtn">R</button>
+                <div class="dropdown-menu profile-dropdown" id="profileMenu">
+                    <div class="profile-info">
+                        <div class="profile-avatar">R</div>
+                        <div class="profile-details">
+                            <h4>Rei</h4>
+                            <p>Tenant • Unit 4B</p>
+                        </div>
+                    </div>
+                    <div class="profile-menu-item" onclick="openProfileSettings()">
+                        <i class="fas fa-user profile-menu-icon"></i>
+                        <span>My Profile</span>
+                    </div>
+                    <!-- Commented out items from original but kept for future use -->
+                    <!-- <div class="profile-menu-item" onclick="openAccountSettings()">
+                        <i class="fas fa-cog profile-menu-icon"></i>
+                        <span>Account Settings</span>
+                    </div>
+                    <div class="profile-menu-item" onclick="openPreferences()">
+                        <i class="fas fa-palette profile-menu-icon"></i>
+                        <span>Preferences</span>
+                    </div>
+                    <div class="profile-menu-item" onclick="openHelp()">
+                        <i class="fas fa-question-circle profile-menu-icon"></i>
+                        <span>Help & Support</span>
+                    </div> -->
+                    <div class="profile-menu-item" onclick="logout()">
+                        <i class="fas fa-sign-out-alt profile-menu-icon"></i>
+                        <span>Sign Out</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/javascript/navigationsTenant.js"></script>
+</body>
+
+</html>

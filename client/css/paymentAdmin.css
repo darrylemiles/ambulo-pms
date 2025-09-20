@@ -122,6 +122,12 @@ body:has(.sidebar.collapsed) .main-content,
     gap: 20px;
 }
 
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
 .section-title {
     font-size: 24px;
     font-weight: 700;
@@ -633,6 +639,17 @@ tbody tr:hover {
     .btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .property-header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 }
 
