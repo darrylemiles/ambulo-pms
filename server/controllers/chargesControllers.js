@@ -15,7 +15,7 @@ const createCharge = expressAsync(async (req, res) => {
 
 const getAllCharges = expressAsync(async (req, res) => {
     try {
-        const result = await chargesServices.getAllCharges();
+        const result = await chargesServices.getAllCharges(req.query);
         res.json(result);
     } catch (error) {
         console.error("Error fetching charges:", error);
