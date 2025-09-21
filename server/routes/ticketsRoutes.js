@@ -32,7 +32,7 @@ router.post('/update-ticket-statuses', updateTicketStatuses);
 
 router.get('/', getTickets);
 router.get('/:ticket_id', getSingleTicketById);
-router.get('/user/:user_id', getTicketsByUserId);
+router.get('/users/:user_id', getTicketsByUserId);
 
 router.patch('/:ticket_id', createUploadMiddleware({
     fields: [

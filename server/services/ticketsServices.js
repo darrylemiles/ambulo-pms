@@ -3,7 +3,6 @@ import conn from "./../config/db.js";
 
 const pool = await conn();
 
-
 const createTicket = async (ticketData = {}, currentUserId = null) => {
   const {
     ticket_title,
@@ -18,20 +17,20 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
     end_time,
     attachments,
     notes,
-    maintenance_costs
+    maintenance_costs,
   } = ticketData || {};
 
   const ticket_id = uuidv4();
   const now = new Date();
-  
+
   try {
     const finalUserId = user_id || currentUserId;
-    
+
     let ticket_status;
-    if (!assigned_to || assigned_to.trim() === '') {
-      ticket_status = 'PENDING';
+    if (!assigned_to || assigned_to.trim() === "") {
+      ticket_status = "PENDING";
     } else {
-      ticket_status = 'ASSIGNED';
+      ticket_status = "ASSIGNED";
     }
 
     const newTicket = {
@@ -52,7 +51,7 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
       notes,
       maintenance_costs,
       created_at: now,
-      updated_at: now
+      updated_at: now,
     };
 
     Object.keys(newTicket).forEach(
@@ -60,32 +59,32 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
     );
 
     const fields = Object.keys(newTicket).join(", ");
-    const placeholders = Object.keys(newTicket).map(() => "?").join(", ");
+    const placeholders = Object.keys(newTicket)
+      .map(() => "?")
+      .join(", ");
     const values = Object.values(newTicket);
 
     const query = `INSERT INTO tickets (${fields}) VALUES (${placeholders})`;
-    
+
     await pool.query(query, values);
 
     return {
       message: "Ticket created successfully",
       ticket_id,
-      ticketData: newTicket
+      ticketData: newTicket,
     };
-
   } catch (error) {
     console.error("Error creating ticket:", error);
     throw new Error(error.message || "Failed to create ticket");
   }
 };
 
-
 const updateTicketStatuses = async () => {
   try {
     const now = new Date();
-    const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS format
-    
+    const currentDate = now.toISOString().split("T")[0];
+    const currentTime = now.toTimeString().split(" ")[0];
+
     const checkQuery = `
       SELECT 
         ticket_id, 
@@ -100,9 +99,9 @@ const updateTicketStatuses = async () => {
       WHERE ticket_status IN ('ASSIGNED', 'PENDING')
         AND start_date IS NOT NULL
     `;
-    
+
     const [eligibleTickets] = await pool.query(checkQuery);
-    
+
     const updateToInProgressQuery = `
       UPDATE tickets 
       SET ticket_status = 'IN_PROGRESS', updated_at = NOW()
@@ -131,10 +130,9 @@ const updateTicketStatuses = async () => {
           OR (end_date > CURDATE() OR (end_date = CURDATE() AND end_time > CURTIME()))
         )
     `;
-    
+
     const [result] = await pool.query(updateToInProgressQuery);
-    
-    
+
     if (result.affectedRows > 0) {
       const updatedTicketsQuery = `
         SELECT ticket_id, ticket_title, ticket_status, assigned_to, start_date, start_time, end_date, end_time 
@@ -142,7 +140,7 @@ const updateTicketStatuses = async () => {
         WHERE ticket_status = 'IN_PROGRESS' 
           AND updated_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
       `;
-      
+
       const [updatedTickets] = await pool.query(updatedTicketsQuery);
     }
 
@@ -156,30 +154,28 @@ const updateTicketStatuses = async () => {
           OR (end_date = CURDATE() AND end_time IS NOT NULL AND end_time <= CURTIME())
         )
     `;
-    
+
     const [completedResult] = await pool.query(updateToCompletedQuery);
-    
+
     if (completedResult.affectedRows > 0) {
-      
       const completedTicketsQuery = `
         SELECT ticket_id, ticket_title, ticket_status, end_date, end_time 
         FROM tickets 
         WHERE ticket_status = 'COMPLETED' 
           AND updated_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
       `;
-      
+
       const [completedTickets] = await pool.query(completedTicketsQuery);
     }
-    
-    return { 
+
+    return {
       message: "Ticket statuses updated successfully",
       inProgressCount: result.affectedRows,
       completedCount: completedResult.affectedRows,
       currentDate,
       currentTime,
-      eligibleTickets: eligibleTickets.length
+      eligibleTickets: eligibleTickets.length,
     };
-    
   } catch (error) {
     console.error("Error updating ticket statuses:", error);
     throw new Error(`Failed to update ticket statuses: ${error.message}`);
@@ -202,10 +198,11 @@ const getTickets = async (queryObj = {}) => {
     const params = [];
 
     const ticketFilters = Object.entries(filters)
-      .filter(([key, value]) => 
-        value !== undefined && 
-        value !== "" && 
-        !['requested_by_name', 'requested_by_email'].includes(key)
+      .filter(
+        ([key, value]) =>
+          value !== undefined &&
+          value !== "" &&
+          !["requested_by_name", "requested_by_email"].includes(key)
       )
       .map(([key, value]) => {
         params.push(value);
@@ -218,12 +215,12 @@ const getTickets = async (queryObj = {}) => {
     }
 
     if (ticketFilters.length > 0) {
-      query += ' WHERE ' + ticketFilters.join(' AND ');
+      query += " WHERE " + ticketFilters.join(" AND ");
     }
 
-    query += ' ORDER BY t.created_at DESC';
+    query += " ORDER BY t.created_at DESC";
 
-    query += ' LIMIT ? OFFSET ?';
+    query += " LIMIT ? OFFSET ?";
     params.push(parseInt(limit), parseInt(skip));
 
     let countQuery = `
@@ -234,16 +231,17 @@ const getTickets = async (queryObj = {}) => {
     const countParams = [];
 
     if (ticketFilters.length > 0) {
-      countQuery += ' WHERE ' + ticketFilters.join(' AND ');
-      
+      countQuery += " WHERE " + ticketFilters.join(" AND ");
+
       Object.entries(filters)
-        .filter(([key, value]) => 
-          value !== undefined && 
-          value !== "" && 
-          !['requested_by_name', 'requested_by_email'].includes(key)
+        .filter(
+          ([key, value]) =>
+            value !== undefined &&
+            value !== "" &&
+            !["requested_by_name", "requested_by_email"].includes(key)
         )
         .forEach(([_, value]) => countParams.push(value));
-      
+
       if (filters.requested_by_name) {
         countParams.push(`%${filters.requested_by_name}%`);
       }
@@ -260,8 +258,8 @@ const getTickets = async (queryObj = {}) => {
         totalPages: Math.ceil(total / limit),
         totalTickets: total,
         hasNextPage: page * limit < total,
-        hasPrevPage: page > 1
-      }
+        hasPrevPage: page > 1,
+      },
     };
   } catch (error) {
     console.error("Error fetching tickets:", error);
@@ -288,7 +286,7 @@ const getSingleTicketById = async (ticket_id = "") => {
 
     return {
       message: "Ticket retrieved successfully",
-      ticket: rows[0]
+      ticket: rows[0],
     };
   } catch (error) {
     console.error("Error getting ticket:", error);
@@ -312,7 +310,11 @@ const getTicketsByUserId = async (user_id = "", queryObj = {}) => {
       ORDER BY t.created_at DESC 
       LIMIT ? OFFSET ?
     `;
-    const [rows] = await pool.query(query, [user_id, parseInt(limit), parseInt(skip)]);
+    const [rows] = await pool.query(query, [
+      user_id,
+      parseInt(limit),
+      parseInt(skip),
+    ]);
 
     const countQuery = `SELECT COUNT(*) as total FROM tickets WHERE user_id = ?`;
     const [countResult] = await pool.query(countQuery, [user_id]);
@@ -327,8 +329,8 @@ const getTicketsByUserId = async (user_id = "", queryObj = {}) => {
         totalPages: Math.ceil(total / limit),
         totalTickets: total,
         hasNextPage: page * limit < total,
-        hasPrevPage: page > 1
-      }
+        hasPrevPage: page > 1,
+      },
     };
   } catch (error) {
     console.error("Error fetching user tickets:", error);
@@ -347,23 +349,23 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
     }
 
     const allowedFields = [
-      'ticket_title',
-      'description', 
-      'priority',
-      'request_type',
-      'assigned_to',
-      'ticket_status', 
-      'start_date',
-      'end_date',
-      'start_time',
-      'end_time',
-      'maintenance_cost',
-      'notes',
-      'attachments'
+      "ticket_title",
+      "description",
+      "priority",
+      "request_type",
+      "assigned_to",
+      "ticket_status",
+      "start_date",
+      "end_date",
+      "start_time",
+      "end_time",
+      "maintenance_cost",
+      "notes",
+      "attachments",
     ];
 
     const filteredData = {};
-    Object.keys(ticketData).forEach(key => {
+    Object.keys(ticketData).forEach((key) => {
       if (allowedFields.includes(key)) {
         filteredData[key] = ticketData[key];
       }
@@ -373,13 +375,11 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("No valid fields provided for update");
     }
 
-    console.log('Filtered data for update:', filteredData);
-
     const existingTicket = await getSingleTicketById(ticket_id);
     const existingTicketData = existingTicket.ticket;
 
     let updatedAttachments = existingTicketData.attachments || "";
-    
+
     if (filteredData.attachments) {
       if (updatedAttachments && filteredData.attachments) {
         updatedAttachments = `${updatedAttachments},${filteredData.attachments}`;
@@ -393,30 +393,24 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
     const updatedData = {
       ...filteredData,
       attachments: updatedAttachments,
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     Object.keys(updatedData).forEach(
       (key) => updatedData[key] === undefined && delete updatedData[key]
     );
 
-    console.log('Final update data:', updatedData);
-
     const fields = Object.keys(updatedData);
-    const setClause = fields.map(field => `${field} = ?`).join(', ');
+    const setClause = fields.map((field) => `${field} = ?`).join(", ");
     const values = Object.values(updatedData);
 
     const query = `UPDATE tickets SET ${setClause} WHERE ticket_id = ?`;
-    console.log('Update query:', query);
-    console.log('Update values:', [...values, ticket_id]);
-    
+
     const [result] = await pool.query(query, [...values, ticket_id]);
 
     if (result.affectedRows === 0) {
       throw new Error("Ticket could not be updated");
     }
-
-    console.log('Update result:', result);
 
     const updatedTicket = await getSingleTicketById(ticket_id);
 
@@ -424,7 +418,7 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       message: "Ticket updated successfully",
       ticket_id,
       ticket: updatedTicket.ticket,
-      updatedFields: Object.keys(filteredData)
+      updatedFields: Object.keys(filteredData),
     };
   } catch (error) {
     console.error("Error updating ticket:", error);
@@ -436,37 +430,35 @@ const deleteTicket = async (ticketId) => {
   try {
     const checkQuery = `SELECT ticket_id, ticket_title, ticket_status FROM tickets WHERE ticket_id = ?`;
     const [existingTickets] = await pool.query(checkQuery, [ticketId]);
-    
+
     if (existingTickets.length === 0) {
       throw new Error("Ticket not found");
     }
-    
+
     const ticket = existingTickets[0];
-    console.log(`Found ticket to delete: ${ticket.ticket_title} (Status: ${ticket.ticket_status})`);
-    
-    if (ticket.ticket_status === 'COMPLETED') {
-      throw new Error("Cannot delete completed tickets. Archive instead if needed.");
+
+    if (ticket.ticket_status === "COMPLETED") {
+      throw new Error(
+        "Cannot delete completed tickets. Archive instead if needed."
+      );
     }
-    
+
     const deleteQuery = `DELETE FROM tickets WHERE ticket_id = ?`;
     const [result] = await pool.query(deleteQuery, [ticketId]);
-    
+
     if (result.affectedRows === 0) {
       throw new Error("Failed to delete ticket");
     }
-    
-    console.log(`Successfully deleted ticket: ${ticketId}`);
-    
+
     return {
       message: "Ticket deleted successfully",
       ticket_id: ticketId,
       deletedTicket: {
         ticket_id: ticket.ticket_id,
         ticket_title: ticket.ticket_title,
-        ticket_status: ticket.ticket_status
-      }
+        ticket_status: ticket.ticket_status,
+      },
     };
-    
   } catch (error) {
     console.error("Error deleting ticket:", error);
     throw new Error(error.message || "Failed to delete ticket");
