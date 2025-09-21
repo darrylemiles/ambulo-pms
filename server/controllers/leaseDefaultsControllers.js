@@ -3,7 +3,7 @@ import leaseDefaultsServices from "../services/leaseDefaultsServices.js";
 
 const getLeaseDefaults = expressAsync(async (req, res) => {
   try {
-    const defaults = await leaseDefaultsServices.getLeaseDefaults();
+    const defaults = await leaseDefaultsServices.getLeaseDefaults(req.query);
     res.status(200).json({defaults});
   } catch (error) {
     console.error("Error getting lease defaults:", error);
@@ -11,13 +11,14 @@ const getLeaseDefaults = expressAsync(async (req, res) => {
   }
 });
 
-const updateLeaseDefaults = expressAsync(async (req, res) => {
+const updateLeaseDefaultsById = expressAsync(async (req, res) => {
   try {
-    const { settingKey, settingValue } = req.body;
-    if (!settingKey || settingValue === undefined) {
-      return res.status(400).json({ message: "settingKey and settingValue are required" });
+    const settingId = req.params.setting_id;
+    const { settingValue, description } = req.body;
+    if (!settingId || settingValue === undefined) {
+      return res.status(400).json({ message: "settingId and settingValue are required" });
     }
-    await leaseDefaultsServices.updateLeaseDefaults(settingKey, settingValue);
+    await leaseDefaultsServices.updateLeaseDefaultsById(settingId, settingValue, description);
     res.status(200).json({ message: "Lease default updated successfully" });
   } catch (error) {
     console.error("Error updating lease default:", error);
@@ -27,5 +28,5 @@ const updateLeaseDefaults = expressAsync(async (req, res) => {
 
 export {
   getLeaseDefaults,
-  updateLeaseDefaults
+  updateLeaseDefaultsById
 };

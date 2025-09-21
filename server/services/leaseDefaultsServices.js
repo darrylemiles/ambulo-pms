@@ -5,11 +5,15 @@ const pool = await conn();
 const getLeaseDefaults = async () => {
   try {
     const [rows] = await pool.query(
-      `SELECT setting_key, setting_value FROM lease_default_values`
+      `SELECT setting_id, setting_key, setting_value, description FROM lease_default_values`
     );
     const defaults = {};
     rows.forEach((row) => {
-      defaults[row.setting_key] = row.setting_value;
+      defaults[row.setting_key] = {
+        setting_id: row.setting_id,
+        value: row.setting_value,
+        description: row.description
+      };
     });
     return defaults;
   } catch (error) {
@@ -17,11 +21,11 @@ const getLeaseDefaults = async () => {
   }
 };
 
-const updateLeaseDefaults = async (settingKey, settingValue) => {
+const updateLeaseDefaultsById = async (settingId, settingValue, description) => {
   try {
     await pool.query(
-      `UPDATE lease_default_values SET setting_value = ? WHERE setting_key = ?`,
-      [settingValue, settingKey]
+      `UPDATE lease_default_values SET setting_value = ?, description = ? WHERE setting_id = ?`,
+      [settingValue, description, settingId]
     );
   } catch (error) {
     throw error;
@@ -30,5 +34,5 @@ const updateLeaseDefaults = async (settingKey, settingValue) => {
 
 export default { 
     getLeaseDefaults, 
-    updateLeaseDefaults 
+    updateLeaseDefaultsById 
 };
