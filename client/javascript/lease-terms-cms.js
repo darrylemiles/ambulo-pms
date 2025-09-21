@@ -134,10 +134,10 @@ function formatSettingKey(key) {
         auto_termination_after_months: ["Auto Termination After", "Months"],
         termination_trigger_days: ["Termination Trigger", "Days"],
         advance_payment_forfeited_on_cancel: ["Advance Payment Forfeited On Cancel", ""],
-        is_security_deposit_refundable: ["Security Deposit Refundable", ""],
+        is_security_deposit_refundable: ["Security Deposit (if Refundable)", ""],
         notice_before_cancel_days: ["Notice Before Cancel", "Days"],
         notice_before_renewal_days: ["Notice Before Renewal", "Days"],
-        rent_increase_on_renewal: ["Rent Increase On Renewal", "Percentage"]
+        rent_increase_on_renewal_percentage: ["Rent Increase On Renewal", "Percentage"]
     };
 
     if (keyMap[key]) {
