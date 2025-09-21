@@ -29,6 +29,15 @@ const getChargeById = async (id) => {
     }
 }
 
+const getChargeByUserId = async (userId) => {
+    try {
+        return `charges for user id: ${userId}`;
+    } catch (error) {
+        console.error(`Error fetching charges for user id ${userId}:`, error);
+        throw error;
+    }
+}
+
 const getChargeByLeaseId = async (leaseId) => {
     try {
         return `charges for lease id: ${leaseId}`;
@@ -60,6 +69,7 @@ export default {
     createCharge,
     getAllCharges,
     getChargeById,
+    getChargeByUserId,
     getChargeByLeaseId,
     updateChargeById,
     deleteChargeById

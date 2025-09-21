@@ -18,6 +18,12 @@ const getChargeById = expressAsync(async (req, res) => {
     res.status(200).json(result);
 });
 
+const getChargeByUserId = expressAsync(async (req, res) => {
+    const { userId } = req.params;
+    const result = await chargesServices.getChargeByUserId(userId);
+    res.status(200).json(result);
+});
+
 const getChargeByLeaseId = expressAsync(async (req, res) => {
     const { leaseId } = req.params;
     const result = await chargesServices.getChargeByLeaseId(leaseId);
@@ -41,6 +47,7 @@ export {
     createCharge,
     getAllCharges,
     getChargeById,
+    getChargeByUserId,
     getChargeByLeaseId,
     updateChargeById,
     deleteChargeById
