@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Font Awesome CDN -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/messages.css">
-    <link rel="stylesheet" href="/css/navigationsTenant.css">
+    <link rel="stylesheet" href="/css/navigation.css">
     <title>Messages</title>
 </head>
+
 <body>
     <div class="overlay" id="overlay"></div>
-    <div id="sidebarContainer-tenant"></div>
-    <div id="navbarContainer-tenant"></div>
+    <div id="sidebarContainer"></div>
+    <div id="navbarContainer"></div>
 
     <div class="main-content">
         <div class="main-container">
@@ -55,7 +58,7 @@
                     <button class="filter-btn" onclick="setFilter('unread', this)">Unread</button>
                     <button class="filter-btn" onclick="setFilter('urgent', this)">Urgent</button>
                     <button class="filter-btn" onclick="setFilter('maintenance', this)">Maintenance</button>
-                    
+
                     <div class="search-container">
                         <span class="search-icon"><i class="fas fa-search"></i></span>
                         <input type="text" class="search-input" placeholder="Search messages..." id="searchInput">
@@ -171,8 +174,9 @@
             </div>
         </div>
     </div>
-    
+
     <script src="/javascript/navigationsTenant.js"></script>
     <script src="/javascript/messages.js"></script>
 </body>
+
 </html>
