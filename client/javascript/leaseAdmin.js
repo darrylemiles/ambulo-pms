@@ -21,6 +21,87 @@ document.addEventListener("DOMContentLoaded", () => {
   setDynamicInfo();
 });
 
+function setStatsBar({ total, active, pending, terminated }) {
+  const set = (stat, val) => {
+    const el = document.querySelector('.stat-value[data-stat="' + stat + '"]');
+    if (el) el.textContent = val;
+  };
+  set('total', total);
+  set('active', active);
+  set('pending', pending);
+  set('terminated', terminated);
+  if (arguments[0].expiring !== undefined) set('expiring', arguments[0].expiring);
+  if (arguments[0].vacant !== undefined) set('vacant', arguments[0].vacant);
+  if (arguments[0].avgduration !== undefined) set('avgduration', arguments[0].avgduration);
+}
+
+async function updateStatsBar() {
+  try {
+    let leases = getSessionCache('leases');
+    if (!leases) {
+      const leaseRes = await fetch('/api/v1/leases');
+      if (!leaseRes.ok) throw new Error('Failed to fetch leases');
+      const leaseData = await leaseRes.json();
+      leases = leaseData.leases || [];
+      setSessionCache('leases', leases);
+    }
+
+    let properties = getSessionCache('properties');
+    if (!properties) {
+      const propRes = await fetch('/api/v1/properties?status=Available&limit=1000');
+      if (propRes.ok) {
+        const propData = await propRes.json();
+        properties = propData.properties || [];
+        setSessionCache('properties', properties);
+      } else {
+        properties = [];
+      }
+    }
+
+    let vacant = '-';
+    try {
+      const leasedPropertyIds = leases
+        .filter(lease => ["ACTIVE", "PENDING"].includes((lease.lease_status || '').toUpperCase()))
+        .map(lease => lease.property_id);
+      const trulyVacant = properties.filter(
+        prop => !leasedPropertyIds.includes(prop.property_id)
+      );
+      vacant = trulyVacant.length;
+    } catch {}
+
+    let total = leases.length;
+    let active = 0, pending = 0, terminated = 0;
+    let expiring = 0;
+    let totalDuration = 0;
+    const now = new Date();
+    leases.forEach(lease => {
+      const status = (lease.lease_status || '').toLowerCase();
+      if (status === 'active') active++;
+      else if (status === 'pending') pending++;
+      else if (status === 'terminated') terminated++;
+
+      if (lease.lease_end_date) {
+        const endDate = new Date(lease.lease_end_date);
+        const diffDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+        if (diffDays > 0 && diffDays <= 30) expiring++;
+        if (lease.lease_start_date) {
+          const startDate = new Date(lease.lease_start_date);
+          const durationMonths = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24 * 30));
+          totalDuration += durationMonths;
+        }
+      }
+    });
+    let avgduration = total > 0 ? Math.round(totalDuration / total) : '-';
+
+    setStatsBar({ total, active, pending, terminated, expiring, vacant, avgduration });
+  } catch (err) {
+    setStatsBar({ total: '-', active: '-', pending: '-', terminated: '-', expiring: '-', vacant: '-', avgduration: '-' });
+    console.error('Stats bar error:', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', updateStatsBar);
+
 //#region Populate Fields
 
 async function populateTenantDropdown() {
@@ -28,10 +109,13 @@ async function populateTenantDropdown() {
   tenantSelect.innerHTML = '<option value="">Select a tenant</option>';
 
   try {
-    const res = await fetch("/api/v1/users?role=TENANT");
-    const data = await res.json();
-    const tenants = data.users || [];
-
+    let tenants = getSessionCache('tenants');
+    if (!tenants) {
+      const res = await fetch("/api/v1/users?role=TENANT");
+      const data = await res.json();
+      tenants = data.users || [];
+      setSessionCache('tenants', tenants);
+    }
     tenants.forEach(user => {
       const option = document.createElement("option");
       option.value = user.user_id;
@@ -48,16 +132,24 @@ async function populatePropertyDropdown() {
   propertySelect.innerHTML = '<option value="">Select a property</option>';
 
   try {
-    const res = await fetch("/api/v1/properties?status=Available&limit=1000");
-    const data = await res.json();
-    let properties = data.properties || [];
+    let properties = getSessionCache('properties');
+    if (!properties) {
+      const res = await fetch("/api/v1/properties?status=Available&limit=1000");
+      const data = await res.json();
+      properties = data.properties || [];
+      setSessionCache('properties', properties);
+    }
 
-    const leaseRes = await fetch("/api/v1/leases");
-    const leaseData = await leaseRes.json();
-    const leases = leaseData.leases || [];
+    let leases = getSessionCache('leases');
+    if (!leases) {
+      const leaseRes = await fetch("/api/v1/leases");
+      const leaseData = await leaseRes.json();
+      leases = leaseData.leases || [];
+      setSessionCache('leases', leases);
+    }
 
     const leasedPropertyIds = leases
-      .filter(lease => ["ACTIVE", "PENDING"].includes(lease.lease_status))
+      .filter(lease => ["ACTIVE", "PENDING"].includes((lease.lease_status || '').toUpperCase()))
       .map(lease => lease.property_id);
 
     properties = properties.filter(
@@ -74,31 +166,36 @@ async function populatePropertyDropdown() {
     console.error("Failed to load properties:", error);
   }
 }
+
 async function populateFinancialDefaults() {
   try {
     const res = await fetch("/api/v1/lease-defaults");
     const data = await res.json();
     const defaults = data.defaults || {};
 
+    const getVal = (key, fallback = "") => {
+      return defaults[key] && defaults[key].value !== undefined ? defaults[key].value : fallback;
+    };
+
     const setDefault = (id, value) => {
       const el = document.getElementById(id);
       if (el && !el.value) el.value = value;
     };
 
-    setDefault("paymentFrequency", defaults.payment_frequency || "Monthly");
-    setDefault("quarterlyTax", defaults.quarterly_tax_percentage || "");
-    setDefault("securityDeposit", defaults.security_deposit_months || "");
-    setDefault("advancePayment", defaults.advance_payment_months || "");
-    setDefault("lateFee", defaults.late_fee_percentage || "");
-    setDefault("gracePeriod", defaults.grace_period_days || "");
+    setDefault("paymentFrequency", getVal("payment_frequency", "Monthly"));
+    setDefault("quarterlyTax", getVal("quarterly_tax_percentage", ""));
+    setDefault("securityDeposit", getVal("security_deposit_months", ""));
+    setDefault("advancePayment", getVal("advance_payment_months", ""));
+    setDefault("lateFee", getVal("late_fee_percentage", ""));
+    setDefault("gracePeriod", getVal("grace_period_days", ""));
 
-    setDefault("autoTerminationMonths", defaults.auto_termination_after_months || "");
-    setDefault("terminationTriggerDays", defaults.termination_trigger_days || "");
-    setDefault("noticeCancelDays", defaults.notice_before_cancel_days || "");
-    setDefault("noticeRenewalDays", defaults.notice_before_renewal_days || "");
-    setDefault("rentIncreaseRenewal", defaults.rent_increase_on_renewal || "");
-    document.getElementById("isSecurityRefundable").checked = defaults.is_security_deposit_refundable === "1";
-    document.getElementById("advanceForfeited").checked = defaults.advance_payment_forfeited_on_cancel === "1";
+    setDefault("autoTerminationMonths", getVal("auto_termination_after_months", ""));
+    setDefault("terminationTriggerDays", getVal("termination_trigger_days", ""));
+    setDefault("noticeCancelDays", getVal("notice_before_cancel_days", ""));
+    setDefault("noticeRenewalDays", getVal("notice_before_renewal_days", ""));
+    setDefault("rentIncreaseRenewal", getVal("rent_increase_on_renewal_percentage", ""));
+    document.getElementById("isSecurityRefundable").checked = getVal("is_security_deposit_refundable", "0") === "1";
+    document.getElementById("advanceForfeited").checked = getVal("advance_payment_forfeited_on_cancel", "0") === "1";
   } catch (error) {
     console.error("Failed to load lease defaults:", error);
   }
@@ -1006,7 +1103,6 @@ function uploadNewDocument() {
   showToast("Document upload feature coming soon!");
 }
 
-// Click outside modal to close
 window.addEventListener("click", function (event) {
   const deleteModal = document.getElementById("deleteModal");
   const cancelModal = document.getElementById("cancelModal");
@@ -1018,6 +1114,23 @@ window.addEventListener("click", function (event) {
     hideCancelModal();
   }
 });
+
+function getSessionCache(key, maxAgeMs = 300000) {
+  try {
+    const item = sessionStorage.getItem(key);
+    if (!item) return null;
+    const { data, ts } = JSON.parse(item);
+    if (Date.now() - ts > maxAgeMs) return null;
+    console.log(`[CACHE] Using cached data for key: ${key}`);
+    return data;
+  } catch { return null; }
+}
+
+function setSessionCache(key, data) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
+}
 
 // Initialize the application
 showListView();
