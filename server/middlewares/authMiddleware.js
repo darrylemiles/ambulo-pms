@@ -2,30 +2,21 @@ import jwt from "jsonwebtoken";
 
 const protect = (req, res, next) => {
   const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Access denied. No token provided." });
-  }
+  if (!token) return res.redirect('/login.html');
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== 'ADMIN') {
+      return res.redirect('/tenantDashboard.html');
+    }
     req.user = decoded;
     next();
-  } catch (error) {
-    res.status(403).json({ message: "Invalid token." });
+  } catch {
+    return res.redirect('/login.html');
   }
 };
 
-const requireRole = (role) => {
-  return (req, res, next) => {
-    if (req.user.role !== role) {
-      return res.status(403).json({ message: "Access denied. Insufficient permissions." });
-    }
-    next();
-  };
-};
 
 export { 
-    protect, 
-    requireRole 
+    protect
 };
