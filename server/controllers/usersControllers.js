@@ -134,7 +134,7 @@ const logoutUser = (req, res) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
-        domain: 'localhost' 
+        domain: process.env.COOKIE_DOMAIN || undefined
     });
     res.json({ message: 'Logged out successfully' });
 };
