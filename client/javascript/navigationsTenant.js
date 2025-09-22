@@ -1,5 +1,24 @@
-// Tenant Navigation Components JavaScript
-// Modular and reusable navigation functionality for tenant portal
+
+function setupTenantNavbar() {
+    const tenantInfo = {
+        name: "Vico Sotto",
+        initial: "V",
+        role: "Tenant",
+        unit: "Unit 3B"
+    };
+
+    const profileBtn = document.getElementById('profileBtn');
+    const profileAvatar = document.getElementById('profileAvatar');
+    const profileName = document.getElementById('profileName');
+    const profileRole = document.getElementById('profileRole');
+    const viewAllMessagesBtn = document.getElementById('viewAllMessagesBtn');
+
+    if (profileBtn) profileBtn.textContent = tenantInfo.initial;
+    if (profileAvatar) profileAvatar.textContent = tenantInfo.initial;
+    if (profileName) profileName.textContent = tenantInfo.name;
+    if (profileRole) profileRole.textContent = `${tenantInfo.role} • ${tenantInfo.unit}`;
+    if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messages.html";
+}
 
 class TenantNavigationManager {
     constructor(config = {}) {
@@ -27,8 +46,7 @@ class TenantNavigationManager {
     init() {
         this.cacheDOMElements();
         this.setupPageTitles();
-        
-        // Modified: Apply initial collapsed state before loading saved state
+
         this.applyInitialCollapsedState();
         this.loadCollapsedState();
         
@@ -37,8 +55,6 @@ class TenantNavigationManager {
         this.setActiveNavItem();
         this.populateInbox();
         this.addKeyboardShortcuts();
-        
-        console.log('Tenant navigation system initialized');
     }
 
     // NEW: Apply initial collapsed state
@@ -70,7 +86,6 @@ class TenantNavigationManager {
 
     setupPageTitles() {
         this.pageTitles = {
-            // File-based mapping for tenant pages
             "tenantDashboard.html": "Dashboard",
             "tenantDashboard": "Dashboard",
             "leaseTenant.html": "Lease Information",
@@ -81,19 +96,14 @@ class TenantNavigationManager {
             "maintenanceTenant": "Maintenance Requests",
             "messages.html": "Messages",
             "messages": "Messages",
-            // "documentsTenant.html": "Documents",
-            // "documentsTenant": "Documents",
-
-            // Data-page attribute mapping
+ 
             dashboard: 'Dashboard',
             lease: 'Lease Information',
             payments: 'Payments',
             maintenance: 'Maintenance Requests',
             messages: 'Messages',
-            // documents: 'Documents',
             support: 'Support',
 
-            // Default fallbacks
             index: 'Dashboard',
             "": 'Dashboard'
         };
@@ -311,7 +321,6 @@ class TenantNavigationManager {
         if (this.pageTitle && this.pageTitles[page]) {
             this.pageTitle.textContent = this.pageTitles[page];
             document.title = this.pageTitles[page] + " | Ambulo PMS";
-            console.log('Page title updated to:', this.pageTitles[page]);
         }
     }
 
@@ -327,8 +336,6 @@ class TenantNavigationManager {
                 currentPage = 'dashboard';
             }
         }
-
-        console.log('Current page detected:', currentPage);
 
         const navLinks = document.querySelectorAll(".nav-link");
 
@@ -353,7 +360,6 @@ class TenantNavigationManager {
                 link.classList.add("active");
                 const pageKey = linkPage || linkFileName || currentPage;
                 this.updatePageTitle(pageKey);
-                console.log('Set active nav item:', pageKey);
             }
         });
     }
@@ -416,8 +422,7 @@ class TenantNavigationManager {
             message.unread = false;
             this.populateInbox();
         }
-        console.log(`Opening message: "${message.subject}" from ${message.sender}`);
-        // Implement actual message opening logic here
+
     }
 
     // === DROPDOWN FUNCTIONALITY ===
@@ -447,34 +452,28 @@ class TenantNavigationManager {
     // === PROFILE FUNCTIONS ===
     
     openProfileSettings() {
-        console.log('Opening tenant profile settings...');
         this.closeAllDropdowns();
         alert('Profile settings would open here');
     }
 
     openAccountSettings() {
-        console.log('Opening tenant account settings...');
-        this.closeAllDropdowns();
         alert('Account settings would open here');
+        this.closeAllDropdowns();
     }
 
     openPreferences() {
-        console.log('Opening tenant preferences...');
         this.closeAllDropdowns();
         alert('Preferences would open here');
     }
 
     openHelp() {
-        console.log('Opening tenant help & support...');
         this.closeAllDropdowns();
         alert('Help & Support would open here');
     }
 
     logout() {
-        console.log('Tenant logging out...');
         this.closeAllDropdowns();
         if (confirm('Are you sure you want to sign out?')) {
-            console.log('Redirecting to login page...');
             // Implement logout logic
         }
     }
@@ -526,17 +525,6 @@ class TenantNavigationManager {
             menu.addEventListener('click', (e) => e.stopPropagation());
         });
 
-        // Search functionality (if enabled)
-        if (this.searchInput) {
-            this.searchInput.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                if (searchTerm) {
-                    console.log('Tenant searching for:', searchTerm);
-                    // Implement search logic
-                }
-            });
-        }
-
         // Navigation link handlers
         document.querySelectorAll(".nav-link").forEach((link) => {
             link.addEventListener("click", (e) => {
@@ -567,7 +555,6 @@ class TenantNavigationManager {
                 item.addEventListener('click', () => {
                     const titleElement = item.querySelector('.dropdown-item-title');
                     if (titleElement) {
-                        console.log('Tenant notification clicked:', titleElement.textContent);
                     }
                     item.style.opacity = '0.7';
                     
@@ -631,24 +618,20 @@ class TenantNavigationManager {
         }
     }
 
-    // Method to initialize tenant navigation after components are loaded
-    static async initializeTenantNavigation(config = {}) {
-        // Load tenant components first
-        const sidebarLoaded = await TenantNavigationManager.loadComponent('/components/sidebarTenant.html', 'sidebarContainer-tenant');
-        const navbarLoaded = await TenantNavigationManager.loadComponent('/components/top-navbarTenant.html', 'navbarContainer-tenant');
+static async initializeTenantNavigation(config = {}) {
+    const sidebarLoaded = await TenantNavigationManager.loadComponent('/components/sidebarTenant.html', 'sidebarContainer-tenant');
+    const navbarLoaded = await TenantNavigationManager.loadComponent('/components/top-navbar.html', 'navbarContainer-tenant');
 
-        if (sidebarLoaded || navbarLoaded) {
-            // Small delay to ensure DOM is updated
-            setTimeout(() => {
-                window.tenantNavigationManager = new TenantNavigationManager(config);
-            }, 100);
-        } else {
-            // Initialize without components if loading fails
+    if (sidebarLoaded || navbarLoaded) {
+        setTimeout(() => {
             window.tenantNavigationManager = new TenantNavigationManager(config);
-        }
+            setupTenantNavbar();
+        }, 100);
+    } else {
+        window.tenantNavigationManager = new TenantNavigationManager(config);
     }
+}
 
-    // Method to update navigation state
     updateNavigation(updates) {
         if (updates.currentPage) {
             this.setActiveNavItem(updates.currentPage);
@@ -718,9 +701,7 @@ class TenantNavigationManager {
         return activeLink ? activeLink.dataset.page : null;
     }
 
-    // Method to destroy navigation instance
     destroy() {
-        // Remove event listeners
         if (this.sidebarToggle) {
             this.sidebarToggle.removeEventListener("click", this.toggleSidebar);
         }
@@ -734,12 +715,9 @@ class TenantNavigationManager {
                 this[key] = null;
             }
         });
-        
-        console.log('Tenant navigation instance destroyed');
     }
 }
 
-// Global functions for backward compatibility
 window.openMessage = (messageId) => {
     if (window.tenantNavigationManager) {
         window.tenantNavigationManager.openMessage(messageId);
@@ -776,15 +754,12 @@ window.logout = () => {
     }
 };
 
-// Method to manually set active page (globally accessible)
 window.setActivePageManually = function(pageName) {
-    console.log('Manually setting active tenant page to:', pageName);
     if (window.tenantNavigationManager) {
         window.tenantNavigationManager.setActiveNavItem(pageName);
     }
 };
 
-// Auto-initialize if DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         TenantNavigationManager.initializeTenantNavigation();
@@ -793,12 +768,10 @@ if (document.readyState === 'loading') {
     TenantNavigationManager.initializeTenantNavigation();
 }
 
-// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = TenantNavigationManager;
 }
 
-// AMD support
 if (typeof define === 'function' && define.amd) {
     define([], function() {
         return TenantNavigationManager;
