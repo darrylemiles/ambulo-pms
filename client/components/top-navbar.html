@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+</head>
+
+<body>
+    <!-- Top Navigation Bar Component -->
+    <div class="top-navbar">
+        <div class="navbar-content">
+            <div class="navbar-left">
+                <h1 class="page-title" id="pageTitle">Dashboard</h1>
+            </div>
+            <div class="navbar-right">
+                <!-- <div class="search-bar">
+                <input type="text" placeholder="Search anything..." id="searchInput">
+            </div> -->
+                <!-- Notifications Dropdown -->
+                <div class="dropdown">
+                    <button class="nav-icon-btn" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notificationBadge">0</span>
+                    </button>
+                    <div class="dropdown-menu" id="notificationMenu">
+                        <!-- JS will populate notifications -->
+                    </div>
+                </div>
+                <!-- Messages Dropdown -->
+                <div class="inbox-dropdown">
+                    <button class="nav-icon-btn" id="inboxBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span class="badge" id="messagesBadge">0</span>
+                    </button>
+                    <div class="inbox-dropdown-menu" id="inboxDropdown">
+                        <div class="inbox-header">
+                            <div class="inbox-header-content">
+                                <h3 class="inbox-title">Messages</h3>
+                                <span class="inbox-badge" id="inboxBadge">0 New</span>
+                            </div>
+                        </div>
+                        <div class="inbox-content" id="inboxContent">
+                            <!-- Messages will be populated by JS -->
+                        </div>
+                        <div class="inbox-footer">
+                            <a href="#" id="viewAllMessagesBtn" class="view-all-btn">View All Messages</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="profile-btn" id="profileBtn"></button>
+                    <div class="dropdown-menu profile-dropdown" id="profileMenu">
+                        <div class="profile-info">
+                            <div class="profile-avatar" id="profileAvatar"></div>
+                            <div class="profile-details">
+                                <h4 id="profileName"></h4>
+                                <p id="profileRole"></p>
+                            </div>
+                        </div>
+                        <div class="profile-menu-item" onclick="openProfileSettings()">
+                            <i class="fas fa-user profile-menu-icon"></i>
+                            <span>My Profile</span>
+                        </div>
+                        <div class="profile-menu-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt profile-menu-icon"></i>
+                            <span>Sign Out</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/javascript/navigationsAdmin.js"></script>
+    <script src="/javascript/navigationsTenant.js"></script>
+</body>
+
+</html>

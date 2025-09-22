@@ -1,5 +1,24 @@
-// Tenant Navigation Components JavaScript
-// Modular and reusable navigation functionality for tenant portal
+
+function setupTenantNavbar() {
+    const tenantInfo = {
+        name: "Vico Sotto",
+        initial: "V",
+        role: "Tenant",
+        unit: "Unit 3B"
+    };
+
+    const profileBtn = document.getElementById('profileBtn');
+    const profileAvatar = document.getElementById('profileAvatar');
+    const profileName = document.getElementById('profileName');
+    const profileRole = document.getElementById('profileRole');
+    const viewAllMessagesBtn = document.getElementById('viewAllMessagesBtn');
+
+    if (profileBtn) profileBtn.textContent = tenantInfo.initial;
+    if (profileAvatar) profileAvatar.textContent = tenantInfo.initial;
+    if (profileName) profileName.textContent = tenantInfo.name;
+    if (profileRole) profileRole.textContent = `${tenantInfo.role} • ${tenantInfo.unit}`;
+    if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messages.html";
+}
 
 class TenantNavigationManager {
     constructor(config = {}) {
@@ -12,11 +31,10 @@ class TenantNavigationManager {
             pageTitleSelector: '#pageTitle',
             searchInputSelector: '#searchInput',
             storageKey: 'tenantSidebarCollapsed',
-            startCollapsed: true, // NEW: Start collapsed by default
+            startCollapsed: true, 
             ...config
         };
 
-        // Modified: Start collapsed unless explicitly set to expanded
         this.isCollapsed = this.config.startCollapsed !== false;
         this.isMobile = window.innerWidth <= 768;
         this.inboxMessages = this.getDefaultInboxMessages();
@@ -27,8 +45,7 @@ class TenantNavigationManager {
     init() {
         this.cacheDOMElements();
         this.setupPageTitles();
-        
-        // Modified: Apply initial collapsed state before loading saved state
+
         this.applyInitialCollapsedState();
         this.loadCollapsedState();
         
@@ -37,11 +54,8 @@ class TenantNavigationManager {
         this.setActiveNavItem();
         this.populateInbox();
         this.addKeyboardShortcuts();
-        
-        console.log('Tenant navigation system initialized');
     }
 
-    // NEW: Apply initial collapsed state
     applyInitialCollapsedState() {
         if (!this.isMobile && this.isCollapsed && this.sidebar) {
             this.sidebar.classList.add("collapsed");
@@ -59,7 +73,6 @@ class TenantNavigationManager {
         this.pageTitle = document.querySelector(this.config.pageTitleSelector);
         this.searchInput = document.querySelector(this.config.searchInputSelector);
         
-        // Dropdown elements
         this.notificationBtn = document.getElementById('notificationBtn');
         this.notificationMenu = document.getElementById('notificationMenu');
         this.inboxBtn = document.getElementById('inboxBtn');
@@ -70,7 +83,6 @@ class TenantNavigationManager {
 
     setupPageTitles() {
         this.pageTitles = {
-            // File-based mapping for tenant pages
             "tenantDashboard.html": "Dashboard",
             "tenantDashboard": "Dashboard",
             "leaseTenant.html": "Lease Information",
@@ -81,19 +93,14 @@ class TenantNavigationManager {
             "maintenanceTenant": "Maintenance Requests",
             "messages.html": "Messages",
             "messages": "Messages",
-            // "documentsTenant.html": "Documents",
-            // "documentsTenant": "Documents",
-
-            // Data-page attribute mapping
+ 
             dashboard: 'Dashboard',
             lease: 'Lease Information',
             payments: 'Payments',
             maintenance: 'Maintenance Requests',
             messages: 'Messages',
-            // documents: 'Documents',
             support: 'Support',
 
-            // Default fallbacks
             index: 'Dashboard',
             "": 'Dashboard'
         };
@@ -149,7 +156,7 @@ class TenantNavigationManager {
         ];
     }
 
-    // === SIDEBAR MANAGEMENT ===
+    //#region Sidebar State Persistence
     
     saveCollapsedState() {
         try {
@@ -184,7 +191,6 @@ class TenantNavigationManager {
         if (!icon) return;
 
         if (this.isMobile) {
-            // Mobile toggle icons
             if (this.sidebar.classList.contains("mobile-open")) {
                 icon.className = "fas fa-times";
                 this.sidebarToggle.title = "Close Menu";
@@ -193,7 +199,6 @@ class TenantNavigationManager {
                 this.sidebarToggle.title = "Open Menu";
             }
         } else {
-            // Desktop toggle icons
             if (this.isCollapsed) {
                 icon.className = "fas fa-chevron-right";
                 this.sidebarToggle.title = "Expand Sidebar";
@@ -206,12 +211,10 @@ class TenantNavigationManager {
 
     updateContentLayout() {
         if (!this.isMobile) {
-            // Update top navbar position
             if (this.topNavbar) {
                 this.topNavbar.style.left = this.isCollapsed ? "80px" : "280px";
             }
             
-            // Update main content margin
             if (this.mainContent) {
                 this.mainContent.style.marginLeft = this.isCollapsed ? "80px" : "280px";
                 this.mainContent.classList.toggle("sidebar-collapsed", this.isCollapsed);
@@ -224,7 +227,6 @@ class TenantNavigationManager {
         this.isMobile = window.innerWidth <= 768;
 
         if (this.isMobile) {
-            // Mobile layout
             if (this.sidebar) {
                 this.sidebar.classList.remove("collapsed");
                 this.sidebar.classList.remove("mobile-open");
@@ -233,7 +235,6 @@ class TenantNavigationManager {
                 this.overlay.classList.remove("active");
             }
             
-            // Reset positions for mobile
             if (this.topNavbar) {
                 this.topNavbar.style.left = "0";
             }
@@ -242,7 +243,6 @@ class TenantNavigationManager {
                 this.mainContent.classList.remove("sidebar-collapsed");
             }
         } else {
-            // Desktop layout
             if (this.sidebar) {
                 this.sidebar.classList.remove("mobile-open");
             }
@@ -250,7 +250,6 @@ class TenantNavigationManager {
                 this.overlay.classList.remove("active");
             }
             
-            // Restore collapsed state on desktop
             if (this.isCollapsed && this.sidebar) {
                 this.sidebar.classList.add("collapsed");
             }
@@ -305,13 +304,10 @@ class TenantNavigationManager {
         }
     }
 
-    // === PAGE TITLE MANAGEMENT ===
-    
     updatePageTitle(page) {
         if (this.pageTitle && this.pageTitles[page]) {
             this.pageTitle.textContent = this.pageTitles[page];
             document.title = this.pageTitles[page] + " | Ambulo PMS";
-            console.log('Page title updated to:', this.pageTitles[page]);
         }
     }
 
@@ -327,8 +323,6 @@ class TenantNavigationManager {
                 currentPage = 'dashboard';
             }
         }
-
-        console.log('Current page detected:', currentPage);
 
         const navLinks = document.querySelectorAll(".nav-link");
 
@@ -353,13 +347,12 @@ class TenantNavigationManager {
                 link.classList.add("active");
                 const pageKey = linkPage || linkFileName || currentPage;
                 this.updatePageTitle(pageKey);
-                console.log('Set active nav item:', pageKey);
             }
         });
     }
+    //#endregion
 
-    // === INBOX FUNCTIONALITY ===
-    
+    //#region INBOX
     populateInbox() {
         const inboxContent = document.getElementById('inboxContent');
         const inboxBadge = document.getElementById('inboxBadge');
@@ -369,7 +362,6 @@ class TenantNavigationManager {
         
         const unreadCount = this.inboxMessages.filter(msg => msg.unread).length;
         
-        // Update badges
         if (inboxBadge) {
             if (unreadCount > 0) {
                 inboxBadge.textContent = `${unreadCount} New`;
@@ -416,12 +408,10 @@ class TenantNavigationManager {
             message.unread = false;
             this.populateInbox();
         }
-        console.log(`Opening message: "${message.subject}" from ${message.sender}`);
-        // Implement actual message opening logic here
-    }
 
-    // === DROPDOWN FUNCTIONALITY ===
-    
+    }
+    //#endregion
+
     toggleDropdown(menu, button) {
         if (!menu) return;
         
@@ -444,55 +434,51 @@ class TenantNavigationManager {
         });
     }
 
-    // === PROFILE FUNCTIONS ===
-    
+    //#region PROFILE MENU ACTIONS
     openProfileSettings() {
-        console.log('Opening tenant profile settings...');
         this.closeAllDropdowns();
         alert('Profile settings would open here');
     }
 
     openAccountSettings() {
-        console.log('Opening tenant account settings...');
-        this.closeAllDropdowns();
         alert('Account settings would open here');
+        this.closeAllDropdowns();
     }
 
     openPreferences() {
-        console.log('Opening tenant preferences...');
         this.closeAllDropdowns();
         alert('Preferences would open here');
     }
 
     openHelp() {
-        console.log('Opening tenant help & support...');
         this.closeAllDropdowns();
         alert('Help & Support would open here');
     }
 
     logout() {
-        console.log('Tenant logging out...');
         this.closeAllDropdowns();
         if (confirm('Are you sure you want to sign out?')) {
-            console.log('Redirecting to login page...');
-            // Implement logout logic
+            localStorage.clear();
+            sessionStorage.clear();
+    
+            fetch('/api/v1/users/logout', { method: 'POST', credentials: 'include' })
+                .finally(() => {
+                    window.location.href = "/login.html";
+                });
         }
     }
+    //#endregion
 
-    // === EVENT BINDING ===
-    
+
     bindEvents() {
-        // Sidebar toggle
         if (this.sidebarToggle) {
             this.sidebarToggle.addEventListener("click", (e) => this.toggleSidebar(e));
         }
 
-        // Overlay click
         if (this.overlay) {
             this.overlay.addEventListener("click", () => this.closeMobileSidebar());
         }
 
-        // Dropdown events
         if (this.notificationBtn && this.notificationMenu) {
             this.notificationBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -514,60 +500,40 @@ class TenantNavigationManager {
             });
         }
 
-        // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.dropdown') && !e.target.closest('.inbox-dropdown')) {
                 this.closeAllDropdowns();
             }
         });
 
-        // Prevent dropdown menu clicks from closing the dropdown
         document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(menu => {
             menu.addEventListener('click', (e) => e.stopPropagation());
         });
 
-        // Search functionality (if enabled)
-        if (this.searchInput) {
-            this.searchInput.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                if (searchTerm) {
-                    console.log('Tenant searching for:', searchTerm);
-                    // Implement search logic
-                }
-            });
-        }
-
-        // Navigation link handlers
         document.querySelectorAll(".nav-link").forEach((link) => {
             link.addEventListener("click", (e) => {
                 if (link.getAttribute("href") === "#") {
                     e.preventDefault();
                 }
 
-                // Update active state
                 document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
                 link.classList.add("active");
                 
-                // Update page title
                 const page = link.dataset.page || link.getAttribute("href").split("/").pop().split(".")[0];
                 this.updatePageTitle(page);
 
-                // Close mobile sidebar
                 this.closeMobileSidebar();
             });
         });
 
-        // Window events
         window.addEventListener("popstate", () => this.setActiveNavItem());
         window.addEventListener("resize", () => this.updateLayout());
 
-        // Notification interactions
         setTimeout(() => {
             document.querySelectorAll('#notificationMenu .dropdown-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const titleElement = item.querySelector('.dropdown-item-title');
                     if (titleElement) {
-                        console.log('Tenant notification clicked:', titleElement.textContent);
                     }
                     item.style.opacity = '0.7';
                     
@@ -593,28 +559,22 @@ class TenantNavigationManager {
 
     addKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl/Cmd + B to toggle sidebar
             if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                 e.preventDefault();
                 this.toggleSidebar();
             }
-            
-            // Ctrl/Cmd + K to focus search (if enabled)
+
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 if (this.searchInput) this.searchInput.focus();
             }
-            
-            // Escape to close dropdowns
+
             if (e.key === 'Escape') {
                 this.closeAllDropdowns();
             }
         });
     }
 
-    // === PUBLIC API METHODS ===
-    
-    // Method to load tenant navigation components
     static async loadComponent(componentPath, containerId) {
         try {
             const response = await fetch(componentPath);
@@ -631,24 +591,20 @@ class TenantNavigationManager {
         }
     }
 
-    // Method to initialize tenant navigation after components are loaded
-    static async initializeTenantNavigation(config = {}) {
-        // Load tenant components first
-        const sidebarLoaded = await TenantNavigationManager.loadComponent('/components/sidebarTenant.html', 'sidebarContainer-tenant');
-        const navbarLoaded = await TenantNavigationManager.loadComponent('/components/top-navbarTenant.html', 'navbarContainer-tenant');
+static async initializeTenantNavigation(config = {}) {
+    const sidebarLoaded = await TenantNavigationManager.loadComponent('/components/sidebarTenant.html', 'sidebarContainer-tenant');
+    const navbarLoaded = await TenantNavigationManager.loadComponent('/components/top-navbar.html', 'navbarContainer-tenant');
 
-        if (sidebarLoaded || navbarLoaded) {
-            // Small delay to ensure DOM is updated
-            setTimeout(() => {
-                window.tenantNavigationManager = new TenantNavigationManager(config);
-            }, 100);
-        } else {
-            // Initialize without components if loading fails
+    if (sidebarLoaded || navbarLoaded) {
+        setTimeout(() => {
             window.tenantNavigationManager = new TenantNavigationManager(config);
-        }
+            setupTenantNavbar();
+        }, 100);
+    } else {
+        window.tenantNavigationManager = new TenantNavigationManager(config);
     }
+}
 
-    // Method to update navigation state
     updateNavigation(updates) {
         if (updates.currentPage) {
             this.setActiveNavItem(updates.currentPage);
@@ -664,7 +620,6 @@ class TenantNavigationManager {
         }
     }
 
-    // Method to add custom navigation items
     addNavItem(item) {
         const navContainer = document.querySelector('.sidebar-nav');
         if (!navContainer) return;
@@ -689,7 +644,6 @@ class TenantNavigationManager {
             navContainer.appendChild(navItem);
         }
 
-        // Bind click event to new item
         const link = navItem.querySelector('.nav-link');
         link.addEventListener('click', (e) => {
             if (link.getAttribute('href') === '#') {
@@ -703,7 +657,6 @@ class TenantNavigationManager {
         });
     }
 
-    // Method to get current navigation state
     getNavigationState() {
         return {
             isCollapsed: this.isCollapsed,
@@ -718,9 +671,7 @@ class TenantNavigationManager {
         return activeLink ? activeLink.dataset.page : null;
     }
 
-    // Method to destroy navigation instance
     destroy() {
-        // Remove event listeners
         if (this.sidebarToggle) {
             this.sidebarToggle.removeEventListener("click", this.toggleSidebar);
         }
@@ -728,18 +679,14 @@ class TenantNavigationManager {
         window.removeEventListener("resize", this.updateLayout);
         window.removeEventListener("popstate", this.setActiveNavItem);
         
-        // Clear references
         Object.keys(this).forEach(key => {
             if (this[key] instanceof HTMLElement) {
                 this[key] = null;
             }
         });
-        
-        console.log('Tenant navigation instance destroyed');
     }
 }
 
-// Global functions for backward compatibility
 window.openMessage = (messageId) => {
     if (window.tenantNavigationManager) {
         window.tenantNavigationManager.openMessage(messageId);
@@ -776,15 +723,12 @@ window.logout = () => {
     }
 };
 
-// Method to manually set active page (globally accessible)
 window.setActivePageManually = function(pageName) {
-    console.log('Manually setting active tenant page to:', pageName);
     if (window.tenantNavigationManager) {
         window.tenantNavigationManager.setActiveNavItem(pageName);
     }
 };
 
-// Auto-initialize if DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         TenantNavigationManager.initializeTenantNavigation();
@@ -793,12 +737,10 @@ if (document.readyState === 'loading') {
     TenantNavigationManager.initializeTenantNavigation();
 }
 
-// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = TenantNavigationManager;
 }
 
-// AMD support
 if (typeof define === 'function' && define.amd) {
     define([], function() {
         return TenantNavigationManager;

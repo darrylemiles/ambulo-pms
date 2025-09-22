@@ -6,7 +6,9 @@ import {
   getUsers, 
   getSingleUserById, 
   updateSingleUserById, 
-  deleteUserById } from '../controllers/usersControllers.js';
+  deleteUserById,
+  logoutUser
+ } from '../controllers/usersControllers.js';
 
 import createUploadMiddleware from '../middlewares/multer/uploadMiddleware.js';
 const router = express.Router();
@@ -49,5 +51,6 @@ router.patch(
 );
 
 router.delete('/:user_id', protect, deleteUserById);
+router.post('/logout', logoutUser);
 
 export default router;
