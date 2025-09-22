@@ -22,13 +22,13 @@ let filteredTenants = [];
 let selectedTenantIndex = -1;
 
 document.addEventListener("DOMContentLoaded", function () {
-  const profileBtn = document.getElementById("profileBtnIcon");
-  const dropdownMenu = document.getElementById("dropdownMenu");
+  const profileBtn = document.getElementById("profileBtn");
+  const dropdownMenu = document.getElementById("profileMenu");
 
   if (profileBtn && dropdownMenu) {
-    profileBtn.addEventListener("click", function () {
-      dropdownMenu.style.display =
-        dropdownMenu.style.display === "block" ? "none" : "block";
+    profileBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      dropdownMenu.classList.toggle("show");
     });
 
     document.addEventListener("click", function (event) {
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
         !profileBtn.contains(event.target) &&
         !dropdownMenu.contains(event.target)
       ) {
-        dropdownMenu.style.display = "none";
+        dropdownMenu.classList.remove("show");
       }
     });
   }

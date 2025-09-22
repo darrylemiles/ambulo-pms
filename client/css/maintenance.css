@@ -1998,3 +1998,10 @@ textarea:disabled:focus {
     max-width: 100vw;
   }
 }
+
+#profileMenu {
+  display: none;
+}
+#profileMenu.show {
+  display: block;
+}

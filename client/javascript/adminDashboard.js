@@ -84,18 +84,18 @@ fetch("/components/sidebar.html")
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  const profileBtn = document.getElementById("profileBtnIcon");
-  const dropdownMenu = document.getElementById("dropdownMenu");
+  const profileBtn = document.getElementById("profileBtn");
+  const dropdownMenu = document.getElementById("profileMenu");
 
   if (profileBtn && dropdownMenu) {
-    profileBtn.addEventListener("click", () => {
-      dropdownMenu.style.display =
-        dropdownMenu.style.display === "block" ? "none" : "block";
+    profileBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdownMenu.classList.toggle("show");
     });
 
     window.addEventListener("click", (e) => {
       if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-        dropdownMenu.style.display = "none";
+        dropdownMenu.classList.remove("show");
       }
     });
   }
