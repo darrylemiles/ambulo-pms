@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/tenantDashboard.css">
-    <link rel="stylesheet" href="/css/navigationsTenant.css">
+    <link rel="stylesheet" href="/css/navigation.css">
     <title>Tenant Dashboard</title>
 </head>
+
 <body>
     <div class="overlay" id="overlay"></div>
-    <div id="sidebarContainer-tenant"></div>
-    <div id="navbarContainer-tenant"></div>
+    <div id="sidebarContainer"></div>
+    <div id="navbarContainer"></div>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -23,7 +28,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Today, August 28</h3>
                     </div>
-                    <div class="reminder-content">You have 0 reminders for Today. <a href="#" class="see-all">View All</a></div>
+                    <div class="reminder-content">You have 0 reminders for Today. <a href="#" class="see-all">View
+                            All</a></div>
                 </div>
 
                 <!-- Calendar Card -->
@@ -35,7 +41,7 @@
                             <button class="nav-btn">›</button>
                         </div>
                     </div>
-                    
+
                     <div class="calendar-grid">
                         <div class="day-header">Mo</div>
                         <div class="day-header">Tu</div>
@@ -44,7 +50,7 @@
                         <div class="day-header">Fr</div>
                         <div class="day-header">Sa</div>
                         <div class="day-header">Su</div>
-                        
+
                         <div class="day"></div>
                         <div class="day"></div>
                         <div class="day"></div>
@@ -81,7 +87,7 @@
                         <div class="day">30</div>
                         <div class="day">31</div>
                     </div>
-                    
+
                     <div class="rent-payment">
                         <div class="payment-label">Monthly Rent Payment</div>
                         <div class="payment-amount">23,000.00 PHP</div>
@@ -213,8 +219,9 @@
             </div>
         </div>
     </div>
-    
+
     <script src="/javascript/navigationsTenant.js"></script>
     <script src="/javascript/tenantDashboard.js"></script>
 </body>
+
 </html>

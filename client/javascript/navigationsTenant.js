@@ -20,6 +20,39 @@ function setupTenantNavbar() {
     if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messages.html";
 }
 
+function setupSidebar(role) {
+    const sidebarNav = document.getElementById('sidebarNav');
+    if (!sidebarNav) return;
+
+    let links = [];
+    if (role === 'tenant') {
+        links = [
+            { href: '/tenantDashboard.html', icon: 'fas fa-chart-line', text: 'Dashboard', page: 'dashboard' },
+            { href: '/messages.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messages' },
+            { section: 'Lease', isSection: true },
+            { href: '/leaseTenant.html', icon: 'fas fa-file-contract', text: 'Lease Info', page: 'leaseTenant' },
+            { section: 'Payments', isSection: true },
+            { href: '/paymentTenant.html', icon: 'fas fa-credit-card', text: 'Payments', page: 'paymentTenant' },
+            { section: 'Requests', isSection: true },
+            { href: '/maintenanceTenant.html', icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenanceTenant' },
+        ];
+    }
+
+    sidebarNav.innerHTML = links.map(link => {
+        if (link.isSection) {
+            return `<div class="nav-section"><div class="nav-section-title">${link.section}</div></div>`;
+        }
+        return `
+            <div class="nav-item">
+                <a href="${link.href}" class="nav-link" data-tooltip="${link.text}" data-page="${link.page}">
+                    <div class="nav-icon"><i class="${link.icon}"></i></div>
+                    <span class="nav-text">${link.text}</span>
+                </a>
+            </div>
+        `;
+    }).join('');
+}
+
 class TenantNavigationManager {
     constructor(config = {}) {
         this.config = {
@@ -31,14 +64,14 @@ class TenantNavigationManager {
             pageTitleSelector: '#pageTitle',
             searchInputSelector: '#searchInput',
             storageKey: 'tenantSidebarCollapsed',
-            startCollapsed: true, 
+            startCollapsed: true,
             ...config
         };
 
         this.isCollapsed = this.config.startCollapsed !== false;
         this.isMobile = window.innerWidth <= 768;
         this.inboxMessages = this.getDefaultInboxMessages();
-        
+
         this.init();
     }
 
@@ -48,7 +81,7 @@ class TenantNavigationManager {
 
         this.applyInitialCollapsedState();
         this.loadCollapsedState();
-        
+
         this.bindEvents();
         this.updateLayout();
         this.setActiveNavItem();
@@ -72,7 +105,7 @@ class TenantNavigationManager {
         this.mainContent = document.querySelector(this.config.mainContentSelector);
         this.pageTitle = document.querySelector(this.config.pageTitleSelector);
         this.searchInput = document.querySelector(this.config.searchInputSelector);
-        
+
         this.notificationBtn = document.getElementById('notificationBtn');
         this.notificationMenu = document.getElementById('notificationMenu');
         this.inboxBtn = document.getElementById('inboxBtn');
@@ -86,14 +119,14 @@ class TenantNavigationManager {
             "tenantDashboard.html": "Dashboard",
             "tenantDashboard": "Dashboard",
             "leaseTenant.html": "Lease Information",
-            "leaseTenant": "Lease Information", 
+            "leaseTenant": "Lease Information",
             "paymentTenant.html": "Payments",
             "paymentTenant": "Payments",
             "maintenanceTenant.html": "Maintenance Requests",
             "maintenanceTenant": "Maintenance Requests",
             "messages.html": "Messages",
             "messages": "Messages",
- 
+
             dashboard: 'Dashboard',
             lease: 'Lease Information',
             payments: 'Payments',
@@ -157,7 +190,7 @@ class TenantNavigationManager {
     }
 
     //#region Sidebar State Persistence
-    
+
     saveCollapsedState() {
         try {
             if (!this.isMobile) {
@@ -186,7 +219,7 @@ class TenantNavigationManager {
 
     updateToggleIcon() {
         if (!this.sidebarToggle) return;
-        
+
         const icon = this.sidebarToggle.querySelector("i");
         if (!icon) return;
 
@@ -214,7 +247,7 @@ class TenantNavigationManager {
             if (this.topNavbar) {
                 this.topNavbar.style.left = this.isCollapsed ? "80px" : "280px";
             }
-            
+
             if (this.mainContent) {
                 this.mainContent.style.marginLeft = this.isCollapsed ? "80px" : "280px";
                 this.mainContent.classList.toggle("sidebar-collapsed", this.isCollapsed);
@@ -234,7 +267,7 @@ class TenantNavigationManager {
             if (this.overlay) {
                 this.overlay.classList.remove("active");
             }
-            
+
             if (this.topNavbar) {
                 this.topNavbar.style.left = "0";
             }
@@ -249,20 +282,20 @@ class TenantNavigationManager {
             if (this.overlay) {
                 this.overlay.classList.remove("active");
             }
-            
+
             if (this.isCollapsed && this.sidebar) {
                 this.sidebar.classList.add("collapsed");
             }
-            
+
             this.updateContentLayout();
         }
-        
+
         this.updateToggleIcon();
     }
 
     toggleSidebar(e) {
         if (e) e.stopPropagation();
-        
+
         if (this.isMobile) {
             if (this.sidebar) {
                 this.sidebar.classList.toggle("mobile-open");
@@ -278,7 +311,7 @@ class TenantNavigationManager {
             this.updateContentLayout();
             this.saveCollapsedState();
         }
-        
+
         this.updateToggleIcon();
         this.addToggleEffect();
     }
@@ -313,7 +346,7 @@ class TenantNavigationManager {
 
     setActiveNavItem(targetPage = null) {
         let currentPage = targetPage;
-        
+
         if (!currentPage) {
             currentPage = window.location.pathname.split("/").pop();
             if (currentPage.includes('.')) {
@@ -332,7 +365,7 @@ class TenantNavigationManager {
             const linkPage = link.getAttribute("data-page");
             const linkHref = link.getAttribute("href");
             let linkFileName = "";
-            
+
             if (linkHref) {
                 linkFileName = linkHref.split("/").pop().split(".")[0];
             }
@@ -357,11 +390,11 @@ class TenantNavigationManager {
         const inboxContent = document.getElementById('inboxContent');
         const inboxBadge = document.getElementById('inboxBadge');
         const messagesBadge = document.getElementById('messagesBadge');
-        
+
         if (!inboxContent) return;
-        
+
         const unreadCount = this.inboxMessages.filter(msg => msg.unread).length;
-        
+
         if (inboxBadge) {
             if (unreadCount > 0) {
                 inboxBadge.textContent = `${unreadCount} New`;
@@ -376,7 +409,7 @@ class TenantNavigationManager {
                 }
             }
         }
-        
+
         if (this.inboxMessages.length === 0) {
             inboxContent.innerHTML = `
                 <div class="empty-inbox">
@@ -414,13 +447,13 @@ class TenantNavigationManager {
 
     toggleDropdown(menu, button) {
         if (!menu) return;
-        
+
         document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(dropdown => {
             if (dropdown !== menu) {
                 dropdown.classList.remove('show', 'active');
             }
         });
-        
+
         if (menu.classList.contains('inbox-dropdown-menu')) {
             menu.classList.toggle('active');
         } else {
@@ -460,7 +493,7 @@ class TenantNavigationManager {
         if (confirm('Are you sure you want to sign out?')) {
             localStorage.clear();
             sessionStorage.clear();
-    
+
             fetch('/api/v1/users/logout', { method: 'POST', credentials: 'include' })
                 .finally(() => {
                     window.location.href = "/login.html";
@@ -518,7 +551,7 @@ class TenantNavigationManager {
 
                 document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
                 link.classList.add("active");
-                
+
                 const page = link.dataset.page || link.getAttribute("href").split("/").pop().split(".")[0];
                 this.updatePageTitle(page);
 
@@ -536,7 +569,7 @@ class TenantNavigationManager {
                     if (titleElement) {
                     }
                     item.style.opacity = '0.7';
-                    
+
                     const badge = document.getElementById('notificationBadge');
                     if (badge) {
                         let count = parseInt(badge.textContent);
@@ -591,29 +624,31 @@ class TenantNavigationManager {
         }
     }
 
-static async initializeTenantNavigation(config = {}) {
-    const sidebarLoaded = await TenantNavigationManager.loadComponent('/components/sidebarTenant.html', 'sidebarContainer-tenant');
-    const navbarLoaded = await TenantNavigationManager.loadComponent('/components/top-navbar.html', 'navbarContainer-tenant');
+    static async initializeTenantNavigation(config = {}) {
+        const sidebarLoaded = await TenantNavigationManager.loadComponent('/components/sidebar.html', 'sidebarContainer');
+        const navbarLoaded = await TenantNavigationManager.loadComponent('/components/top-navbar.html', 'navbarContainer');
 
-    if (sidebarLoaded || navbarLoaded) {
-        setTimeout(() => {
+        if (sidebarLoaded || navbarLoaded) {
+            setTimeout(() => {
+                window.tenantNavigationManager = new TenantNavigationManager(config);
+                setupTenantNavbar();
+                setupSidebar('tenant');
+                window.tenantNavigationManager.setActiveNavItem();
+            }, 10);
+        } else {
             window.tenantNavigationManager = new TenantNavigationManager(config);
-            setupTenantNavbar();
-        }, 100);
-    } else {
-        window.tenantNavigationManager = new TenantNavigationManager(config);
+        }
     }
-}
 
     updateNavigation(updates) {
         if (updates.currentPage) {
             this.setActiveNavItem(updates.currentPage);
         }
-        
+
         if (updates.pageTitle) {
             this.updatePageTitle(updates.pageTitle);
         }
-        
+
         if (updates.messages) {
             this.inboxMessages = updates.messages;
             this.populateInbox();
@@ -675,10 +710,10 @@ static async initializeTenantNavigation(config = {}) {
         if (this.sidebarToggle) {
             this.sidebarToggle.removeEventListener("click", this.toggleSidebar);
         }
-        
+
         window.removeEventListener("resize", this.updateLayout);
         window.removeEventListener("popstate", this.setActiveNavItem);
-        
+
         Object.keys(this).forEach(key => {
             if (this[key] instanceof HTMLElement) {
                 this[key] = null;
@@ -723,7 +758,7 @@ window.logout = () => {
     }
 };
 
-window.setActivePageManually = function(pageName) {
+window.setActivePageManually = function (pageName) {
     if (window.tenantNavigationManager) {
         window.tenantNavigationManager.setActiveNavItem(pageName);
     }
@@ -742,7 +777,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 if (typeof define === 'function' && define.amd) {
-    define([], function() {
+    define([], function () {
         return TenantNavigationManager;
     });
 }
