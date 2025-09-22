@@ -665,21 +665,6 @@ class NavigationManager {
         }
     }
 
-        static async initializeNavigation(config = {}) {
-        const sidebarLoaded = await NavigationManager.loadComponent('/components/sidebarAdmin.html', 'sidebarContainer');
-        const navbarLoaded = await NavigationManager.loadComponent('/components/top-navbar.html', 'navbarContainer');
-    
-        if (sidebarLoaded || navbarLoaded) {
-            setTimeout(() => {
-                window.navigationManager = new NavigationManager(config);
-    
-                setupAdminNavbar();
-            }, 100);
-        } else {
-            window.navigationManager = new NavigationManager(config);
-        }
-    }
-
     static async initializeNavigation(config = {}) {
         const sidebarLoaded = await NavigationManager.loadComponent(
             "/components/sidebarAdmin.html",
