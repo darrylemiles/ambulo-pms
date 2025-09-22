@@ -50,7 +50,6 @@ class NavigationManager {
         this.populateInbox();
         this.addKeyboardShortcuts();
 
-        console.log("Navigation system initialized");
     }
 
     cacheDOMElements() {
@@ -62,7 +61,6 @@ class NavigationManager {
         this.pageTitle = document.querySelector(this.config.pageTitleSelector);
         this.searchInput = document.querySelector(this.config.searchInputSelector);
 
-        // Dropdown elements
         this.notificationBtn = document.getElementById("notificationBtn");
         this.notificationMenu = document.getElementById("notificationMenu");
         this.inboxBtn = document.getElementById("inboxBtn");
@@ -73,7 +71,6 @@ class NavigationManager {
 
     setupPageTitles() {
         this.pageTitles = {
-            // File-based mapping
             "adminDashboard.html": "Dashboard",
             adminDashboard: "Dashboard",
             "propertyAdmin.html": "Properties",
@@ -91,7 +88,6 @@ class NavigationManager {
             "documents.html": "Documents",
             documents: "Documents",
 
-            // Content Management pages - all show "Manage Content"
             "contentManagement.html": "Manage Content",
             contentManagement: "Manage Content",
             "company-information.html": "Manage Content",
@@ -103,7 +99,6 @@ class NavigationManager {
             "lease-terms-cms.html": "Manage Content",
             "lease-terms-cms": "Manage Content",
 
-            // Data-page attribute mapping
             dashboard: "Dashboard",
             propertyAdmin: "Properties",
             tenants: "Tenants",
@@ -115,7 +110,6 @@ class NavigationManager {
             reports: "Reports",
             content: "Manage Content",
 
-            // Default fallbacks
             index: "Dashboard",
             "": "Dashboard",
         };
@@ -176,8 +170,7 @@ class NavigationManager {
         ];
     }
 
-    // === SIDEBAR MANAGEMENT ===
-
+    //#region SIDEBAR MANAGEMENT
     saveCollapsedState() {
         try {
             if (!this.isMobile) {
@@ -216,7 +209,6 @@ class NavigationManager {
         if (!icon) return;
 
         if (this.isMobile) {
-            // Mobile toggle icons
             if (this.sidebar.classList.contains("mobile-open")) {
                 icon.className = "fas fa-times";
                 this.sidebarToggle.title = "Close Menu";
@@ -225,7 +217,6 @@ class NavigationManager {
                 this.sidebarToggle.title = "Open Menu";
             }
         } else {
-            // Desktop toggle icons
             if (this.isCollapsed) {
                 icon.className = "fas fa-chevron-right";
                 this.sidebarToggle.title = "Expand Sidebar";
@@ -238,12 +229,10 @@ class NavigationManager {
 
     updateContentLayout() {
         if (!this.isMobile) {
-            // Update top navbar position
             if (this.topNavbar) {
                 this.topNavbar.style.left = this.isCollapsed ? "80px" : "280px";
             }
 
-            // Update main content margin
             if (this.mainContent) {
                 this.mainContent.style.marginLeft = this.isCollapsed ? "80px" : "280px";
                 this.mainContent.classList.toggle(
@@ -259,7 +248,6 @@ class NavigationManager {
         this.isMobile = window.innerWidth <= 768;
 
         if (this.isMobile) {
-            // Mobile layout
             if (this.sidebar) {
                 this.sidebar.classList.remove("collapsed");
                 this.sidebar.classList.remove("mobile-open");
@@ -268,7 +256,6 @@ class NavigationManager {
                 this.overlay.classList.remove("active");
             }
 
-            // Reset positions for mobile
             if (this.topNavbar) {
                 this.topNavbar.style.left = "0";
             }
@@ -277,7 +264,6 @@ class NavigationManager {
                 this.mainContent.classList.remove("sidebar-collapsed");
             }
         } else {
-            // Desktop layout
             if (this.sidebar) {
                 this.sidebar.classList.remove("mobile-open");
             }
@@ -285,7 +271,6 @@ class NavigationManager {
                 this.overlay.classList.remove("active");
             }
 
-            // Restore collapsed state on desktop
             if (this.isCollapsed && this.sidebar) {
                 this.sidebar.classList.add("collapsed");
             }
@@ -339,6 +324,7 @@ class NavigationManager {
             this.updateToggleIcon();
         }
     }
+    //#endregion
 
     // === PAGE TITLE MANAGEMENT ===
 
@@ -368,7 +354,6 @@ class NavigationManager {
 
         navLinks.forEach((link) => link.classList.remove("active"));
 
-        // Check if current page is a content management page
         const contentManagementPages = [
             "contentManagement",
             "company-information",
@@ -388,7 +373,6 @@ class NavigationManager {
                 linkFileName = linkHref.split("/").pop().split(".")[0];
             }
 
-            // Special handling for content management pages
             if (isContentPage && linkPage === "content") {
                 link.classList.add("active");
                 this.updatePageTitle("content");
@@ -415,8 +399,7 @@ class NavigationManager {
         });
     }
 
-    // === INBOX FUNCTIONALITY ===
-
+    //#region INBOX 
     populateInbox() {
         const inboxContent = document.getElementById("inboxContent");
         const inboxBadge = document.getElementById("inboxBadge");
@@ -482,11 +465,8 @@ class NavigationManager {
             message.unread = false;
             this.populateInbox();
         }
-        console.log(`Opening message: "${message.subject}" from ${message.sender}`);
-        // Implement actual message opening logic here
     }
-
-    // === DROPDOWN FUNCTIONALITY ===
+    //#endregion
 
     toggleDropdown(menu, button) {
         if (!menu) return;
@@ -514,57 +494,49 @@ class NavigationManager {
             });
     }
 
-    // === PROFILE FUNCTIONS ===
-
+    //#region PROFILE ACTIONS
     openProfileSettings() {
-        console.log("Opening profile settings...");
         this.closeAllDropdowns();
-        // Implement profile settings logic
     }
 
     openAccountSettings() {
-        console.log("Opening account settings...");
         this.closeAllDropdowns();
-        // Implement account settings logic
     }
 
     openPreferences() {
-        console.log("Opening preferences...");
         this.closeAllDropdowns();
-        // Implement preferences logic
     }
 
     openHelp() {
-        console.log("Opening help & support...");
         this.closeAllDropdowns();
-        // Implement help logic
     }
 
     logout() {
-        console.log("Logging out...");
-        this.closeAllDropdowns();
-        if (confirm("Are you sure you want to sign out?")) {
-            // Implement logout logic
-            console.log("Redirecting to login page...");
-        }
+    this.closeAllDropdowns();
+    if (confirm('Are you sure you want to sign out?')) {
+        localStorage.clear();
+        sessionStorage.clear();
+
+        fetch('/api/v1/users/logout', { method: 'POST', credentials: 'include' })
+            .finally(() => {
+                window.location.href = "/login.html";
+            });
     }
+}
+    //#endregion
 
     // === EVENT BINDING ===
-
     bindEvents() {
-        // Sidebar toggle
         if (this.sidebarToggle) {
             this.sidebarToggle.addEventListener("click", (e) =>
                 this.toggleSidebar(e)
             );
         }
 
-        // Overlay click
         if (this.overlay) {
             this.overlay.addEventListener("click", () => this.closeMobileSidebar());
         }
 
-        // Dropdown events
         if (this.notificationBtn && this.notificationMenu) {
             this.notificationBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -586,7 +558,6 @@ class NavigationManager {
             });
         }
 
-        // Close dropdowns when clicking outside
         document.addEventListener("click", (e) => {
             if (
                 !e.target.closest(".dropdown") &&
@@ -596,53 +567,36 @@ class NavigationManager {
             }
         });
 
-        // Prevent dropdown menu clicks from closing the dropdown
         document
             .querySelectorAll(".dropdown-menu, .inbox-dropdown-menu")
             .forEach((menu) => {
                 menu.addEventListener("click", (e) => e.stopPropagation());
             });
 
-        // Search functionality
-        if (this.searchInput) {
-            this.searchInput.addEventListener("input", (e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                if (searchTerm) {
-                    console.log("Searching for:", searchTerm);
-                    // Implement search logic
-                }
-            });
-        }
 
-        // Navigation link handlers
         document.querySelectorAll(".nav-link").forEach((link) => {
             link.addEventListener("click", (e) => {
                 if (link.getAttribute("href") === "#") {
                     e.preventDefault();
                 }
 
-                // Update active state
                 document
                     .querySelectorAll(".nav-link")
                     .forEach((l) => l.classList.remove("active"));
                 link.classList.add("active");
 
-                // Update page title
                 const page =
                     link.dataset.page ||
                     link.getAttribute("href").split("/").pop().split(".")[0];
                 this.updatePageTitle(page);
 
-                // Close mobile sidebar
                 this.closeMobileSidebar();
             });
         });
 
-        // Window events
         window.addEventListener("popstate", () => this.setActiveNavItem());
         window.addEventListener("resize", () => this.updateLayout());
 
-        // Notification interactions
         setTimeout(() => {
             document
                 .querySelectorAll("#notificationMenu .dropdown-item")
@@ -678,7 +632,6 @@ class NavigationManager {
 
     addKeyboardShortcuts() {
         document.addEventListener("keydown", (e) => {
-            // Ctrl/Cmd + B to toggle sidebar
             if ((e.ctrlKey || e.metaKey) && e.key === "b") {
                 e.preventDefault();
                 this.toggleSidebar();

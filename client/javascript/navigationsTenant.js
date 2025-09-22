@@ -31,11 +31,10 @@ class TenantNavigationManager {
             pageTitleSelector: '#pageTitle',
             searchInputSelector: '#searchInput',
             storageKey: 'tenantSidebarCollapsed',
-            startCollapsed: true, // NEW: Start collapsed by default
+            startCollapsed: true, 
             ...config
         };
 
-        // Modified: Start collapsed unless explicitly set to expanded
         this.isCollapsed = this.config.startCollapsed !== false;
         this.isMobile = window.innerWidth <= 768;
         this.inboxMessages = this.getDefaultInboxMessages();
@@ -57,7 +56,6 @@ class TenantNavigationManager {
         this.addKeyboardShortcuts();
     }
 
-    // NEW: Apply initial collapsed state
     applyInitialCollapsedState() {
         if (!this.isMobile && this.isCollapsed && this.sidebar) {
             this.sidebar.classList.add("collapsed");
@@ -75,7 +73,6 @@ class TenantNavigationManager {
         this.pageTitle = document.querySelector(this.config.pageTitleSelector);
         this.searchInput = document.querySelector(this.config.searchInputSelector);
         
-        // Dropdown elements
         this.notificationBtn = document.getElementById('notificationBtn');
         this.notificationMenu = document.getElementById('notificationMenu');
         this.inboxBtn = document.getElementById('inboxBtn');
@@ -159,7 +156,7 @@ class TenantNavigationManager {
         ];
     }
 
-    // === SIDEBAR MANAGEMENT ===
+    //#region Sidebar State Persistence
     
     saveCollapsedState() {
         try {
@@ -194,7 +191,6 @@ class TenantNavigationManager {
         if (!icon) return;
 
         if (this.isMobile) {
-            // Mobile toggle icons
             if (this.sidebar.classList.contains("mobile-open")) {
                 icon.className = "fas fa-times";
                 this.sidebarToggle.title = "Close Menu";
@@ -203,7 +199,6 @@ class TenantNavigationManager {
                 this.sidebarToggle.title = "Open Menu";
             }
         } else {
-            // Desktop toggle icons
             if (this.isCollapsed) {
                 icon.className = "fas fa-chevron-right";
                 this.sidebarToggle.title = "Expand Sidebar";
@@ -216,12 +211,10 @@ class TenantNavigationManager {
 
     updateContentLayout() {
         if (!this.isMobile) {
-            // Update top navbar position
             if (this.topNavbar) {
                 this.topNavbar.style.left = this.isCollapsed ? "80px" : "280px";
             }
             
-            // Update main content margin
             if (this.mainContent) {
                 this.mainContent.style.marginLeft = this.isCollapsed ? "80px" : "280px";
                 this.mainContent.classList.toggle("sidebar-collapsed", this.isCollapsed);
@@ -234,7 +227,6 @@ class TenantNavigationManager {
         this.isMobile = window.innerWidth <= 768;
 
         if (this.isMobile) {
-            // Mobile layout
             if (this.sidebar) {
                 this.sidebar.classList.remove("collapsed");
                 this.sidebar.classList.remove("mobile-open");
@@ -243,7 +235,6 @@ class TenantNavigationManager {
                 this.overlay.classList.remove("active");
             }
             
-            // Reset positions for mobile
             if (this.topNavbar) {
                 this.topNavbar.style.left = "0";
             }
@@ -252,7 +243,6 @@ class TenantNavigationManager {
                 this.mainContent.classList.remove("sidebar-collapsed");
             }
         } else {
-            // Desktop layout
             if (this.sidebar) {
                 this.sidebar.classList.remove("mobile-open");
             }
@@ -260,7 +250,6 @@ class TenantNavigationManager {
                 this.overlay.classList.remove("active");
             }
             
-            // Restore collapsed state on desktop
             if (this.isCollapsed && this.sidebar) {
                 this.sidebar.classList.add("collapsed");
             }
@@ -315,8 +304,6 @@ class TenantNavigationManager {
         }
     }
 
-    // === PAGE TITLE MANAGEMENT ===
-    
     updatePageTitle(page) {
         if (this.pageTitle && this.pageTitles[page]) {
             this.pageTitle.textContent = this.pageTitles[page];
@@ -363,9 +350,9 @@ class TenantNavigationManager {
             }
         });
     }
+    //#endregion
 
-    // === INBOX FUNCTIONALITY ===
-    
+    //#region INBOX
     populateInbox() {
         const inboxContent = document.getElementById('inboxContent');
         const inboxBadge = document.getElementById('inboxBadge');
@@ -375,7 +362,6 @@ class TenantNavigationManager {
         
         const unreadCount = this.inboxMessages.filter(msg => msg.unread).length;
         
-        // Update badges
         if (inboxBadge) {
             if (unreadCount > 0) {
                 inboxBadge.textContent = `${unreadCount} New`;
@@ -424,9 +410,8 @@ class TenantNavigationManager {
         }
 
     }
+    //#endregion
 
-    // === DROPDOWN FUNCTIONALITY ===
-    
     toggleDropdown(menu, button) {
         if (!menu) return;
         
@@ -449,8 +434,7 @@ class TenantNavigationManager {
         });
     }
 
-    // === PROFILE FUNCTIONS ===
-    
+    //#region PROFILE MENU ACTIONS
     openProfileSettings() {
         this.closeAllDropdowns();
         alert('Profile settings would open here');
@@ -474,24 +458,27 @@ class TenantNavigationManager {
     logout() {
         this.closeAllDropdowns();
         if (confirm('Are you sure you want to sign out?')) {
-            // Implement logout logic
+            localStorage.clear();
+            sessionStorage.clear();
+    
+            fetch('/api/v1/users/logout', { method: 'POST', credentials: 'include' })
+                .finally(() => {
+                    window.location.href = "/login.html";
+                });
         }
     }
+    //#endregion
 
-    // === EVENT BINDING ===
-    
+
     bindEvents() {
-        // Sidebar toggle
         if (this.sidebarToggle) {
             this.sidebarToggle.addEventListener("click", (e) => this.toggleSidebar(e));
         }
 
-        // Overlay click
         if (this.overlay) {
             this.overlay.addEventListener("click", () => this.closeMobileSidebar());
         }
 
-        // Dropdown events
         if (this.notificationBtn && this.notificationMenu) {
             this.notificationBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -513,43 +500,35 @@ class TenantNavigationManager {
             });
         }
 
-        // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.dropdown') && !e.target.closest('.inbox-dropdown')) {
                 this.closeAllDropdowns();
             }
         });
 
-        // Prevent dropdown menu clicks from closing the dropdown
         document.querySelectorAll('.dropdown-menu, .inbox-dropdown-menu').forEach(menu => {
             menu.addEventListener('click', (e) => e.stopPropagation());
         });
 
-        // Navigation link handlers
         document.querySelectorAll(".nav-link").forEach((link) => {
             link.addEventListener("click", (e) => {
                 if (link.getAttribute("href") === "#") {
                     e.preventDefault();
                 }
 
-                // Update active state
                 document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
                 link.classList.add("active");
                 
-                // Update page title
                 const page = link.dataset.page || link.getAttribute("href").split("/").pop().split(".")[0];
                 this.updatePageTitle(page);
 
-                // Close mobile sidebar
                 this.closeMobileSidebar();
             });
         });
 
-        // Window events
         window.addEventListener("popstate", () => this.setActiveNavItem());
         window.addEventListener("resize", () => this.updateLayout());
 
-        // Notification interactions
         setTimeout(() => {
             document.querySelectorAll('#notificationMenu .dropdown-item').forEach(item => {
                 item.addEventListener('click', () => {
@@ -580,28 +559,22 @@ class TenantNavigationManager {
 
     addKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl/Cmd + B to toggle sidebar
             if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                 e.preventDefault();
                 this.toggleSidebar();
             }
-            
-            // Ctrl/Cmd + K to focus search (if enabled)
+
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 if (this.searchInput) this.searchInput.focus();
             }
-            
-            // Escape to close dropdowns
+
             if (e.key === 'Escape') {
                 this.closeAllDropdowns();
             }
         });
     }
 
-    // === PUBLIC API METHODS ===
-    
-    // Method to load tenant navigation components
     static async loadComponent(componentPath, containerId) {
         try {
             const response = await fetch(componentPath);
@@ -647,7 +620,6 @@ static async initializeTenantNavigation(config = {}) {
         }
     }
 
-    // Method to add custom navigation items
     addNavItem(item) {
         const navContainer = document.querySelector('.sidebar-nav');
         if (!navContainer) return;
@@ -672,7 +644,6 @@ static async initializeTenantNavigation(config = {}) {
             navContainer.appendChild(navItem);
         }
 
-        // Bind click event to new item
         const link = navItem.querySelector('.nav-link');
         link.addEventListener('click', (e) => {
             if (link.getAttribute('href') === '#') {
@@ -686,7 +657,6 @@ static async initializeTenantNavigation(config = {}) {
         });
     }
 
-    // Method to get current navigation state
     getNavigationState() {
         return {
             isCollapsed: this.isCollapsed,
@@ -709,7 +679,6 @@ static async initializeTenantNavigation(config = {}) {
         window.removeEventListener("resize", this.updateLayout);
         window.removeEventListener("popstate", this.setActiveNavItem);
         
-        // Clear references
         Object.keys(this).forEach(key => {
             if (this[key] instanceof HTMLElement) {
                 this[key] = null;
