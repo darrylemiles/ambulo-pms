@@ -4,11 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/fontawesome/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="/css/fonts.css" />
   <link rel="stylesheet" href="/css/tenants.css" />
-  <link rel="stylesheet" href="/css/navigationsAdmincss" />
+  <link rel="stylesheet" href="/css/navigation.css" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png" />
   <title>Tenants</title>
 </head>
@@ -17,655 +20,679 @@
   <div class="overlay" id="overlay"></div>
   <div id="sidebarContainer"></div>
   <div id="navbarContainer"></div>
-  
+
   <!-- Tenants Section -->
   <div class="main-content">
-  <div class="tenants-section">
-    <!-- Tenants Label (breadcrumb style) -->
-    <div class="tenants-label-container mb-2">
-      <div class="tenants-header-top">
-        <div class="breadcrumb-container" id="tenantsBreadcrumbContainer">
-          <nav aria-label="breadcrumb">
-            <ol class="breadcrumb" id="tenantsBreadcrumbNav">
-              <li class="breadcrumb-item" id="tenantsBreadcrumbLink" style="cursor:pointer;">
-                <i class="fas fa-users me-2"></i>Tenants
-              </li>
-            </ol>
-          </nav>
-        </div>
-      </div>
-    </div>
-
-    <!-- Controls Row: Add New Tenant, Search, Filter, View Toggle -->
-    <div class="controls-row mb-3">
-      <div class="tenants-header d-flex align-items-center flex-wrap" style="gap: 14px;">
-        <button class="btn btn-primary tenants-add-btn" onclick="openCreateAccountInline()">
-          <i class="fas fa-plus me-2"></i>
-          Add New Tenant
-        </button>
-        <div class="tenants-search-group d-flex align-items-center" style="gap: 10px;">
-          <div class="tenants-search-box property-search-box">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" id="searchInput" placeholder="Search by name, business, or email" />
-          </div>
-          <div class="status-filter-container" style="position: relative;">
-            <button class="status-filter-btn" id="statusFilterBtn" type="button">
-              <i class="fas fa-filter"></i>
-              <span id="statusFilterLabel">Status</span>
-              <i class="fas fa-chevron-down"></i>
-            </button>
-            <div class="status-filter-dropdown" id="statusFilterDropdown" style="display:none;">
-              <div class="dropdown-item" data-value="">All Status</div>
-              <div class="dropdown-item" data-value="active">Active</div>
-              <div class="dropdown-item" data-value="inactive">Inactive</div>
-            </div>
-            <input type="hidden" id="statusFilter" value="">
-          </div>
-          <div class="sort-filter-container" style="position: relative;">
-            <button class="sort-filter-btn" id="sortFilterBtn" type="button">
-              <i class="fas fa-sort"></i>
-              <span id="sortFilterLabel">Sort</span>
-              <i class="fas fa-chevron-down"></i>
-            </button>
-            <div class="sort-filter-dropdown" id="sortFilterDropdown" style="display:none;">
-              <div class="dropdown-item" data-sort="name_asc">Name (A–Z)</div>
-              <div class="dropdown-item" data-sort="name_desc">Name (Z–A)</div>
-              <div class="dropdown-item" data-sort="lease_end_asc">Lease End Date (Soonest → Latest)</div>
-              <div class="dropdown-item" data-sort="lease_end_desc">Lease End Date (Latest → Soonest)</div>
-              <div class="dropdown-item" data-sort="balance_desc">Balance (Highest → Lowest)</div>
-              <div class="dropdown-item" data-sort="balance_asc">Balance (Lowest → Highest)</div>
-              <div class="dropdown-item" data-sort="date_added_desc">Date Added (Newest → Oldest)</div>
-              <div class="dropdown-item" data-sort="date_added_asc">Date Added (Oldest → Newest)</div>
-            </div>
-          </div>
-        </div>
-        <div class="header-right d-flex align-items-center ms-auto">
-          <div class="view-toggle">
-            <button class="view-btn active" data-view="grid" onclick="toggleView('grid')" title="Grid View">
-              <i class="fas fa-th"></i>
-            </button>
-            <button class="view-btn" data-view="list" onclick="toggleView('list')" title="List View">
-              <i class="fas fa-list"></i>
-            </button>
+    <div class="tenants-section">
+      <!-- Tenants Label (breadcrumb style) -->
+      <div class="tenants-label-container mb-2">
+        <div class="tenants-header-top">
+          <div class="breadcrumb-container" id="tenantsBreadcrumbContainer">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb" id="tenantsBreadcrumbNav">
+                <li class="breadcrumb-item" id="tenantsBreadcrumbLink" style="cursor:pointer;">
+                  <i class="fas fa-users me-2"></i>Tenants
+                </li>
+              </ol>
+            </nav>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Create Account Inline Form (hidden by default) -->
-    <div id="createAccountInlineContainer" style="display: none">
-      <div class="inline-form-container">
-        <h3 class="inline-form-title">Create Tenant Account</h3>
-        <p class="inline-form-subtitle">
-          Complete the form to add a new tenant to the system
-        </p>
-
-        <div class="step-indicator">
-          <div class="step-group">
-            <div class="step active" id="step1">1</div>
-            <div class="step-label">Personal Info</div>
-          </div>
-          <div class="step-connector" id="connector1"></div>
-          <div class="step-group">
-            <div class="step" id="step2">2</div>
-            <div class="step-label">Documentation</div>
-          </div>
-          <div class="step-connector" id="connector2"></div>
-          <div class="step-group">
-            <div class="step" id="step3">3</div>
-            <div class="step-label">Account Setup</div>
-          </div>
-        </div>
-
-        <!-- The paginated form (reuse your existing form markup) -->
-        <form id="createAccountForm" autocomplete="off">
-          <!-- Step 1: Personal Information -->
-          <div class="form-step active" id="formStep1">
-            <div class="form-section">
-              <h4>Personal Information</h4>
-              <div class="form-row name-row">
-                <div class="form-group">
-                  <label for="firstName">First Name *</label>
-                  <input type="text" id="firstName" name="firstName" required />
-                  <div class="invalid-feedback"></div>
-                </div>
-                <div class="form-group">
-                  <label for="middleName">Middle Name</label>
-                  <input type="text" id="middleName" name="middleName" />
-                  <div class="invalid-feedback"></div>
-                </div>
-                <div class="form-group">
-                  <label for="lastName">Last Name *</label>
-                  <input type="text" id="lastName" name="lastName" required />
-                  <div class="invalid-feedback"></div>
-                </div>
-                <div class="form-group">
-                  <label for="suffix">Suffix</label>
-                  <input type="text" id="suffix" name="suffix" />
-                  <div class="invalid-feedback"></div>
-                </div>
+      <!-- Controls Row: Add New Tenant, Search, Filter, View Toggle -->
+      <div class="controls-row mb-3">
+        <div class="tenants-header d-flex align-items-center flex-wrap" style="gap: 14px;">
+          <button class="btn btn-primary tenants-add-btn" onclick="openCreateAccountInline()">
+            <i class="fas fa-plus me-2"></i>
+            Add New Tenant
+          </button>
+          <div class="tenants-search-group d-flex align-items-center" style="gap: 10px;">
+            <div class="tenants-search-box property-search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="searchInput" placeholder="Search by name, business, or email" />
+            </div>
+            <div class="status-filter-container" style="position: relative;">
+              <button class="status-filter-btn" id="statusFilterBtn" type="button">
+                <i class="fas fa-filter"></i>
+                <span id="statusFilterLabel">Status</span>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <div class="status-filter-dropdown" id="statusFilterDropdown" style="display:none;">
+                <div class="dropdown-item" data-value="">All Status</div>
+                <div class="dropdown-item" data-value="active">Active</div>
+                <div class="dropdown-item" data-value="inactive">Inactive</div>
               </div>
-              <div class="form-row two-col">
-                <div class="form-group">
-                  <label for="birthDate">Date of Birth *</label>
-                  <input type="date" id="birthDate" name="birthDate" />
-                  <div class="invalid-feedback"></div>
-                </div>
-                <div class="form-group">
-                  <label>Gender</label>
-                  <div class="radio-group">
-                    <div class="radio-option">
-                      <input type="radio" id="male" name="gender" value="male" />
-                      <label for="male">Male</label>
-                    </div>
-                    <div class="radio-option">
-                      <input type="radio" id="female" name="gender" value="female" />
-                      <label for="female">Female</label>
-                    </div>
-                    <div class="radio-option">
-                      <input type="radio" id="other" name="gender" value="other" />
-                      <label for="other">Other</label>
-                    </div>
+              <input type="hidden" id="statusFilter" value="">
+            </div>
+            <div class="sort-filter-container" style="position: relative;">
+              <button class="sort-filter-btn" id="sortFilterBtn" type="button">
+                <i class="fas fa-sort"></i>
+                <span id="sortFilterLabel">Sort</span>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <div class="sort-filter-dropdown" id="sortFilterDropdown" style="display:none;">
+                <div class="dropdown-item" data-sort="name_asc">Name (A–Z)</div>
+                <div class="dropdown-item" data-sort="name_desc">Name (Z–A)</div>
+                <div class="dropdown-item" data-sort="lease_end_asc">Lease End Date (Soonest → Latest)</div>
+                <div class="dropdown-item" data-sort="lease_end_desc">Lease End Date (Latest → Soonest)</div>
+                <div class="dropdown-item" data-sort="balance_desc">Balance (Highest → Lowest)</div>
+                <div class="dropdown-item" data-sort="balance_asc">Balance (Lowest → Highest)</div>
+                <div class="dropdown-item" data-sort="date_added_desc">Date Added (Newest → Oldest)</div>
+                <div class="dropdown-item" data-sort="date_added_asc">Date Added (Oldest → Newest)</div>
+              </div>
+            </div>
+          </div>
+          <div class="header-right d-flex align-items-center ms-auto">
+            <div class="view-toggle">
+              <button class="view-btn active" data-view="grid" onclick="toggleView('grid')" title="Grid View">
+                <i class="fas fa-th"></i>
+              </button>
+              <button class="view-btn" data-view="list" onclick="toggleView('list')" title="List View">
+                <i class="fas fa-list"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Account Inline Form (hidden by default) -->
+      <div id="createAccountInlineContainer" style="display: none">
+        <div class="inline-form-container">
+          <h3 class="inline-form-title">Create Tenant Account</h3>
+          <p class="inline-form-subtitle">
+            Complete the form to add a new tenant to the system
+          </p>
+
+          <div class="step-indicator">
+            <div class="step-group">
+              <div class="step active" id="step1">1</div>
+              <div class="step-label">Personal Info</div>
+            </div>
+            <div class="step-connector" id="connector1"></div>
+            <div class="step-group">
+              <div class="step" id="step2">2</div>
+              <div class="step-label">Documentation</div>
+            </div>
+            <div class="step-connector" id="connector2"></div>
+            <div class="step-group">
+              <div class="step" id="step3">3</div>
+              <div class="step-label">Account Setup</div>
+            </div>
+          </div>
+
+          <!-- The paginated form (reuse your existing form markup) -->
+          <form id="createAccountForm" autocomplete="off">
+            <!-- Step 1: Personal Information -->
+            <div class="form-step active" id="formStep1">
+              <div class="form-section">
+                <h4>Personal Information</h4>
+                <div class="form-row name-row">
+                  <div class="form-group">
+                    <label for="firstName">First Name *</label>
+                    <input type="text" id="firstName" name="firstName" required />
+                    <div class="invalid-feedback"></div>
                   </div>
-                  <div class="invalid-feedback"></div>
+                  <div class="form-group">
+                    <label for="middleName">Middle Name</label>
+                    <input type="text" id="middleName" name="middleName" />
+                    <div class="invalid-feedback"></div>
+                  </div>
+                  <div class="form-group">
+                    <label for="lastName">Last Name *</label>
+                    <input type="text" id="lastName" name="lastName" required />
+                    <div class="invalid-feedback"></div>
+                  </div>
+                  <div class="form-group">
+                    <label for="suffix">Suffix</label>
+                    <input type="text" id="suffix" name="suffix" />
+                    <div class="invalid-feedback"></div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h4>Contact Information</h4>
-              <div class="form-row two-col">
-                <div class="form-group">
-                  <label for="mobileNumber">Mobile Number *</label>
-                  <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="+63" required />
-                  <div class="invalid-feedback"></div>
-                </div>
-                <div class="form-group">
-                  <label for="altMobileNumber">Alternative Mobile Number</label>
-                  <input type="tel" id="altMobileNumber" name="altMobileNumber" placeholder="+63" />
-                  <div class="invalid-feedback"></div>
-                </div>
-              </div>
-              <div class="form-section billing-address">
-                <label>Billing Address</label>
                 <div class="form-row two-col">
                   <div class="form-group">
-                    <input type="text" name="houseNo" placeholder="House No. (Required)" required />
+                    <label for="birthDate">Date of Birth *</label>
+                    <input type="date" id="birthDate" name="birthDate" />
                     <div class="invalid-feedback"></div>
                   </div>
                   <div class="form-group">
-                    <input type="text" name="street" placeholder="Street (Required)" required />
-                    <div class="invalid-feedback"></div>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <input type="text" name="city" placeholder="City (Required)" required />
-                    <div class="invalid-feedback"></div>
-                  </div>
-                  <div class="form-group">
-                    <input type="text" name="province" placeholder="Province (Required)" required />
-                    <div class="invalid-feedback"></div>
-                  </div>
-                  <div class="form-group">
-                    <input type="text" name="zipCode" placeholder="ZIP Code" />
-                    <div class="invalid-feedback"></div>
-                  </div>
-                </div>
-                <div class="form-row full-width">
-                  <div class="form-group">
-                    <input type="text" name="country" placeholder="Country (Required)" value="Philippines" required />
-                    <div class="invalid-feedback"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 2: Documentation and Emergency Contact -->
-          <div class="form-step" id="formStep2">
-            <div class="form-section">
-              <h4>Documentation</h4>
-              <div class="upload-area" onclick="document.getElementById('documentUpload').click()">
-                <div class="upload-icon">
-                  <i class="fas fa-cloud-upload-alt"></i>
-                </div>
-                <div class="upload-text">
-                  <strong>Upload Documents</strong><br />
-                  <span>ID Proof, Lease Agreement, etc. (PDF, JPG, PNG - Max 5MB
-                    each, up to 4 files)</span>
-                </div>
-                <input type="file" id="documentUpload" name="documents" multiple accept=".pdf,.jpg,.jpeg,.png"
-                  style="display: none" />
-                <div class="invalid-feedback"></div>
-              </div>
-              <div id="documentPreview" class="document-preview" style="display: none">
-                <!-- Uploaded documents will appear here -->
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h4>Emergency Contact</h4>
-              <div class="form-row full-width">
-                <div class="form-group">
-                  <label for="emergencyName">Emergency Contact Name</label>
-                  <input type="text" id="emergencyName" name="emergencyName" placeholder="Full Name" />
-                  <div class="invalid-feedback"></div>
-                </div>
-              </div>
-              <div class="form-row two-col">
-                <div class="form-group">
-                  <label for="emergencyNumber">Emergency Contact Number</label>
-                  <input type="tel" id="emergencyNumber" name="emergencyNumber" placeholder="+63" />
-                  <div class="invalid-feedback"></div>
-                </div>
-                <div class="form-group">
-                  <label for="emergencyRelationship">Relationship</label>
-                  <select id="emergencyRelationship" name="emergencyRelationship">
-                    <option value="">Select Relationship</option>
-                    <option value="Parent">Parent</option>
-                    <option value="Spouse">Spouse</option>
-                    <option value="Sibling">Sibling</option>
-                    <option value="Friend">Friend</option>
-                    <option value="Colleague">Colleague</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <div class="invalid-feedback"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 3: Account Credentials -->
-          <div class="form-step" id="formStep3">
-            <div class="form-layout">
-              <div class="form-left">
-                <div class="form-section">
-                  <h4>Account Credentials</h4>
-                  <div class="form-group">
-                    <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" placeholder="example@example.com" required />
-                    <div class="invalid-feedback"></div>
-                  </div>
-                  <div class="form-group">
-                    <label for="defaultPassword">Password *</label>
-                    <div class="input-with-icon">
-                      <input type="password" id="defaultPassword" name="defaultPassword" placeholder="Password"
-                        required />
-                      <button type="button" class="toggle-password" onclick="togglePassword('defaultPassword', this)">
-                        <i class="fas fa-eye"></i>
-                      </button>
-                      <button type="button" id="generatePasswordBtn" class="btn btn-secondary btn-sm"
-                        style="margin-left: 8px">
-                        <i class="fas fa-random"></i> Generate Password
-                      </button>
-                    </div>
-                    <div class="invalid-feedback"></div>
-                  </div>
-                  <div class="form-group">
-                    <label for="confirmPassword">Confirm Password *</label>
-                    <div class="input-with-icon">
-                      <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Password"
-                        required />
-                      <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword', this)">
-                        <i class="fas fa-eye"></i>
-                      </button>
-                    </div>
-                    <div class="invalid-feedback"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-right">
-                <div class="form-section">
-                  <h4>Profile Picture</h4>
-                  <div class="profile-upload">
-                    <div class="profile-preview" onclick="document.getElementById('profileUpload').click()">
-                      <div class="profile-preview-content">
-                        <i class="fas fa-user-plus"></i>
-                        <span>Add Photo</span>
+                    <label>Gender</label>
+                    <div class="radio-group">
+                      <div class="radio-option">
+                        <input type="radio" id="male" name="gender" value="male" />
+                        <label for="male">Male</label>
+                      </div>
+                      <div class="radio-option">
+                        <input type="radio" id="female" name="gender" value="female" />
+                        <label for="female">Female</label>
+                      </div>
+                      <div class="radio-option">
+                        <input type="radio" id="other" name="gender" value="other" />
+                        <label for="other">Other</label>
                       </div>
                     </div>
-                    <div class="profile-upload-text">
-                      <h5>Upload Profile Picture</h5>
-                      <p>JPG or PNG format, max 2MB</p>
+                    <div class="invalid-feedback"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h4>Contact Information</h4>
+                <div class="form-row two-col">
+                  <div class="form-group">
+                    <label for="mobileNumber">Mobile Number *</label>
+                    <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="+63" required />
+                    <div class="invalid-feedback"></div>
+                  </div>
+                  <div class="form-group">
+                    <label for="altMobileNumber">Alternative Mobile Number</label>
+                    <input type="tel" id="altMobileNumber" name="altMobileNumber" placeholder="+63" />
+                    <div class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="form-section billing-address">
+                  <label>Billing Address</label>
+                  <div class="form-row two-col">
+                    <div class="form-group">
+                      <input type="text" name="houseNo" placeholder="House No. (Required)" required />
+                      <div class="invalid-feedback"></div>
                     </div>
-                    <input type="file" id="profileUpload" name="profilePicture" accept=".jpg,.jpeg,.png"
-                      style="display: none" />
+                    <div class="form-group">
+                      <input type="text" name="street" placeholder="Street (Required)" required />
+                      <div class="invalid-feedback"></div>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <input type="text" name="city" placeholder="City (Required)" required />
+                      <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="form-group">
+                      <input type="text" name="province" placeholder="Province (Required)" required />
+                      <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="form-group">
+                      <input type="text" name="zipCode" placeholder="ZIP Code" />
+                      <div class="invalid-feedback"></div>
+                    </div>
+                  </div>
+                  <div class="form-row full-width">
+                    <div class="form-group">
+                      <input type="text" name="country" placeholder="Country (Required)" value="Philippines" required />
+                      <div class="invalid-feedback"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="terms-section">
-              <div class="terms-checkbox">
-                <input type="checkbox" id="agreeTerms" name="agreeTerms" required />
-                <label for="agreeTerms">
-                  I agree to the
-                  <a href="#" target="_blank">Terms of Service</a> and
-                  <a href="#" target="_blank">Privacy Policy</a>
-                </label>
+            <!-- Step 2: Documentation and Emergency Contact -->
+            <div class="form-step" id="formStep2">
+              <div class="form-section">
+                <h4>Documentation</h4>
+                <div class="upload-area" onclick="document.getElementById('documentUpload').click()">
+                  <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                  </div>
+                  <div class="upload-text">
+                    <strong>Upload Documents</strong><br />
+                    <span>ID Proof, Lease Agreement, etc. (PDF, JPG, PNG - Max 5MB
+                      each, up to 4 files)</span>
+                  </div>
+                  <input type="file" id="documentUpload" name="documents" multiple accept=".pdf,.jpg,.jpeg,.png"
+                    style="display: none" />
+                  <div class="invalid-feedback"></div>
+                </div>
+                <div id="documentPreview" class="document-preview" style="display: none">
+                  <!-- Uploaded documents will appear here -->
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h4>Emergency Contact</h4>
+                <div class="form-row full-width">
+                  <div class="form-group">
+                    <label for="emergencyName">Emergency Contact Name</label>
+                    <input type="text" id="emergencyName" name="emergencyName" placeholder="Full Name" />
+                    <div class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="form-row two-col">
+                  <div class="form-group">
+                    <label for="emergencyNumber">Emergency Contact Number</label>
+                    <input type="tel" id="emergencyNumber" name="emergencyNumber" placeholder="+63" />
+                    <div class="invalid-feedback"></div>
+                  </div>
+                  <div class="form-group">
+                    <label for="emergencyRelationship">Relationship</label>
+                    <select id="emergencyRelationship" name="emergencyRelationship">
+                      <option value="">Select Relationship</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Spouse">Spouse</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Colleague">Colleague</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <div class="invalid-feedback"></div>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <!-- Step 3: Account Credentials -->
+            <div class="form-step" id="formStep3">
+              <div class="form-layout">
+                <div class="form-left">
+                  <div class="form-section">
+                    <h4>Account Credentials</h4>
+                    <div class="form-group">
+                      <label for="email">Email Address *</label>
+                      <input type="email" id="email" name="email" placeholder="example@example.com" required />
+                      <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="form-group">
+                      <label for="defaultPassword">Password *</label>
+                      <div class="input-with-icon">
+                        <input type="password" id="defaultPassword" name="defaultPassword" placeholder="Password"
+                          required />
+                        <button type="button" class="toggle-password" onclick="togglePassword('defaultPassword', this)">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" id="generatePasswordBtn" class="btn btn-secondary btn-sm"
+                          style="margin-left: 8px">
+                          <i class="fas fa-random"></i> Generate Password
+                        </button>
+                      </div>
+                      <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="form-group">
+                      <label for="confirmPassword">Confirm Password *</label>
+                      <div class="input-with-icon">
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Password"
+                          required />
+                        <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword', this)">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                      </div>
+                      <div class="invalid-feedback"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-right">
+                  <div class="form-section">
+                    <h4>Profile Picture</h4>
+                    <div class="profile-upload">
+                      <div class="profile-preview" onclick="document.getElementById('profileUpload').click()">
+                        <div class="profile-preview-content">
+                          <i class="fas fa-user-plus"></i>
+                          <span>Add Photo</span>
+                        </div>
+                      </div>
+                      <div class="profile-upload-text">
+                        <h5>Upload Profile Picture</h5>
+                        <p>JPG or PNG format, max 2MB</p>
+                      </div>
+                      <input type="file" id="profileUpload" name="profilePicture" accept=".jpg,.jpeg,.png"
+                        style="display: none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="terms-section">
+                <div class="terms-checkbox">
+                  <input type="checkbox" id="agreeTerms" name="agreeTerms" required />
+                  <label for="agreeTerms">
+                    I agree to the
+                    <a href="#" target="_blank">Terms of Service</a> and
+                    <a href="#" target="_blank">Privacy Policy</a>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </form>
+          <div class="inline-form-footer">
+            <button type="button" class="modal-btn modal-btn-secondary" id="prevBtn" onclick="previousStep()"
+              style="display: none">
+              <i class="fas fa-arrow-left"></i>
+              Previous
+            </button>
+            <div class="modal-footer-spacer"></div>
+            <button type="button" class="modal-btn modal-btn-primary" id="nextBtn" onclick="nextStep()">
+              Next
+              <i class="fas fa-arrow-right"></i>
+            </button>
+            <button type="submit" class="modal-btn modal-btn-success" id="confirmBtn" form="createAccountForm"
+              style="display: none">
+              <i class="fas fa-check"></i>
+              Create Account
+            </button>
+            <button type="button" class="modal-btn modal-btn-cancel" id="cancelBtn" style="margin-left: 10px">
+              Cancel
+            </button>
           </div>
-        </form>
-        <div class="inline-form-footer">
-          <button type="button" class="modal-btn modal-btn-secondary" id="prevBtn" onclick="previousStep()"
-            style="display: none">
-            <i class="fas fa-arrow-left"></i>
-            Previous
+        </div>
+      </div>
+
+      <!-- Bulk Actions Bar -->
+      <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none">
+        <div class="bulk-actions-left">
+          <span id="selectedCount" class="selected-count">0 selected</span>
+          <button class="bulk-btn" onclick="selectAll()">
+            <i class="fas fa-check-square"></i>
+            <span>Select All</span>
           </button>
-          <div class="modal-footer-spacer"></div>
-          <button type="button" class="modal-btn modal-btn-primary" id="nextBtn" onclick="nextStep()">
-            Next
-            <i class="fas fa-arrow-right"></i>
+          <button class="bulk-btn" onclick="clearSelection()">
+            <i class="fas fa-times"></i>
+            <span>Clear Selection</span>
           </button>
-          <button type="submit" class="modal-btn modal-btn-success" id="confirmBtn" form="createAccountForm"
-            style="display: none">
-            <i class="fas fa-check"></i>
-            Create Account
+        </div>
+        <div class="bulk-actions-right">
+          <button class="bulk-btn bulk-message" onclick="messageSelected()">
+            <i class="fas fa-envelope"></i>
+            <span>Message</span>
           </button>
-          <button type="button" class="modal-btn modal-btn-cancel" id="cancelBtn" style="margin-left: 10px">
-            Cancel
+          <button class="bulk-btn bulk-export" onclick="exportSelected()">
+            <i class="fas fa-download"></i>
+            <span>Export</span>
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- Bulk Actions Bar -->
-    <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none">
-      <div class="bulk-actions-left">
-        <span id="selectedCount" class="selected-count">0 selected</span>
-        <button class="bulk-btn" onclick="selectAll()">
-          <i class="fas fa-check-square"></i>
-          <span>Select All</span>
-        </button>
-        <button class="bulk-btn" onclick="clearSelection()">
-          <i class="fas fa-times"></i>
-          <span>Clear Selection</span>
+      <!-- Loading State -->
+      <div id="loadingState" class="loading-state" style="display: none">
+        <div class="loader"></div>
+        <p>Loading tenants...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="errorState" class="error-state" style="display: none">
+        <div class="error-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3>Failed to load tenants</h3>
+        <p>Please check your connection and try again.</p>
+        <button onclick="loadTenants()" class="retry-btn">
+          <i class="fas fa-redo"></i>
+          Retry
         </button>
       </div>
-      <div class="bulk-actions-right">
-        <button class="bulk-btn bulk-message" onclick="messageSelected()">
-          <i class="fas fa-envelope"></i>
-          <span>Message</span>
-        </button>
-        <button class="bulk-btn bulk-export" onclick="exportSelected()">
-          <i class="fas fa-download"></i>
-          <span>Export</span>
-        </button>
-      </div>
-    </div>
 
-    <!-- Loading State -->
-    <div id="loadingState" class="loading-state" style="display: none">
-      <div class="loader"></div>
-      <p>Loading tenants...</p>
-    </div>
-
-    <!-- Error State -->
-    <div id="errorState" class="error-state" style="display: none">
-      <div class="error-icon">
-        <i class="fas fa-exclamation-triangle"></i>
-      </div>
-      <h3>Failed to load tenants</h3>
-      <p>Please check your connection and try again.</p>
-      <button onclick="loadTenants()" class="retry-btn">
-        <i class="fas fa-redo"></i>
-        Retry
-      </button>
-    </div>
-
-    <!-- Tenant Details Inline Form (hidden by default) -->
-    <div id="tenantDetailsContainer">
-      <div id="tenantDetailsInlineForm" class="inline-form-container tenant-details-wide" style="display:none;">
-        <form id="editTenantForm" autocomplete="off">
-          <div class="tenant-details-header">
-            <div class="tenant-details-title">
-              <div class="tenant-avatar-wrapper" style="display: flex; flex-direction: column; align-items: flex-start;">
-                <button type="button" class="btn btn-secondary" id="backToGridBtn" style="margin-bottom: 16px;">
-                  <i class="fas fa-arrow-left"></i> Back
+      <!-- Tenant Details Inline Form (hidden by default) -->
+      <div id="tenantDetailsContainer">
+        <div id="tenantDetailsInlineForm" class="inline-form-container tenant-details-wide" style="display:none;">
+          <form id="editTenantForm" autocomplete="off">
+            <div class="tenant-details-header">
+              <div class="tenant-details-title">
+                <div class="tenant-avatar-wrapper"
+                  style="display: flex; flex-direction: column; align-items: flex-start;">
+                  <button type="button" class="btn btn-secondary" id="backToGridBtn" style="margin-bottom: 16px;">
+                    <i class="fas fa-arrow-left"></i> Back
+                  </button>
+                  <div class="tenant-details-avatar" id="editAvatarPreview"
+                    onclick="document.getElementById('editAvatarUpload').click()">
+                    <!-- Avatar image or Add Photo will be injected here by JS -->
+                  </div>
+                </div>
+                <input type="file" id="editAvatarUpload" name="avatar" accept=".jpg,.jpeg,.png" style="display:none;">
+                <div>
+                  <input type="hidden" name="user_id" id="editUserId">
+                  <h2 id="tenantNameDisplay" class="tenant-details-name">Tenant Details</h2>
+                  <div class="tenant-details-contact"></div>
+                  <div id="tenantEmailDisplay" class="tenant-details-email"></div>
+                </div>
+              </div>
+              <div class="tenant-details-actions">
+                <button type="button" class="modal-btn modal-btn-primary" id="editUserBtn"
+                  onclick="toggleEditTenantForm(true)">
+                  <i class="fas fa-edit"></i> Edit User
                 </button>
-                <div class="tenant-details-avatar" id="editAvatarPreview"
-                  onclick="document.getElementById('editAvatarUpload').click()">
-                  <!-- Avatar image or Add Photo will be injected here by JS -->
-                </div>
-              </div>
-              <input type="file" id="editAvatarUpload" name="avatar" accept=".jpg,.jpeg,.png" style="display:none;">
-              <div>
-                <input type="hidden" name="user_id" id="editUserId">
-                <h2 id="tenantNameDisplay" class="tenant-details-name">Tenant Details</h2>
-                <div class="tenant-details-contact"></div>
-                <div id="tenantEmailDisplay" class="tenant-details-email"></div>
+                <button type="button" class="modal-btn modal-btn-cancel" onclick="deleteTenantFromDetails()">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
               </div>
             </div>
-            <div class="tenant-details-actions">
-              <button type="button" class="modal-btn modal-btn-primary" id="editUserBtn"
-                onclick="toggleEditTenantForm(true)">
-                <i class="fas fa-edit"></i> Edit User
-              </button>
-              <button type="button" class="modal-btn modal-btn-cancel" onclick="deleteTenantFromDetails()">
-                <i class="fas fa-trash"></i> Delete
-              </button>
+            <div class="tenant-details-sections">
+              <!-- Personal Info -->
+              <section class="tenant-details-section">
+                <h4>Personal Information</h4>
+                <div class="tenant-details-row">
+                  <div class="tenant-details-col">
+                    <label>First Name</label>
+                    <span class="tenant-details-value" data-field="firstName"></span>
+                    <input type="text" name="firstName" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Middle Name</label>
+                    <span class="tenant-details-value" data-field="middleName"></span>
+                    <input type="text" name="middleName" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Last Name</label>
+                    <span class="tenant-details-value" data-field="lastName"></span>
+                    <input type="text" name="lastName" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Suffix</label>
+                    <span class="tenant-details-value" data-field="suffix"></span>
+                    <input type="text" name="suffix" class="tenant-details-input" style="display:none;">
+                  </div>
+                </div>
+                <div class="tenant-details-row">
+                  <div class="tenant-details-col">
+                    <label>Birthdate</label>
+                    <span class="tenant-details-value" data-field="birthDate"></span>
+                    <input type="date" name="birthDate" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Gender</label>
+                    <span class="tenant-details-value" data-field="gender"></span>
+                    <select name="gender" class="tenant-details-input" style="display:none;">
+                      <option value="">Select</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+              <!-- Contact Info -->
+              <section class="tenant-details-section">
+                <h4>Contact Information</h4>
+                <div class="tenant-details-row">
+                  <div class="tenant-details-col">
+                    <label>Phone</label>
+                    <span class="tenant-details-value" data-field="phoneNumber"></span>
+                    <input type="tel" name="phoneNumber" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Alt Phone</label>
+                    <span class="tenant-details-value" data-field="altPhoneNumber"></span>
+                    <input type="tel" name="altPhoneNumber" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Email</label>
+                    <span class="tenant-details-value" data-field="email"></span>
+                    <input type="email" name="email" class="tenant-details-input" style="display:none;">
+                  </div>
+                </div>
+              </section>
+              <!-- Address -->
+              <section class="tenant-details-section">
+                <h4>Address</h4>
+                <div class="tenant-details-row">
+                  <div class="tenant-details-col">
+                    <label>House No.</label>
+                    <span class="tenant-details-value" data-field="houseNo"></span>
+                    <input type="text" name="houseNo" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Street</label>
+                    <span class="tenant-details-value" data-field="street"></span>
+                    <input type="text" name="street" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>City</label>
+                    <span class="tenant-details-value" data-field="city"></span>
+                    <input type="text" name="city" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Province</label>
+                    <span class="tenant-details-value" data-field="province"></span>
+                    <input type="text" name="province" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>ZIP Code</label>
+                    <span class="tenant-details-value" data-field="zipCode"></span>
+                    <input type="text" name="zipCode" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Country</label>
+                    <span class="tenant-details-value" data-field="country"></span>
+                    <input type="text" name="country" class="tenant-details-input" style="display:none;">
+                  </div>
+                </div>
+              </section>
+              <!-- Emergency Contact -->
+              <section class="tenant-details-section">
+                <h4>Emergency Contact</h4>
+                <div class="tenant-details-row">
+                  <div class="tenant-details-col">
+                    <label>Name</label>
+                    <span class="tenant-details-value" data-field="emergencyName"></span>
+                    <input type="text" name="emergencyName" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Number</label>
+                    <span class="tenant-details-value" data-field="emergencyNumber"></span>
+                    <input type="tel" name="emergencyNumber" class="tenant-details-input" style="display:none;">
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Relationship</label>
+                    <span class="tenant-details-value" data-field="emergencyRelationship"></span>
+                    <input type="text" name="emergencyRelationship" class="tenant-details-input" style="display:none;">
+                  </div>
+                </div>
+              </section>
+              <!-- Status & Role -->
+              <section class="tenant-details-section">
+                <h4>Account</h4>
+                <div class="tenant-details-row">
+                  <div class="tenant-details-col">
+                    <label>Status</label>
+                    <span class="tenant-details-value" data-field="status"></span>
+                    <select name="status" class="tenant-details-input" style="display:none;">
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="BANNED">Banned</option>
+                    </select>
+                  </div>
+                  <div class="tenant-details-col">
+                    <label>Role</label>
+                    <span class="tenant-details-value" data-field="role"></span>
+                    <select name="role" class="tenant-details-input" style="display:none;">
+                      <option value="TENANT">Tenant</option>
+                      <option value="MANAGER">Manager</option>
+                      <option value="ADMIN">Admin</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
             </div>
-          </div>
-          <div class="tenant-details-sections">
-            <!-- Personal Info -->
-            <section class="tenant-details-section">
-              <h4>Personal Information</h4>
-              <div class="tenant-details-row">
-                <div class="tenant-details-col">
-                  <label>First Name</label>
-                  <span class="tenant-details-value" data-field="firstName"></span>
-                  <input type="text" name="firstName" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Middle Name</label>
-                  <span class="tenant-details-value" data-field="middleName"></span>
-                  <input type="text" name="middleName" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Last Name</label>
-                  <span class="tenant-details-value" data-field="lastName"></span>
-                  <input type="text" name="lastName" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Suffix</label>
-                  <span class="tenant-details-value" data-field="suffix"></span>
-                  <input type="text" name="suffix" class="tenant-details-input" style="display:none;">
-                </div>
-              </div>
-              <div class="tenant-details-row">
-                <div class="tenant-details-col">
-                  <label>Birthdate</label>
-                  <span class="tenant-details-value" data-field="birthDate"></span>
-                  <input type="date" name="birthDate" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Gender</label>
-                  <span class="tenant-details-value" data-field="gender"></span>
-                  <select name="gender" class="tenant-details-input" style="display:none;">
-                    <option value="">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-            </section>
-            <!-- Contact Info -->
-            <section class="tenant-details-section">
-              <h4>Contact Information</h4>
-              <div class="tenant-details-row">
-                <div class="tenant-details-col">
-                  <label>Phone</label>
-                  <span class="tenant-details-value" data-field="phoneNumber"></span>
-                  <input type="tel" name="phoneNumber" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Alt Phone</label>
-                  <span class="tenant-details-value" data-field="altPhoneNumber"></span>
-                  <input type="tel" name="altPhoneNumber" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Email</label>
-                  <span class="tenant-details-value" data-field="email"></span>
-                  <input type="email" name="email" class="tenant-details-input" style="display:none;">
-                </div>
-              </div>
-            </section>
-            <!-- Address -->
-            <section class="tenant-details-section">
-              <h4>Address</h4>
-              <div class="tenant-details-row">
-                <div class="tenant-details-col">
-                  <label>House No.</label>
-                  <span class="tenant-details-value" data-field="houseNo"></span>
-                  <input type="text" name="houseNo" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Street</label>
-                  <span class="tenant-details-value" data-field="street"></span>
-                  <input type="text" name="street" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>City</label>
-                  <span class="tenant-details-value" data-field="city"></span>
-                  <input type="text" name="city" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Province</label>
-                  <span class="tenant-details-value" data-field="province"></span>
-                  <input type="text" name="province" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>ZIP Code</label>
-                  <span class="tenant-details-value" data-field="zipCode"></span>
-                  <input type="text" name="zipCode" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Country</label>
-                  <span class="tenant-details-value" data-field="country"></span>
-                  <input type="text" name="country" class="tenant-details-input" style="display:none;">
-                </div>
-              </div>
-            </section>
-            <!-- Emergency Contact -->
-            <section class="tenant-details-section">
-              <h4>Emergency Contact</h4>
-              <div class="tenant-details-row">
-                <div class="tenant-details-col">
-                  <label>Name</label>
-                  <span class="tenant-details-value" data-field="emergencyName"></span>
-                  <input type="text" name="emergencyName" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Number</label>
-                  <span class="tenant-details-value" data-field="emergencyNumber"></span>
-                  <input type="tel" name="emergencyNumber" class="tenant-details-input" style="display:none;">
-                </div>
-                <div class="tenant-details-col">
-                  <label>Relationship</label>
-                  <span class="tenant-details-value" data-field="emergencyRelationship"></span>
-                  <input type="text" name="emergencyRelationship" class="tenant-details-input" style="display:none;">
-                </div>
-              </div>
-            </section>
-            <!-- Status & Role -->
-            <section class="tenant-details-section">
-              <h4>Account</h4>
-              <div class="tenant-details-row">
-                <div class="tenant-details-col">
-                  <label>Status</label>
-                  <span class="tenant-details-value" data-field="status"></span>
-                  <select name="status" class="tenant-details-input" style="display:none;">
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="BANNED">Banned</option>
-                  </select>
-                </div>
-                <div class="tenant-details-col">
-                  <label>Role</label>
-                  <span class="tenant-details-value" data-field="role"></span>
-                  <select name="role" class="tenant-details-input" style="display:none;">
-                    <option value="TENANT">Tenant</option>
-                    <option value="MANAGER">Manager</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                </div>
-              </div>
-            </section>
-          </div>
 
-          <div id="tenantIdFilesSection" class="tenant-id-files-section" style="margin: 24px 0 0 0;">
-            <h4>Tenant ID Files</h4>
-            <div id="tenantIdFilesList" class="tenant-id-files-list">
-              <!-- Files will be rendered here -->
+            <div id="tenantIdFilesSection" class="tenant-id-files-section" style="margin: 24px 0 0 0;">
+              <h4>Tenant ID Files</h4>
+              <div id="tenantIdFilesList" class="tenant-id-files-list">
+                <!-- Files will be rendered here -->
+              </div>
+              <div class="tenant-details-footer" style="display:none;">
+                <button type="button" class="modal-btn modal-btn-cancel"
+                  onclick="toggleEditTenantForm(false)">Cancel</button>
+                <button type="submit" class="modal-btn modal-btn-success"><i class="fas fa-save"></i>Save
+                  Changes</button>
+              </div>
             </div>
-            <div class="tenant-details-footer" style="display:none;">
-              <button type="button" class="modal-btn modal-btn-cancel"
-                onclick="toggleEditTenantForm(false)">Cancel</button>
-              <button type="submit" class="modal-btn modal-btn-success"><i class="fas fa-save"></i>Save Changes</button>
-            </div>
-          </div>
 
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
 
-    <!-- Grid View (always present, shown/hidden by JS) -->
-    <div id="gridView" class="tenants-grid">
-      <!-- Tenant cards will be populated here -->
-    </div>
+      <!-- Grid View (always present, shown/hidden by JS) -->
+      <div id="gridView" class="tenants-grid">
+        <!-- Tenant cards will be populated here -->
+      </div>
 
-    <!-- List View (always present, shown/hidden by JS) -->
-    <div id="listView" class="tenants-list" style="display: none">
-      <div class="list-header">
-        <div class="list-col list-col-checkbox">
-          <input type="checkbox" id="listSelectAll" onchange="toggleSelectAll()" />
+      <!-- List View (always present, shown/hidden by JS) -->
+      <div id="listView" class="tenants-list" style="display: none">
+        <div class="list-header">
+          <div class="list-col list-col-checkbox">
+            <input type="checkbox" id="listSelectAll" onchange="toggleSelectAll()" />
+          </div>
+          <div class="list-col list-col-name">
+            <span>Name</span>
+          </div>
+          <div class="list-col list-col-email">
+            <span>Email</span>
+          </div>
+          <div class="list-col list-col-phone">
+            <span>Phone</span>
+          </div>
+          <div class="list-col list-col-status">
+            <span>Status</span>
+          </div>
+          <div class="list-col list-col-created">
+            <span>Created</span>
+          </div>
+          <div class="list-col list-col-actions">Actions</div>
         </div>
-        <div class="list-col list-col-name">
-          <span>Name</span>
+        <div id="listContainer"></div>
+        <!-- Pagination -->
+        <div id="pagination" class="pagination" style="display: none">
+          <!-- Pagination will be populated here -->
         </div>
-        <div class="list-col list-col-email">
-          <span>Email</span>
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none">
+          <div class="empty-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3>No Tenants Found</h3>
+          <p>There are no tenants matching the search criteria.</p>
+          <button class="btn btn-primary" onclick="openCreateAccountInline()">
+            <i class="fas fa-plus"></i>
+            Create Tenant
+          </button>
         </div>
-        <div class="list-col list-col-phone">
-          <span>Phone</span>
-        </div>
-        <div class="list-col list-col-status">
-          <span>Status</span>
-        </div>
-        <div class="list-col list-col-created">
-          <span>Created</span>
-        </div>
-        <div class="list-col list-col-actions">Actions</div>
-      </div>
-      <div id="listContainer"></div>
-      <!-- Pagination -->
-      <div id="pagination" class="pagination" style="display: none">
-        <!-- Pagination will be populated here -->
-      </div>
-      <!-- Empty State -->
-      <div id="emptyState" class="empty-state" style="display: none">
-        <div class="empty-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <h3>No Tenants Found</h3>
-        <p>There are no tenants matching the search criteria.</p>
-        <button class="btn btn-primary" onclick="openCreateAccountInline()">
-          <i class="fas fa-plus"></i>
-          Create Tenant
-        </button>
       </div>
     </div>
   </div>
-  </div>
 
-  <script src="/javascript/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+    integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+    crossorigin="anonymous"></script>
   <script src="constants/constants.js"></script>
   <script type="module" src="/javascript/tenants.js"></script>
-  <script src="/javascript/navigationsAdmin.js"></script>
+  <script>
+    var user = null;
+    try {
+      user = JSON.parse(localStorage.getItem('user'));
+    } catch (e) { }
+
+    var userRole = (user && user.role) ? user.role.toUpperCase() : 'TENANT';
+
+    if (userRole === 'ADMIN') {
+      var script = document.createElement('script');
+      script.src = '/javascript/navigationsAdmin.js';
+      document.body.appendChild(script);
+    } else {
+      var script = document.createElement('script');
+      script.src = '/javascript/navigationsTenant.js';
+      document.body.appendChild(script);
+    }
+  </script>
 </body>
 
 </html>

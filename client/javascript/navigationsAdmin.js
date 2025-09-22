@@ -19,6 +19,44 @@ function setupAdminNavbar() {
     if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messagesAdmin.html";
 }
 
+function setupSidebar(role) {
+    const sidebarNav = document.getElementById('sidebarNav');
+    if (!sidebarNav) return;
+
+    let links = [];
+    if (role === 'admin') {
+        links = [
+            { href: '/adminDashboard.html', icon: 'fas fa-chart-line', text: 'Dashboard', page: 'dashboard' },
+            { href: '/messagesAdmin.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messagesAdmin' },
+            { section: 'Property Management', isSection: true },
+            { href: '/propertyAdmin.html', icon: 'fas fa-building', text: 'Properties', page: 'propertyAdmin' },
+            { href: '/tenants.html', icon: 'fas fa-users', text: 'Tenants', page: 'tenants' },
+            { href: '/documents.html', icon: 'fa-solid fa-folder', text: 'Documents', page: 'documents' },
+            { href: '/leaseAdmin.html', icon: 'fas fa-file-contract', text: 'Leases', page: 'leases' },
+            { section: 'Operations', isSection: true },
+            { href: '/maintenance.html', icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenance' },
+            { href: '/paymentAdmin.html', icon: 'fas fa-credit-card', text: 'Payments', page: 'payments' },
+            { href: '#', icon: 'fas fa-chart-bar', text: 'Reports', page: 'reports' },
+            { section: 'Content Management', isSection: true },
+            { href: '/contentManagement.html', icon: 'fa-solid fa-gears', text: 'Manage Content', page: 'content' }
+        ];
+    }
+
+    sidebarNav.innerHTML = links.map(link => {
+        if (link.isSection) {
+            return `<div class="nav-section"><div class="nav-section-title">${link.section}</div></div>`;
+        }
+        return `
+            <div class="nav-item">
+                <a href="${link.href}" class="nav-link" data-tooltip="${link.text}" data-page="${link.page}">
+                    <div class="nav-icon"><i class="${link.icon}"></i></div>
+                    <span class="nav-text">${link.text}</span>
+                </a>
+            </div>
+        `;
+    }).join('');
+}
+
 class NavigationManager {
     constructor(config = {}) {
         this.config = {
@@ -347,9 +385,6 @@ class NavigationManager {
                 currentPage = "dashboard";
             }
         }
-
-        console.log("Current page detected:", currentPage);
-
         const navLinks = document.querySelectorAll(".nav-link");
 
         navLinks.forEach((link) => link.classList.remove("active"));
@@ -376,9 +411,6 @@ class NavigationManager {
             if (isContentPage && linkPage === "content") {
                 link.classList.add("active");
                 this.updatePageTitle("content");
-                console.log(
-                    "Set active nav item: content (detected content management page)"
-                );
                 return;
             }
 
@@ -394,7 +426,6 @@ class NavigationManager {
                 link.classList.add("active");
                 const pageKey = linkPage || linkFileName || currentPage;
                 this.updatePageTitle(pageKey);
-                console.log("Set active nav item:", pageKey);
             }
         });
     }
@@ -512,17 +543,17 @@ class NavigationManager {
     }
 
     logout() {
-    this.closeAllDropdowns();
-    if (confirm('Are you sure you want to sign out?')) {
-        localStorage.clear();
-        sessionStorage.clear();
+        this.closeAllDropdowns();
+        if (confirm('Are you sure you want to sign out?')) {
+            localStorage.clear();
+            sessionStorage.clear();
 
-        fetch('/api/v1/users/logout', { method: 'POST', credentials: 'include' })
-            .finally(() => {
-                window.location.href = "/login.html";
-            });
+            fetch('/api/v1/users/logout', { method: 'POST', credentials: 'include' })
+                .finally(() => {
+                    window.location.href = "/login.html";
+                });
+        }
     }
-}
     //#endregion
 
     // === EVENT BINDING ===
@@ -602,10 +633,7 @@ class NavigationManager {
                 .querySelectorAll("#notificationMenu .dropdown-item")
                 .forEach((item) => {
                     item.addEventListener("click", () => {
-                        const titleElement = item.querySelector(".dropdown-item-title");
-                        if (titleElement) {
-                            console.log("Notification clicked:", titleElement.textContent);
-                        }
+                        const titleElement = item.querySelector(".dropdown-item-title");    
                         item.style.opacity = "0.7";
 
                         const badge = document.getElementById("notificationBadge");
@@ -667,7 +695,7 @@ class NavigationManager {
 
     static async initializeNavigation(config = {}) {
         const sidebarLoaded = await NavigationManager.loadComponent(
-            "/components/sidebarAdmin.html",
+            "/components/sidebar.html",
             "sidebarContainer"
         );
         const navbarLoaded = await NavigationManager.loadComponent(
@@ -676,16 +704,31 @@ class NavigationManager {
         );
 
         if (sidebarLoaded || navbarLoaded) {
+            let isCollapsed = false;
+            try {
+                const saved = localStorage.getItem("adminSidebarCollapsed");
+                if (saved !== null) {
+                    isCollapsed = saved === "true";
+                }
+            } catch (e) { }
+
+            const sidebar = document.querySelector("#sidebar");
+            if (sidebar && isCollapsed) {
+                sidebar.classList.add("collapsed");
+            }
+
             setTimeout(() => {
                 window.navigationManager = new NavigationManager(config);
                 setupAdminNavbar();
-            }, 100);
+                setupSidebar('admin');
+                window.navigationManager.setActiveNavItem();
+            }, 10);
         } else {
             window.navigationManager = new NavigationManager(config);
         }
     }
 
-    
+
 
     updateNavigation(updates) {
         if (updates.currentPage) {
@@ -807,8 +850,6 @@ class NavigationManager {
                 this[key] = null;
             }
         });
-
-        console.log("Navigation instance destroyed");
     }
 }
 

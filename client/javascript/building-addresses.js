@@ -867,14 +867,12 @@ function validateBuildingFields(building) {
     errors.postal_code = "Numbers and dash only.";
   }
 
-  // Country: required, max 100 chars
   if (!building.country || building.country.trim().length === 0) {
     errors.country = "Country is required.";
   } else if (building.country.length > 100) {
     errors.country = "Max 100 characters.";
   }
 
-  // Latitude: optional, must be between -90 and 90 if present
   if (
     building.latitude !== "" &&
     building.latitude !== null &&
@@ -886,7 +884,6 @@ function validateBuildingFields(building) {
     }
   }
 
-  // Longitude: optional, must be between -180 and 180 if present
   if (
     building.longitude !== "" &&
     building.longitude !== null &&
@@ -900,3 +897,16 @@ function validateBuildingFields(building) {
 
   return errors;
 }
+
+window.toggleBuildingDetails = toggleBuildingDetails;
+window.addNewBuildingCard = addNewBuildingCard;
+window.removeBuilding = removeBuilding;
+window.editBuilding = editBuilding;
+window.cancelEditBuilding = cancelEditBuilding;
+window.saveBuilding = saveBuilding;
+window.saveAll = saveAll;
+window.previewBuildings = previewBuildings;
+window.goBack = goBack;
+window.showAddressModal = showAddressModal;
+window.closeAddressModal = closeAddressModal;
+window.copyToClipboard = copyToClipboard;
