@@ -128,6 +128,17 @@ const deleteUserById = expressAsync(async (req, res) => {
   }
 });
 
+const logoutUser = (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        domain: 'localhost' 
+    });
+    res.json({ message: 'Logged out successfully' });
+};
+
 export {
   authUser,
   createUser,
@@ -135,4 +146,5 @@ export {
   getSingleUserById,
   updateSingleUserById,
   deleteUserById,
+  logoutUser
 };
