@@ -91,6 +91,7 @@ MY_SQL_HOST="localhost"
 MY_SQL_USER="your_mysql_user"
 MY_SQL_PASSWORD="your_mysql_password"
 MY_SQL_DATABASE="your_database_name"
+COOKIE_DOMAIN="localhost"
 
 CLOUDINARY_CLOUD_NAME="your_cloudinary_cloud_name"
 CLOUDINARY_API_KEY="your_cloudinary_api_key"
