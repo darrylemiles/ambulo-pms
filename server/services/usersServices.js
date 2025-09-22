@@ -32,7 +32,7 @@ const authUser = async (email, password) => {
         role: user.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "30d" }
+      { expiresIn: "1d" }
     );
 
     const { password_hash, ...userWithoutPassword } = user;
