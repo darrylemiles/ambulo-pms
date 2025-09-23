@@ -32,18 +32,6 @@
     <div id="overlay" class="overlay"></div>
 </body>
 
-<script>
-    var userRole = window.userRole || 'tenant';
 
-    if (userRole === 'admin') {
-        var script = document.createElement('script');
-        script.src = '/javascript/navigationsAdmin.js';
-        document.body.appendChild(script);
-    } else {
-        var script = document.createElement('script');
-        script.src = '/javascript/navigationsTenant.js';
-        document.body.appendChild(script);
-    }
-</script>
 
 </html>

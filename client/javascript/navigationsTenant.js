@@ -68,11 +68,25 @@ class TenantNavigationManager {
             ...config
         };
 
-        this.isCollapsed = this.config.startCollapsed !== false;
         this.isMobile = window.innerWidth <= 768;
         this.inboxMessages = this.getDefaultInboxMessages();
 
+        // Load collapsed state from localStorage before setting default
+        this.isCollapsed = this.getInitialCollapsedState();
+
         this.init();
+    }
+
+    getInitialCollapsedState() {
+        try {
+            const saved = localStorage.getItem(this.config.storageKey);
+            if (saved !== null && !this.isMobile) {
+                return saved === "true";
+            }
+        } catch (e) {
+            // ignore
+        }
+        return this.config.startCollapsed !== false;
     }
 
     init() {
@@ -80,7 +94,6 @@ class TenantNavigationManager {
         this.setupPageTitles();
 
         this.applyInitialCollapsedState();
-        this.loadCollapsedState();
 
         this.bindEvents();
         this.updateLayout();
