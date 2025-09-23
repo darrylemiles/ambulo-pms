@@ -1,4 +1,5 @@
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
+import fetchAboutUsDetails from "../api/loadAboutUs.js";
 
 let companyId = null;
 
@@ -337,8 +338,14 @@ function removeLogo() {
 //#region Company Information
 async function loadCompanyInfo() {
   try {
-    const company = await fetchCompanyDetails();
-    console.log("Company info loaded:", company);
+    let cached = sessionStorage.getItem("companyDetails");
+    let company;
+    if (cached) {
+      company = JSON.parse(cached);
+    } else {
+      company = await fetchCompanyDetails();
+      sessionStorage.setItem("companyDetails", JSON.stringify(company));
+    }
 
     const data = company[0] || company;
     if (data && typeof data === "object") {
@@ -506,7 +513,7 @@ async function continueSaveCompanyInfo(adminEmail, adminPassword) {
     }
     if (res.ok) {
       sessionStorage.removeItem("companyDetails");
-
+      sessionStorage.setItem("companyDetailsForceRefresh", "true");
       showNotification("Company information saved successfully!", "success");
       hasUnsavedChanges = false;
       await loadCompanyInfo();
@@ -822,23 +829,12 @@ function getAboutUsSession() {
 }
 
 async function loadAboutUsContent(forceRefresh = false) {
-  let about = null;
-
-  if (!forceRefresh) {
-    about = getAboutUsSession();
-  }
-
-  if (!about) {
-    try {
-      const res = await fetch(ABOUT_API_URL);
-      const result = await res.json();
-      about = result.data && result.data[0] ? result.data[0] : null;
-      if (about) setAboutUsSession(about);
-    } catch (err) {
+    const about = await fetchAboutUsDetails(forceRefresh);
+    if (!about) {
       showNotification("Failed to load About Us content.", "error");
       return;
     }
-  }
+    setAboutUsSession(about);
 
   if (!about) return;
 
@@ -877,6 +873,7 @@ async function loadAboutUsContent(forceRefresh = false) {
     }
   }
 }
+
 async function saveAboutContent() {
   const saveBtn = document.querySelector("#about .btn-success");
   saveBtn.classList.add("btn-loading");

@@ -1,4 +1,5 @@
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
+import fetchAboutUsDetails from "../api/loadAboutUs.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const heroContent = document.querySelector(".hero-content");
@@ -40,9 +41,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function setDynamicHomepageContent() {
-  const data = await fetchCompanyDetails();
-  if (!data) return;
-  const company = data;
+  const company = await fetchCompanyDetails();
+  if (!company) return;
 
   const brandNameEl = document.getElementById("dynamic-company-name");
   if (brandNameEl)
@@ -149,27 +149,8 @@ function getAboutUsSession() {
 }
 
 async function populateHomepageAboutSection() {
-  let about = null;
-  const cached = sessionStorage.getItem("aboutUsData");
-  if (cached) {
-    try {
-      about = JSON.parse(cached);
-    } catch {
-      sessionStorage.removeItem("aboutUsData");
-    }
-  }
-  if (!about) {
-    try {
-      const res = await fetch("/api/v1/about-us");
-      const result = await res.json();
-      about = result.data && result.data[0] ? result.data[0] : null;
-      if (about) sessionStorage.setItem("aboutUsData", JSON.stringify(about));
-    } catch (err) {
-      console.error("Failed to load About Us content for homepage.", err);
-      about = getAboutUsSession();
-    }
-  }
-  if (!about) return;
+    const about = await fetchAboutUsDetails();
+    if (!about) return;
 
   const aboutSection = document.querySelector("#about .section-title");
   if (aboutSection) {

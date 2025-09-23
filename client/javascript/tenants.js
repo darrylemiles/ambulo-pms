@@ -1,6 +1,6 @@
 import formatDate from "../utils/formatDate.js";
 import formatStatus from "../utils/formatStatus.js";
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js"
+import fetchCompanyDetails from "../api/loadCompanyInfo.js"
 
 let tenants = [];
 let allTenants = [];

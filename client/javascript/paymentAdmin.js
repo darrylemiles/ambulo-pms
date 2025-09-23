@@ -1,4 +1,4 @@
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
 
 async function setDynamicInfo() {
   const company = await fetchCompanyDetails();

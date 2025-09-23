@@ -1,6 +1,6 @@
 import formatAddress from "../utils/formatAddress.js";
 import formatDate from "../utils/formatDate.js";
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
 
 let properties = [];
 let filteredProperties = [];

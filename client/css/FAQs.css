@@ -11,29 +11,48 @@ body {
   overflow-x: hidden;
 }
 
-        /* Main Content - Maximized layout */
-        .main-content {
-            flex: 1;
-            padding: 12px 16px; /* Reduced padding */
-            overflow-y: auto;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 60px 16px 16px 260px; /* Reduced margins */
-            width: calc(100vw - 260px); /* Maximized width */
-            min-height: calc(100vh - 60px); /* Maximized height */
-        }
+/* Main Content - Maximized layout */
+.main-content {
+  flex: 1;
+  padding: 12px 16px; /* Reduced padding */
+  overflow-y: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 60px 16px 16px 260px; /* Reduced margins */
+  width: calc(100vw - 260px); /* Maximized width */
+  min-height: calc(100vh - 60px); /* Maximized height */
+}
 
-        /* When sidebar is collapsed */
-        body:has(.sidebar.collapsed) .main-content,
-        .sidebar.collapsed ~ .main-content {
-            margin-left: 70px; /* Reduced collapsed margin */
-            width: calc(100vw - 70px);
-        }
-
+/* When sidebar is collapsed */
+body:has(.sidebar.collapsed) .main-content,
+.sidebar.collapsed ~ .main-content {
+  margin-left: 70px; 
+  width: calc(100vw - 70px);
+}
 
 .container {
   max-width: 1600px;
   margin: 0 auto;
   padding: 0 20px;
+}
+
+.custom-modal {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow: hidden;
+  position: relative;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  background: rgb(255, 255, 255) !important;
+  color: #000 !important;
+  z-index: 100000 !important;
+}
+.modal-overlay.show .custom-modal {
+  transform: scale(1);
+  animation: modalSlideIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 /* Main White Card Wrapper */
@@ -100,7 +119,6 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
     max-width: calc(100vw - 32px);
   }
 }
-
 
 .back-button {
   display: inline-flex;
@@ -745,7 +763,6 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   box-shadow: 0 6px 24px rgba(59, 130, 246, 0.15);
 }
 
-
 .faq-search {
   position: relative;
 }
@@ -779,7 +796,7 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   }
 
   .pay-now-btn {
-    width: 40%; 
+    width: 40%;
     padding: 1rem 2rem;
   }
 
@@ -816,7 +833,7 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   }
 
   table {
-    font-size: 14px; 
+    font-size: 14px;
   }
 
   th,

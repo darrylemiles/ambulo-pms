@@ -1,8 +1,9 @@
 const API_BASE_URL = "/api/v1/company-details";
 
 async function fetchCompanyDetails() {
+  const forceRefresh = sessionStorage.getItem("companyDetailsForceRefresh") === "true";
   const cached = sessionStorage.getItem("companyDetails");
-  if (cached) {
+  if (cached && !forceRefresh) {
     try {
       const data = JSON.parse(cached);
       const company = data[0] || data;
@@ -16,6 +17,9 @@ async function fetchCompanyDetails() {
     } catch {
       sessionStorage.removeItem("companyDetails");
     }
+  }
+  if (forceRefresh) {
+    sessionStorage.removeItem("companyDetailsForceRefresh");
   }
   try {
     const res = await fetch(API_BASE_URL, {

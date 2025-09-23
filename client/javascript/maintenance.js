@@ -5,7 +5,7 @@ import formatRequestType from "../utils/formatRequestType.js";
 import formatPriority from "../utils/formatPriority.js";
 import formatDate from "../utils/formatDate.js";
 import formatAttachments from "../utils/formatAttachments.js";
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
 
 let tickets = [];
 let allTickets = [];
