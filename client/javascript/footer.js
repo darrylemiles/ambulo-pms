@@ -1,6 +1,5 @@
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
-// Load footer component
 fetch("/components/footer.html")
   .then((res) => res.text())
   .then((data) => {
@@ -10,6 +9,7 @@ fetch("/components/footer.html")
   .catch((error) => {
     console.error("Error loading footer:", error);
   });
+  
 async function setDynamicFooterContent() {
   const company = await fetchCompanyDetails();
   if (!company) return;

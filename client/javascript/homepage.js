@@ -103,14 +103,14 @@ async function fetchHomepageProperties() {
     } catch {
       sessionStorage.removeItem(cacheKey);
     }
-  } else {
+  }
+  if (!properties.length) {
     const res = await fetch("/api/v1/properties?limit=50");
     if (!res.ok) return [];
     const data = await res.json();
     properties = data.properties || [];
     sessionStorage.setItem(cacheKey, JSON.stringify(properties));
   }
-
   for (let i = properties.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [properties[i], properties[j]] = [properties[j], properties[i]];
@@ -150,17 +150,25 @@ function getAboutUsSession() {
 
 async function populateHomepageAboutSection() {
   let about = null;
-  try {
-    const res = await fetch("/api/v1/about-us");
-    const result = await res.json();
-    about = result.data && result.data[0] ? result.data[0] : null;
-    if (about) sessionStorage.setItem("aboutUsData", JSON.stringify(about));
-  } catch (err) {
-    console.error("Failed to load About Us content for homepage.", err);
-    // fallback to cache if fetch fails
-    about = getAboutUsSession();
+  const cached = sessionStorage.getItem("aboutUsData");
+  if (cached) {
+    try {
+      about = JSON.parse(cached);
+    } catch {
+      sessionStorage.removeItem("aboutUsData");
+    }
   }
-
+  if (!about) {
+    try {
+      const res = await fetch("/api/v1/about-us");
+      const result = await res.json();
+      about = result.data && result.data[0] ? result.data[0] : null;
+      if (about) sessionStorage.setItem("aboutUsData", JSON.stringify(about));
+    } catch (err) {
+      console.error("Failed to load About Us content for homepage.", err);
+      about = getAboutUsSession();
+    }
+  }
   if (!about) return;
 
   const aboutSection = document.querySelector("#about .section-title");

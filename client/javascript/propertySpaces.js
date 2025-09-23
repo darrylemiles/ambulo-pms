@@ -292,16 +292,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
 async function fetchProperties() {
 
-  try {
-    const res = await fetch(`${API_BASE_URL}?limit=50`, { method: "GET" });
-    if (!res.ok) throw new Error("Failed to fetch properties");
-    
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    console.error("Error fetching properties:", err);
-    return { properties: [] };
+  const cacheKey = "propertySpacesAll";
+  let properties = null;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    try {
+      properties = JSON.parse(cached);
+    } catch {
+      sessionStorage.removeItem(cacheKey);
+    }
   }
+  if (!properties) {
+    try {
+      const res = await fetch(`${API_BASE_URL}?limit=50`, { method: "GET" });
+      if (!res.ok) throw new Error("Failed to fetch properties");
+      const data = await res.json();
+      properties = data;
+      sessionStorage.setItem(cacheKey, JSON.stringify(properties));
+    } catch (err) {
+      console.error("Error fetching properties:", err);
+      return { properties: [] };
+    }
+  }
+  return properties;
 }
 
 function formatPrice(price) {
@@ -391,7 +404,6 @@ async function populatePropertyGrid() {
   try {
     const response = await fetchProperties();
     const properties = response?.properties || [];
-    console.log("Fetched properties:", properties.length, properties); // Debug
     if (properties.length === 0) {
       grid.innerHTML = `<div class="no-results">No properties found.</div>`;
       return;

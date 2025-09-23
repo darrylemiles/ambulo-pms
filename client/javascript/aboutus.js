@@ -1,14 +1,28 @@
 import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
 
 async function fetchAboutUsData() {
-  try {
-    const res = await fetch("/api/v1/about-us");
-    const result = await res.json();
-    return result.data && result.data[0] ? result.data[0] : null;
-  } catch (err) {
-    console.error("Failed to fetch About Us data:", err);
-    return null;
+  const cacheKey = "aboutUsData";
+  let about = null;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    try {
+      about = JSON.parse(cached);
+    } catch {
+      sessionStorage.removeItem(cacheKey);
+    }
   }
+  if (!about) {
+    try {
+      const res = await fetch("/api/v1/about-us");
+      const result = await res.json();
+      about = result.data && result.data[0] ? result.data[0] : null;
+      if (about) sessionStorage.setItem(cacheKey, JSON.stringify(about));
+    } catch (err) {
+      console.error("Failed to fetch About Us data:", err);
+      return null;
+    }
+  }
+  return about;
 }
 
 async function setDynamicCompanyInfo() {
