@@ -1,4 +1,5 @@
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
+import { fetchFaqs } from "../utils/loadFaqs.js";
 const API_BASE_URL = "/api/v1";
 
 document.addEventListener("DOMContentLoaded", fetchAndRenderContactFAQs);
@@ -288,27 +289,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 async function fetchAndRenderContactFAQs() {
-  const cacheKey = "contactFaqs";
-  let faqs = null;
-  const cached = sessionStorage.getItem(cacheKey);
-  if (cached) {
-    try {
-      faqs = JSON.parse(cached);
-    } catch {
-      sessionStorage.removeItem(cacheKey);
-    }
-  }
-  if (!faqs) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/faqs/`);
-      const data = await res.json();
-      faqs = Array.isArray(data.message) ? data.message : [];
-      sessionStorage.setItem(cacheKey, JSON.stringify(faqs));
-    } catch (err) {
-      document.getElementById("faq-container").innerHTML =
-        "<div style='color: #e53e3e; padding: 16px;'>Unable to load FAQs at this time.</div>";
-      return;
-    }
+  const faqs = await fetchFaqs();
+  if (!faqs || !faqs.length) {
+    document.getElementById("faq-container").innerHTML =
+      "<div style='color: #e53e3e; padding: 16px;'>Unable to load FAQs at this time.</div>";
+    return;
   }
   const faqContainer = document.getElementById("faq-container");
   faqContainer.innerHTML = "";
@@ -317,16 +302,7 @@ async function fetchAndRenderContactFAQs() {
     .sort((a, b) => a.sort_order - b.sort_order)
     .forEach((faq, idx) => {
       const faqHtml = `
-        <div class="faq-item reveal-element" style="transition-delay: ${0.1 + idx * 0.1}s;">
-          <div class="faq-question">
-            <h4>${escapeHtml(faq.question)}</h4>
-            <span class="faq-icon">▼</span>
-          </div>
-          <div class="faq-answer">
-            <p></br>${escapeHtml(faq.answer)}</p>
-          </div>
-        </div>
-      `;
+        <div class=\"faq-item reveal-element\" style=\"transition-delay: ${0.1 + idx * 0.1}s;\">\n          <div class=\"faq-question\">\n            <h4>${escapeHtml(faq.question)}</h4>\n            <span class=\"faq-icon\">▼</span>\n          </div>\n          <div class=\"faq-answer\">\n            <p></br>${escapeHtml(faq.answer)}</p>\n          </div>\n        </div>\n      `;
       faqContainer.insertAdjacentHTML("beforeend", faqHtml);
     });
   attachFAQListeners();

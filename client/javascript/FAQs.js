@@ -1,4 +1,5 @@
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
+import { fetchFaqs, clearFaqsCache } from "../utils/loadFaqs.js";
 
 let faqIdCounter = 0;
 let currentEditingId = null;
@@ -72,9 +73,8 @@ async function fetchAndRenderFAQs() {
         : `<span class="faq-active-badge" style="background:#64748b; color:#fff; font-size:12px; border-radius:6px; padding:2px 8px; margin-right:8px;">Inactive</span>`;
 
       const faqHtml = `
-    <div class="faq-item" data-id="${faq.faq_id}" data-active="${
-        faq.is_active
-      }" data-sort-order="${faq.sort_order}">
+    <div class="faq-item" data-id="${faq.faq_id}" data-active="${faq.is_active
+        }" data-sort-order="${faq.sort_order}">
       <div class="faq-question" onclick="toggleFAQ(this)">
         <h4 style="display: flex; align-items: center;">
           <span class="faq-sort-order" style="font-size: 0.95em; color: #64748b; margin-right: 10px;">
@@ -94,9 +94,8 @@ async function fetchAndRenderFAQs() {
             <i class="fas fa-edit"></i>
             Edit
           </button>
-          <button class="btn btn-danger" onclick="deleteFAQ(${
-            faq.faq_id
-          }, this)">
+          <button class="btn btn-danger" onclick="deleteFAQ(${faq.faq_id
+        }, this)">
             <i class="fas fa-trash"></i>
             Delete
           </button>
@@ -112,7 +111,31 @@ async function fetchAndRenderFAQs() {
     updateFAQCounter();
   } catch (err) {
     showNotification("Failed to load FAQs from server.", "error");
-    console.error(err);
+    try {
+      const faqs = await fetchFaqs();
+      latestFaqs = faqs;
+
+      const faqList = document.getElementById("faq-list");
+      faqList.innerHTML = "";
+
+      faqs.forEach((faq) => {
+        const isActive = String(faq.is_active) === "1";
+        const activeBadge = isActive
+          ? `<span class=\"faq-active-badge\" style=\"background:#22c55e; color:#fff; font-size:12px; border-radius:6px; padding:2px 8px; margin-right:8px;\">Active</span>`
+          : `<span class=\"faq-active-badge\" style=\"background:#64748b; color:#fff; font-size:12px; border-radius:6px; padding:2px 8px; margin-right:8px;\">Inactive</span>`;
+
+        const faqHtml = `
+      <div class=\"faq-item\" data-id=\"${faq.faq_id}\" data-active=\"${faq.is_active}\" data-sort-order=\"${faq.sort_order}\">\n      <div class=\"faq-question\" onclick=\"toggleFAQ(this)\">\n        <h4 style=\"display: flex; align-items: center;\">\n          <span class=\"faq-sort-order\" style=\"font-size: 0.95em; color: #64748b; margin-right: 10px;\">\n            <i class=\"fas fa-sort-numeric-down\"></i> ${faq.sort_order}\n          </span>\n          ${activeBadge}\n          ${escapeHtml(faq.question)}\n        </h4>\n        <span class=\"faq-icon\">\n          <i class=\"fas fa-chevron-down\"></i>\n        </span>\n      </div>\n      <div class=\"faq-answer\">\n        <p>${escapeHtml(faq.answer)}</p>\n        <div class=\"action-buttons\">\n          <button class=\"btn btn-primary\" onclick=\"editFAQ(${faq.faq_id})\">\n            <i class=\"fas fa-edit\"></i>\n            Edit\n          </button>\n          <button class=\"btn btn-danger\" onclick=\"deleteFAQ(${faq.faq_id}, this)\">\n            <i class=\"fas fa-trash\"></i>\n            Delete\n          </button>\n        </div>\n      </div>\n    </div>\n  `;
+        faqList.insertAdjacentHTML("beforeend", faqHtml);
+      });
+
+      faqIdCounter =
+        faqs.length > 0 ? Math.max(...faqs.map((f) => f.faq_id)) + 1 : 1;
+      updateFAQCounter();
+    } catch (err) {
+      showNotification("Failed to load FAQs from server.", "error");
+      console.error(err);
+    }
   }
 }
 
@@ -170,6 +193,7 @@ function addFAQ() {
 
   document.getElementById("saveFAQBtn").innerHTML =
     '<i class="fas fa-save"></i> Save FAQ';
+  console.log("[Modal Debug] addFAQ() called");
   showModal("faqModal");
 }
 
@@ -216,6 +240,7 @@ function editFAQ(id) {
 
   document.getElementById("saveFAQBtn").innerHTML =
     '<i class="fas fa-save"></i> Update FAQ';
+  console.log(`[Modal Debug] editFAQ(${id}) called`);
   showModal("faqModal");
 }
 
@@ -262,6 +287,7 @@ async function updateExistingFAQ(id, question, answer, sortOrder, isActive) {
       body: JSON.stringify(faqData),
     });
     if (!res.ok) throw new Error("Failed to update FAQ");
+    clearFaqsCache();
     await fetchAndRenderFAQs();
   } catch (err) {
     showNotification("Error updating FAQ: " + err.message, "error");
@@ -283,6 +309,7 @@ async function createNewFAQ(question, answer, sortOrder, isActive) {
       body: JSON.stringify(faqData),
     });
     if (!res.ok) throw new Error("Failed to save FAQ");
+    clearFaqsCache();
     await fetchAndRenderFAQs();
   } catch (err) {
     showNotification("Error saving FAQ: " + err.message, "error");
@@ -300,6 +327,7 @@ function deleteFAQ(id, element) {
     })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to delete FAQ");
+        clearFaqsCache();
         const faqItem = element.closest(".faq-item");
         if (faqItem) {
           faqItem.style.transform = "translateX(-100%)";
@@ -343,9 +371,8 @@ function filterFAQs() {
 
   filteredFaqs.forEach((faq) => {
     const faqHtml = `
-      <div class="faq-item" data-id="${faq.faq_id}" data-active="${
-      faq.is_active
-    }" data-sort-order="${faq.sort_order}">
+      <div class="faq-item" data-id="${faq.faq_id}" data-active="${faq.is_active
+      }" data-sort-order="${faq.sort_order}">
         <div class="faq-question" onclick="toggleFAQ(this)">
           <h4>${escapeHtml(faq.question)}</h4>
           <span class="faq-icon">
@@ -359,9 +386,8 @@ function filterFAQs() {
               <i class="fas fa-edit"></i>
               Edit
             </button>
-            <button class="btn btn-danger" onclick="deleteFAQ(${
-              faq.faq_id
-            }, this)">
+            <button class="btn btn-danger" onclick="deleteFAQ(${faq.faq_id
+      }, this)">
               <i class="fas fa-trash"></i>
               Delete
             </button>
@@ -376,6 +402,7 @@ function filterFAQs() {
 }
 
 function previewFAQ() {
+  console.log("[Modal Debug] previewFAQ() called");
   generatePreview();
   showModal("previewModal");
 }
@@ -390,11 +417,11 @@ function generatePreview() {
   let previewHTML = `
     <div style="text-align: center; margin-bottom: 40px;">
       <h2 style="font-size: 32px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">${escapeHtml(
-        title
-      )}</h2>
+    title
+  )}</h2>
       <p style="font-size: 16px; color: #64748b; line-height: 1.6;">${escapeHtml(
-        description
-      )}</p>
+    description
+  )}</p>
     </div>
     <div style="display: flex; flex-direction: column; gap: 20px;">
   `;
@@ -406,11 +433,11 @@ function generatePreview() {
       previewHTML += `
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
           <h4 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 12px;">${escapeHtml(
-            faq.question
-          )}</h4>
+        faq.question
+      )}</h4>
           <p style="font-size: 15px; color: #64748b; line-height: 1.6; margin: 0;">${escapeHtml(
-            faq.answer
-          )}</p>
+        faq.answer
+      )}</p>
         </div>
       `;
     });
@@ -473,11 +500,11 @@ function importFAQ(file) {
             is_active: faq.is_active
           })
         })
-        .then(res => {
-          if (res.ok) importedCount++;
-          else failedCount++;
-        })
-        .catch(() => { failedCount++; })
+          .then(res => {
+            if (res.ok) importedCount++;
+            else failedCount++;
+          })
+          .catch(() => { failedCount++; })
       );
       Promise.all(promises).then(() => {
         fetchAndRenderFAQs();
@@ -499,22 +526,34 @@ document.getElementById("faqImportInput").addEventListener("change", function (e
 
 function showModal(modalId) {
   const modal = document.getElementById(modalId);
+  if (!modal) {
+    console.error(`[Modal Debug] Modal with id '${modalId}' not found.`);
+    return;
+  }
   modal.classList.add("show");
   document.body.style.overflow = "hidden";
+  console.log(`[Modal Debug] Showing modal: #${modalId}`);
 }
 
 function closeFAQModal() {
+  console.log("[Modal Debug] closeFAQModal() called");
   hideModal("faqModal");
 }
 
 function closePreviewModal() {
+  console.log("[Modal Debug] closePreviewModal() called");
   hideModal("previewModal");
 }
 
 function hideModal(modalId) {
   const modal = document.getElementById(modalId);
+  if (!modal) {
+    console.error(`[Modal Debug] Modal with id '${modalId}' not found.`);
+    return;
+  }
   modal.classList.remove("show");
   document.body.style.overflow = "auto";
+  console.log(`[Modal Debug] Hiding modal: #${modalId}`);
 }
 
 function goBack() {
@@ -529,13 +568,12 @@ function showNotification(message, type = "info") {
   const notification = document.createElement("div");
   notification.className = `notification ${type}`;
   notification.innerHTML = `
-                <i class="fas fa-${
-                  type === "success"
-                    ? "check-circle"
-                    : type === "error"
-                    ? "exclamation-triangle"
-                    : "info-circle"
-                }"></i>
+                <i class="fas fa-${type === "success"
+      ? "check-circle"
+      : type === "error"
+        ? "exclamation-triangle"
+        : "info-circle"
+    }"></i>
                 ${message}
             `;
 

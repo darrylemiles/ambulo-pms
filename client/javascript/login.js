@@ -1,4 +1,4 @@
-import fetchCompanyDetails from "../utils/loadCompanyInfo.js";
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
 
 // API Configuration
 const API_BASE_URL = "/api/v1/users";
