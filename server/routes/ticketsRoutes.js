@@ -24,7 +24,7 @@ router.post(
     fieldFolders: {
       attachments: 'ticket_attachments',
     },
-  }), 
+  }), protect,
     createTicket
 );
 
@@ -33,7 +33,6 @@ router.post('/update-ticket-statuses', updateTicketStatuses);
 router.get('/', getTickets);
 router.get('/:ticket_id', getSingleTicketById);
 router.get('/users/:user_id', getTicketsByUserId);
-
 router.patch('/:ticket_id', createUploadMiddleware({
     fields: [
       { name: 'attachments', maxCount: 5 },
@@ -42,7 +41,7 @@ router.patch('/:ticket_id', createUploadMiddleware({
       attachments: 'ticket_attachments',
     },
   }),
-    
+    protect,
     updateTicketById);
 
 router.delete('/:ticket_id', protect, deleteTicket);

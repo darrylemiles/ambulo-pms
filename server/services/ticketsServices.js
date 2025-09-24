@@ -275,9 +275,12 @@ const getTicketsByUserId = async (user_id = "", queryObj = {}) => {
         u.email as requested_by_email,
         (
           SELECT JSON_ARRAYAGG(url) FROM ticket_attachments ta WHERE ta.ticket_id = t.ticket_id
-        ) as attachments
+        ) as attachments,
+        p.property_name as property_name
       FROM tickets t
       LEFT JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN leases l ON t.lease_id = l.lease_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
       WHERE t.user_id = ? 
       ORDER BY t.created_at DESC 
       LIMIT ? OFFSET ?
@@ -288,7 +291,14 @@ const getTicketsByUserId = async (user_id = "", queryObj = {}) => {
       parseInt(skip),
     ]);
 
-    const countQuery = `SELECT COUNT(*) as total FROM tickets WHERE user_id = ?`;
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM tickets t
+      LEFT JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN leases l ON t.lease_id = l.lease_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE t.user_id = ?
+    `;
     const [countResult] = await pool.query(countQuery, [user_id]);
     const total = countResult[0].total;
 

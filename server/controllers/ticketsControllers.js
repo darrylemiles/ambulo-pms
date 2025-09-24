@@ -7,23 +7,12 @@ const createTicket = expressAsync(async (req, res) => {
       ? req.files['attachments'].map(file => file.path)
       : [];
 
-    const currentUserId = req.user?.user_id || req.session?.user_id || "61713b1c-597b-455b-bd14-b41600c91527";
-
-    if (!currentUserId) {
-      return res.status(401).json({
-        message: "User authentication required. Please log in again."
-      });
-    }
-
-    const finalUserId = req.body.user_id || currentUserId;
-
     const payload = {
       ...req.body,
-      attachments,
-      user_id: finalUserId
+      attachments
     };
 
-    const response = await ticketsServices.createTicket(payload, currentUserId);
+    const response = await ticketsServices.createTicket(payload);
     res.json(response);
   } catch (error) {
     console.error("Error creating ticket:", error);
