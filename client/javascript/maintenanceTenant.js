@@ -1,8 +1,43 @@
-        class TenantMaintenancePortal {
+import formatDate from '../utils/formatDate.js';
+    class TenantMaintenancePortal {
             constructor() {
-                this.requests = this.loadRequests();
-                this.history = this.loadHistory();
-                this.filteredHistory = [...this.history];
+                this.requests = [];
+                this.history = [];
+                this.filteredHistory = [];
+                this.initLiveData();
+            }
+
+            async initLiveData() {
+                let user = null;
+                try {
+                    user = JSON.parse(localStorage.getItem('user'));
+                } catch (e) {}
+                const userId = user && user.user_id ? user.user_id : null;
+                if (!userId) {
+                    this.requests = this.loadRequests();
+                    this.history = this.loadHistory();
+                    this.filteredHistory = [...this.history];
+                    this.init();
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/v1/tickets/users/${userId}`);
+                    const result = await res.json();
+                    if (res.ok && result.tickets) {
+                        this.requests = result.tickets.filter(t => t.ticket_status !== 'COMPLETED' && t.ticket_status !== 'CANCELLED');
+                        this.history = result.tickets.filter(t => t.ticket_status === 'COMPLETED');
+                        this.filteredHistory = [...this.history];
+                    } else {
+                        this.requests = this.loadRequests();
+                        this.history = this.loadHistory();
+                        this.filteredHistory = [...this.history];
+                    }
+                } catch (err) {
+                    this.requests = this.loadRequests();
+                    this.history = this.loadHistory();
+                    this.filteredHistory = [...this.history];
+                }
                 this.init();
             }
 
@@ -24,7 +59,6 @@
                     fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
                 }
 
-                // History filters
                 const historySearch = document.getElementById('historySearch');
                 const statusFilter = document.getElementById('statusFilter');
                 const categoryFilter = document.getElementById('categoryFilter');
@@ -38,97 +72,11 @@
                 if (dateTo) dateTo.addEventListener('change', () => this.filterHistory());
             }
 
-            loadRequests() {
-                // Sample data - in a real app this would come from a database
-                return [
-                    {
-                        id: 'REQ-2024-001',
-                        tenantName: 'John Smith',
-                        unitNumber: '3B',
-                        category: 'plumbing',
-                        priority: 'high',
-                        description: 'Kitchen sink is completely blocked and water is backing up into the dishwasher.',
-                        status: 'progress',
-                        submittedDate: '2024-08-20',
-                        phone: '(555) 123-4567',
-                        assignedTechnician: 'Mike Johnson',
-                        estimatedCompletion: '2024-08-26'
-                    },
-                    {
-                        id: 'REQ-2024-002',
-                        tenantName: 'Sarah Davis',
-                        unitNumber: '1A',
-                        category: 'electrical',
-                        priority: 'medium',
-                        description: 'Living room outlet not working, tried resetting breaker.',
-                        status: 'pending',
-                        submittedDate: '2024-08-22',
-                        phone: '(555) 987-6543'
-                    }
-                ];
-            }
-
-            loadHistory() {
-                // Sample historical data
-                return [
-                    {
-                        id: 'REQ-2024-050',
-                        tenantName: 'Emily Johnson',
-                        unitNumber: '2C',
-                        category: 'hvac',
-                        priority: 'low',
-                        description: 'Air conditioning unit making unusual noise during operation.',
-                        status: 'completed',
-                        submittedDate: '2024-07-15',
-                        completedDate: '2024-07-18',
-                        phone: '(555) 456-7890',
-                        assignedTechnician: 'David Wilson',
-                        resolution: 'Cleaned and lubricated fan motor. Replaced worn belt. System now operating normally.',
-                        cost: 125.00,
-                        rating: 5
-                    },
-                    {
-                        id: 'REQ-2024-049',
-                        tenantName: 'Michael Brown',
-                        unitNumber: '4A',
-                        category: 'plumbing',
-                        priority: 'high',
-                        description: 'Bathroom toilet continuously running and won\'t stop filling.',
-                        status: 'completed',
-                        submittedDate: '2024-07-10',
-                        completedDate: '2024-07-12',
-                        phone: '(555) 234-5678',
-                        assignedTechnician: 'Lisa Chen',
-                        resolution: 'Replaced faulty flapper valve and adjusted chain length. Toilet now functioning properly.',
-                        cost: 85.00,
-                        rating: 4
-                    },
-                    {
-                        id: 'REQ-2024-048',
-                        tenantName: 'Jennifer Wilson',
-                        unitNumber: '1B',
-                        category: 'appliance',
-                        priority: 'medium',
-                        description: 'Refrigerator not cooling properly, freezer section working fine.',
-                        status: 'completed',
-                        submittedDate: '2024-06-28',
-                        completedDate: '2024-07-02',
-                        phone: '(555) 345-6789',
-                        assignedTechnician: 'Robert Martinez',
-                        resolution: 'Diagnosed faulty evaporator fan motor. Replaced motor and cleaned coils. Refrigerator cooling restored.',
-                        cost: 275.00,
-                        rating: 5
-                    }
-                ];
-            }
-
             handleSubmit(e) {
                 e.preventDefault();
                 
-                // Clear previous errors
                 this.clearErrors();
 
-                // Get form data
                 const formData = new FormData(e.target);
                 const data = {
                     tenantName: formData.get('tenantName') || document.getElementById('tenantName').value,
@@ -314,56 +262,80 @@
 
                 if (this.requests.length === 0) {
                     requestsList.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📋</div>
-                            <p>No active requests at this time</p>
+                        <div class="empty-state" style="text-align:center;padding:2rem;">
+                            <div class="empty-state-icon" style="font-size:3rem;color:#3b82f6;margin-bottom:0.5rem;">
+                                <i class="fa-solid fa-clipboard-list"></i>
+                            </div>
+                            <p style="font-size:1.2rem;color:#555;">No active requests at this time</p>
+                            <div style="margin-top:0.5rem;color:#888;font-size:1rem;">
+                                <i class="fa-solid fa-circle-info"></i> You have no pending or in-progress maintenance requests.
+                            </div>
                         </div>
                     `;
                     return;
                 }
 
-                requestsList.innerHTML = this.requests.map(request => `
-                    <div class="request-item">
-                        <div class="request-header">
-                            <div class="request-id">${request.id}</div>
-                            <div class="status-badge status-${request.status}">
-                                ${request.status === 'pending' ? 'Pending Review' : 
-                                  request.status === 'progress' ? 'In Progress' : 
-                                  'Completed'}
+                requestsList.innerHTML = this.requests.map(request => {
+                    const id = request.ticket_id || request.id || '';
+                    const title = request.ticket_title || request.title || '';
+                    const propertyName = request.property_name || request.propertyName || '';
+                    const status = (request.ticket_status || request.status || '').toLowerCase();
+                    const category = request.request_type || request.category || '';
+                    const priority = request.priority || '';
+                    const description = request.description || '';
+                    const submittedDate = request.created_at || request.submittedDate || '';
+                    const startTime = request.start_datetime || request.startTime || '';
+                    const assignedTechnician = request.assigned_to || request.assignedTechnician || '';
+                    const estimatedCompletion = request.end_datetime || request.estimatedCompletion || '';
+
+                    return `
+                        <div class="request-item active-request-item">
+                            <div class="request-header">
+                                <div class="request-id"><strong>Ticket ID:</strong> ${id}</div>
+                                <div class="status-badge status-${status}">
+                                    ${status === 'pending' ? 'Pending Review' :
+                                      status === 'assigned' ? 'Assigned' :
+                                      status === 'in_progress' ? 'In Progress' :
+                                      status === 'completed' ? 'Completed' :
+                                      status.charAt(0).toUpperCase() + status.slice(1)}
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="request-details">
-                            <div class="request-category">${this.getCategoryLabel(request.category)}</div>
-                            <div class="request-description">${request.description}</div>
-                        </div>
-                        
-                        <div class="request-meta">
-                            <div class="request-meta-item">
-                                <span><i class="fa-solid fa-calendar"></i></span>
-                                <span>Submitted: ${this.formatDate(request.submittedDate)}</span>
+                            <div class="request-content">
+                                ${title ? `<div class="ticket-title"><h3>${title}</h3></div>` : ''}
+                                <div class="property-name"><i class='fa-solid fa-building'></i> ${propertyName ? propertyName : 'N/A'}</div>
+                                <div class="request-category">${this.getCategoryLabel(category)}</div>
+                                <div class="request-description">${description}</div>
                             </div>
-                            <div class="priority-badge priority-${request.priority}">
-                                ${request.priority.toUpperCase()} PRIORITY
-                            </div>
-                        </div>
-                        
-                        ${request.assignedTechnician ? `
                             <div class="request-meta">
                                 <div class="request-meta-item">
-                                    <span><i class="fa-solid fa-user"></i></span>
-                                    <span>Assigned to: ${request.assignedTechnician}</span>
+                                    <span><i class="fa-solid fa-calendar"></i></span>
+                                    <span>Submitted: ${this.formatDate(submittedDate)}</span>
                                 </div>
-                                ${request.estimatedCompletion ? `
-                                    <div class="request-meta-item">
-                                        <span><i class="fa-solid fa-bullseye"></i></span>
-                                        <span>Est. completion: ${this.formatDate(request.estimatedCompletion)}</span>
-                                    </div>
-                                ` : ''}
+                                <div class="request-meta-item">
+                                    <span><i class="fa-solid fa-clock"></i></span>
+                                    <span>Start Time: ${startTime ? formatDate(startTime, true) : 'Not scheduled'}</span>
+                                </div>
+                                <div class="priority-badge priority-${priority}">
+                                    ${priority ? priority.toUpperCase() + ' PRIORITY' : ''}
+                                </div>
                             </div>
-                        ` : ''}
-                    </div>
-                `).join('');
+                            ${assignedTechnician ? `
+                                <div class="request-meta">
+                                    <div class="request-meta-item">
+                                        <span><i class="fa-solid fa-user"></i></span>
+                                        <span>Assigned to: ${assignedTechnician}</span>
+                                    </div>
+                                    ${estimatedCompletion ? `
+                                        <div class="request-meta-item">
+                                            <span><i class="fa-solid fa-bullseye"></i></span>
+                                            <span>Est. completion: ${formatDate(estimatedCompletion, true)}</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
             }
 
             displayHistory() {
@@ -372,53 +344,73 @@
 
                 if (this.filteredHistory.length === 0) {
                     historyList.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📚</div>
-                            <p>No history records match your current filters</p>
+                        <div class="empty-state" style="text-align:center;padding:2rem;">
+                            <div class="empty-state-icon" style="font-size:3rem;color:#059669;margin-bottom:0.5rem;">
+                                <i class="fa-solid fa-book-open"></i>
+                            </div>
+                            <p style="font-size:1.2rem;color:#555;">No history records match your current filters</p>
+                            <div style="margin-top:0.5rem;color:#888;font-size:1rem;">
+                                <i class="fa-solid fa-circle-info"></i> Try adjusting your filters or check back later.
+                            </div>
                         </div>
                     `;
                     return;
                 }
 
-                historyList.innerHTML = this.filteredHistory.map(item => `
-                    <div class="history-item ${item.status}">
-                        <div class="history-header">
-                            <div class="request-id">${item.id}</div>
-                            <div class="history-dates">
-                                <div>Submitted: ${this.formatDate(item.submittedDate)}</div>
-                                <div>Completed: ${this.formatDate(item.completedDate)}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="history-content">
-                            <div class="history-category">${this.getCategoryLabel(item.category)}</div>
-                            <div class="history-description">${item.description}</div>
-                            
-                            ${item.resolution ? `
-                                <div class="resolution-text">
-                                    <strong>Resolution:</strong> ${item.resolution}
+                historyList.innerHTML = this.filteredHistory.map(item => {
+                    const id = item.ticket_id || item.id || '';
+                    const title = item.ticket_title || item.title || '';
+                    const propertyName = item.property_name || item.propertyName || '';
+                    const status = (item.ticket_status || item.status || '').toLowerCase();
+                    const category = item.request_type || item.category || '';
+                    const priority = item.priority || '';
+                    const description = item.description || '';
+                    const submittedDate = item.created_at || item.submittedDate || '';
+                    const completedDate = item.end_datetime || item.completedDate || '';
+                    const assignedTechnician = item.assigned_to || item.assignedTechnician || '';
+                    const resolution = item.notes || item.resolution || '';
+                    const cost = item.maintenance_cost || item.cost || '';
+                    const rating = item.rating || '';
+
+                    return `
+                        <div class="history-item ${status}">
+                            <div class="history-header">
+                                <div class="request-id"><strong>Ticket ID:</strong> ${id}</div>
+                                <div class="history-dates">
+                                    <div>Submitted: ${formatDate(submittedDate, true)}</div>
+                                    <div>Completed: ${formatDate(completedDate, true)}</div>
                                 </div>
-                            ` : ''}
-                        </div>
-                        
-                        <div class="history-footer">
-                            <div class="footer-left">
-                                <div class="technician-info"><i class="fa-solid fa-user"></i> ${item.assignedTechnician}</div>
-                                ${item.cost ? `<div class="cost-info"><i class="fa-solid fa-dollar-sign"></i> Cost: ${item.cost.toFixed(2)}</div>` : ''}
                             </div>
-                            <div class="footer-right">
-                                <div class="priority-badge priority-${item.priority}">
-                                    ${item.priority.toUpperCase()}
-                                </div>
-                                ${item.rating ? `
-                                    <div class="rating-stars">
-                                        ${'⭐'.repeat(item.rating)}
+                            <div class="history-content">
+                                ${title ? `<div class="ticket-title"><h3>${title}</h3></div>` : ''}
+                                <div class="property-name"><i class='fa-solid fa-building'></i> ${propertyName ? propertyName : 'N/A'}</div>
+                                <div class="history-category">${this.getCategoryLabel(category)}</div>
+                                <div class="history-description">${description}</div>
+                                ${resolution ? `
+                                    <div class="resolution-text">
+                                        <strong>Resolution:</strong> ${resolution}
                                     </div>
                                 ` : ''}
                             </div>
+                            <div class="history-footer">
+                                <div class="footer-left">
+                                    <div class="technician-info"><i class="fa-solid fa-user"></i> ${assignedTechnician}</div>
+                                    ${cost ? `<div class="cost-info"><i class="fa-solid fa-dollar-sign"></i> Cost: ${parseFloat(cost).toFixed(2)}</div>` : ''}
+                                </div>
+                                <div class="footer-right">
+                                    <div class="priority-badge priority-${priority}">
+                                        ${priority ? priority.toUpperCase() : ''}
+                                    </div>
+                                    ${rating ? `
+                                        <div class="rating-stars">
+                                            ${'⭐'.repeat(rating)}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
 
             filterHistory() {
