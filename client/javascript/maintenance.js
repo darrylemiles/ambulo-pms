@@ -1353,6 +1353,28 @@ function initializeModal() {
     newTicketForm.addEventListener("submit", async function (event) {
       event.preventDefault();
       const formData = new FormData(newTicketForm);
+      const unitNo = formData.get("unit_no");
+      if (unitNo) {
+        formData.set("lease_id", unitNo);
+        formData.delete("unit_no");
+      }
+      const requestedBy = formData.get("requested_by");
+      if (requestedBy) {
+        formData.set("user_id", requestedBy);
+      }
+      const startDate = formData.get("start_date") || null;
+      const startTime = formData.get("start_time") || null;
+      let start_datetime = null;
+      if (startDate && startTime) {
+        start_datetime = `${startDate}T${startTime}:00`;
+      } else if (startDate) {
+        start_datetime = `${startDate}T00:00:00`;
+      }
+      if (start_datetime) {
+        formData.set("start_datetime", start_datetime);
+      }
+      formData.delete("start_date");
+      formData.delete("start_time");
       const submitBtn = document.querySelector(".btn-submit");
       submitBtn.disabled = true;
       submitBtn.textContent = "Creating...";

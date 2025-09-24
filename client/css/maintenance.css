@@ -12,18 +12,18 @@
   --border-color: rgba(226, 232, 240, 0.6);
   --border-light: rgba(226, 232, 240, 0.3);
   --background-white: rgba(255, 255, 255, 0.95);
-  --background-gray: #fefefe;
+  --background-gray: #f7f7f7;
   --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 16px 32px rgba(14, 165, 233, 0.15);
 }
 
 html {
-  font-size: 14px; /* 1rem = 14px */
+  font-size: 14px; /* 1rem = 15px */
 }
 
 body {
-  font-size: 1rem; /* 14px */
+  font-size: 1rem; /* 15px */
   line-height: 1.4;
 }
 
