@@ -11,13 +11,12 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
     request_type,
     assigned_to,
     user_id,
-    unit_no,
-    start_date,
-    start_time,
-    end_time,
-    attachments,
+    lease_id,
+    start_datetime,
+    end_datetime,
     notes,
     maintenance_costs,
+    attachments,
   } = ticketData || {};
 
   const ticket_id = uuidv4();
@@ -34,24 +33,21 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
     }
 
     const newTicket = {
-      ticket_id,
-      ticket_title,
-      description,
-      priority,
-      request_type,
-      assigned_to,
-      user_id: finalUserId,
-      unit_no,
-      ticket_status,
-      start_date,
-      end_date: null,
-      start_time,
-      end_time,
-      attachments,
-      notes,
-      maintenance_costs,
-      created_at: now,
-      updated_at: now,
+  ticket_id,
+  ticket_title,
+  description,
+  priority,
+  request_type,
+  assigned_to,
+  user_id: finalUserId,
+  lease_id,
+  ticket_status,
+  start_datetime,
+  end_datetime,
+  notes,
+  maintenance_costs,
+  created_at: now,
+  updated_at: now,
     };
 
     Object.keys(newTicket).forEach(
@@ -65,8 +61,13 @@ const createTicket = async (ticketData = {}, currentUserId = null) => {
     const values = Object.values(newTicket);
 
     const query = `INSERT INTO tickets (${fields}) VALUES (${placeholders})`;
-
     await pool.query(query, values);
+
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      const attachQuery = `INSERT INTO ticket_attachments (ticket_id, url) VALUES ?`;
+      const attachValues = attachments.map(url => [ticket_id, url]);
+      await pool.query(attachQuery, [attachValues]);
+    }
 
     return {
       message: "Ticket created successfully",
@@ -91,13 +92,11 @@ const updateTicketStatuses = async () => {
         ticket_title, 
         ticket_status, 
         assigned_to,
-        start_date,
-        start_time,
-        end_date,
-        end_time 
+        start_datetime,
+        end_datetime
       FROM tickets 
       WHERE ticket_status IN ('ASSIGNED', 'PENDING')
-        AND start_date IS NOT NULL
+        AND start_datetime IS NOT NULL
     `;
 
     const [eligibleTickets] = await pool.query(checkQuery);
@@ -106,67 +105,23 @@ const updateTicketStatuses = async () => {
       UPDATE tickets 
       SET ticket_status = 'IN_PROGRESS', updated_at = NOW()
       WHERE ticket_status IN ('ASSIGNED', 'PENDING')
-        -- Must have someone assigned to move to IN_PROGRESS
         AND assigned_to IS NOT NULL 
         AND assigned_to != ''
-        -- Start date condition
-        AND start_date <= CURDATE()
-        -- Start time condition (if start_date is today, check time; if past date, ignore time)
-        AND (
-          start_time IS NULL 
-          OR start_time = '' 
-          OR (start_date < CURDATE() OR (start_date = CURDATE() AND start_time <= CURTIME()))
-        )
-        -- End date condition (ticket shouldn't be expired)
-        AND (
-          end_date IS NULL 
-          OR end_date >= CURDATE()
-        )
-        -- End time condition (if end_date is today, check time; if future date, ignore time)
-        AND (
-          end_time IS NULL 
-          OR end_time = ''
-          OR end_date IS NULL
-          OR (end_date > CURDATE() OR (end_date = CURDATE() AND end_time > CURTIME()))
-        )
+        AND start_datetime <= NOW()
+        AND (end_datetime IS NULL OR end_datetime >= NOW())
     `;
 
     const [result] = await pool.query(updateToInProgressQuery);
-
-    if (result.affectedRows > 0) {
-      const updatedTicketsQuery = `
-        SELECT ticket_id, ticket_title, ticket_status, assigned_to, start_date, start_time, end_date, end_time 
-        FROM tickets 
-        WHERE ticket_status = 'IN_PROGRESS' 
-          AND updated_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
-      `;
-
-      const [updatedTickets] = await pool.query(updatedTicketsQuery);
-    }
 
     const updateToCompletedQuery = `
       UPDATE tickets 
       SET ticket_status = 'COMPLETED', updated_at = NOW()
       WHERE ticket_status = 'IN_PROGRESS'
-        AND end_date IS NOT NULL
-        AND (
-          end_date < CURDATE()
-          OR (end_date = CURDATE() AND end_time IS NOT NULL AND end_time <= CURTIME())
-        )
+        AND end_datetime IS NOT NULL
+        AND end_datetime <= NOW()
     `;
 
     const [completedResult] = await pool.query(updateToCompletedQuery);
-
-    if (completedResult.affectedRows > 0) {
-      const completedTicketsQuery = `
-        SELECT ticket_id, ticket_title, ticket_status, end_date, end_time 
-        FROM tickets 
-        WHERE ticket_status = 'COMPLETED' 
-          AND updated_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
-      `;
-
-      const [completedTickets] = await pool.query(completedTicketsQuery);
-    }
 
     return {
       message: "Ticket statuses updated successfully",
@@ -191,9 +146,15 @@ const getTickets = async (queryObj = {}) => {
       SELECT 
         t.*,
         CONCAT(u.first_name, ' ', u.last_name) as requested_by_name,
-        u.email as requested_by_email
+        u.email as requested_by_email,
+        (
+          SELECT JSON_ARRAYAGG(url) FROM ticket_attachments ta WHERE ta.ticket_id = t.ticket_id
+        ) as attachments,
+        p.property_name as property_name
       FROM tickets t
       LEFT JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN leases l ON t.lease_id = l.lease_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
     `;
     const params = [];
 
@@ -227,6 +188,8 @@ const getTickets = async (queryObj = {}) => {
       SELECT COUNT(*) as total 
       FROM tickets t
       LEFT JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN leases l ON t.lease_id = l.lease_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
     `;
     const countParams = [];
 
@@ -273,9 +236,15 @@ const getSingleTicketById = async (ticket_id = "") => {
       SELECT 
         t.*,
         CONCAT(u.first_name, ' ', u.last_name) as requested_by_name,
-        u.email as requested_by_email
+        u.email as requested_by_email,
+        (
+          SELECT JSON_ARRAYAGG(url) FROM ticket_attachments ta WHERE ta.ticket_id = t.ticket_id
+        ) as attachments,
+        p.property_name as property_name
       FROM tickets t
       LEFT JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN leases l ON t.lease_id = l.lease_id
+      LEFT JOIN properties p ON l.property_id = p.property_id
       WHERE t.ticket_id = ?
     `;
     const [rows] = await pool.query(query, [ticket_id]);
@@ -303,7 +272,10 @@ const getTicketsByUserId = async (user_id = "", queryObj = {}) => {
       SELECT 
         t.*,
         CONCAT(u.first_name, ' ', u.last_name) as requested_by_name,
-        u.email as requested_by_email
+        u.email as requested_by_email,
+        (
+          SELECT JSON_ARRAYAGG(url) FROM ticket_attachments ta WHERE ta.ticket_id = t.ticket_id
+        ) as attachments
       FROM tickets t
       LEFT JOIN users u ON t.user_id = u.user_id
       WHERE t.user_id = ? 
@@ -355,13 +327,10 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       "request_type",
       "assigned_to",
       "ticket_status",
-      "start_date",
-      "end_date",
-      "start_time",
-      "end_time",
-      "maintenance_cost",
-      "notes",
-      "attachments",
+      "start_datetime",
+      "end_datetime",
+      "maintenance_costs",
+      "notes"
     ];
 
     const filteredData = {};
@@ -375,24 +344,15 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("No valid fields provided for update");
     }
 
-    const existingTicket = await getSingleTicketById(ticket_id);
-    const existingTicketData = existingTicket.ticket;
-
-    let updatedAttachments = existingTicketData.attachments || "";
-
-    if (filteredData.attachments) {
-      if (updatedAttachments && filteredData.attachments) {
-        updatedAttachments = `${updatedAttachments},${filteredData.attachments}`;
-      } else if (filteredData.attachments) {
-        updatedAttachments = filteredData.attachments;
-      }
-    } else {
-      updatedAttachments = existingTicketData.attachments;
+    if (ticketData.attachments && Array.isArray(ticketData.attachments) && ticketData.attachments.length > 0) {
+      await pool.query(`DELETE FROM ticket_attachments WHERE ticket_id = ?`, [ticket_id]);
+      const attachQuery = `INSERT INTO ticket_attachments (ticket_id, url) VALUES ?`;
+      const attachValues = ticketData.attachments.map(url => [ticket_id, url]);
+      await pool.query(attachQuery, [attachValues]);
     }
 
     const updatedData = {
       ...filteredData,
-      attachments: updatedAttachments,
       updated_at: new Date(),
     };
 

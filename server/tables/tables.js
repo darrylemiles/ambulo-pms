@@ -6,6 +6,8 @@ import tenantIdsTable from "./tenantIdsTable.js";
 
 // tickets
 import ticketsTable from "./ticketsTable.js";
+import ticketAttachmentsTable from "./ticketAttachmentsTable.js";
+import ticketRatingsTable from "./ticketRatingsTable.js";
 
 //properties
 import addressesTable from "./addressesTable.js";
@@ -40,6 +42,8 @@ const tables = async (dbConnection) => {
 
     // tickets
     ticketsTable,
+    ticketAttachmentsTable,
+    ticketRatingsTable,
 
     // properties
     addressesTable,

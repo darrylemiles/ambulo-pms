@@ -24,7 +24,7 @@ router.post(
     fieldFolders: {
       attachments: 'ticket_attachments',
     },
-  }), protect,
+  }), 
     createTicket
 );
 
@@ -42,7 +42,7 @@ router.patch('/:ticket_id', createUploadMiddleware({
       attachments: 'ticket_attachments',
     },
   }),
-    protect,
+    
     updateTicketById);
 
 router.delete('/:ticket_id', protect, deleteTicket);

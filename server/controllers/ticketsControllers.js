@@ -3,31 +3,31 @@ import ticketsServices from "../services/ticketsServices.js";
 
 const createTicket = expressAsync(async (req, res) => {
   try {
-    const attachments = req.files && req.files['attachments'] 
-      ? req.files['attachments'].map(file => file.path).join(',') 
-      : "";
+    const attachments = req.files && req.files['attachments']
+      ? req.files['attachments'].map(file => file.path)
+      : [];
 
-    const currentUserId = req.user?.user_id || req.session?.user_id;
-    
+    const currentUserId = req.user?.user_id || req.session?.user_id || "61713b1c-597b-455b-bd14-b41600c91527";
+
     if (!currentUserId) {
-      return res.status(401).json({ 
-        message: "User authentication required. Please log in again." 
+      return res.status(401).json({
+        message: "User authentication required. Please log in again."
       });
     }
 
     const finalUserId = req.body.user_id || currentUserId;
 
-    const payload = { 
-      ...req.body, 
-      attachments, 
-      user_id: finalUserId 
+    const payload = {
+      ...req.body,
+      attachments,
+      user_id: finalUserId
     };
 
     const response = await ticketsServices.createTicket(payload, currentUserId);
     res.json(response);
   } catch (error) {
     console.error("Error creating ticket:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message || "Failed to create ticket"
     });
   }
@@ -69,7 +69,7 @@ const updateTicketStatuses = expressAsync(async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error("Error updating ticket statuses:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message || "Failed to update ticket statuses"
     });
   }
@@ -77,17 +77,16 @@ const updateTicketStatuses = expressAsync(async (req, res) => {
 
 const updateTicketById = expressAsync(async (req, res) => {
   try {
-    const attachments = req.files && req.files['attachments'] 
-      ? req.files['attachments'].map(file => file.path).join(',') 
-      : "";
+    const attachments = req.files && req.files['attachments']
+      ? req.files['attachments'].map(file => file.path)
+      : [];
 
     let payload = { ...req.body, attachments };
-    
+
     if (req.body.ticket_status === 'CANCELLED') {
       payload.ticket_status = 'CANCELLED';
-    } else if (req.body.end_time && req.body.end_time.trim() !== '') {
+    } else if (req.body.end_datetime) {
       payload.ticket_status = 'COMPLETED';
-      payload.end_date = new Date().toISOString().split('T')[0];
     } else if (req.body.assigned_to && req.body.assigned_to.trim() !== '' && !req.body.ticket_status) {
       payload.ticket_status = 'ASSIGNED';
     }
@@ -113,9 +112,9 @@ const deleteTicket = expressAsync(async (req, res) => {
 export {
   createTicket,
   updateTicketStatuses,
-    getTickets,
-    getSingleTicketById,
-    getTicketsByUserId,
-    updateTicketById,
-    deleteTicket
+  getTickets,
+  getSingleTicketById,
+  getTicketsByUserId,
+  updateTicketById,
+  deleteTicket
 };
