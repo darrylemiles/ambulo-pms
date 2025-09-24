@@ -1,3 +1,40 @@
+:root {
+    --primary-color: #0ea5e9;
+    --primary-dark: #0284c7;
+    --secondary-color: #06b6d4;
+    --accent-color: #0ea5e9;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --border-color: rgba(226, 232, 240, 0.6);
+    --border-light: rgba(226, 232, 240, 0.3);
+    --background-white: rgba(255, 255, 255, 0.95);
+    --background-gray: #f7f7f7;
+    --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 16px 32px rgba(14, 165, 233, 0.15);
+}
+
+html {
+  font-size: 12px; /* 1rem = 12px */
+}
+
+body {
+  font-size: 0.75rem;   /* 12px */
+  line-height: 1.4;
+}
+
+h1 { font-size: 1.25rem; /* 20px */ }
+h2 { font-size: 1.125rem;/* 18px */ }
+h3 { font-size: 1rem;    /* 16px */ }
+h4 { font-size: 0.875rem;/* 14px */ }
+h5 { font-size: 0.8125rem;/* 13px */ }
+h6 { font-size: 0.75rem; /* 12px */ }
+
+
 * {
     margin: 0;
     padding: 0;
@@ -8,7 +45,7 @@ body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.6;
     color: #1e293b;
-    background: #9dbebe;
+    background: var(--background-gray);
     min-height: 100vh;
     overflow-x: hidden;
 }
