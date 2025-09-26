@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user || !user.user_id) return;
 
-  const res = await fetch(`/api/v1/leases/user/${user.user_id}`);
+  const res = await fetch(`/api/v1/leases/users/${user.user_id}`);
   const data = await res.json();
   const leases = Array.isArray(data) ? data : data.leases || [];
 
@@ -17,10 +17,26 @@ function renderOverview(user, leases) {
   if (!grid) return;
 
   const activeLeases = leases.filter((l) => l.lease_status === "ACTIVE").length;
-  const nextLease = leases.sort(
-    (a, b) => new Date(a.lease_end_date) - new Date(b.lease_end_date)
-  )[0];
-  const nextDate = nextLease ? new Date(nextLease.lease_end_date) : null;
+  const now = new Date();
+  let nextPaymentDate = null;
+  leases.forEach(l => {
+    const startDate = new Date(l.lease_start_date);
+    const endDate = new Date(l.lease_end_date);
+    let paymentDate = new Date(startDate);
+    let freq = (l.payment_frequency || '').toLowerCase();
+    let intervalMonths = 1;
+    if (freq.includes('quarter')) intervalMonths = 3;
+    else if (freq.includes('semi')) intervalMonths = 6;
+    else if (freq.includes('year')) intervalMonths = 12;
+    while (paymentDate <= now && paymentDate < endDate) {
+      paymentDate.setMonth(paymentDate.getMonth() + intervalMonths);
+    }
+    if (paymentDate > now && paymentDate < endDate) {
+      if (!nextPaymentDate || paymentDate < nextPaymentDate) {
+        nextPaymentDate = new Date(paymentDate);
+      }
+    }
+  });
 
   grid.innerHTML = `
     <div class="overview-card">
@@ -40,10 +56,8 @@ function renderOverview(user, leases) {
     </div>
     <div class="overview-card">
       <h3>Next Payment</h3>
-      <div class="value">${nextDate ? nextDate.toLocaleDateString() : "-"}</div>
-      <div class="subtitle">${
-        nextDate ? nextDate.getFullYear() + " - Due Soon" : ""
-      }</div>
+      <div class="value">${nextPaymentDate ? nextPaymentDate.toLocaleDateString() : "-"}</div>
+      <div class="subtitle">${nextPaymentDate ? nextPaymentDate.getFullYear() + " - Due Soon" : ""}</div>
     </div>
   `;
 }
@@ -55,6 +69,9 @@ function renderProperties(leases) {
   container.innerHTML = `<h2 class="section-title">My Leased Spaces</h2>`;
 
   leases.forEach((lease) => {
+    const addressParts = [lease.building_name, lease.street, lease.city, lease.postal_code, lease.country].filter(Boolean);
+    const fullAddress = addressParts.join(", ");
+
     container.innerHTML += `
       <div class="property-card">
         <div class="property-image-container">
@@ -67,46 +84,26 @@ function renderProperties(leases) {
           <div class="property-header">
             <div>
               <div class="property-title">${lease.property_name}</div>
-              <div class="property-address">${
-                lease.property_address || ""
-              }</div>
+              <div class="property-address">${fullAddress}</div>
             </div>
-            <div class="property-status status-${lease.lease_status.toLowerCase()}">${
-      lease.lease_status
-    }</div>
+            <div class="property-status status-${lease.lease_status.toLowerCase()}">${lease.lease_status}</div>
           </div>
           <div class="property-details">
-            <div class="detail-item"><div class="detail-label">Monthly Rent</div><div class="detail-value price">₱${Number(
-              lease.monthly_rent
-            ).toLocaleString()}</div></div>
-            <div class="detail-item"><div class="detail-label">Lease Start</div><div class="detail-value">${new Date(
-              lease.lease_start_date
-            ).toLocaleDateString()}</div></div>
-            <div class="detail-item"><div class="detail-label">Lease End</div><div class="detail-value">${new Date(
-              lease.lease_end_date
-            ).toLocaleDateString()}</div></div>
+            <div class="detail-item"><div class="detail-label">Monthly Rent</div><div class="detail-value price">₱${Number(lease.monthly_rent).toLocaleString()}</div></div>
+            <div class="detail-item"><div class="detail-label">Lease Start</div><div class="detail-value">${new Date(lease.lease_start_date).toLocaleDateString()}</div></div>
+            <div class="detail-item"><div class="detail-label">Lease End</div><div class="detail-value">${new Date(lease.lease_end_date).toLocaleDateString()}</div></div>
           </div>
           <div class="contract-section">
             <div class="contract-header">
-              <div class="contract-title">Lease #${
-                lease.lease_id
-              }</div>
+              <div class="contract-title">Lease #${lease.lease_id}</div>
               <div class="contract-actions">
-                <button class="btn btn-primary" onclick="viewLeaseDetails('${
-                  lease.lease_id
-                }')">View Lease Details</button>
-                <button class="btn btn-secondary" onclick="viewPayments('${
-                  lease.lease_id
-                }')">View Payments</button>
+                <button class="btn btn-primary" onclick="viewLeaseDetails('${lease.lease_id}')">View Lease Details</button>
+                <button class="btn btn-secondary" onclick="viewPayments('${lease.lease_id}')">View Payments</button>
               </div>
             </div>
             <div class="contract-details">
-              <div class="contract-item"><div class="contract-label">Security Deposit</div><div class="contract-value highlight">₱${Number(
-                lease.security_deposit_months * lease.monthly_rent
-              ).toLocaleString()}</div></div>
-              <div class="contract-item"><div class="contract-label">Next Payment Due</div><div class="contract-value highlight">${new Date(
-                lease.lease_end_date
-              ).toLocaleDateString()}</div></div>
+              <div class="contract-item"><div class="contract-label">Security Deposit</div><div class="contract-value highlight">₱${Number(lease.security_deposit_months * lease.monthly_rent).toLocaleString()}</div></div>
+              <div class="contract-item"><div class="contract-label">Next Payment Due</div><div class="contract-value highlight">${new Date(lease.lease_end_date).toLocaleDateString()}</div></div>
             </div>
           </div>
         </div>
@@ -126,6 +123,9 @@ function viewLeaseDetails(leaseId) {
 
   title.textContent = `Lease Details - ${lease.property_name}`;
 
+  const addressParts = [lease.street, lease.city, lease.postal_code, lease.country].filter(Boolean);
+  const fullAddress = addressParts.join(", ");
+
   let html = `
     <div style="padding: 1rem;">
       <h4 style="margin-bottom: 1rem; color: #44444E;">Property Information</h4>
@@ -135,7 +135,7 @@ function viewLeaseDetails(leaseId) {
       </div>
       <div class="term-item">
         <span class="term-label">Address:</span>
-        <span class="term-value">${lease.property_address || "N/A"}</span>
+        <span class="term-value">${fullAddress || "N/A"}</span>
       </div>
       <div class="term-item">
         <span class="term-label">Lease Status:</span>

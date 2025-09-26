@@ -243,10 +243,17 @@ const getSingleLeaseById = async (leaseId) => {
         CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) AS tenant_name,
         u.user_id,
         p.property_name,
-        p.property_id
+        p.property_id,
+        a.building_name,
+        a.address_id,
+        a.street,
+        a.city,
+        a.postal_code,
+        a.country
       FROM leases l
       LEFT JOIN users u ON l.user_id = u.user_id
       LEFT JOIN properties p ON l.property_id = p.property_id
+      LEFT JOIN addresses a ON p.address_id = a.address_id
       WHERE l.lease_id = ?
       LIMIT 1
     `,
@@ -272,9 +279,11 @@ const getSingleLeaseById = async (leaseId) => {
 const getLeaseByUserId = async (userId) => {
   try {
     const [rows] = await pool.query(`
-      SELECT l.*, p.property_name, p.property_id, p.display_image
+      SELECT l.*, p.property_name, p.property_id, p.display_image,
+        a.address_id, a.building_name, a.street, a.city, a.postal_code, a.country
       FROM leases l
       LEFT JOIN properties p ON l.property_id = p.property_id
+      LEFT JOIN addresses a ON p.address_id = a.address_id
       WHERE l.user_id = ?
     `, [userId]);
     return rows;

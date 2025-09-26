@@ -25,7 +25,7 @@ router.post(
 
 router.get("/", getAllLeases);
 router.get("/:id", getSingleLeaseById);
-router.get("/user/:userId", getLeaseByUserId);
+router.get("/users/:userId", getLeaseByUserId);
 
 router.patch(
   "/:id",
