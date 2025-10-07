@@ -97,6 +97,8 @@ class NavigationManager {
         this.topNavbar = document.querySelector(this.config.topNavbarSelector);
         this.mainContent = document.querySelector(this.config.mainContentSelector);
         this.pageTitle = document.querySelector(this.config.pageTitleSelector);
+        this.pageIcon = document.getElementById('pageIcon');
+        this.pageDescription = document.getElementById('pageDescription');
         this.searchInput = document.querySelector(this.config.searchInputSelector);
 
         this.notificationBtn = document.getElementById("notificationBtn");
@@ -150,6 +152,92 @@ class NavigationManager {
 
             index: "Dashboard",
             "": "Dashboard",
+        };
+
+        this.pageIcons = {
+            "adminDashboard.html": "fas fa-chart-line",
+            adminDashboard: "fas fa-chart-line",
+            "propertyAdmin.html": "fas fa-building",
+            propertyAdmin: "fas fa-building",
+            "tenants.html": "fas fa-users",
+            tenants: "fas fa-users",
+            "leaseAdmin.html": "fas fa-file-contract",
+            leaseAdmin: "fas fa-file-contract",
+            "paymentAdmin.html": "fas fa-credit-card",
+            paymentAdmin: "fas fa-credit-card",
+            "maintenance.html": "fas fa-tools",
+            maintenance: "fas fa-tools",
+            "messagesAdmin.html": "fas fa-envelope",
+            messagesAdmin: "fas fa-envelope",
+            "documents.html": "fas fa-folder",
+            documents: "fas fa-folder",
+            "contentManagement.html": "fas fa-gears",
+            contentManagement: "fas fa-gears",
+            "company-information.html": "fas fa-gears",
+            "company-information": "fas fa-gears",
+            "building-addresses.html": "fas fa-gears",
+            "building-addresses": "fas fa-gears",
+            "FAQs.html": "fas fa-gears",
+            FAQs: "fas fa-gears",
+            "lease-terms-cms.html": "fas fa-gears",
+            "lease-terms-cms": "fas fa-gears",
+
+            dashboard: "fas fa-chart-line",
+            propertyAdmin: "fas fa-building",
+            tenants: "fas fa-users",
+            leases: "fas fa-file-contract",
+            payments: "fas fa-credit-card",
+            maintenance: "fas fa-tools",
+            messagesAdmin: "fas fa-envelope",
+            documents: "fas fa-folder",
+            reports: "fas fa-chart-bar",
+            content: "fas fa-gears",
+
+            index: "fas fa-chart-line",
+            "": "fas fa-chart-line"
+        };
+
+        this.pageDescriptions = {
+            "adminDashboard.html": "Monitor property performance, track key metrics, and oversee daily operations",
+            adminDashboard: "Monitor property performance, track key metrics, and oversee daily operations",
+            "propertyAdmin.html": "Manage property listings, view details, and maintain property information",
+            propertyAdmin: "Manage property listings, view details, and maintain property information",
+            "tenants.html": "View tenant information, manage accounts, and track tenant activity",
+            tenants: "View tenant information, manage accounts, and track tenant activity",
+            "leaseAdmin.html": "Manage lease agreements, renewals, and rental contract details",
+            leaseAdmin: "Manage lease agreements, renewals, and rental contract details",
+            "paymentAdmin.html": "Process payments, track collections, and manage financial transactions",
+            paymentAdmin: "Process payments, track collections, and manage financial transactions",
+            "maintenance.html": "Oversee maintenance requests, assign work orders, and track service completion",
+            maintenance: "Oversee maintenance requests, assign work orders, and track service completion",
+            "messagesAdmin.html": "Communicate with tenants and manage property-related correspondence",
+            messagesAdmin: "Communicate with tenants and manage property-related correspondence",
+            "documents.html": "Manage property documents, leases, and important administrative files",
+            documents: "Manage property documents, leases, and important administrative files",
+            "contentManagement.html": "Configure system settings and manage website content",
+            contentManagement: "Configure system settings and manage website content",
+            "company-information.html": "Update company details and business information",
+            "company-information": "Update company details and business information",
+            "building-addresses.html": "Manage property addresses and location information",
+            "building-addresses": "Manage property addresses and location information",
+            "FAQs.html": "Maintain frequently asked questions and help documentation",
+            FAQs: "Maintain frequently asked questions and help documentation",
+            "lease-terms-cms.html": "Configure lease terms and rental agreement templates",
+            "lease-terms-cms": "Configure lease terms and rental agreement templates",
+
+            dashboard: "Monitor property performance, track key metrics, and oversee daily operations",
+            propertyAdmin: "Manage property listings, view details, and maintain property information",
+            tenants: "View tenant information, manage accounts, and track tenant activity",
+            leases: "Manage lease agreements, renewals, and rental contract details",
+            payments: "Process payments, track collections, and manage financial transactions",
+            maintenance: "Oversee maintenance requests, assign work orders, and track service completion",
+            messagesAdmin: "Communicate with tenants and manage property-related correspondence",
+            documents: "Manage property documents, leases, and important administrative files",
+            reports: "Generate and analyze property performance and financial reports",
+            content: "Configure system settings and manage website content",
+
+            index: "Monitor property performance, track key metrics, and oversee daily operations",
+            "": "Monitor property performance, track key metrics, and oversee daily operations"
         };
     }
 
@@ -364,12 +452,20 @@ class NavigationManager {
     }
     //#endregion
 
-    // === PAGE TITLE MANAGEMENT ===
+     
 
     updatePageTitle(page) {
         if (this.pageTitle && this.pageTitles[page]) {
             this.pageTitle.textContent = this.pageTitles[page];
             document.title = this.pageTitles[page] + " | Ambulo PMS";
+        }
+        
+        if (this.pageIcon && this.pageIcons[page]) {
+            this.pageIcon.className = `page-icon ${this.pageIcons[page]}`;
+        }
+        
+        if (this.pageDescription && this.pageDescriptions[page]) {
+            this.pageDescription.textContent = this.pageDescriptions[page];
         }
     }
 
@@ -440,7 +536,7 @@ class NavigationManager {
 
         const unreadCount = this.inboxMessages.filter((msg) => msg.unread).length;
 
-        // Update badges
+         
         if (inboxBadge) {
             if (unreadCount > 0) {
                 inboxBadge.textContent = `${unreadCount} New`;
@@ -556,7 +652,7 @@ class NavigationManager {
     }
     //#endregion
 
-    // === EVENT BINDING ===
+     
     bindEvents() {
         if (this.sidebarToggle) {
             this.sidebarToggle.addEventListener("click", (e) =>
@@ -852,7 +948,7 @@ class NavigationManager {
         window.removeEventListener("resize", this.updateLayout);
         window.removeEventListener("popstate", this.setActiveNavItem);
 
-        // Clear references
+         
         Object.keys(this).forEach((key) => {
             if (this[key] instanceof HTMLElement) {
                 this[key] = null;

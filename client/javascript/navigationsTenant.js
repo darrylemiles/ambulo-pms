@@ -71,7 +71,7 @@ class TenantNavigationManager {
         this.isMobile = window.innerWidth <= 768;
         this.inboxMessages = this.getDefaultInboxMessages();
 
-        // Load collapsed state from localStorage before setting default
+         
         this.isCollapsed = this.getInitialCollapsedState();
 
         this.init();
@@ -84,7 +84,7 @@ class TenantNavigationManager {
                 return saved === "true";
             }
         } catch (e) {
-            // ignore
+             
         }
         return this.config.startCollapsed !== false;
     }
@@ -117,6 +117,8 @@ class TenantNavigationManager {
         this.topNavbar = document.querySelector(this.config.topNavbarSelector);
         this.mainContent = document.querySelector(this.config.mainContentSelector);
         this.pageTitle = document.querySelector(this.config.pageTitleSelector);
+        this.pageIcon = document.getElementById('pageIcon');
+        this.pageDescription = document.getElementById('pageDescription');
         this.searchInput = document.querySelector(this.config.searchInputSelector);
 
         this.notificationBtn = document.getElementById('notificationBtn');
@@ -141,14 +143,60 @@ class TenantNavigationManager {
             "messages": "Messages",
 
             dashboard: 'Dashboard',
-            lease: 'Lease Information',
-            payments: 'Payments',
-            maintenance: 'Maintenance Requests',
+            leaseTenant: 'Lease Information',
+            paymentTenant: 'Payments',
+            maintenanceTenant: 'Maintenance Requests',
             messages: 'Messages',
             support: 'Support',
 
             index: 'Dashboard',
             "": 'Dashboard'
+        };
+
+        this.pageIcons = {
+            "tenantDashboard.html": "fas fa-chart-line",
+            "tenantDashboard": "fas fa-chart-line",
+            "leaseTenant.html": "fas fa-file-contract",
+            "leaseTenant": "fas fa-file-contract",
+            "paymentTenant.html": "fas fa-credit-card",
+            "paymentTenant": "fas fa-credit-card",
+            "maintenanceTenant.html": "fas fa-tools",
+            "maintenanceTenant": "fas fa-tools",
+            "messages.html": "fas fa-envelope",
+            "messages": "fas fa-envelope",
+
+            dashboard: 'fas fa-chart-line',
+            leaseTenant: 'fas fa-file-contract',
+            paymentTenant: 'fas fa-credit-card',
+            maintenanceTenant: 'fas fa-tools',
+            messages: 'fas fa-envelope',
+            support: 'fas fa-question-circle',
+
+            index: 'fas fa-chart-line',
+            "": 'fas fa-chart-line'
+        };
+
+        this.pageDescriptions = {
+            "tenantDashboard.html": "Overview of your rental activity, important notifications, and quick access to key features",
+            "tenantDashboard": "Overview of your rental activity, important notifications, and quick access to key features",
+            "leaseTenant.html": "View your lease agreement details, terms, and important rental information",
+            "leaseTenant": "View your lease agreement details, terms, and important rental information",
+            "paymentTenant.html": "Manage your rent payments, view payment history, and set up automatic payments",
+            "paymentTenant": "Manage your rent payments, view payment history, and set up automatic payments",
+            "maintenanceTenant.html": "Submit maintenance requests and track the status of your service tickets",
+            "maintenanceTenant": "Submit maintenance requests and track the status of your service tickets",
+            "messages.html": "Communicate with property management and stay updated on important announcements",
+            "messages": "Communicate with property management and stay updated on important announcements",
+
+            dashboard: 'Overview of your rental activity, important notifications, and quick access to key features',
+            leaseTenant: 'View your lease agreement details, terms, and important rental information',
+            paymentTenant: 'Manage your rent payments, view payment history, and set up automatic payments',
+            maintenanceTenant: 'Submit maintenance requests and track the status of your service tickets',
+            messages: 'Communicate with property management and stay updated on important announcements',
+            support: 'Get help and support for any questions or issues you may have',
+
+            index: 'Overview of your rental activity, important notifications, and quick access to key features',
+            "": 'Overview of your rental activity, important notifications, and quick access to key features'
         };
     }
 
@@ -355,7 +403,17 @@ class TenantNavigationManager {
             this.pageTitle.textContent = this.pageTitles[page];
             document.title = this.pageTitles[page] + " | Ambulo PMS";
         }
+        
+        if (this.pageIcon && this.pageIcons[page]) {
+            this.pageIcon.className = `page-icon ${this.pageIcons[page]}`;
+        }
+        
+        if (this.pageDescription && this.pageDescriptions[page]) {
+            this.pageDescription.textContent = this.pageDescriptions[page];
+        }
     }
+
+
 
     setActiveNavItem(targetPage = null) {
         let currentPage = targetPage;
