@@ -16,9 +16,10 @@ const authUser = expressAsync(async (req, res) => {
     const response = await usersServices.authUser(email, password);
 
     res.cookie('token', response.token, {
-      httpOnly: true,
+      httpOnly: false, 
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
+      path: '/',
       maxAge: 24 * 60 * 60 * 1000
     });
 
