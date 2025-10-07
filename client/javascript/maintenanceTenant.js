@@ -512,34 +512,31 @@ import formatDate from '../utils/formatDate.js';
                 overviewGrid.innerHTML = `
                     <div class="overview-card total">
                         <div class="overview-header">
-                            <div class="overview-icon"></div>
+                            <span class="overview-icon"><i class="fa-solid fa-ticket"></i></span>
                         </div>
                         <div class="overview-number">${totalRequests}</div>
                         <div class="overview-label">Total Requests</div>
-                        <div class="overview-description">All-time maintenance requests submitted</div>
+                        <div class="overview-description">All maintenance requests submitted</div>
                     </div>
-                    
                     <div class="overview-card active">
                         <div class="overview-header">
-                            <div class="overview-icon"></div>
+                            <span class="overview-icon"><i class="fa-solid fa-spinner"></i></span>
                         </div>
                         <div class="overview-number">${activeRequests}</div>
                         <div class="overview-label">Active Requests</div>
                         <div class="overview-description">Currently pending or in progress</div>
                     </div>
-                    
                     <div class="overview-card completed">
                         <div class="overview-header">
-                            <div class="overview-icon"></div>
+                            <span class="overview-icon"><i class="fa-solid fa-circle-check"></i></span>
                         </div>
                         <div class="overview-number">${completedRequests}</div>
                         <div class="overview-label">Completed</div>
                         <div class="overview-description">Successfully resolved requests</div>
                     </div>
-                    
                     <div class="overview-card rating">
                         <div class="overview-header">
-                            <div class="overview-icon"></div>
+                            <span class="overview-icon"><i class="fa-solid fa-star"></i></span>
                         </div>
                         <div class="overview-number">${avgRating}</div>
                         <div class="overview-label">Avg Rating</div>

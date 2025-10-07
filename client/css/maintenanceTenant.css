@@ -275,9 +275,18 @@ body {
 }
 
 .overview-icon {
-    font-size: 1.5rem;
-    opacity: 0.8;
-    color: var(--primary-color);
+    font-size: 2rem;
+    opacity: 1;
+    color: #0ea5e9;
+    background: #eaf2ff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 1px 4px rgba(14,165,233,0.08);
+    z-index: 1;
 }
 
 .overview-number {
@@ -1041,6 +1050,12 @@ body {
     font-size: 1.2rem;
     color: #3b82f6;
 }
+.card-title-icon i {
+    color: #3b82f6 !important;
+    font-size: 20px !important;
+    display: inline-block;
+}
+
 .card-description {
     font-size: 1rem;
     color: #6b7a8f;
@@ -1082,6 +1097,16 @@ body {
     font-size: 1.1rem;
     color: #3b82f6;
 }
+.overview-icon i {
+    color: #0ea5e9 !important;
+    font-size: 32px !important;
+    display: inline-block;
+    background: none !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 2;
+}
+
 .overview-number {
     font-size: 2.1rem;
     font-weight: 700;
@@ -1492,9 +1517,10 @@ body {
 }
 
 .modal-notice i {
-    color: var(--primary-color);
+    color: var(--primary-color) !important;
     margin-top: 0.1rem;
-    font-size: 0.9rem;
+    font-size: 1.2rem !important;
+    display: inline-block;
 }
 
 .modal-footer {
