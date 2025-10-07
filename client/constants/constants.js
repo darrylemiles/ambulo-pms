@@ -15,15 +15,18 @@ const PRIORITY_LEVELS = {
     URGENT: 'URGENT'
 };
 
-// Request Types
-const REQUEST_TYPES = {
-    PLUMBING: 'Plumbing',
-    ELECTRICAL: 'Electrical',
-    APPLIANCE: 'Appliance',
-    CLEANING: 'Cleaning',
-    PEST_CONTROL: 'Pest Control',
-    GENERAL: 'General'
-};
+// Ticket Request Types for dropdown
+const TICKET_REQUEST_TYPES = [
+    { value: 'Electrical', label: 'Electrical' },
+    { value: 'Plumbing', label: 'Plumbing' },
+    { value: 'HVAC', label: 'HVAC' },
+    { value: 'Appliance', label: 'Appliance' },
+    { value: 'Structural', label: 'Structural' },
+    { value: 'Painting', label: 'Painting' },
+    { value: 'Cleaning', label: 'Cleaning' },
+    { value: 'Security', label: 'Security' },
+    { value: 'Other', label: 'Other' }
+];
 
 // User Roles
 const USER_ROLES = {
@@ -185,7 +188,8 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         TICKET_STATUSES,
         PRIORITY_LEVELS,
-        REQUEST_TYPES,
+            REQUEST_TYPES,
+            TICKET_REQUEST_TYPES,
         USER_ROLES,
         FILE_UPLOAD,
         VALIDATION,
@@ -201,7 +205,7 @@ if (typeof module !== 'undefined' && module.exports) {
     window.AppConstants = {
         TICKET_STATUSES,
         PRIORITY_LEVELS,
-        REQUEST_TYPES,
+        TICKET_REQUEST_TYPES,
         USER_ROLES,
         FILE_UPLOAD,
         VALIDATION,

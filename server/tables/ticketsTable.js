@@ -7,6 +7,7 @@ const ticketsTable = `CREATE TABLE IF NOT EXISTS tickets (
     assigned_to VARCHAR(100),
     user_id VARCHAR(255) NOT NULL,
     lease_id VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(15),
     unit_no VARCHAR(100) NOT NULL,
     ticket_status VARCHAR(20) NOT NULL,
     start_date DATETIME,

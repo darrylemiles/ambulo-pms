@@ -90,16 +90,13 @@
                         <div class="form-section">
                             <h3 class="section-title">Request Details</h3>
                             <div class="form-group">
+                                <label class="form-label required" for="ticketTitle">Request Title</label>
+                                <input type="text" id="ticketTitle" class="form-input" placeholder="Short summary of the issue" maxlength="100" required>
+                                <div class="error-message" id="ticketTitleError"></div>
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label required" for="category">Service Category</label>
                                 <select id="category" class="form-select" required>
-                                    <option value="">Select a category</option>
-                                    <option value="plumbing">Plumbing Services</option>
-                                    <option value="electrical">Electrical Services</option>
-                                    <option value="hvac">HVAC & Climate Control</option>
-                                    <option value="appliance">Appliance Repair</option>
-                                    <option value="structural">Structural & Building</option>
-                                    <option value="security">Security Systems</option>
-                                    <option value="other">Other Services</option>
                                 </select>
                                 <div class="error-message" id="categoryError"></div>
                             </div>
@@ -115,11 +112,14 @@
                             <div class="form-group">
                                 <label class="form-label">Upload Supporting Photos/Videos</label>
                                 <div class="file-upload-wrapper">
-                                    <input type="file" id="photos" class="file-upload-input" accept="image/*,video/*" multiple>
+                                    <input type="file" id="photos" class="file-upload-input" accept="image/*,video/*" multiple style="display:none;">
                                     <label for="photos" class="file-upload-label">
                                         <span><i class="fa-solid fa-paperclip"></i></span>
-                                        <span>Click to upload photos/videos (optional)</span>
+                                        <span>Click to upload photos/videos (optional, up to 5 files, max 10MB each)</span>
                                     </label>
+                                    <div class="file-upload-preview">
+                                        <div class="file-preview-list" id="filePreviewList"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -190,6 +190,32 @@
         </div>
     </div>
 
+    <!-- Confirmation Dialog Modal -->
+    <div class="modal-overlay" id="confirmationModal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Confirm Ticket Submission</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to submit this maintenance request?</p>
+                <div class="modal-notice">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <span>This ticket will be reviewed by an administrator before being assigned to a technician.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel-btn" id="cancelSubmit">Cancel</button>
+                <button type="button" class="modal-btn confirm-btn" id="confirmSubmit">
+                    <span class="btn-text">Submit Request</span>
+                    <span class="btn-loading" style="display: none;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Submitting...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/constants/constants.js"></script>
     <script type="module" src="/javascript/maintenanceTenant.js"></script>
         <script>
         var user = null;

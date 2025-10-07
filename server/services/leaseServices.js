@@ -242,6 +242,8 @@ const getSingleLeaseById = async (leaseId) => {
         l.*,
         CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name, u.suffix) AS tenant_name,
         u.user_id,
+        u.phone_number,
+        u.alt_phone_number,
         p.property_name,
         p.property_id,
         a.building_name,
