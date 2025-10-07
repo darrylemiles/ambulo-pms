@@ -1,11 +1,104 @@
 
-function setupTenantNavbar() {
-    const tenantInfo = {
-        name: "Vico Sotto",
-        initial: "V",
-        role: "Tenant",
-        unit: "Unit 3B"
-    };
+async function setupTenantNavbar() {
+     
+    function getCookie(name) {
+      if (!document || !document.cookie) return null;
+      const match = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+      return match ? match[2] : null;
+    }
+    
+    function getJwtToken() {
+      const token = getCookie("token");
+    
+      if (!token) {
+        window.location.href = "/login.html";
+      }
+
+      return token;
+    }
+
+    function normalize(obj) {
+        if (!obj || typeof obj !== 'object') return null;
+         
+        const candidate = obj.user || obj.data || obj;
+         
+        const name = candidate.name
+            || candidate.fullName
+            || ((candidate.first_name || candidate.firstName) && (candidate.last_name || candidate.lastName)
+                ? `${candidate.first_name || candidate.firstName} ${candidate.last_name || candidate.lastName}`
+                : null)
+            || candidate.username
+            || candidate.email
+            || null;
+        if (!name) return null;
+        const initial = (name && name[0]) ? name[0].toUpperCase() : '';
+        const role = candidate.role || candidate.userRole || candidate.user_role || 'Tenant';
+        const unit = candidate.unit || candidate.unitNumber || candidate.apartment || candidate.user_unit || '';
+         
+        const avatarUrl = candidate.avatar || candidate.avatarUrl || candidate.photo || candidate.profile_image || null;
+        return { name, initial, role, unit, avatarUrl };
+    }
+
+    async function tryFetch(url, extraHeaders = {}) {
+        try {
+            const res = await fetch(url, {
+                method: 'GET',
+                credentials: 'include',
+                headers: { 'Accept': 'application/json', ...extraHeaders }
+            });
+            if (!res.ok) return null;
+             
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const json = await res.json();
+                return normalize(json);
+            } else {
+                 
+                return null;
+            }
+        } catch (e) {
+            console.warn('Fetch error for', url, e);
+            return null;
+        }
+    }
+                const contactSubmissionsMenuItem = document.getElementById('contactSubmissionsMenuItem');
+                if (contactSubmissionsMenuItem) contactSubmissionsMenuItem.style.display = 'none';
+
+    function decodeJwtPayload(token) {
+        try {
+            const parts = token.split('.');
+            if (parts.length < 2) return null;
+            let payload = parts[1];
+            payload = payload.replace(/-/g, '+').replace(/_/g, '/');
+            while (payload.length % 4) payload += '=';
+            const json = atob(payload);
+            return JSON.parse(json);
+        } catch (e) {
+            return null;
+        }
+                const contactSubmissionsMenuItem = document.getElementById('contactSubmissionsMenuItem');
+                if (contactSubmissionsMenuItem) contactSubmissionsMenuItem.style.display = 'none';
+    }
+
+    let user = null;
+    try {
+        const token = getJwtToken();
+        ('[TenantNavbar] JWT token:', token);
+        const payload = decodeJwtPayload(token);
+        ('[TenantNavbar] Decoded JWT payload:', payload);
+        const userId = payload && (payload.user_id || payload.userId || payload.id);
+        ('[TenantNavbar] Extracted userId:', userId);
+        if (userId) {
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            user = await tryFetch(`/api/v1/users/${encodeURIComponent(userId)}`, headers);
+            ('[TenantNavbar] Fetched user object:', user);
+        }
+    } catch (e) {
+        console.warn('JWT decode or user fetch error', e);
+    }
+    if (!user) {
+        ('[TenantNavbar] No user found, clearing DOM fields.');
+    }
 
     const profileBtn = document.getElementById('profileBtn');
     const profileAvatar = document.getElementById('profileAvatar');
@@ -13,11 +106,60 @@ function setupTenantNavbar() {
     const profileRole = document.getElementById('profileRole');
     const viewAllMessagesBtn = document.getElementById('viewAllMessagesBtn');
 
-    if (profileBtn) profileBtn.textContent = tenantInfo.initial;
-    if (profileAvatar) profileAvatar.textContent = tenantInfo.initial;
-    if (profileName) profileName.textContent = tenantInfo.name;
-    if (profileRole) profileRole.textContent = `${tenantInfo.role} • ${tenantInfo.unit}`;
-    if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messages.html";
+    if (user) {
+        if (profileBtn) {
+            if (user.avatarUrl) {
+                profileBtn.style.backgroundImage = `url('${user.avatarUrl}')`;
+                profileBtn.style.backgroundSize = 'cover';
+                profileBtn.style.backgroundPosition = 'center';
+                profileBtn.textContent = '';
+            } else {
+                profileBtn.style.backgroundImage = '';
+                profileBtn.textContent = user.initial || (user.name && user.name[0]) || '';
+            }
+            profileBtn.title = user.name || '';
+        }
+
+        if (profileAvatar) {
+            if (user.avatarUrl) {
+                profileAvatar.style.backgroundImage = `url('${user.avatarUrl}')`;
+                profileAvatar.style.backgroundSize = 'cover';
+                profileAvatar.style.backgroundPosition = 'center';
+                profileAvatar.textContent = '';
+            } else {
+                profileAvatar.style.backgroundImage = '';
+                profileAvatar.textContent = user.initial || (user.name && user.name[0]) || '';
+            }
+        }
+
+        if (profileName) {
+            profileName.textContent = user.name || '';
+        }
+
+        if (profileRole) {
+            const parts = [];
+            if (user.role) parts.push(user.role);
+            if (user.unit) parts.push(user.unit);
+            profileRole.textContent = parts.join(' • ');
+        }
+
+        if (viewAllMessagesBtn) viewAllMessagesBtn.href = '/messages.html';
+
+        window.currentTenantUser = user;
+    } else {
+        if (profileBtn) {
+            profileBtn.style.backgroundImage = '';
+            profileBtn.textContent = '';
+        }
+        if (profileAvatar) {
+            profileAvatar.style.backgroundImage = '';
+            profileAvatar.textContent = '';
+        }
+        if (profileName) profileName.textContent = '';
+        if (profileRole) profileRole.textContent = '';
+        if (viewAllMessagesBtn) viewAllMessagesBtn.href = '#';
+        window.currentTenantUser = null;
+    }
 }
 
 function setupSidebar(role) {
@@ -700,9 +842,9 @@ class TenantNavigationManager {
         const navbarLoaded = await TenantNavigationManager.loadComponent('/components/top-navbar.html', 'navbarContainer');
     
         if (sidebarLoaded || navbarLoaded) {
-            setTimeout(() => {
+            setTimeout(async () => {
                 window.tenantNavigationManager = new TenantNavigationManager(config);
-                setupTenantNavbar();
+                await setupTenantNavbar();
                 setupSidebar('tenant');
                 window.tenantNavigationManager.setActiveNavItem();
     
@@ -851,14 +993,4 @@ if (document.readyState === 'loading') {
     });
 } else {
     TenantNavigationManager.initializeTenantNavigation();
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = TenantNavigationManager;
-}
-
-if (typeof define === 'function' && define.amd) {
-    define([], function () {
-        return TenantNavigationManager;
-    });
 }

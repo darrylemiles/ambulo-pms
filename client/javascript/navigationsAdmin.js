@@ -1,10 +1,84 @@
 
-function setupAdminNavbar() {
-    const adminInfo = {
-        name: "Admin User",
-        initial: "A",
-        role: "Property Administrator"
-    };
+async function setupAdminNavbar() {
+    function getCookie(name) {
+        if (!document || !document.cookie) return null;
+        const match = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+        return match ? match[2] : null;
+    }
+
+    function getJwtToken() {
+        const token = getCookie("token");
+        if (!token) {
+            window.location.href = "/login.html";
+        }
+        return token;
+    }
+
+    function normalize(obj) {
+        if (!obj || typeof obj !== 'object') return null;
+        const candidate = obj.user || obj.data || obj;
+        const name = candidate.name
+            || candidate.fullName
+            || ((candidate.first_name || candidate.firstName) && (candidate.last_name || candidate.lastName)
+                ? `${candidate.first_name || candidate.firstName} ${candidate.last_name || candidate.lastName}`
+                : null)
+            || candidate.username
+            || candidate.email
+            || null;
+        if (!name) return null;
+        const initial = (name && name[0]) ? name[0].toUpperCase() : '';
+        const role = candidate.role || candidate.userRole || candidate.user_role || 'Admin';
+        const avatarUrl = candidate.avatar || candidate.avatarUrl || candidate.photo || candidate.profile_image || null;
+        return { name, initial, role, avatarUrl };
+    }
+
+    async function tryFetch(url, extraHeaders = {}) {
+        try {
+            const res = await fetch(url, {
+                method: 'GET',
+                credentials: 'include',
+                headers: { 'Accept': 'application/json', ...extraHeaders }
+            });
+            if (!res.ok) return null;
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const json = await res.json();
+                return normalize(json);
+            } else {
+                return null;
+            }
+        } catch (e) {
+            console.warn('Fetch error for', url, e);
+            return null;
+        }
+    }
+
+    function decodeJwtPayload(token) {
+        try {
+            const parts = token.split('.');
+            if (parts.length < 2) return null;
+            let payload = parts[1];
+            payload = payload.replace(/-/g, '+').replace(/_/g, '/');
+            while (payload.length % 4) payload += '=';
+            const json = atob(payload);
+            return JSON.parse(json);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    let user = null;
+    try {
+        const token = getJwtToken();
+        const payload = decodeJwtPayload(token);
+        const userId = payload && (payload.user_id || payload.userId || payload.id);
+        if (userId) {
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            user = await tryFetch(`/api/v1/users/${encodeURIComponent(userId)}`, headers);
+        }
+    } catch (e) {
+        console.warn('JWT decode or user fetch error', e);
+    }
 
     const profileBtn = document.getElementById('profileBtn');
     const profileAvatar = document.getElementById('profileAvatar');
@@ -12,11 +86,57 @@ function setupAdminNavbar() {
     const profileRole = document.getElementById('profileRole');
     const viewAllMessagesBtn = document.getElementById('viewAllMessagesBtn');
 
-    if (profileBtn) profileBtn.textContent = adminInfo.initial;
-    if (profileAvatar) profileAvatar.textContent = adminInfo.initial;
-    if (profileName) profileName.textContent = adminInfo.name;
-    if (profileRole) profileRole.textContent = adminInfo.role;
-    if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messagesAdmin.html";
+    if (user) {
+        if (profileBtn) {
+            if (user.avatarUrl) {
+                profileBtn.style.backgroundImage = `url('${user.avatarUrl}')`;
+                profileBtn.style.backgroundSize = 'cover';
+                profileBtn.style.backgroundPosition = 'center';
+                profileBtn.textContent = '';
+            } else {
+                profileBtn.style.backgroundImage = '';
+                profileBtn.textContent = user.initial || (user.name && user.name[0]) || '';
+            }
+            profileBtn.title = user.name || '';
+        }
+        if (profileAvatar) {
+            if (user.avatarUrl) {
+                profileAvatar.style.backgroundImage = `url('${user.avatarUrl}')`;
+                profileAvatar.style.backgroundSize = 'cover';
+                profileAvatar.style.backgroundPosition = 'center';
+                profileAvatar.textContent = '';
+            } else {
+                profileAvatar.style.backgroundImage = '';
+                profileAvatar.textContent = user.initial || (user.name && user.name[0]) || '';
+            }
+        }
+        if (profileName) {
+            profileName.textContent = user.name || '';
+        }
+        if (profileRole) {
+            profileRole.textContent = user.role || '';
+        }
+        if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messagesAdmin.html";
+        const contactSubmissionsMenuItem = document.getElementById('contactSubmissionsMenuItem');
+        if (contactSubmissionsMenuItem) contactSubmissionsMenuItem.style.display = '';
+        window.currentAdminUser = user;
+    } else {
+        if (profileBtn) {
+            profileBtn.style.backgroundImage = '';
+            profileBtn.textContent = '';
+        }
+        if (profileAvatar) {
+            profileAvatar.style.backgroundImage = '';
+            profileAvatar.textContent = '';
+        }
+        if (profileName) profileName.textContent = '';
+        if (profileRole) profileRole.textContent = '';
+        if (viewAllMessagesBtn) viewAllMessagesBtn.href = '#';
+        // Hide Contact Submissions for non-admin
+        const contactSubmissionsMenuItem = document.getElementById('contactSubmissionsMenuItem');
+        if (contactSubmissionsMenuItem) contactSubmissionsMenuItem.style.display = 'none';
+        window.currentAdminUser = null;
+    }
 }
 
 function setupSidebar(role) {
