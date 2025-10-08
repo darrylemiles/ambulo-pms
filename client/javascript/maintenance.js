@@ -1,7 +1,3 @@
-let allUsers = [];
-let allProperties = [];
-let userLeases = {};
-
 import formatCurrency from "../utils/formatCurrency.js";
 import formatStatus from "../utils/formatStatus.js";
 import formatRequestType from "../utils/formatRequestType.js";
@@ -9,6 +5,11 @@ import formatPriority from "../utils/formatPriority.js";
 import formatDate from "../utils/formatDate.js";
 import formatAttachments from "../utils/formatAttachments.js";
 import fetchCompanyDetails from "../api/loadCompanyInfo.js";
+
+let allUsers = [];
+let allProperties = [];
+let userLeases = {};
+
 
 let tickets = [];
 let allTickets = [];
@@ -19,7 +20,6 @@ let maxDate = null;
 let currentFromDate = null;
 let currentToDate = null;
 
-// Global variables for tenant data
 let tenantsList = [];
 let filteredTenants = [];
 let selectedTenantIndex = -1;
@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  initializeFilters();
   loadTickets();
 
   setInterval(checkAndUpdateTicketStatuses, 1 * 60 * 1000);
@@ -60,6 +61,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const searchInput = document.getElementById("searchInput");
   if (searchInput) {
     searchInput.addEventListener("input", filterTickets);
+  }
+
+
+  const statusFilter = document.getElementById("statusFilter");
+  const priorityFilter = document.getElementById("priorityFilter");
+  const requestTypeFilter = document.getElementById("requestTypeFilter");
+
+  if (statusFilter) {
+    statusFilter.addEventListener("change", filterTickets);
+  }
+  if (priorityFilter) {
+    priorityFilter.addEventListener("change", filterTickets);
+  }
+  if (requestTypeFilter) {
+    requestTypeFilter.addEventListener("change", filterTickets);
   }
 
   initializeDatePickers();
@@ -121,6 +137,41 @@ async function setDynamicInfo() {
 document.addEventListener("DOMContentLoaded", () => {
   setDynamicInfo();
 });
+
+function initializeFilters() {
+
+  const statusFilter = document.getElementById("statusFilter");
+  if (statusFilter) {
+    Object.keys(AppConstants.STATUS_MAPPINGS).forEach(status => {
+      const option = document.createElement("option");
+      option.value = status;
+      option.textContent = AppConstants.STATUS_MAPPINGS[status].label;
+      statusFilter.appendChild(option);
+    });
+  }
+
+
+  const priorityFilter = document.getElementById("priorityFilter");
+  if (priorityFilter) {
+    Object.keys(AppConstants.PRIORITY_MAPPINGS).forEach(priority => {
+      const option = document.createElement("option");
+      option.value = priority;
+      option.textContent = AppConstants.PRIORITY_MAPPINGS[priority].label;
+      priorityFilter.appendChild(option);
+    });
+  }
+
+
+  const requestTypeFilter = document.getElementById("requestTypeFilter");
+  if (requestTypeFilter) {
+    AppConstants.TICKET_REQUEST_TYPES.forEach(type => {
+      const option = document.createElement("option");
+      option.value = type.value;
+      option.textContent = type.label;
+      requestTypeFilter.appendChild(option);
+    });
+  }
+}
 
 
 async function fetchAllUsersAndProperties() {
@@ -242,7 +293,7 @@ function initializeTomSelectDropdowns() {
     placeholder: "Select or search user...",
     pagination: false,
     maxOptions: 1000,
-    onChange: function(value) {
+    onChange: function (value) {
       const unitNoSelect = document.getElementById("unitNo");
       if (unitNoSelect) {
         while (unitNoSelect.options.length > 0) {
@@ -260,8 +311,8 @@ function initializeTomSelectDropdowns() {
       }
     },
     render: {
-      option: function(data, escape) {
-        // Show user_id as subtitle in dropdown options
+      option: function (data, escape) {
+
         let userId = "";
         if (data.$option) {
           userId = data.$option.getAttribute("data-userid") || "";
@@ -271,7 +322,7 @@ function initializeTomSelectDropdowns() {
           <div style='font-size:12px;color:#888;'>${escape(userId)}</div>
         </div>`;
       },
-      item: function(data, escape) {
+      item: function (data, escape) {
         return `<div style='font-weight:500;'>${escape(data.text)}</div>`;
       }
     }
@@ -281,14 +332,14 @@ function initializeTomSelectDropdowns() {
     sortField: { field: "text", direction: "asc" },
     placeholder: "Select property...",
     render: {
-      option: function(data, escape) {
+      option: function (data, escape) {
         let address = data.address || "";
         return `<div>
           <div style='font-weight:500;'>${escape(data.text)}</div>
           ${address ? `<div style='font-size:12px;color:#888;'>${escape(address)}</div>` : ""}
         </div>`;
       },
-      item: function(data, escape) {
+      item: function (data, escape) {
         return `<div style='font-weight:500;'>${escape(data.text)}</div>`;
       }
     }
@@ -351,7 +402,7 @@ function updateDateRestrictions() {
     maxDate = new Date(Math.max(...endDates));
   } else {
     maxDate = new Date(Math.max(...createdDates));
-    console.log("No end_dates found, using latest created_at as maxDate");
+
   }
 
   const minDateStr = minDate.toISOString().split("T")[0];
@@ -424,6 +475,27 @@ function filterTicketsByDateRange() {
         ticket.request_type?.toLowerCase().includes(searchTerm)
       );
     });
+  }
+
+
+  const statusFilter = document.getElementById("statusFilter");
+  const selectedStatus = statusFilter ? statusFilter.value : "";
+  if (selectedStatus) {
+    filteredTickets = filteredTickets.filter(ticket => ticket.ticket_status === selectedStatus);
+  }
+
+
+  const priorityFilter = document.getElementById("priorityFilter");
+  const selectedPriority = priorityFilter ? priorityFilter.value : "";
+  if (selectedPriority) {
+    filteredTickets = filteredTickets.filter(ticket => ticket.priority === selectedPriority);
+  }
+
+
+  const requestTypeFilter = document.getElementById("requestTypeFilter");
+  const selectedRequestType = requestTypeFilter ? requestTypeFilter.value : "";
+  if (selectedRequestType) {
+    filteredTickets = filteredTickets.filter(ticket => ticket.request_type === selectedRequestType);
   }
 
   if (currentFromDate && currentToDate) {
@@ -516,9 +588,24 @@ function clearFilters() {
   const searchInput = document.getElementById("searchInput");
   const fromDateInput = document.getElementById("fromDate");
   const toDateInput = document.getElementById("toDate");
+  const statusFilter = document.getElementById("statusFilter");
+  const priorityFilter = document.getElementById("priorityFilter");
+  const requestTypeFilter = document.getElementById("requestTypeFilter");
 
   if (searchInput) {
     searchInput.value = "";
+  }
+
+  if (statusFilter) {
+    statusFilter.value = "";
+  }
+
+  if (priorityFilter) {
+    priorityFilter.value = "";
+  }
+
+  if (requestTypeFilter) {
+    requestTypeFilter.value = "";
   }
 
   if (fromDateInput && toDateInput && minDate && maxDate) {
@@ -551,7 +638,7 @@ function renderTickets() {
   }
 
   const ticketRows = tickets
-    .map((ticket) => {
+    .map((ticket, index) => {
       const statusClass = ticket.ticket_status
         ? `status-${ticket.ticket_status.toLowerCase().replace(/[^a-z_]/g, "")}`
         : "status-pending";
@@ -561,13 +648,11 @@ function renderTickets() {
       const isPending =
         ticket.ticket_status &&
         ticket.ticket_status.toUpperCase() ===
-          AppConstants.TICKET_STATUSES.PENDING;
-      let attachmentsForDisplay = ticket.attachments;
-      if (Array.isArray(attachmentsForDisplay)) {
-        attachmentsForDisplay = attachmentsForDisplay.join(",");
-      } else if (attachmentsForDisplay && typeof attachmentsForDisplay !== "string") {
-        attachmentsForDisplay = String(attachmentsForDisplay);
-      }
+        AppConstants.TICKET_STATUSES.PENDING;
+
+
+      const statusMapping = AppConstants.STATUS_MAPPINGS[ticket.ticket_status] || AppConstants.STATUS_MAPPINGS[AppConstants.TICKET_STATUSES.PENDING];
+      const priorityMapping = AppConstants.PRIORITY_MAPPINGS[ticket.priority] || AppConstants.PRIORITY_MAPPINGS[AppConstants.PRIORITY_LEVELS.MEDIUM];
 
       let startDateDisplay = "Not set";
       let endDateDisplay = "Not set";
@@ -575,156 +660,46 @@ function renderTickets() {
         const dt = new Date(ticket.start_datetime);
         if (!isNaN(dt.getTime())) {
           startDateDisplay = formatDate(dt.toISOString(), false) +
-            " " + dt.toTimeString().slice(0,5);
+            " " + dt.toTimeString().slice(0, 5);
         }
       }
       if (ticket.end_datetime) {
         const dt = new Date(ticket.end_datetime);
         if (!isNaN(dt.getTime())) {
           endDateDisplay = formatDate(dt.toISOString(), false) +
-            " " + dt.toTimeString().slice(0,5);
+            " " + dt.toTimeString().slice(0, 5);
         }
       }
 
       return `
-        <div class="ticket-item" data-ticket-id="${ticket.ticket_id}">
-            <!-- Main row - ensure exact column alignment -->
-            <div class="ticket-row">
-                <span class="status-badge ${statusClass}">${formatStatus(
-        ticket.ticket_status
-      )}</span>
-                <span class="ticket-title">${
-                  ticket.ticket_title || "N/A"
-                }</span>
-                <span>${ticket.property_name || "N/A"}</span>
-                <span class="status-badge ${priorityClass}">${formatPriority(
-        ticket.priority
-      )}</span>
-                <span>${
-                  formatRequestType(ticket.request_type)
-                }</span>
-                <span>${startDateDisplay}</span>
-                <span>${endDateDisplay}</span>
-                <div class="row-actions">
-                    <button class="action-btn action-btn-edit" onclick="editTicket('${
-                      ticket.ticket_id
-                    }'); event.stopPropagation();" title="Update">
-                        ✏️
-                    </button>
-                    ${
-                      isPending
-                        ? `
-                    <button class="action-btn action-btn-assign" onclick="assignTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Assign">
-                        👤
-                    </button>
-                    `
-                        : ""
-                    }
-                    <button class="action-btn action-btn-delete" onclick="deleteTicket('${
-                      ticket.ticket_id
-                    }'); event.stopPropagation();" title="Delete">
-                        🗑️
-                    </button>
-                </div>
-                <button class="expand-btn" onclick="toggleTicketDetails('${
-                  ticket.ticket_id
-                }')" title="Expand Details">
-                    <span class="expand-icon">▼</span>
+        <tr class="ticket-row" data-ticket-id="${ticket.ticket_id}" onclick="viewTicketDetails('${ticket.ticket_id}')" style="cursor: pointer;">
+            <td class="row-number">${index + 1}</td>
+            <td>
+                <span class="status-badge ${statusClass}" style="background-color: ${statusMapping.color};">${statusMapping.label}</span>
+            </td>
+            <td class="ticket-title">${ticket.ticket_title || "N/A"}</td>
+            <td>${ticket.requested_by_name || ticket.user_id || "Unknown"}</td>
+            <td>${ticket.property_name || "N/A"}</td>
+            <td>
+                <span class="priority-badge ${priorityClass}" style="background-color: ${priorityMapping.color};">${priorityMapping.label}</span>
+            </td>
+            <td>${formatRequestType(ticket.request_type)}</td>
+            <td>${startDateDisplay}</td>
+            <td>${endDateDisplay}</td>
+            <td class="row-actions">
+                <button class="action-btn action-btn-edit" onclick="editTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Update">
+                    <i class="fas fa-edit"></i>
                 </button>
-            </div>
-            <div class="ticket-details" id="details-${ticket.ticket_id}">
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <strong>Ticket ID</strong>
-                        <span>${ticket.ticket_id}</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>Current Status</strong>
-                        <span class="status-badge ${statusClass}">${formatStatus(
-        ticket.ticket_status
-      )}</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>Requested By</strong>
-                        <span title="${ticket.requested_by_email || ""}">${
-        ticket.requested_by_name || ticket.user_id || "Unknown"
-      }</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>Assigned To</strong>
-                        <span>${ticket.assigned_to || "Unassigned"}</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>Start Time</strong>
-                        <span>${
-                          ticket.start_datetime ? formatDate(new Date(ticket.start_datetime).toISOString(), true) : "Not scheduled"
-                        }</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>End Time</strong>
-                        <span>${
-                          ticket.end_datetime ? formatDate(new Date(ticket.end_datetime).toISOString(), true) : "Not scheduled"
-                        }</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>Maintenance Cost</strong>
-                        <span class="cost-display">${
-                          formatCurrency(ticket.maintenance_cost) ||
-                          "Not estimated"
-                        }</span>
-                    </div>
-                    <div class="detail-item">
-                        <strong>Priority Level</strong>
-                        <span class="status-badge ${priorityClass}">${formatPriority(
-        ticket.priority
-      )}</span>
-                    </div>
-                    ${
-                      ticket.description
-                        ? `
-                    <div class="detail-item full-width">
-                        <strong>Description</strong>
-                        <span>${ticket.description}</span>
-                    </div>`
-                        : ""
-                    }
-                    ${
-                      ticket.notes
-                        ? `
-                    <div class="detail-item full-width">
-                        <strong>Additional Notes</strong>
-                        <div class="notes-content">${ticket.notes}</div>
-                    </div>`
-                        : ""
-                    }
-                    ${
-                      attachmentsForDisplay
-                        ? `
-                    <div class="detail-item full-width">
-                        <strong>Attachments</strong>
-                        <div class="attachments-list">
-                            ${formatAttachments(attachmentsForDisplay)}
-                        </div>
-                    </div>`
-                        : ""
-                    }
-                </div>
-                <div class="ticket-dates-info">
-                    <div class="date-info-item">
-                        <span class="date-label">Created:</span>
-                        <span class="date-value">${formatDate(
-                          ticket.created_at, true
-                        )}</span>
-                    </div>
-                    <div class="date-info-item">
-                        <span class="date-label">Last Updated:</span>
-                        <span class="date-value">${formatDate(
-                          ticket.updated_at, true
-                        )}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+                ${isPending ? `
+                <button class="action-btn action-btn-assign" onclick="assignTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Assign">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+                ` : ""}
+                <button class="action-btn action-btn-delete" onclick="deleteTicket('${ticket.ticket_id}'); event.stopPropagation();" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
     `;
     })
     .join("");
@@ -774,7 +749,7 @@ async function checkAndUpdateTicketStatuses() {
     });
 
     if (response.ok) {
-      console.log("Ticket statuses updated successfully");
+
       await loadTickets();
     }
   } catch (error) {
@@ -784,10 +759,12 @@ async function checkAndUpdateTicketStatuses() {
 
 
 async function editTicket(ticketId) {
-  event.stopPropagation();
+  if (typeof event !== 'undefined' && event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
 
   try {
-    console.log(`Opening edit modal for ticket: ${ticketId}`);
+
 
     const response = await fetch(`/api/v1/tickets/${ticketId}`, {
       method: "GET",
@@ -807,11 +784,11 @@ async function editTicket(ticketId) {
     const isCompleted =
       ticket.ticket_status &&
       ticket.ticket_status.toUpperCase() ===
-        AppConstants.TICKET_STATUSES.COMPLETED;
+      AppConstants.TICKET_STATUSES.COMPLETED;
     const isCancelled =
       ticket.ticket_status &&
       ticket.ticket_status.toUpperCase() ===
-        AppConstants.TICKET_STATUSES.CANCELLED;
+      AppConstants.TICKET_STATUSES.CANCELLED;
 
     if (isCompleted || isCancelled) {
       const statusText = isCompleted ? "completed" : "cancelled";
@@ -837,23 +814,23 @@ function populateEditForm(ticket) {
   if (editTicketId) editTicketId.value = ticket.ticket_id;
   const editTicketIdDisplay = document.getElementById("editTicketIdDisplay");
   if (editTicketIdDisplay) editTicketIdDisplay.value = ticket.ticket_id;
-    const editUnitNoLabel = document.querySelector('label[for="editUnitNo"]');
-    if (editUnitNoLabel) editUnitNoLabel.textContent = "Unit/Property";
-    const editUnitNo = document.getElementById("editUnitNo");
-    if (editUnitNo) {
-      let unitOrProperty = "";
-      if (ticket.property_name) {
-        unitOrProperty = ticket.property_name;
-        if (ticket.unit_number) {
-          unitOrProperty += ` (${ticket.unit_number})`;
-        }
-      } else if (ticket.unit_number) {
-        unitOrProperty = ticket.unit_number;
-      } else if (ticket.lease_id) {
-        unitOrProperty = ticket.lease_id;
+  const editUnitNoLabel = document.querySelector('label[for="editUnitNo"]');
+  if (editUnitNoLabel) editUnitNoLabel.textContent = "Unit/Property";
+  const editUnitNo = document.getElementById("editUnitNo");
+  if (editUnitNo) {
+    let unitOrProperty = "";
+    if (ticket.property_name) {
+      unitOrProperty = ticket.property_name;
+      if (ticket.unit_number) {
+        unitOrProperty += ` (${ticket.unit_number})`;
       }
-      editUnitNo.value = unitOrProperty;
+    } else if (ticket.unit_number) {
+      unitOrProperty = ticket.unit_number;
+    } else if (ticket.lease_id) {
+      unitOrProperty = ticket.lease_id;
     }
+    editUnitNo.value = unitOrProperty;
+  }
   const editStatus = document.getElementById("editStatus");
   if (editStatus) editStatus.value = formatStatus(ticket.ticket_status);
   const editRequestedBy = document.getElementById("editRequestedBy");
@@ -864,18 +841,18 @@ function populateEditForm(ticket) {
   const isCompleted =
     ticket.ticket_status &&
     ticket.ticket_status.toUpperCase() ===
-      AppConstants.TICKET_STATUSES.COMPLETED;
+    AppConstants.TICKET_STATUSES.COMPLETED;
   const isCancelled =
     ticket.ticket_status &&
     ticket.ticket_status.toUpperCase() ===
-      AppConstants.TICKET_STATUSES.CANCELLED;
+    AppConstants.TICKET_STATUSES.CANCELLED;
   const isNotEditable = isCompleted || isCancelled;
   const isPendingOrAssigned =
     ticket.ticket_status &&
     (ticket.ticket_status.toUpperCase() ===
       AppConstants.TICKET_STATUSES.PENDING ||
       ticket.ticket_status.toUpperCase() ===
-        AppConstants.TICKET_STATUSES.ASSIGNED);
+      AppConstants.TICKET_STATUSES.ASSIGNED);
 
   const editableFields = [
     "editTicketTitle",
@@ -906,7 +883,7 @@ function populateEditForm(ticket) {
   document.getElementById("editRequestType").value = ticket.request_type || "";
   document.getElementById("editPriority").value = ticket.priority || "";
   document.getElementById("editMaintenanceCosts").value =
-    ticket.maintenance_cost || "";
+    ticket.maintenance_costs || "";
   document.getElementById("editDescription").value = ticket.description || "";
   document.getElementById("editNotes").value = ticket.notes || "";
 
@@ -919,7 +896,7 @@ function populateEditForm(ticket) {
       const dt = new Date(ticket.start_datetime);
       if (!isNaN(dt.getTime())) {
         startDate = dt.toISOString().split("T")[0];
-        startTime = dt.toTimeString().slice(0,5); 
+        startTime = dt.toTimeString().slice(0, 5);
       }
     }
     startDateField.value = startDate;
@@ -935,8 +912,7 @@ function populateEditForm(ticket) {
       startDateField.classList.remove("readonly-field");
       startTimeField.disabled = false;
       startTimeField.classList.remove("readonly-field");
-      const today = new Date().toISOString().split("T")[0];
-      startDateField.min = today;
+      startDateField.removeAttribute("min");
     }
   }
 
@@ -949,7 +925,7 @@ function populateEditForm(ticket) {
       const dt = new Date(ticket.end_datetime);
       if (!isNaN(dt.getTime())) {
         endDate = dt.toISOString().split("T")[0];
-        endTime = dt.toTimeString().slice(0,5);
+        endTime = dt.toTimeString().slice(0, 5);
       }
     }
     endDateField.value = endDate;
@@ -993,12 +969,14 @@ function populateEditForm(ticket) {
     if (isNotEditable) {
       attachmentsArea.style.opacity = "0.5";
       attachmentsArea.style.pointerEvents = "none";
-      attachmentsArea.querySelector("span").textContent =
-        "📎 File upload disabled for this ticket status";
+      const uploadText = attachmentsArea.querySelector(".upload-main");
+      if (uploadText) {
+        uploadText.textContent = "File upload disabled for this ticket status";
+      }
     } else {
       attachmentsArea.style.opacity = "1";
       attachmentsArea.style.pointerEvents = "auto";
-      resetEditFileUploadDisplay();
+      initializeEditFileUpload(ticket);
     }
   }
 
@@ -1084,18 +1062,186 @@ function closeEditTicketModal() {
   modal.classList.remove("active");
 
   document.getElementById("editTicketForm").reset();
+  editSelectedFiles = [];
+  currentTicketAttachments = [];
   resetEditFileUploadDisplay();
 }
 
 function resetEditFileUploadDisplay() {
-  const attachmentsArea = document.querySelector(
-    "#editTicketModal .attachments-area span"
-  );
-  if (attachmentsArea) {
-    attachmentsArea.textContent =
-      "📎 Click here to upload additional files or drag and drop";
-    attachmentsArea.style.color = "#6b7280";
+  const uploadMain = document.querySelector("#editTicketModal .upload-main");
+  const uploadSub = document.querySelector("#editTicketModal .upload-sub");
+  const selectedFilesContainer = document.getElementById("editSelectedFiles");
+
+  if (uploadMain) {
+    uploadMain.textContent = "Click to upload files or drag and drop";
   }
+  if (uploadSub) {
+    uploadSub.textContent = "Maximum 5 files total (including existing)";
+  }
+  if (selectedFilesContainer) {
+    selectedFilesContainer.innerHTML = "";
+  }
+}
+
+let editSelectedFiles = [];
+let currentTicketAttachments = [];
+
+function initializeEditFileUpload(ticket) {
+  editSelectedFiles = [];
+  currentTicketAttachments = ticket.attachments ?
+    (Array.isArray(ticket.attachments) ? ticket.attachments : ticket.attachments.split(',').filter(a => a.trim())) : [];
+
+  const fileInput = document.getElementById("editFileInput");
+  const attachmentsArea = document.querySelector("#editTicketModal .attachments-area");
+
+
+  const newFileInput = fileInput.cloneNode(true);
+  fileInput.parentNode.replaceChild(newFileInput, fileInput);
+
+
+  newFileInput.addEventListener("change", handleEditFileSelection);
+
+
+  attachmentsArea.addEventListener("dragover", handleEditDragOver);
+  attachmentsArea.addEventListener("dragleave", handleEditDragLeave);
+  attachmentsArea.addEventListener("drop", handleEditDrop);
+
+  updateEditFileUploadDisplay();
+}
+
+function handleEditFileSelection(e) {
+  const files = Array.from(e.target.files);
+  addFilesToEditSelection(files);
+}
+
+function handleEditDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.style.borderColor = "#3b82f6";
+  e.currentTarget.style.backgroundColor = "#eff6ff";
+}
+
+function handleEditDragLeave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.style.borderColor = "#cbd5e0";
+  e.currentTarget.style.backgroundColor = "";
+}
+
+function handleEditDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.style.borderColor = "#cbd5e0";
+  e.currentTarget.style.backgroundColor = "";
+
+  const files = Array.from(e.dataTransfer.files);
+  addFilesToEditSelection(files);
+}
+
+function addFilesToEditSelection(files) {
+  const totalExistingFiles = currentTicketAttachments.length + editSelectedFiles.length;
+  const maxNewFiles = AppConstants.FILE_UPLOAD.MAX_FILES - totalExistingFiles;
+
+  if (maxNewFiles <= 0) {
+    alert(`Maximum ${AppConstants.FILE_UPLOAD.MAX_FILES} files allowed total (including existing attachments).`);
+    return;
+  }
+
+  if (files.length > maxNewFiles) {
+    alert(`Can only add ${maxNewFiles} more file(s). You have ${totalExistingFiles} files already.`);
+    files = files.slice(0, maxNewFiles);
+  }
+
+  for (const file of files) {
+
+    if (!AppConstants.FILE_UPLOAD.ALLOWED_TYPES.includes(file.type)) {
+      alert(`File type not supported: ${file.name}\nAllowed types: Images, Videos, PDF, Word documents, Text files`);
+      continue;
+    }
+
+
+    if (file.size > AppConstants.FILE_UPLOAD.MAX_SIZE) {
+      alert(`File too large: ${file.name}\nMaximum size: ${AppConstants.FILE_UPLOAD.MAX_SIZE / (1024 * 1024)}MB`);
+      continue;
+    }
+
+
+    if (editSelectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+      continue;
+    }
+
+    editSelectedFiles.push(file);
+  }
+
+  updateEditFileUploadDisplay();
+
+
+  document.getElementById("editFileInput").value = "";
+}
+
+window.removeEditFile = function (index) {
+  editSelectedFiles.splice(index, 1);
+  updateEditFileUploadDisplay();
+};
+
+function updateEditFileUploadDisplay() {
+  const selectedFilesContainer = document.getElementById("editSelectedFiles");
+  const uploadSub = document.querySelector("#editTicketModal .upload-sub");
+
+  const totalFiles = currentTicketAttachments.length + editSelectedFiles.length;
+  const remaining = AppConstants.FILE_UPLOAD.MAX_FILES - totalFiles;
+
+  if (uploadSub) {
+    uploadSub.textContent = `${remaining} of ${AppConstants.FILE_UPLOAD.MAX_FILES} slots available`;
+  }
+
+  if (selectedFilesContainer) {
+    selectedFilesContainer.innerHTML = editSelectedFiles.map((file, index) => {
+      const fileType = getFileType(file.type);
+      const fileSize = formatFileSize(file.size);
+
+      return `
+        <div class="file-item">
+          <div class="file-info-left">
+            <div class="file-type-icon file-type-${fileType}">
+              <i class="fas ${getFileIcon(file.type)}"></i>
+            </div>
+            <div class="file-details">
+              <div class="file-name">${file.name}</div>
+              <div class="file-size">${fileSize}</div>
+            </div>
+          </div>
+          <button type="button" class="file-remove" onclick="removeEditFile(${index})" title="Remove file">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function getFileType(mimeType) {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (mimeType.includes('document') || mimeType.includes('word')) return 'document';
+  return 'other';
+}
+
+function getFileIcon(mimeType) {
+  if (mimeType.startsWith('image/')) return 'fa-image';
+  if (mimeType.startsWith('video/')) return 'fa-video';
+  if (mimeType === 'application/pdf') return 'fa-file-pdf';
+  if (mimeType.includes('document') || mimeType.includes('word')) return 'fa-file-word';
+  return 'fa-file';
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 async function submitEditTicket(event) {
@@ -1112,7 +1258,6 @@ async function submitEditTicket(event) {
 
   const formData = new FormData(form);
 
-  // Combine start_date and start_time into start_datetime
   let start_date = formData.get("start_date") || null;
   let start_time = formData.get("start_time") || null;
   let start_datetime = null;
@@ -1138,7 +1283,7 @@ async function submitEditTicket(event) {
     priority: formData.get("priority"),
     start_datetime: start_datetime,
     end_datetime: end_datetime,
-    maintenance_cost: formData.get("maintenance_cost") || null,
+    maintenance_costs: formData.get("maintenance_costs") || null,
     notes: formData.get("notes")?.trim() || null,
   };
 
@@ -1179,23 +1324,31 @@ async function submitEditTicket(event) {
     Object.keys(ticketData).forEach((key) => {
       if (ticketData[key] !== null && ticketData[key] !== undefined) {
         submitData.append(key, ticketData[key]);
-        console.log(`Adding to FormData: ${key} = ${ticketData[key]}`);
+
       }
     });
 
-    const fileInput = document.getElementById("editFileInput");
-    if (fileInput.files && fileInput.files.length > 0 && !fileInput.disabled) {
-      for (let i = 0; i < fileInput.files.length; i++) {
-        const file = fileInput.files[i];
 
+
+    if (editSelectedFiles && editSelectedFiles.length > 0) {
+
+      for (const file of editSelectedFiles) {
         if (file.size > AppConstants.FILE_UPLOAD.MAX_SIZE) {
           alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
           return;
         }
 
-        submitData.append("attachments", file);
+        let normalizedFile = file;
+        if (file.type === "image/svg+xml") {
+
+          normalizedFile = new File([file], file.name, { type: "image/svg" });
+        }
+        submitData.append("attachments", normalizedFile);
+
       }
     }
+
+
 
     const response = await fetch(`/api/v1/tickets/${ticketId}`, {
       method: "PATCH",
@@ -1204,7 +1357,7 @@ async function submitEditTicket(event) {
     });
 
     const result = await response.json();
-    console.log("Server response:", result);
+
 
     if (response.ok) {
       const statusMessage =
@@ -1238,13 +1391,11 @@ function validateEditTicketForm(data) {
   if (!data.description) errors.push("• Description is required");
   if (!data.priority) errors.push("• Priority is required");
 
-  if (data.start_date) {
-    const selectedDate = new Date(data.start_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDate < today) {
-      errors.push("• Start Date cannot be in the past");
+  if (data.start_date && data.end_date) {
+    const startDate = new Date(data.start_date);
+    const endDate = new Date(data.end_date);
+    if (startDate > endDate) {
+      errors.push("• Start Date must be earlier than End Date");
     }
   }
 
@@ -1404,7 +1555,10 @@ function initializeModal() {
 }
 
 function assignTicket(ticketId) {
-  const ticket = allTickets.find(t => t.ticket_id === ticketId);
+  let ticket = tickets.find(t => t.ticket_id === ticketId);
+  if (!ticket) {
+    ticket = allTickets.find(t => t.ticket_id === ticketId);
+  }
   if (!ticket) {
     alert("Ticket not found");
     return;
@@ -1424,7 +1578,7 @@ function assignTicket(ticketId) {
 
   const assignTicketForm = document.getElementById("assignTicketForm");
   if (assignTicketForm) {
-    assignTicketForm.onsubmit = async function(event) {
+    assignTicketForm.onsubmit = async function (event) {
       event.preventDefault();
       const assignedTo = document.getElementById("assignedToInput").value.trim();
       const assignmentNotes = document.getElementById("assignmentNotes").value.trim();
@@ -1497,6 +1651,141 @@ function expandTicket(ticketId, details, ticketItem, expandIcon) {
 }
 
 
+
+let currentTicketId = null;
+
+window.editCurrentTicket = function () {
+  if (!currentTicketId || currentTicketId === 'null' || currentTicketId === null) {
+    alert('No valid ticket selected for editing.');
+    return;
+  }
+  closeTicketDetailsModal();
+  setTimeout(function () {
+    editTicket(currentTicketId);
+  }, 150);
+};
+window.assignCurrentTicket = function () {
+  if (!currentTicketId || currentTicketId === 'null' || currentTicketId === null) {
+    alert('No valid ticket selected for assignment.');
+    return;
+  }
+  closeTicketDetailsModal();
+  setTimeout(function () {
+    assignTicket(currentTicketId);
+  }, 150);
+};
+
+
+function viewTicketDetails(ticketId) {
+  const ticket = tickets.find(t => t.ticket_id === ticketId);
+  if (!ticket) return;
+  currentTicketId = ticketId;
+
+
+
+  const statusMapping = AppConstants.STATUS_MAPPINGS[ticket.ticket_status] || AppConstants.STATUS_MAPPINGS[AppConstants.TICKET_STATUSES.PENDING];
+  const priorityMapping = AppConstants.PRIORITY_MAPPINGS[ticket.priority] || AppConstants.PRIORITY_MAPPINGS[AppConstants.PRIORITY_LEVELS.MEDIUM];
+
+
+  document.getElementById('detailTicketId').textContent = ticket.ticket_id;
+  document.getElementById('detailsModalTitle').textContent = `Ticket #${ticket.ticket_id} Details`;
+
+  const statusClass = ticket.ticket_status ? `status-${ticket.ticket_status.toLowerCase().replace(/[^a-z_]/g, "")}` : "status-pending";
+  const priorityClass = ticket.priority ? `priority-${ticket.priority.toLowerCase()}` : "priority-medium";
+
+  const statusElement = document.getElementById('detailStatus');
+  statusElement.textContent = statusMapping.label;
+  statusElement.className = `status-badge ${statusClass}`;
+  statusElement.style.backgroundColor = statusMapping.color;
+
+  const priorityElement = document.getElementById('detailPriority');
+  priorityElement.textContent = priorityMapping.label;
+  priorityElement.className = `priority-badge ${priorityClass}`;
+  priorityElement.style.backgroundColor = priorityMapping.color;
+
+  document.getElementById('detailRequestType').textContent = formatRequestType(ticket.request_type);
+  document.getElementById('detailRequestedBy').textContent = ticket.requested_by_name || ticket.user_id || "Unknown";
+  document.getElementById('detailProperty').textContent = ticket.property_name || "N/A";
+
+
+  document.getElementById('detailDescription').textContent = ticket.description || "No description provided";
+
+
+  document.getElementById('detailCreatedAt').textContent = formatDate(ticket.created_at, true);
+
+  let startDateDisplay = "Not set";
+  let endDateDisplay = "Not set";
+  if (ticket.start_datetime) {
+    const dt = new Date(ticket.start_datetime);
+    if (!isNaN(dt.getTime())) {
+      startDateDisplay = formatDate(dt.toISOString(), false) + " " + dt.toTimeString().slice(0, 5);
+    }
+  }
+  if (ticket.end_datetime) {
+    const dt = new Date(ticket.end_datetime);
+    if (!isNaN(dt.getTime())) {
+      endDateDisplay = formatDate(dt.toISOString(), false) + " " + dt.toTimeString().slice(0, 5);
+    }
+  }
+
+  document.getElementById('detailStartDateTime').textContent = startDateDisplay;
+  document.getElementById('detailEndDateTime').textContent = endDateDisplay;
+  document.getElementById('detailUpdatedAt').textContent = formatDate(ticket.updated_at, true);
+
+
+  document.getElementById('detailAssignedTo').textContent = ticket.assigned_to || "Unassigned";
+  document.getElementById('detailPhone').textContent = ticket.phone_number || "N/A";
+  document.getElementById('detailMaintenanceCost').textContent = formatCurrency(ticket.maintenance_costs) || "Not estimated";
+
+    // Hide assign and edit buttons if status is COMPLETED
+    const assignBtn = document.getElementById('assignCurrentTicketBtn');
+    const editBtn = document.getElementById('editCurrentTicketBtn');
+    const isCompleted = ticket.ticket_status && ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.COMPLETED;
+    if (assignBtn) {
+      assignBtn.style.display = isCompleted ? 'none' : '';
+    }
+    if (editBtn) {
+      editBtn.style.display = isCompleted ? 'none' : '';
+    }
+
+  const notesSection = document.getElementById('notesSection');
+  if (ticket.notes && ticket.notes.trim()) {
+    document.getElementById('detailNotes').textContent = ticket.notes;
+    notesSection.style.display = 'block';
+  } else {
+    notesSection.style.display = 'none';
+  }
+
+
+  const attachmentsSection = document.getElementById('attachmentsSection');
+  if (ticket.attachments) {
+    let attachmentsForDisplay = ticket.attachments;
+    if (Array.isArray(attachmentsForDisplay)) {
+      attachmentsForDisplay = attachmentsForDisplay.join(",");
+    } else if (attachmentsForDisplay && typeof attachmentsForDisplay !== "string") {
+      attachmentsForDisplay = String(attachmentsForDisplay);
+    }
+
+    if (attachmentsForDisplay && attachmentsForDisplay.trim()) {
+      document.getElementById('detailAttachments').innerHTML = formatAttachments(attachmentsForDisplay, true);
+      attachmentsSection.style.display = 'block';
+    } else {
+      attachmentsSection.style.display = 'none';
+    }
+  } else {
+    attachmentsSection.style.display = 'none';
+  }
+
+
+  document.getElementById('ticketDetailsModal').style.display = 'flex';
+}
+
+
+function closeTicketDetailsModal() {
+  document.getElementById('ticketDetailsModal').style.display = 'none';
+
+}
+
 function closeAssignTicketModal() {
   const modal = document.getElementById("assignTicketModal");
   if (modal) {
@@ -1534,8 +1823,10 @@ window.closeAssignTicketModal = closeAssignTicketModal;
 window.closeNewTicketModal = closeNewTicketModal;
 window.toggleTicketDetails = toggleTicketDetails;
 window.submitEditTicket = submitEditTicket;
-// window.closeDeleteModal = closeDeleteModal;
-// window.confirmDelete = confirmDelete;
-// window.selectTenant = selectTenant;
-// window.logout = logout;
-// window.filteredTenants = filteredTenants;
+window.viewTicketDetails = viewTicketDetails;
+window.closeTicketDetailsModal = closeTicketDetailsModal;
+
+
+
+
+
