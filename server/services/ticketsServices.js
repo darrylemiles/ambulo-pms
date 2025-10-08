@@ -356,11 +356,29 @@ const updateTicketById = async (ticket_id = "", ticketData = {}) => {
       throw new Error("No valid fields provided for update");
     }
 
+    
     if (ticketData.attachments && Array.isArray(ticketData.attachments) && ticketData.attachments.length > 0) {
+      
+      const existingQuery = `SELECT url FROM ticket_attachments WHERE ticket_id = ?`;
+      const [existingAttachments] = await pool.query(existingQuery, [ticket_id]);
+      const existingUrls = existingAttachments.map(att => att.url);
+      
+      
+      const allAttachments = [...existingUrls, ...ticketData.attachments];
+      const maxFiles = 5;
+      
+      if (allAttachments.length > maxFiles) {
+        throw new Error(`Total attachments cannot exceed ${maxFiles} files. Current: ${existingUrls.length} existing + ${ticketData.attachments.length} new = ${allAttachments.length}`);
+      }
+      
+      
       await pool.query(`DELETE FROM ticket_attachments WHERE ticket_id = ?`, [ticket_id]);
-      const attachQuery = `INSERT INTO ticket_attachments (ticket_id, url) VALUES ?`;
-      const attachValues = ticketData.attachments.map(url => [ticket_id, url]);
-      await pool.query(attachQuery, [attachValues]);
+      
+      if (allAttachments.length > 0) {
+        const attachQuery = `INSERT INTO ticket_attachments (ticket_id, url) VALUES ?`;
+        const attachValues = allAttachments.map(url => [ticket_id, url]);
+        await pool.query(attachQuery, [attachValues]);
+      }
     }
 
     const updatedData = {
