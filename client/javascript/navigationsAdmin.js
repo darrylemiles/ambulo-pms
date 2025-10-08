@@ -132,7 +132,7 @@ async function setupAdminNavbar() {
         if (profileName) profileName.textContent = '';
         if (profileRole) profileRole.textContent = '';
         if (viewAllMessagesBtn) viewAllMessagesBtn.href = '#';
-        // Hide Contact Submissions for non-admin
+        
         const contactSubmissionsMenuItem = document.getElementById('contactSubmissionsMenuItem');
         if (contactSubmissionsMenuItem) contactSubmissionsMenuItem.style.display = 'none';
         window.currentAdminUser = null;
@@ -241,8 +241,8 @@ class NavigationManager {
             leaseAdmin: "Leases",
             "paymentAdmin.html": "Payments",
             paymentAdmin: "Payments",
-            "maintenance.html": "Maintenance",
-            maintenance: "Maintenance",
+            "maintenance.html": "Maintenance Requests",
+            maintenance: "Maintenance Requests",
             "messagesAdmin.html": "Messages",
             messagesAdmin: "Messages",
             "documents.html": "Documents",
@@ -258,13 +258,18 @@ class NavigationManager {
             FAQs: "Manage Content",
             "lease-terms-cms.html": "Manage Content",
             "lease-terms-cms": "Manage Content",
+            "contact-us-submissions.html": "Contact Submissions",
+            "contact-us-submissions": "Contact Submissions",
+            contactUs: "Contact Submissions",
+            "account-profile.html": "Account Settings",
+            "account-profile": "Account Settings",
 
             dashboard: "Dashboard",
             propertyAdmin: "Properties",
             tenants: "Tenants",
             leases: "Leases",
             payments: "Payments",
-            maintenance: "Maintenance",
+            maintenance: "Maintenance Requests",
             messagesAdmin: "Messages",
             documents: "Documents",
             reports: "Reports",
@@ -301,6 +306,11 @@ class NavigationManager {
             FAQs: "fas fa-gears",
             "lease-terms-cms.html": "fas fa-gears",
             "lease-terms-cms": "fas fa-gears",
+            "contact-us-submissions.html": "fas fa-comment-dots",
+            "contact-us-submissions": "fas fa-comment-dots",
+            contactUs: "fas fa-comment-dots",
+            "account-profile.html": "fas fa-user-cog",
+            "account-profile": "fas fa-user-cog",
 
             dashboard: "fas fa-chart-line",
             propertyAdmin: "fas fa-building",
@@ -312,6 +322,7 @@ class NavigationManager {
             documents: "fas fa-folder",
             reports: "fas fa-chart-bar",
             content: "fas fa-gears",
+            contactUs: "fas fa-comment-dots",
 
             index: "fas fa-chart-line",
             "": "fas fa-chart-line"
@@ -344,6 +355,11 @@ class NavigationManager {
             FAQs: "Maintain frequently asked questions and help documentation",
             "lease-terms-cms.html": "Configure lease terms and rental agreement templates",
             "lease-terms-cms": "Configure lease terms and rental agreement templates",
+            "contact-us-submissions.html": "View and manage messages submitted via the Contact Us form",
+            "contact-us-submissions": "View and manage messages submitted via the Contact Us form",
+            contactUs: "View and manage messages submitted via the Contact Us form",
+            "account-profile.html": "Manage your account details, password, notifications, and verification",
+            "account-profile": "Manage your account details, password, notifications, and verification",
 
             dashboard: "Monitor property performance, track key metrics, and oversee daily operations",
             propertyAdmin: "Manage property listings, view details, and maintain property information",
@@ -355,6 +371,7 @@ class NavigationManager {
             documents: "Manage property documents, leases, and important administrative files",
             reports: "Generate and analyze property performance and financial reports",
             content: "Configure system settings and manage website content",
+            contactUs: "View and manage messages submitted via the Contact Us form",
 
             index: "Monitor property performance, track key metrics, and oversee daily operations",
             "": "Monitor property performance, track key metrics, and oversee daily operations"
@@ -572,20 +589,30 @@ class NavigationManager {
     }
     //#endregion
 
-     
-
     updatePageTitle(page) {
-        if (this.pageTitle && this.pageTitles[page]) {
-            this.pageTitle.textContent = this.pageTitles[page];
-            document.title = this.pageTitles[page] + " | Ambulo PMS";
+        
+        let pageKey = page;
+        let path = window.location.pathname.split('/').pop();
+        let fileName = path.toLowerCase();
+        
+        if (fileName === 'contact-us-submissions.html' || pageKey === 'contact-us-submissions' || pageKey === 'contactUs') {
+            pageKey = 'contactUs';
+        } else if (!pageKey) {
+            pageKey = path.replace('.html', '') || 'dashboard';
         }
         
-        if (this.pageIcon && this.pageIcons[page]) {
-            this.pageIcon.className = `page-icon ${this.pageIcons[page]}`;
+        let title = this.pageTitles[pageKey] || this.pageTitles[pageKey + '.html'] || this.pageTitles[path] || 'Dashboard';
+        let icon = this.pageIcons[pageKey] || this.pageIcons[pageKey + '.html'] || this.pageIcons[path] || '';
+        let description = this.pageDescriptions[pageKey] || this.pageDescriptions[pageKey + '.html'] || this.pageDescriptions[path] || '';
+
+        if (this.pageTitle) {
+            this.pageTitle.textContent = title;
         }
-        
-        if (this.pageDescription && this.pageDescriptions[page]) {
-            this.pageDescription.textContent = this.pageDescriptions[page];
+        if (this.pageIcon && icon) {
+            this.pageIcon.className = icon;
+        }
+        if (this.pageDescription && description) {
+            this.pageDescription.textContent = description;
         }
     }
 
@@ -601,8 +628,18 @@ class NavigationManager {
                 currentPage = "dashboard";
             }
         }
-        const navLinks = document.querySelectorAll(".nav-link");
+        
+        const path = window.location.pathname.split("/").pop().toLowerCase();
+        if (path === "contact-us-submissions.html" || currentPage === "contact-us-submissions" || currentPage === "contactUs") {
+            this.updatePageTitle("contactUs");
+            return;
+        }
+        if (path === "account-profile.html" || currentPage === "account-profile") {
+            this.updatePageTitle("account-profile");
+            return;
+        }
 
+        const navLinks = document.querySelectorAll(".nav-link");
         navLinks.forEach((link) => link.classList.remove("active"));
 
         const contentManagementPages = [
@@ -656,7 +693,7 @@ class NavigationManager {
 
         const unreadCount = this.inboxMessages.filter((msg) => msg.unread).length;
 
-         
+
         if (inboxBadge) {
             if (unreadCount > 0) {
                 inboxBadge.textContent = `${unreadCount} New`;
@@ -772,7 +809,7 @@ class NavigationManager {
     }
     //#endregion
 
-     
+
     bindEvents() {
         if (this.sidebarToggle) {
             this.sidebarToggle.addEventListener("click", (e) =>
@@ -908,7 +945,7 @@ class NavigationManager {
             return false;
         }
     }
-    
+
     static async initializeNavigation(config = {}) {
         const sidebarLoaded = await NavigationManager.loadComponent(
             "/components/sidebar.html",
@@ -1068,7 +1105,7 @@ class NavigationManager {
         window.removeEventListener("resize", this.updateLayout);
         window.removeEventListener("popstate", this.setActiveNavItem);
 
-         
+
         Object.keys(this).forEach((key) => {
             if (this[key] instanceof HTMLElement) {
                 this[key] = null;
