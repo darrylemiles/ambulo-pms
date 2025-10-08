@@ -70,7 +70,12 @@ const updateTicketById = expressAsync(async (req, res) => {
       ? req.files['attachments'].map(file => file.path)
       : [];
 
-    let payload = { ...req.body, attachments };
+    let payload = { ...req.body };
+    
+    
+    if (attachments.length > 0) {
+      payload.attachments = attachments;
+    }
 
     if (req.body.ticket_status === 'CANCELLED') {
       payload.ticket_status = 'CANCELLED';
