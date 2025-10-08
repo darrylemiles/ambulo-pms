@@ -24,6 +24,36 @@ let tenantsList = [];
 let filteredTenants = [];
 let selectedTenantIndex = -1;
 
+
+
+const _ticketsCache = new Map();
+const CACHE_TTL_MS = 2 * 60 * 1000; 
+
+function setCache(key, value) {
+  const record = { value, ts: Date.now() };
+  _ticketsCache.set(key, record);
+}
+
+function getCache(key) {
+  const record = _ticketsCache.get(key);
+  if (!record) return null;
+  if (Date.now() - record.ts > CACHE_TTL_MS) {
+    _ticketsCache.delete(key);
+    return null;
+  }
+  return record.value;
+}
+
+function invalidateCacheByPrefix(prefix) {
+  
+  const keys = Array.from(_ticketsCache.keys());
+  for (const k of keys) {
+    if (k.startsWith(prefix)) {
+      _ticketsCache.delete(k);
+    }
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const profileBtn = document.getElementById("profileBtn");
   const dropdownMenu = document.getElementById("profileMenu");
@@ -512,6 +542,17 @@ async function loadTickets() {
 
     const url = `/api/v1/tickets?${params.toString()}`;
     
+    const cacheKey = url;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      const data = cached;
+      allTickets = data.tickets || [];
+      tickets = allTickets;
+      updateDateRestrictions();
+      renderTickets();
+      return;
+    }
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -523,12 +564,11 @@ async function loadTickets() {
 
     if (response.ok) {
       const data = await response.json();
-      
-      if (data.tickets && Array.isArray(data.tickets)) {
         
-      }
-      allTickets = data.tickets || [];
-      tickets = allTickets;
+  try { setCache(cacheKey, data); } catch (e) { }
+
+        allTickets = data.tickets || [];
+        tickets = allTickets;
 
       updateDateRestrictions();
 
@@ -706,6 +746,7 @@ async function checkAndUpdateTicketStatuses() {
 
     if (response.ok) {
 
+      try { invalidateCacheByPrefix('/api/v1/tickets'); } catch (e) {}
       await loadTickets();
     }
   } catch (error) {
@@ -1324,6 +1365,7 @@ async function submitEditTicket(event) {
       alert(statusMessage);
       closeEditTicketModal();
 
+      try { invalidateCacheByPrefix('/api/v1/tickets'); } catch (e) {}
       await loadTickets();
     } else {
       throw new Error(result.message || "Failed to update ticket");
@@ -1438,6 +1480,7 @@ function deleteTicket(ticketId) {
       if (result && result.message) alert(result.message);
       allTickets = allTickets.filter(t => t.ticket_id !== ticketId);
       tickets = tickets.filter(t => t.ticket_id !== ticketId);
+      try { invalidateCacheByPrefix('/api/v1/tickets'); } catch (e) {}
       renderTickets();
     })
     .catch(err => {
@@ -1496,6 +1539,7 @@ function initializeModal() {
           alert(`✅ Ticket created successfully!\n\nTicket ID: ${result.ticket_id}`);
           modal.classList.remove("active");
           newTicketForm.reset();
+          try { invalidateCacheByPrefix('/api/v1/tickets'); } catch (e) {}
           await loadTickets();
         } else {
           throw new Error(result.message || "Failed to create ticket");
@@ -1562,6 +1606,7 @@ function assignTicket(ticketId) {
           alert("✅ Ticket assigned successfully!");
           modal.classList.remove("active");
           assignTicketForm.reset();
+          try { invalidateCacheByPrefix('/api/v1/tickets'); } catch (e) {}
           await loadTickets();
         } else {
           throw new Error(result.message || "Failed to assign ticket");
