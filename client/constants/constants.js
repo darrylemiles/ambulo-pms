@@ -11,7 +11,6 @@ const TICKET_STATUSES = {
 const PRIORITY_LEVELS = {
     LOW: 'LOW',
     MEDIUM: 'MEDIUM',
-    HIGH: 'HIGH',
     URGENT: 'URGENT'
 };
 
@@ -38,11 +37,17 @@ const USER_ROLES = {
 // File Upload Constants
 const FILE_UPLOAD = {
     MAX_SIZE: 10 * 1024 * 1024, // 10MB in bytes
+    MAX_FILES: 5, // Maximum total files including existing attachments
     ALLOWED_TYPES: [
         'image/jpeg',
         'image/png',
         'image/gif',
         'image/webp',
+        'video/mp4',
+        'video/webm',
+        'video/ogg',
+        'video/mov',
+        'video/avi',
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -109,7 +114,7 @@ const MESSAGES = {
 const STATUS_MAPPINGS = {
     [TICKET_STATUSES.PENDING]: {
         label: 'Pending',
-        color: '#f59e0b',
+        color: '#f59e0b', // Amber/Orange
         canEdit: true,
         canAssign: true,
         canCancel: true,
@@ -117,7 +122,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.ASSIGNED]: {
         label: 'Assigned',
-        color: '#3b82f6',
+        color: '#2563eb', // Blue
         canEdit: true,
         canAssign: true,
         canCancel: true,
@@ -125,7 +130,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.IN_PROGRESS]: {
         label: 'In Progress',
-        color: '#8b5cf6',
+        color: '#7c3aed', // Violet
         canEdit: false,
         canAssign: false,
         canCancel: false,
@@ -133,7 +138,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.COMPLETED]: {
         label: 'Completed',
-        color: '#10b981',
+        color: '#059669', // Emerald/Green
         canEdit: false,
         canAssign: false,
         canCancel: false,
@@ -141,7 +146,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.CANCELLED]: {
         label: 'Cancelled',
-        color: '#ef4444',
+        color: '#dc2626', // Red
         canEdit: false,
         canAssign: false,
         canCancel: false,
@@ -160,11 +165,6 @@ const PRIORITY_MAPPINGS = {
         label: 'Medium',
         color: '#f59e0b',
         order: 2
-    },
-    [PRIORITY_LEVELS.HIGH]: {
-        label: 'High',
-        color: '#ef4444',
-        order: 3
     },
     [PRIORITY_LEVELS.URGENT]: {
         label: 'Urgent',
@@ -188,8 +188,8 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         TICKET_STATUSES,
         PRIORITY_LEVELS,
-            REQUEST_TYPES,
-            TICKET_REQUEST_TYPES,
+        REQUEST_TYPES,
+        TICKET_REQUEST_TYPES,
         USER_ROLES,
         FILE_UPLOAD,
         VALIDATION,
