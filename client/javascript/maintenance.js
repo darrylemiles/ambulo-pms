@@ -455,75 +455,8 @@ function updateFromDateRestrictions() {
 }
 
 function filterTicketsByDateRange() {
-  let filteredTickets = allTickets;
-
-  const searchInput = document.getElementById("searchInput");
-  const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-
-  if (searchTerm) {
-    filteredTickets = filteredTickets.filter((ticket) => {
-      return (
-        ticket.ticket_id?.toLowerCase().includes(searchTerm) ||
-        ticket.ticket_title?.toLowerCase().includes(searchTerm) ||
-        ticket.description?.toLowerCase().includes(searchTerm) ||
-        ticket.assigned_to?.toLowerCase().includes(searchTerm) ||
-        ticket.user_id?.toLowerCase().includes(searchTerm) ||
-        ticket.requested_by_name?.toLowerCase().includes(searchTerm) ||
-        ticket.requested_by_email?.toLowerCase().includes(searchTerm) ||
-        ticket.ticket_status?.toLowerCase().includes(searchTerm) ||
-        ticket.priority?.toLowerCase().includes(searchTerm) ||
-        ticket.request_type?.toLowerCase().includes(searchTerm)
-      );
-    });
-  }
-
-
-  const statusFilter = document.getElementById("statusFilter");
-  const selectedStatus = statusFilter ? statusFilter.value : "";
-  if (selectedStatus) {
-    filteredTickets = filteredTickets.filter(ticket => ticket.ticket_status === selectedStatus);
-  }
-
-
-  const priorityFilter = document.getElementById("priorityFilter");
-  const selectedPriority = priorityFilter ? priorityFilter.value : "";
-  if (selectedPriority) {
-    filteredTickets = filteredTickets.filter(ticket => ticket.priority === selectedPriority);
-  }
-
-
-  const requestTypeFilter = document.getElementById("requestTypeFilter");
-  const selectedRequestType = requestTypeFilter ? requestTypeFilter.value : "";
-  if (selectedRequestType) {
-    filteredTickets = filteredTickets.filter(ticket => ticket.request_type === selectedRequestType);
-  }
-
-  if (currentFromDate && currentToDate) {
-    const fromDate = new Date(currentFromDate);
-    const toDate = new Date(currentToDate);
-
-    toDate.setHours(23, 59, 59, 999);
-
-    filteredTickets = filteredTickets.filter((ticket) => {
-      const ticketCreatedDate = new Date(ticket.created_at);
-      const ticketEndDate = ticket.end_date ? new Date(ticket.end_date) : null;
-
-      const createdInRange =
-        ticketCreatedDate >= fromDate && ticketCreatedDate <= toDate;
-      const endInRange =
-        ticketEndDate && ticketEndDate >= fromDate && ticketEndDate <= toDate;
-      const spansRange =
-        ticketCreatedDate <= fromDate &&
-        ticketEndDate &&
-        ticketEndDate >= toDate;
-
-      return createdInRange || endInRange || spansRange;
-    });
-  }
-
-  tickets = filteredTickets;
-  renderTickets();
-  updateFilterStatus();
+  
+  loadTickets();
 }
 
 function updateFilterStatus() {
@@ -553,21 +486,47 @@ function updateFilterStatus() {
 }
 
 function filterTickets() {
-  filterTicketsByDateRange();
+  loadTickets();
 }
 
 async function loadTickets() {
   try {
-    const response = await fetch("/api/v1/tickets", {
+    
+    const searchInput = document.getElementById("searchInput");
+    const statusFilter = document.getElementById("statusFilter");
+    const priorityFilter = document.getElementById("priorityFilter");
+    const requestTypeFilter = document.getElementById("requestTypeFilter");
+    const fromDateInput = document.getElementById("fromDate");
+    const toDateInput = document.getElementById("toDate");
+
+    const params = new URLSearchParams();
+    
+    params.append("page", 1);
+    params.append("limit", 10);
+    if (searchInput && searchInput.value.trim() !== "") params.append("search", searchInput.value.trim());
+    if (statusFilter && statusFilter.value && statusFilter.value !== "all") params.append("status", statusFilter.value);
+    if (priorityFilter && priorityFilter.value && priorityFilter.value !== "all") params.append("priority", priorityFilter.value);
+    if (requestTypeFilter && requestTypeFilter.value && requestTypeFilter.value !== "all") params.append("request_type", requestTypeFilter.value);
+    if (fromDateInput && fromDateInput.value) params.append("from_date", fromDateInput.value);
+    if (toDateInput && toDateInput.value) params.append("to_date", toDateInput.value);
+
+    const url = `/api/v1/tickets?${params.toString()}`;
+    console.debug("Loading tickets from:", url);
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
+      cache: 'no-store'
     });
 
     if (response.ok) {
       const data = await response.json();
+      console.debug("Tickets response count:", (data.tickets || []).length, "pagination:", data.pagination);
+      if (data.tickets && Array.isArray(data.tickets)) {
+        console.debug("First ticket:", data.tickets[0] || null);
+      }
       allTickets = data.tickets || [];
       tickets = allTickets;
 
@@ -591,50 +550,39 @@ function clearFilters() {
   const statusFilter = document.getElementById("statusFilter");
   const priorityFilter = document.getElementById("priorityFilter");
   const requestTypeFilter = document.getElementById("requestTypeFilter");
+  if (searchInput) searchInput.value = "";
+  
+  if (statusFilter) statusFilter.value = "";
+  if (priorityFilter) priorityFilter.value = "";
+  if (requestTypeFilter) requestTypeFilter.value = "";
+  if (fromDateInput) fromDateInput.value = "";
+  if (toDateInput) toDateInput.value = "";
 
-  if (searchInput) {
-    searchInput.value = "";
-  }
-
-  if (statusFilter) {
-    statusFilter.value = "";
-  }
-
-  if (priorityFilter) {
-    priorityFilter.value = "";
-  }
-
-  if (requestTypeFilter) {
-    requestTypeFilter.value = "";
-  }
-
-  if (fromDateInput && toDateInput && minDate && maxDate) {
-    const minDateStr = minDate.toISOString().split("T")[0];
-    const maxDateStr = maxDate.toISOString().split("T")[0];
-
-    currentFromDate = minDateStr;
-    currentToDate = maxDateStr;
-
-    fromDateInput.value = minDateStr;
-    toDateInput.value = maxDateStr;
-
-    fromDateInput.min = minDateStr;
-    fromDateInput.max = maxDateStr;
-    toDateInput.min = minDateStr;
-    toDateInput.max = maxDateStr;
-  }
-
-  tickets = allTickets;
-  renderTickets();
+  loadTickets();
 }
 
 function renderTickets() {
   const container = document.getElementById("ticketsContainer");
   if (!container) return;
 
+  console.debug("renderTickets called, tickets.length=", tickets.length, "first:", tickets[0] || null);
+
+  const emptyRow = document.getElementById('emptyTicketsRow');
   if (tickets.length === 0) {
-    container.innerHTML = '<div class="no-tickets">No tickets found</div>';
+    
+    container.innerHTML = '';
+    if (emptyRow) {
+      emptyRow.style.display = '';
+      
+      container.appendChild(emptyRow);
+    }
     return;
+  } else {
+    if (emptyRow) {
+      
+      emptyRow.style.display = 'none';
+      if (emptyRow.parentElement === container) container.removeChild(emptyRow);
+    }
   }
 
   const ticketRows = tickets
@@ -1737,7 +1685,7 @@ function viewTicketDetails(ticketId) {
   document.getElementById('detailPhone').textContent = ticket.phone_number || "N/A";
   document.getElementById('detailMaintenanceCost').textContent = formatCurrency(ticket.maintenance_costs) || "Not estimated";
 
-    // Hide assign and edit buttons if status is COMPLETED
+    
     const assignBtn = document.getElementById('assignCurrentTicketBtn');
     const editBtn = document.getElementById('editCurrentTicketBtn');
     const isCompleted = ticket.ticket_status && ticket.ticket_status.toUpperCase() === AppConstants.TICKET_STATUSES.COMPLETED;

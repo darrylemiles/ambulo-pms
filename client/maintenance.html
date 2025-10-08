@@ -104,6 +104,21 @@
                     </thead>
                     <tbody id="ticketsContainer">
                         <!-- Tickets will be populated here -->
+                        <tr id="emptyTicketsRow" style="display:none;">
+                            <td colspan="10"
+                                style="text-align:center; padding: 48px 0; background: #f8fafc; color: #64748b; font-size: 1.25rem; border-radius: 12px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                                    <i class="fas fa-folder-open" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                                    <div>No maintenance tickets found</div>
+                                    <div style="font-size: 1rem; color: #94a3b8;">Try adjusting your filters or create a
+                                        new ticket.</div>
+                                    <button class="new-ticket-btn" style="margin-top: 12px;"
+                                        onclick="openNewTicketModal()">
+                                        <i class="fas fa-plus"></i> Create New Ticket
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -128,7 +143,8 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="requestedBy">Requested By <span class="required">*</span></label>
-                                <select id="requestedBy" name="requested_by" placeholder="Select or search user..." required></select>
+                                <select id="requestedBy" name="requested_by" placeholder="Select or search user..."
+                                    required></select>
                             </div>
                             <div class="form-group">
                                 <label for="unitNo">Unit / Property <span class="required">*</span></label>
@@ -142,7 +158,8 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="ticketTitle">Ticket Title <span class="required">*</span></label>
-                                <input type="text" id="ticketTitle" name="ticket_title" placeholder="Brief description of the issue" required>
+                                <input type="text" id="ticketTitle" name="ticket_title"
+                                    placeholder="Brief description of the issue" required>
                             </div>
                             <div class="form-group">
                                 <label for="requestType">Request Type <span class="required">*</span></label>
@@ -172,7 +189,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="assignedTo">Assigned To</label>
-                                <input type="text" id="assignedTo" name="assigned_to" placeholder="Leave blank for auto-assignment">
+                                <input type="text" id="assignedTo" name="assigned_to"
+                                    placeholder="Leave blank for auto-assignment">
                             </div>
                         </div>
                     </div>
@@ -189,17 +207,20 @@
                                 <input type="time" id="startTime" name="start_time" required>
                             </div>
                         </div>
-                    </div>  
+                    </div>
                     <!-- Section: Description & Notes -->
                     <div class="modal-section">
                         <h3 class="section-title"><i class="fas fa-align-left"></i> Description & Notes</h3>
                         <div class="form-group form-grid-full">
                             <label for="description">Description <span class="required">*</span></label>
-                            <textarea id="description" name="description" placeholder="Detailed description of the maintenance request" required rows="4"></textarea>
+                            <textarea id="description" name="description"
+                                placeholder="Detailed description of the maintenance request" required
+                                rows="4"></textarea>
                         </div>
                         <div class="form-group form-grid-full">
                             <label for="notes">Additional Notes</label>
-                            <textarea id="notes" name="notes" placeholder="Any additional information or special instructions" rows="3"></textarea>
+                            <textarea id="notes" name="notes"
+                                placeholder="Any additional information or special instructions" rows="3"></textarea>
                         </div>
                     </div>
                     <!-- Section: Attachments -->
@@ -209,15 +230,19 @@
                             <label for="attachments">Attachments</label>
                             <div class="attachments-area" onclick="document.getElementById('fileInput').click()">
                                 <span>📎 Click here to upload files or drag and drop</span>
-                                <input type="file" id="fileInput" name="attachments" multiple accept="image/*,application/pdf,.doc,.docx" style="display: none;">
+                                <input type="file" id="fileInput" name="attachments" multiple
+                                    accept="image/*,application/pdf,.doc,.docx" style="display: none;">
                             </div>
-                            <small class="file-info">Accepted formats: Images, PDF, Word documents (Max 10MB per file)</small>
+                            <small class="file-info">Accepted formats: Images, PDF, Word documents (Max 10MB per
+                                file)</small>
                         </div>
                     </div>
                 </div>
                 <div class="form-actions modal-actions-centered">
-                    <button type="button" class="btn-cancel btn-modal-cancel" onclick="closeNewTicketModal()"><i class="fas fa-times"></i> Cancel</button>
-                    <button type="submit" class="btn-submit btn-modal-submit"><i class="fas fa-save"></i> Create Ticket</button>
+                    <button type="button" class="btn-cancel btn-modal-cancel" onclick="closeNewTicketModal()"><i
+                            class="fas fa-times"></i> Cancel</button>
+                    <button type="submit" class="btn-submit btn-modal-submit"><i class="fas fa-save"></i> Create
+                        Ticket</button>
                 </div>
             </form>
         </div>
@@ -410,7 +435,7 @@
                 </div>
                 <button class="close-btn" onclick="closeTicketDetailsModal()">&times;</button>
             </div>
-            
+
             <div class="modal-body">
                 <div class="ticket-details-container">
                     <!-- Status and Basic Info -->
@@ -517,7 +542,8 @@
                     <button type="button" class="btn-secondary" id="editCurrentTicketBtn" onclick="editCurrentTicket()">
                         <i class="fas fa-edit"></i> Edit Ticket
                     </button>
-                    <button type="button" class="btn-secondary" id="assignCurrentTicketBtn" onclick="assignCurrentTicket()">
+                    <button type="button" class="btn-secondary" id="assignCurrentTicketBtn"
+                        onclick="assignCurrentTicket()">
                         <i class="fas fa-user-plus"></i> Assign
                     </button>
                 </div>

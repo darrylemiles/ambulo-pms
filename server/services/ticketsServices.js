@@ -141,8 +141,23 @@ const updateTicketStatuses = async () => {
 
 const getTickets = async (queryObj = {}) => {
   try {
-    const { page = 1, limit = 10, ...filters } = queryObj;
-    const skip = (page - 1) * limit;
+    
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      priority,
+      request_type,
+      from_date,
+      to_date,
+      search,
+    } = queryObj;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    
+    console.debug("getTickets called with:", { page: pageNum, limit: limitNum, status, priority, request_type, from_date, to_date, search });
 
     let query = `
       SELECT 
@@ -157,73 +172,112 @@ const getTickets = async (queryObj = {}) => {
       LEFT JOIN users u ON t.user_id = u.user_id
       LEFT JOIN leases l ON t.lease_id = l.lease_id
       LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE 1=1
     `;
     const params = [];
 
-    const ticketFilters = Object.entries(filters)
-      .filter(
-        ([key, value]) =>
-          value !== undefined &&
-          value !== "" &&
-          !["requested_by_name", "requested_by_email"].includes(key)
-      )
-      .map(([key, value]) => {
-        params.push(value);
-        return `t.${key} = ?`;
-      });
-
-    if (filters.requested_by_name) {
-      ticketFilters.push(`CONCAT(u.first_name, ' ', u.last_name) LIKE ?`);
-      params.push(`%${filters.requested_by_name}%`);
+    
+    if (status && String(status).trim() !== "" && String(status).toLowerCase() !== "all") {
+      query += ` AND UPPER(t.ticket_status) = UPPER(?)`;
+      params.push(status);
     }
-
-    if (ticketFilters.length > 0) {
-      query += " WHERE " + ticketFilters.join(" AND ");
+    
+    if (priority && String(priority).trim() !== "" && String(priority).toLowerCase() !== "all") {
+      query += ` AND UPPER(t.priority) = UPPER(?)`;
+      params.push(priority);
+    }
+    
+    if (request_type && String(request_type).trim() !== "" && String(request_type).toLowerCase() !== "all") {
+      query += ` AND UPPER(t.request_type) = UPPER(?)`;
+      params.push(request_type);
+    }
+    
+    if (from_date && to_date) {
+      query += ` AND DATE(t.created_at) BETWEEN ? AND ?`;
+      params.push(from_date, to_date);
+    } else if (from_date) {
+      query += ` AND DATE(t.created_at) >= ?`;
+      params.push(from_date);
+    } else if (to_date) {
+      query += ` AND DATE(t.created_at) <= ?`;
+      params.push(to_date);
+    }
+    
+    if (search && search.trim() !== "") {
+      query += ` AND (
+        t.ticket_title LIKE ? OR
+        t.description LIKE ? OR
+        p.property_name LIKE ? OR
+        CONCAT(u.first_name, ' ', u.last_name) LIKE ?
+      )`;
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     query += " ORDER BY t.created_at DESC";
+  query += " LIMIT ? OFFSET ?";
+  params.push(limitNum, skip);
 
-    query += " LIMIT ? OFFSET ?";
-    params.push(parseInt(limit), parseInt(skip));
-
+    
     let countQuery = `
       SELECT COUNT(*) as total 
       FROM tickets t
       LEFT JOIN users u ON t.user_id = u.user_id
       LEFT JOIN leases l ON t.lease_id = l.lease_id
       LEFT JOIN properties p ON l.property_id = p.property_id
+      WHERE 1=1
     `;
     const countParams = [];
-
-    if (ticketFilters.length > 0) {
-      countQuery += " WHERE " + ticketFilters.join(" AND ");
-
-      Object.entries(filters)
-        .filter(
-          ([key, value]) =>
-            value !== undefined &&
-            value !== "" &&
-            !["requested_by_name", "requested_by_email"].includes(key)
-        )
-        .forEach(([_, value]) => countParams.push(value));
-
-      if (filters.requested_by_name) {
-        countParams.push(`%${filters.requested_by_name}%`);
-      }
+    if (status && String(status).trim() !== "" && String(status).toLowerCase() !== "all") {
+      countQuery += ` AND UPPER(t.ticket_status) = UPPER(?)`;
+      countParams.push(status);
+    }
+    if (priority && String(priority).trim() !== "" && String(priority).toLowerCase() !== "all") {
+      countQuery += ` AND UPPER(t.priority) = UPPER(?)`;
+      countParams.push(priority);
+    }
+    if (request_type && String(request_type).trim() !== "" && String(request_type).toLowerCase() !== "all") {
+      countQuery += ` AND UPPER(t.request_type) = UPPER(?)`;
+      countParams.push(request_type);
+    }
+    if (from_date && to_date) {
+      countQuery += ` AND DATE(t.created_at) BETWEEN ? AND ?`;
+      countParams.push(from_date, to_date);
+    } else if (from_date) {
+      countQuery += ` AND DATE(t.created_at) >= ?`;
+      countParams.push(from_date);
+    } else if (to_date) {
+      countQuery += ` AND DATE(t.created_at) <= ?`;
+      countParams.push(to_date);
+    }
+    if (search && search.trim() !== "") {
+      countQuery += ` AND (
+        t.ticket_title LIKE ? OR
+        t.description LIKE ? OR
+        p.property_name LIKE ? OR
+        CONCAT(u.first_name, ' ', u.last_name) LIKE ?
+      )`;
+      const searchTerm = `%${search}%`;
+      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
-    const [rows] = await pool.query(query, params);
-    const [countResult] = await pool.query(countQuery, countParams);
+  
+  console.debug("Executing tickets query:", query);
+  console.debug("With params:", params);
+  const [rows] = await pool.query(query, params);
+  console.debug("Executing count query:", countQuery);
+  console.debug("With count params:", countParams);
+  const [countResult] = await pool.query(countQuery, countParams);
     const total = countResult[0].total;
 
     return {
       tickets: rows,
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / limit),
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limitNum),
         totalTickets: total,
-        hasNextPage: page * limit < total,
-        hasPrevPage: page > 1,
+        hasNextPage: pageNum * limitNum < total,
+        hasPrevPage: pageNum > 1,
       },
     };
   } catch (error) {
