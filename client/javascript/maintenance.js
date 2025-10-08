@@ -511,7 +511,7 @@ async function loadTickets() {
     if (toDateInput && toDateInput.value) params.append("to_date", toDateInput.value);
 
     const url = `/api/v1/tickets?${params.toString()}`;
-    console.debug("Loading tickets from:", url);
+    
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -523,9 +523,9 @@ async function loadTickets() {
 
     if (response.ok) {
       const data = await response.json();
-      console.debug("Tickets response count:", (data.tickets || []).length, "pagination:", data.pagination);
+      
       if (data.tickets && Array.isArray(data.tickets)) {
-        console.debug("First ticket:", data.tickets[0] || null);
+        
       }
       allTickets = data.tickets || [];
       tickets = allTickets;
@@ -565,24 +565,31 @@ function renderTickets() {
   const container = document.getElementById("ticketsContainer");
   if (!container) return;
 
-  console.debug("renderTickets called, tickets.length=", tickets.length, "first:", tickets[0] || null);
+  
 
   const emptyRow = document.getElementById('emptyTicketsRow');
   if (tickets.length === 0) {
     
-    container.innerHTML = '';
     if (emptyRow) {
-      emptyRow.style.display = '';
       
-      container.appendChild(emptyRow);
+      try {
+        let html = emptyRow.outerHTML;
+        
+        if (/display\s*:\s*none/.test(html)) {
+          html = html.replace(/display\s*:\s*none/g, 'display:table-row');
+        } else {
+          
+          html = html.replace('<tr', '<tr style="display:table-row"');
+        }
+        container.innerHTML = html;
+      } catch (e) {
+        
+        container.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 24px;">No maintenance tickets found</td></tr>`;
+      }
+    } else {
+      container.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 24px;">No maintenance tickets found</td></tr>`;
     }
     return;
-  } else {
-    if (emptyRow) {
-      
-      emptyRow.style.display = 'none';
-      if (emptyRow.parentElement === container) container.removeChild(emptyRow);
-    }
   }
 
   const ticketRows = tickets
@@ -651,6 +658,7 @@ function renderTickets() {
     `;
     })
     .join("");
+  
   container.innerHTML = ticketRows;
   currentlyExpandedTicket = null;
 }
