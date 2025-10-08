@@ -25,51 +25,87 @@
     <!-- Maintenance Ticketing System -->
     <div class="main-content">
         <div class="maintenance-container">
-            <div class="header-controls">
-                <button class="new-ticket-btn" onclick="openNewTicketModal()">
-                    <i class="fas fa-plus"></i> New Maintenance Request
-                </button>
-
-                <div class="date-control">
-                    <span>From:</span>
-                    <i class="fas fa-calendar-alt"></i>
-                    <input type="date" id="fromDate" class="date-picker">
-                </div>
-
-                <div class="date-control">
-                    <span>To:</span>
-                    <i class="fas fa-calendar-alt"></i>
-                    <input type="date" id="toDate" class="date-picker">
-                </div>
-
-                <div class="search-container">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" class="search-input" placeholder="Search tickets..." id="searchInput">
-                </div>
-
-                <button class="clear-filters-btn" onclick="clearFilters()">
-                    <i class="fas fa-times"></i> Clear Filters
-                </button>
-                <button class="filter-btn">
-                    <i class="fas fa-filter"></i>
-                </button>
+            <!-- Breadcrumb Navigation -->
+            <div class="breadcrumb-container">
+                <nav class="breadcrumb-nav">
+                    <a href="/adminDashboard.html">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <span class="breadcrumb-separator">></span>
+                    <span class="breadcrumb-current">Maintenance Requests</span>
+                </nav>
             </div>
 
-            <div class="tickets-container">
-                <div class="table-header">
-                    <div class="header-center">Status</div>
-                    <div class="header-left">Ticket Title</div>
-                    <div class="header-center">Unit No.</div>
-                    <div class="header-center">Priority</div>
-                    <div class="header-center">Request Type</div>
-                    <div class="header-center">Start Date</div>
-                    <div class="header-center">End Date</div>
-                    <div class="header-center">Actions</div>
-                    <div class="header-center">Expand</div>
+            <div class="header-controls">
+                <div class="controls-row">
+                    <button class="new-ticket-btn" onclick="openNewTicketModal()">
+                        <i class="fas fa-plus"></i> New Maintenance Request
+                    </button>
+
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search tickets..." id="searchInput">
+                    </div>
+
+                    <button class="clear-filters-btn" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
                 </div>
 
-                <div id="ticketsContainer">
+                <div class="controls-row">
+                    <div class="control-group">
+                        <label for="statusFilter">Status</label>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="">All Status</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="priorityFilter">Priority</label>
+                        <select id="priorityFilter" class="filter-select">
+                            <option value="">All Priority</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="requestTypeFilter">Type</label>
+                        <select id="requestTypeFilter" class="filter-select">
+                            <option value="">All Types</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="fromDate">From Date</label>
+                        <input type="date" id="fromDate" class="filter-date">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="toDate">To Date</label>
+                        <input type="date" id="toDate" class="filter-date">
+                    </div>
                 </div>
+            </div>
+
+            <div class="maintenance-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Status</th>
+                            <th>Ticket Title</th>
+                            <th>Requestor</th>
+                            <th>Property</th>
+                            <th>Priority</th>
+                            <th>Request Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsContainer">
+                        <!-- Tickets will be populated here -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -283,7 +319,7 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="editMaintenanceCosts">Maintenance Costs</label>
-                            <input type="number" id="editMaintenanceCosts" name="maintenance_cost" step="0.01" min="0"
+                            <input type="number" id="editMaintenanceCosts" name="maintenance_costs" step="0.01" min="0"
                                 placeholder="0.00">
                         </div>
                         <div class="form-group" id="editAssignedToGroup">
@@ -328,13 +364,30 @@
                     <!-- New Attachments - full width -->
                     <div class="form-group form-grid-full">
                         <label for="editAttachments">Add New Attachments</label>
-                        <div class="attachments-area" onclick="document.getElementById('editFileInput').click()">
-                            <span>📎 Click here to upload additional files or drag and drop</span>
-                            <input type="file" id="editFileInput" name="attachments" multiple
-                                accept="image/*,application/pdf,.doc,.docx" style="display: none;">
+                        <div class="upload-container">
+                            <div class="attachments-area" onclick="document.getElementById('editFileInput').click()">
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <div class="upload-text">
+                                    <span class="upload-main">Click to upload files or drag and drop</span>
+                                    <span class="upload-sub">Maximum 5 files total (including existing)</span>
+                                </div>
+                                <input type="file" id="editFileInput" name="attachments" multiple
+                                    accept="image/*,video/*,application/pdf,.doc,.docx,.txt" style="display: none;">
+                            </div>
+                            <div class="upload-progress" id="editUploadProgress" style="display: none;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                                <span class="progress-text">Uploading files...</span>
+                            </div>
+                            <div class="selected-files" id="editSelectedFiles"></div>
                         </div>
-                        <small class="file-info">Accepted formats: Images (JPEG, PNG), PDF, Word documents (Max 10MB per
-                            file)</small>
+                        <small class="file-info">
+                            <i class="fas fa-info-circle"></i>
+                            Accepted: Images, Videos, PDF, Word documents, Text files (Max 10MB per file)
+                        </small>
                     </div>
                 </div>
 
@@ -346,6 +399,136 @@
         </div>
     </div>
 
+
+    <!-- Ticket Details Modal -->
+    <div class="modal" id="ticketDetailsModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h2 id="detailsModalTitle">Ticket Details</h2>
+                    <p class="modal-subtitle">Complete ticket information and status</p>
+                </div>
+                <button class="close-btn" onclick="closeTicketDetailsModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="ticket-details-container">
+                    <!-- Status and Basic Info -->
+                    <div class="details-section">
+                        <h3 class="section-title"><i class="fas fa-info-circle"></i> Basic Information</h3>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Ticket ID:</label>
+                                <span id="detailTicketId">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Status:</label>
+                                <span id="detailStatus" class="status-badge">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Priority:</label>
+                                <span id="detailPriority" class="priority-badge">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Request Type:</label>
+                                <span id="detailRequestType">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Requested By:</label>
+                                <span id="detailRequestedBy">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Property:</label>
+                                <span id="detailProperty">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="details-section">
+                        <h3 class="section-title"><i class="fas fa-align-left"></i> Description</h3>
+                        <div class="details-content">
+                            <p id="detailDescription">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Information -->
+                    <div class="details-section">
+                        <h3 class="section-title"><i class="fas fa-calendar-alt"></i> Schedule & Timeline</h3>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Created Date:</label>
+                                <span id="detailCreatedAt">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Start Date/Time:</label>
+                                <span id="detailStartDateTime">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>End Date/Time:</label>
+                                <span id="detailEndDateTime">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Last Updated:</label>
+                                <span id="detailUpdatedAt">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assignment & Cost -->
+                    <div class="details-section">
+                        <h3 class="section-title"><i class="fas fa-user-cog"></i> Assignment & Cost</h3>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Assigned To:</label>
+                                <span id="detailAssignedTo">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Contact Phone:</label>
+                                <span id="detailPhone">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Maintenance Cost:</label>
+                                <span id="detailMaintenanceCost" class="cost-display">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="details-section" id="notesSection" style="display: none;">
+                        <h3 class="section-title"><i class="fas fa-sticky-note"></i> Notes</h3>
+                        <div class="details-content">
+                            <p id="detailNotes">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Attachments -->
+                    <div class="details-section" id="attachmentsSection" style="display: none;">
+                        <h3 class="section-title"><i class="fas fa-paperclip"></i> Attachments</h3>
+                        <div class="attachments-grid" id="detailAttachments">
+                            <!-- Attachments will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="modal-actions-left">
+                    <button type="button" class="btn-secondary" id="editCurrentTicketBtn" onclick="editCurrentTicket()">
+                        <i class="fas fa-edit"></i> Edit Ticket
+                    </button>
+                    <button type="button" class="btn-secondary" id="assignCurrentTicketBtn" onclick="assignCurrentTicket()">
+                        <i class="fas fa-user-plus"></i> Assign
+                    </button>
+                </div>
+                <div class="modal-actions-right">
+                    <button type="button" class="btn-cancel" onclick="closeTicketDetailsModal()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Assign Ticket Modal -->
     <div class="modal" id="assignTicketModal">
