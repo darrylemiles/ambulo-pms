@@ -9,6 +9,7 @@ const createUploadMiddleware = ({ fields = [], fieldFolders = {} }) => {
     'pdf', 'doc', 'docx',
     'ppt', 'pptx',
     'xls', 'xlsx',
+    'mp4', 'mov', 'avi',
   ];
 
   const mimeToExtension = {
@@ -24,6 +25,9 @@ const createUploadMiddleware = ({ fields = [], fieldFolders = {} }) => {
     'vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
     'vnd.ms-excel': 'xls',
     'vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+    'mp4': 'mp4',
+    'quicktime': 'mov',
+    'x-msvideo': 'avi',
   };
 
   const storage = new CloudinaryStorage({
@@ -33,6 +37,7 @@ const createUploadMiddleware = ({ fields = [], fieldFolders = {} }) => {
       const ext = mimeToExtension[mimePart] || mimePart;
 
       const isRawFile = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext);
+      const isVideoFile = ['mp4', 'mov', 'avi'].includes(ext);
 
       const folder = fieldFolders[file.fieldname] || 'uploads';
 
@@ -40,7 +45,7 @@ const createUploadMiddleware = ({ fields = [], fieldFolders = {} }) => {
         folder,
         public_id: uuidv4(),
         format: ext,
-        resource_type: isRawFile ? 'raw' : 'image',
+        resource_type: isRawFile ? 'raw' : isVideoFile ? 'video' : 'image',
       };
     },
   });
