@@ -169,14 +169,14 @@ function setupSidebar(role) {
     let links = [];
     if (role === 'tenant') {
         links = [
-            { href: '/tenantDashboard.html', icon: 'fas fa-chart-line', text: 'Dashboard', page: 'dashboard' },
-            { href: '/messages.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messages' },
+            { href: '/tenantDashboard.html', icon: 'fas fa-chart-line', text: 'Dashboard', page: 'dashboard', tooltip: 'Dashboard Overview' },
+            { href: '/messages.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messages', tooltip: 'Messages & Communication' },
             { section: 'Lease', isSection: true },
-            { href: '/leaseTenant.html', icon: 'fas fa-file-contract', text: 'Lease Information', page: 'leaseTenant' },
+            { href: '/leaseTenant.html', icon: 'fas fa-file-contract', text: 'Lease Information', page: 'leaseTenant', tooltip: 'Lease Agreement & Details' },
             { section: 'Payments', isSection: true },
-            { href: '/paymentTenant.html', icon: 'fas fa-credit-card', text: 'Payments', page: 'paymentTenant' },
+            { href: '/paymentTenant.html', icon: 'fas fa-credit-card', text: 'Payments', page: 'paymentTenant', tooltip: 'Rent & Payment History' },
             { section: 'Requests', isSection: true },
-            { href: '/maintenanceTenant.html', icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenanceTenant' },
+            { href: '/maintenanceTenant.html', icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenanceTenant', tooltip: 'Maintenance Requests' },
         ];
     }
 
@@ -186,7 +186,7 @@ function setupSidebar(role) {
         }
         return `
             <div class="nav-item">
-                <a href="${link.href}" class="nav-link" data-tooltip="${link.text}" data-page="${link.page}">
+                <a href="${link.href}" class="nav-link" data-tooltip="${link.tooltip || link.text}" data-page="${link.page}" title="${link.tooltip || link.text}">
                     <div class="nav-icon"><i class="${link.icon}"></i></div>
                     <span class="nav-text">${link.text}</span>
                 </a>
@@ -885,7 +885,7 @@ class TenantNavigationManager {
         const navItem = document.createElement('div');
         navItem.className = 'nav-item';
         navItem.innerHTML = `
-            <a href="${item.href || '#'}" class="nav-link" data-tooltip="${item.tooltip || item.text}" data-page="${item.page || ''}">
+            <a href="${item.href || '#'}" class="nav-link" data-tooltip="${item.tooltip || item.text}" data-page="${item.page || ''}" title="${item.tooltip || item.text}">
                 <div class="nav-icon"><i class="${item.icon || 'fas fa-circle'}"></i></div>
                 <span class="nav-text">${item.text}</span>
             </a>

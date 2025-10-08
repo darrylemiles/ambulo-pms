@@ -146,19 +146,19 @@ function setupSidebar(role) {
     let links = [];
     if (role === 'admin') {
         links = [
-            { href: '/adminDashboard.html', icon: 'fas fa-chart-line', text: 'Dashboard', page: 'dashboard' },
-            { href: '/messagesAdmin.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messagesAdmin' },
+            { href: '/adminDashboard.html', icon: 'fas fa-chart-line', text: 'Dashboard', page: 'dashboard', tooltip: 'Dashboard' },
+            { href: '/messagesAdmin.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messagesAdmin', tooltip: 'Messages' },
             { section: 'Property Management', isSection: true },
-            { href: '/propertyAdmin.html', icon: 'fas fa-building', text: 'Properties', page: 'propertyAdmin' },
-            { href: '/tenants.html', icon: 'fas fa-users', text: 'Tenants', page: 'tenants' },
-            { href: '/documents.html', icon: 'fa-solid fa-folder', text: 'Documents', page: 'documents' },
-            { href: '/leaseAdmin.html', icon: 'fas fa-file-contract', text: 'Leases', page: 'leases' },
+            { href: '/propertyAdmin.html', icon: 'fas fa-building', text: 'Properties', page: 'propertyAdmin', tooltip: 'Properties' },
+            { href: '/tenants.html', icon: 'fas fa-users', text: 'Tenants', page: 'tenants', tooltip: 'Tenants' },
+            { href: '/documents.html', icon: 'fa-solid fa-folder', text: 'Documents', page: 'documents', tooltip: 'Documents' },
+            { href: '/leaseAdmin.html', icon: 'fas fa-file-contract', text: 'Leases', page: 'leases', tooltip: 'Lease Management' },
             { section: 'Operations', isSection: true },
-            { href: '/maintenance.html', icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenance' },
-            { href: '/paymentAdmin.html', icon: 'fas fa-credit-card', text: 'Payments', page: 'payments' },
-            { href: '#', icon: 'fas fa-chart-bar', text: 'Reports', page: 'reports' },
+            { href: '/maintenance.html', icon: 'fas fa-tools', text: 'Maintenance', page: 'maintenance', tooltip: 'Maintenance Requests' },
+            { href: '/paymentAdmin.html', icon: 'fas fa-credit-card', text: 'Payments', page: 'payments', tooltip: 'Payment Management' },
+            { href: '#', icon: 'fas fa-chart-bar', text: 'Reports', page: 'reports', tooltip: 'Analytics & Reports' },
             { section: 'Content Management', isSection: true },
-            { href: '/contentManagement.html', icon: 'fa-solid fa-gears', text: 'Manage Content', page: 'content' }
+            { href: '/contentManagement.html', icon: 'fa-solid fa-gears', text: 'Manage Content', page: 'content', tooltip: 'Content Management' }
         ];
     }
 
@@ -168,7 +168,7 @@ function setupSidebar(role) {
         }
         return `
             <div class="nav-item">
-                <a href="${link.href}" class="nav-link" data-tooltip="${link.text}" data-page="${link.page}">
+                <a href="${link.href}" class="nav-link" data-tooltip="${link.tooltip || link.text}" data-page="${link.page}" title="${link.tooltip || link.text}">
                     <div class="nav-icon"><i class="${link.icon}"></i></div>
                     <span class="nav-text">${link.text}</span>
                 </a>
@@ -1014,7 +1014,7 @@ class NavigationManager {
         navItem.className = "nav-item";
         navItem.innerHTML = `
             <a href="${item.href || "#"}" class="nav-link" data-tooltip="${item.tooltip || item.text
-            }" data-page="${item.page || ""}">
+            }" data-page="${item.page || ""}" title="${item.tooltip || item.text}">
                 <div class="nav-icon"><i class="${item.icon || "fas fa-circle"
             }"></i></div>
                 <span class="nav-text">${item.text}</span>
