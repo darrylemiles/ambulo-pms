@@ -157,7 +157,7 @@ const getTickets = async (queryObj = {}) => {
     const skip = (pageNum - 1) * limitNum;
 
     
-    console.debug("getTickets called with:", { page: pageNum, limit: limitNum, status, priority, request_type, from_date, to_date, search });
+    
 
     let query = `
       SELECT 
@@ -262,11 +262,11 @@ const getTickets = async (queryObj = {}) => {
     }
 
   
-  console.debug("Executing tickets query:", query);
-  console.debug("With params:", params);
+  
+  
   const [rows] = await pool.query(query, params);
-  console.debug("Executing count query:", countQuery);
-  console.debug("With count params:", countParams);
+  
+  
   const [countResult] = await pool.query(countQuery, countParams);
     const total = countResult[0].total;
 
