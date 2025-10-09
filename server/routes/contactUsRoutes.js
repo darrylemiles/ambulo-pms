@@ -13,7 +13,7 @@ const router = express.Router();
 router.post('/create-contact', createContactUsEntry);
 router.get('/', getAllContactUsEntries);
 router.get('/:entry_id', getContactUsEntryById);
-router.patch('/:entry_id', editContactUsEntry);
-router.delete('/:entry_id', deleteContactUsEntry);
+router.patch('/:entry_id', protect, editContactUsEntry);
+router.delete('/:entry_id', protect, deleteContactUsEntry);
 
 export default router;
