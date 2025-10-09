@@ -22,6 +22,7 @@ import leaseDefaultRoutes from './routes/leaseDefaultsRoutes.js';
 import aboutUsRoutes from './routes/aboutUsRoutes.js';
 import chargesRoutes from './routes/chargesRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import contactUsRoutes from './routes/contactUsRoutes.js';
 
 
 import tables from './tables/tables.js';
@@ -70,6 +71,7 @@ app.use(`/api/${API_VERSION}/lease-defaults`, leaseDefaultRoutes);
 app.use(`/api/${API_VERSION}/about-us`, aboutUsRoutes);
 app.use(`/api/${API_VERSION}/charges`, chargesRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
+app.use(`/api/${API_VERSION}/contact-us`, contactUsRoutes);
 
 // Serve login page
 app.get('/', (req, res) => {
