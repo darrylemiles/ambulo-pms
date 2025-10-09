@@ -4,6 +4,11 @@ import contactUsServices from "../services/contactUsServices.js";
 const createContactUsEntry = expressAsync(async (req, res) => {
   try {
     const payload = { ...req.body };
+    
+    if (!payload || Object.keys(payload).length === 0) {
+      res.status(400).json({ message: 'Request body is empty. Make sure you send form fields (application/json or multipart/form-data with a parser).' });
+      return;
+    }
     const response = await contactUsServices.createContactUsEntry(payload);
     res.json(response);
   } catch (error) {
