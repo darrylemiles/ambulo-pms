@@ -1,4 +1,4 @@
-// Ticket Status Constants
+
 const TICKET_STATUSES = {
     PENDING: 'PENDING',
     ASSIGNED: 'ASSIGNED',
@@ -7,14 +7,14 @@ const TICKET_STATUSES = {
     CANCELLED: 'CANCELLED'
 };
 
-// Priority Levels
+
 const PRIORITY_LEVELS = {
     LOW: 'LOW',
     MEDIUM: 'MEDIUM',
     URGENT: 'URGENT'
 };
 
-// Ticket Request Types for dropdown
+
 const TICKET_REQUEST_TYPES = [
     { value: 'Electrical', label: 'Electrical' },
     { value: 'Plumbing', label: 'Plumbing' },
@@ -27,17 +27,17 @@ const TICKET_REQUEST_TYPES = [
     { value: 'Other', label: 'Other' }
 ];
 
-// User Roles
+
 const USER_ROLES = {
     ADMIN: 'ADMIN',
     MANAGER: 'MANAGER',
     TENANT: 'TENANT'
 };
 
-// File Upload Constants
+
 const FILE_UPLOAD = {
-    MAX_SIZE: 10 * 1024 * 1024, // 10MB in bytes
-    MAX_FILES: 5, // Maximum total files including existing attachments
+    MAX_SIZE: 10 * 1024 * 1024, 
+    MAX_FILES: 5, 
     ALLOWED_TYPES: [
         'image/jpeg',
         'image/png',
@@ -56,7 +56,7 @@ const FILE_UPLOAD = {
     UPLOAD_PATH: './uploads/attachments/'
 };
 
-// Validation Constants
+
 const VALIDATION = {
     UNIT_NUMBER_REGEX: /^[A-Z]?\d+[A-Z]?$/i,
     PHONE_REGEX: /^(\+63|0)?[9]\d{9}$/,
@@ -67,14 +67,14 @@ const VALIDATION = {
     NOTES_MAX_LENGTH: 500
 };
 
-// Currency and Locale
+
 const LOCALE = {
     CURRENCY: 'PHP',
     LOCALE_CODE: 'en-PH',
     TIMEZONE: 'Asia/Manila'
 };
 
-// Date Formats
+
 const DATE_FORMATS = {
     DB_DATE: 'YYYY-MM-DD',
     DB_TIME: 'HH:mm:ss',
@@ -83,7 +83,7 @@ const DATE_FORMATS = {
     DISPLAY_DATETIME: 'MMM D, YYYY, h:mm A'
 };
 
-// API Response Messages
+
 const MESSAGES = {
     SUCCESS: {
         TICKET_CREATED: 'Ticket created successfully',
@@ -107,14 +107,23 @@ const MESSAGES = {
         DUPLICATE_EMAIL: 'Email already exists',
         FILE_TOO_LARGE: 'File size exceeds limit',
         INVALID_FILE_TYPE: 'Invalid file type'
+
     }
 };
 
-// Status Mappings for Database
+
+const SUBJECT_LINES = [
+    { value: 'general', label: 'General Inquiry' },
+    { value: 'property-availability', label: 'Property Availability / Viewing Request' },
+    { value: 'leasing-terms', label: 'Leasing / Rental Terms' },
+    { value: 'feedback', label: 'Feedback or Suggestions' }
+];
+
+
 const STATUS_MAPPINGS = {
     [TICKET_STATUSES.PENDING]: {
         label: 'Pending',
-        color: '#f59e0b', // Amber/Orange
+        color: '#f59e0b', 
         canEdit: true,
         canAssign: true,
         canCancel: true,
@@ -122,7 +131,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.ASSIGNED]: {
         label: 'Assigned',
-        color: '#2563eb', // Blue
+        color: '#2563eb', 
         canEdit: true,
         canAssign: true,
         canCancel: true,
@@ -130,7 +139,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.IN_PROGRESS]: {
         label: 'In Progress',
-        color: '#7c3aed', // Violet
+        color: '#7c3aed', 
         canEdit: false,
         canAssign: false,
         canCancel: false,
@@ -138,7 +147,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.COMPLETED]: {
         label: 'Completed',
-        color: '#059669', // Emerald/Green
+        color: '#059669', 
         canEdit: false,
         canAssign: false,
         canCancel: false,
@@ -146,7 +155,7 @@ const STATUS_MAPPINGS = {
     },
     [TICKET_STATUSES.CANCELLED]: {
         label: 'Cancelled',
-        color: '#dc2626', // Red
+        color: '#dc2626', 
         canEdit: false,
         canAssign: false,
         canCancel: false,
@@ -154,7 +163,7 @@ const STATUS_MAPPINGS = {
     }
 };
 
-// Priority Mappings
+
 const PRIORITY_MAPPINGS = {
     [PRIORITY_LEVELS.LOW]: {
         label: 'Low',
@@ -174,7 +183,7 @@ const PRIORITY_MAPPINGS = {
 };
 
 
-// Pagination Constants
+
 const PAGINATION = {
     DEFAULT_LIMIT: 20,
     MAX_LIMIT: 100,
@@ -182,9 +191,9 @@ const PAGINATION = {
 };
 
 
-// Browser export - make available globally
+
 if (typeof module !== 'undefined' && module.exports) {
-    // Node.js export
+    
     module.exports = {
         TICKET_STATUSES,
         PRIORITY_LEVELS,
@@ -196,12 +205,13 @@ if (typeof module !== 'undefined' && module.exports) {
         LOCALE,
         DATE_FORMATS,
         MESSAGES,
+        SUBJECT_LINES,
         STATUS_MAPPINGS,
         PRIORITY_MAPPINGS,
         PAGINATION
     };
 } else {
-    // Browser export - attach to window
+    
     window.AppConstants = {
         TICKET_STATUSES,
         PRIORITY_LEVELS,
@@ -212,6 +222,7 @@ if (typeof module !== 'undefined' && module.exports) {
         LOCALE,
         DATE_FORMATS,
         MESSAGES,
+        SUBJECT_LINES,
         STATUS_MAPPINGS,
         PRIORITY_MAPPINGS,
         PAGINATION

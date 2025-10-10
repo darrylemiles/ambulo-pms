@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../assets/fontawesome/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/contactus.css">
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png">
-    <link rel="manifest" href="/assets/favicon/site.webmanifest">
     <title>Contact Us</title>
 </head>
 
@@ -39,30 +39,30 @@
                         about your commercial space requirements.</p>
 
                     <form id="contactForm">
+
                         <div class="form-row">
                             <div class="form-group">
+                                <input type="text" id="firstName" name="firstName" placeholder=" " required>
                                 <label for="firstName">First Name *</label>
-                                <input type="text" id="firstName" name="firstName" required>
                             </div>
                             <div class="form-group">
+                                <input type="text" id="lastName" name="lastName" placeholder=" " required>
                                 <label for="lastName">Last Name *</label>
-                                <input type="text" id="lastName" name="lastName" required>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
+                                <input type="email" id="email" name="email" placeholder=" " required>
                                 <label for="email">Email Address *</label>
-                                <input type="email" id="email" name="email" required>
                             </div>
                             <div class="form-group">
+                                <input type="tel" id="phone" name="phone" placeholder=" ">
                                 <label for="phone">Phone Number</label>
-                                <input type="tel" id="phone" name="phone" placeholder="+63 xxx xxx xxxx">
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="businessType">Business Type</label>
                             <select id="businessType" name="businessType">
                                 <option value="">Select Business Type</option>
                                 <option value="retail">Retail Store</option>
@@ -73,11 +73,11 @@
                                 <option value="services">Service Business</option>
                                 <option value="other">Other</option>
                             </select>
+                            <label for="businessType">Business Type</label>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="spaceSize">Preferred Space Size</label>
                                 <select id="spaceSize" name="spaceSize">
                                     <option value="">Select Size</option>
                                     <option value="small">Small (< 50 sqm)</option>
@@ -85,9 +85,9 @@
                                     <option value="large">Large (> 100 sqm)</option>
                                     <option value="flexible">Flexible</option>
                                 </select>
+                                <label for="spaceSize">Preferred Space Size</label>
                             </div>
                             <div class="form-group">
-                                <label for="budget">Monthly Budget Range</label>
                                 <select id="budget" name="budget">
                                     <option value="">Select Budget</option>
                                     <option value="under-20k">Under ₱20,000</option>
@@ -96,13 +96,25 @@
                                     <option value="over-100k">Over ₱100,000</option>
                                     <option value="discuss">Prefer to Discuss</option>
                                 </select>
+                                <label for="budget">Monthly Budget Range</label>
                             </div>
                         </div>
 
+                        <!-- Subject Dropdown -->
                         <div class="form-group">
+                            <select id="subject" name="subject" required>
+                                <option value="">Select Subject</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="property-availability">Property Availability / Viewing Request</option>
+                                <option value="leasing-terms">Leasing / Rental Terms</option>
+                                <option value="feedback">Feedback or Suggestions</option>
+                            </select>
+                            <label for="subject">Subject *</label>
+                        </div>
+
+                        <div class="form-group">
+                            <textarea id="message" name="message" placeholder=" " required></textarea>
                             <label for="message">Message *</label>
-                            <textarea id="message" name="message" required
-                                placeholder="Tell us about your business needs, preferred move-in date, and any specific requirements..."></textarea>
                         </div>
 
                         <button type="submit" class="btn" id="submitBtn">

@@ -1,206 +1,191 @@
 import fetchCompanyDetails from "../api/loadCompanyInfo.js";
-import { fetchFaqs } from "../utils/loadFaqs.js";
+import { fetchFaqs } from "../api/loadFaqs.js";
 const API_BASE_URL = "/api/v1";
 
-document.addEventListener("DOMContentLoaded", fetchAndRenderContactFAQs);
+document.addEventListener("DOMContentLoaded", () => {
+  
+  initializeAnimations();
+  enhanceFormInteractions();
+  addMicroAnimations();
+  
+  
+  setDynamicContactInfo();
+  fetchAndRenderContactFAQs();
+});
 
 const observerOptions = {
-  threshold: 0.1,
-  rootMargin: "0px 0px -50px 0px",
+  threshold: 0.15,
+  rootMargin: "0px 0px -80px 0px",
 };
 
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {
       entry.target.classList.add("revealed");
+      
+      const children = entry.target.querySelectorAll('.form-group, .contact-item-box, .faq-item');
+      children.forEach((child, index) => {
+        setTimeout(() => {
+          child.style.animationDelay = `${index * 0.1}s`;
+          child.classList.add('stagger-animate');
+        }, index * 100);
+      });
     }
   });
 }, observerOptions);
 
-document.querySelectorAll(".reveal-element").forEach((el) => {
-  observer.observe(el);
-});
+function initializeAnimations() {
+  document.querySelectorAll(".reveal-element").forEach((el) => {
+    observer.observe(el);
+  });
 
-window.addEventListener("scroll", () => {
-  const navbar = document.querySelector(".navbar");
-  if (navbar) {
-    if (window.scrollY > 100) {
-      navbar.style.background = "rgba(255, 255, 255, 0.98)";
-    } else {
-      navbar.style.background = "rgba(255, 255, 255, 0.95)";
-    }
-  }
-});
-
-document.querySelectorAll(".faq-question").forEach((question) => {
-  question.addEventListener("click", () => {
-    const faqItem = question.parentElement;
-    const isActive = faqItem.classList.contains("active");
-
-    document.querySelectorAll(".faq-item").forEach((item) => {
-      item.classList.remove("active");
-    });
-
-    if (!isActive) {
-      faqItem.classList.add("active");
+  
+  window.addEventListener('scroll', () => {
+    const scrolled = window.pageYOffset;
+    const hero = document.querySelector('.hero');
+    if (hero) {
+      hero.style.transform = `translateY(${scrolled * 0.5}px)`;
     }
   });
-});
-
-document.getElementById("contactForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const submitBtn = document.getElementById("submitBtn");
-  const originalText = submitBtn.textContent;
-
-  const formData = new FormData(this);
-  const firstName = formData.get("firstName");
-  const lastName = formData.get("lastName");
-  const email = formData.get("email");
-  const phone = formData.get("phone");
-  const businessType = formData.get("businessType");
-  const spaceSize = formData.get("spaceSize");
-  const budget = formData.get("budget");
-  const message = formData.get("message");
-
-  if (!firstName || !lastName || !email || !message) {
-    alert("Please fill in all required fields.");
-    return;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    alert("Please enter a valid email address.");
-    return;
-  }
-
-  submitBtn.textContent = "Sending Message...";
-  submitBtn.disabled = true;
-
-  setTimeout(() => {
-    alert(
-      `Thank you, ${firstName}! Your inquiry has been received. We'll contact you within 24 hours regarding your commercial space requirements.`
-    );
-
-    this.reset();
-
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-
-    if (businessType) {
-      setTimeout(() => {
-        alert(
-          `We've noted your interest in ${businessType} space. Our leasing specialist will prepare relevant options for you.`
-        );
-      }, 1000);
-    }
-  }, 2000);
-});
-
-document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-  anchor.addEventListener("click", function (e) {
-    e.preventDefault();
-    const target = document.querySelector(this.getAttribute("href"));
-    if (target) {
-      target.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  });
-});
-
-document.querySelectorAll("input, textarea, select").forEach((field) => {
-  field.addEventListener("focus", function () {
-    this.parentElement.style.transform = "scale(1.02)";
-  });
-
-  field.addEventListener("blur", function () {
-    this.parentElement.style.transform = "scale(1)";
-  });
-});
-
-document.querySelectorAll(".contact-item").forEach((item) => {
-  item.addEventListener("mouseenter", function () {
-    this.style.background = "rgba(255, 255, 255, 0.1)";
-  });
-
-  item.addEventListener("mouseleave", function () {
-    this.style.background = "rgba(255, 255, 255, 0.05)";
-  });
-});
-
-const messageTextarea = document.getElementById("message");
-messageTextarea.addEventListener("input", function () {
-  this.style.height = "auto";
-  this.style.height = this.scrollHeight + "px";
-});
-
-
-
-const style = document.createElement("style");
-style.textContent = `
-            @keyframes float {
-                0%, 100% { transform: translateY(0px); }
-                50% { transform: translateY(-10px); }
-            }
-        `;
-document.head.appendChild(style);
-
-const inputs = document.querySelectorAll("input, textarea, select");
-inputs.forEach((input) => {
-  input.addEventListener("blur", function () {
-    validateField(this);
-  });
-});
-
-function validateField(field) {
-  const value = field.value.trim();
-  const isRequired = field.hasAttribute("required");
-
-  field.classList.remove("valid", "invalid");
-
-  if (isRequired && !value) {
-    field.classList.add("invalid");
-    return false;
-  }
-
-  if (field.type === "email" && value) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) {
-      field.classList.add("invalid");
-      return false;
-    }
-  }
-
-  if (value) {
-    field.classList.add("valid");
-  }
-
-  return true;
 }
 
-const validationStyle = document.createElement("style");
-validationStyle.textContent = `
-            .form-group input.valid, 
-            .form-group textarea.valid, 
-            .form-group select.valid {
-                border-color: #10b981;
-                background: #f0fdf4;
-            }
-            
-            .form-group input.invalid, 
-            .form-group textarea.invalid, 
-            .form-group select.invalid {
-                border-color: #ef4444;
-                background: #fef2f2;
-            }
-        `;
-document.head.appendChild(validationStyle);
+
+
+function enhanceFormInteractions() {
+  const form = document.getElementById("contactForm");
+  const submitBtn = document.getElementById("submitBtn");
+  
+  
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const originalText = submitBtn.textContent;
+    const formData = new FormData(this);
+    const firstName = formData.get("firstName");
+    const lastName = formData.get("lastName");
+    const email = formData.get("email");
+    const phone = formData.get("phone");
+    const businessType = formData.get("businessType");
+    const spaceSize = formData.get("spaceSize");
+    const budget = formData.get("budget");
+    const subject = formData.get("subject");
+    const message = formData.get("message");
+
+    if (!firstName || !lastName || !email || !subject || !message) {
+      showNotification("Please fill in all required fields.", "error");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showNotification("Please enter a valid email address.", "error");
+      return;
+    }
+
+    
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending Message...';
+    submitBtn.disabled = true;
+    submitBtn.style.background = '#6b7280';
+
+    
+    form.style.opacity = '0.7';
+    form.style.pointerEvents = 'none';
+
+    setTimeout(() => {
+      const selectedSubject = document.querySelector('#subject option:checked').textContent;
+      showNotification(
+        `Thank you, ${firstName}! Your inquiry (${selectedSubject}) has been received. We'll contact you within 24 hours.`,
+        "success"
+      );
+
+      
+      this.reset();
+      resetFloatingLabels();
+
+      
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+      submitBtn.style.background = '';
+      
+      
+      form.style.opacity = '';
+      form.style.pointerEvents = '';
+
+      if (businessType) {
+        setTimeout(() => {
+          showNotification(
+            `We've noted your interest in ${businessType} space. Our leasing specialist will prepare relevant options for you.`,
+            "info"
+          );
+        }, 2000);
+      }
+    }, 2500);
+  });
+
+  
+  document.querySelectorAll("input, textarea, select").forEach((field) => {
+    
+    field.addEventListener("focus", function () {
+      if (this.tagName !== 'SELECT') {
+        this.parentElement.classList.add('focused');
+      }
+      this.parentElement.style.transform = "scale(1.01)";
+    });
+
+    
+    field.addEventListener("blur", function () {
+      if (this.tagName !== 'SELECT') {
+        this.parentElement.classList.remove('focused');
+      }
+      this.parentElement.style.transform = "scale(1)";
+      updateLabelState(this);
+      validateField(this);
+    });
+
+    
+    field.addEventListener("input", function () {
+      updateLabelState(this);
+      validateField(this);
+    });
+
+    field.addEventListener("change", function () {
+      updateLabelState(this);
+      validateField(this);
+    });
+
+    
+    updateLabelState(field);
+  });
+}
+
+
+function updateLabelState(field) {
+  
+  if (field.tagName === 'SELECT') {
+    return;
+  }
+  
+  const formGroup = field.parentElement;
+  const hasValue = field.value && field.value.trim() !== '';
+  
+  if (hasValue) {
+    formGroup.classList.add('has-value');
+  } else {
+    formGroup.classList.remove('has-value');
+  }
+}
+
+
 
 async function setDynamicContactInfo() {
-  const company = await fetchCompanyDetails();
-  if (!company) return;
+  
+  try {
+    const company = await fetchCompanyDetails();
+    
+    if (!company) {
+      console.warn('No company details returned');
+      return;
+    }
 
   const phoneBoxes = document.querySelectorAll(
     ".contact-item-box .contact-item-content h4"
@@ -281,20 +266,72 @@ async function setDynamicContactInfo() {
   if (metaDescription) {
     metaDescription.content = company.meta_description || "Contact Ambulo Properties for your commercial space needs.";
   }
+
+  
+  } catch (error) {
+    console.error('Error setting dynamic contact info:', error);
+    
+    setFallbackContactInfo();
+  }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  setDynamicContactInfo();
-});
+
+function setFallbackContactInfo() {
+  
+  const phoneBoxes = document.querySelectorAll(
+    ".contact-item-box .contact-item-content h4"
+  );
+  
+  phoneBoxes.forEach((h4) => {
+    if (h4.textContent.includes("Phone Number")) {
+      const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
+      if (icon) icon.innerHTML = `<i class="fa-solid fa-phone"></i>`;
+      const pList = h4.parentElement.querySelectorAll("p");
+      if (pList[0]) pList[0].innerHTML = `<strong>+63 xxx xxx xxxx</strong>`;
+      if (pList[1]) pList[1].innerHTML = `<span>Available during business hours</span>`;
+    }
+    
+    if (h4.textContent.includes("Email Address")) {
+      const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
+      if (icon) icon.innerHTML = `<i class="fa-solid fa-envelope"></i>`;
+      const pList = h4.parentElement.querySelectorAll("p");
+      if (pList[0]) pList[0].innerHTML = `<strong>info@ambuloproperties.com</strong>`;
+      if (pList[1]) pList[1].innerHTML = `<span>We respond within 24 hours</span>`;
+    }
+    
+    if (h4.textContent.includes("Office Location")) {
+      const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
+      if (icon) icon.innerHTML = `<i class="fa-solid fa-location-dot"></i>`;
+      const pList = h4.parentElement.querySelectorAll("p");
+      if (pList[0]) pList[0].innerHTML = `<strong>Kapt. Sayas Street</strong>`;
+      if (pList[1]) pList[1].innerHTML = `<span>Silang, Cavite, Philippines</span>`;
+    }
+    
+    if (h4.textContent.includes("Business Hours")) {
+      const icon = h4.parentElement.parentElement.querySelector(".contact-icon");
+      if (icon) icon.innerHTML = `<i class="fa-solid fa-clock"></i>`;
+      const pList = h4.parentElement.querySelectorAll("p");
+      if (pList[0]) pList[0].innerHTML = `<span>Monday - Friday: 9:00 AM - 6:00 PM</span>`;
+      if (pList[1]) pList[1].innerHTML = `<span>Saturday: 9:00 AM - 4:00 PM</span>`;
+      if (pList[2]) pList[2].innerHTML = `<span>Sunday: Closed</span>`;
+    }
+  });
+}
+
+
 
 
 async function fetchAndRenderContactFAQs() {
-  const faqs = await fetchFaqs();
-  if (!faqs || !faqs.length) {
-    document.getElementById("faq-container").innerHTML =
-      "<div style='color: #e53e3e; padding: 16px;'>Unable to load FAQs at this time.</div>";
-    return;
-  }
+  
+  try {
+    const faqs = await fetchFaqs();
+    
+    if (!faqs || !faqs.length) {
+      console.warn('No FAQs returned');
+      document.getElementById("faq-container").innerHTML =
+        "<div style='color: #e53e3e; padding: 16px;'>Unable to load FAQs at this time.</div>";
+      return;
+    }
   const faqContainer = document.getElementById("faq-container");
   faqContainer.innerHTML = "";
   faqs
@@ -305,6 +342,55 @@ async function fetchAndRenderContactFAQs() {
         <div class=\"faq-item reveal-element\" style=\"transition-delay: ${0.1 + idx * 0.1}s;\">\n          <div class=\"faq-question\">\n            <h4>${escapeHtml(faq.question)}</h4>\n            <span class=\"faq-icon\">▼</span>\n          </div>\n          <div class=\"faq-answer\">\n            <p></br>${escapeHtml(faq.answer)}</p>\n          </div>\n        </div>\n      `;
       faqContainer.insertAdjacentHTML("beforeend", faqHtml);
     });
+  attachFAQListeners();
+  
+  } catch (error) {
+    console.error('Error fetching/rendering FAQs:', error);
+    
+    setFallbackFAQs();
+  }
+}
+
+
+function setFallbackFAQs() {
+  
+  const fallbackFAQs = [
+    {
+      question: "What types of commercial spaces do you offer?",
+      answer: "We offer a variety of commercial spaces including retail stores, office spaces, restaurant locations, and service business premises. Our properties range from small boutique spaces to larger commercial units."
+    },
+    {
+      question: "What is the typical lease term for commercial properties?",
+      answer: "Our standard lease terms are typically 2-5 years for commercial properties. We also offer flexible terms depending on your business needs and the specific property."
+    },
+    {
+      question: "Do you provide parking facilities?",
+      answer: "Yes, most of our commercial properties include dedicated parking spaces. The number of parking spaces varies by property and will be specified in the lease agreement."
+    },
+    {
+      question: "How do I schedule a property viewing?",
+      answer: "You can schedule a viewing by filling out our contact form, calling our office, or sending us an email. We'll arrange a convenient time for you to visit the property with one of our leasing specialists."
+    }
+  ];
+
+  const faqContainer = document.getElementById("faq-container");
+  faqContainer.innerHTML = "";
+  
+  fallbackFAQs.forEach((faq, idx) => {
+    const faqHtml = `
+      <div class="faq-item reveal-element" style="transition-delay: ${0.1 + idx * 0.1}s;">
+        <div class="faq-question">
+          <h4>${escapeHtml(faq.question)}</h4>
+          <span class="faq-icon">▼</span>
+        </div>
+        <div class="faq-answer">
+          <p>${escapeHtml(faq.answer)}</p>
+        </div>
+      </div>
+    `;
+    faqContainer.insertAdjacentHTML("beforeend", faqHtml);
+  });
+  
   attachFAQListeners();
 }
 
@@ -333,4 +419,274 @@ function escapeHtml(text) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+function validateField(field) {
+  const value = field.value.trim();
+  const isRequired = field.hasAttribute("required");
+
+  field.classList.remove("valid", "invalid");
+
+  if (isRequired && !value) {
+    field.classList.add("invalid");
+    return false;
+  }
+
+  if (field.type === "email" && value) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      field.classList.add("invalid");
+      return false;
+    }
+  }
+
+  
+  if (field.tagName === 'SELECT') {
+    if (isRequired && (!value || value === "")) {
+      field.classList.add("invalid");
+      return false;
+    } else if (value && value !== "") {
+      field.classList.add("valid");
+      return true;
+    }
+  }
+
+  
+  if (value) {
+    field.classList.add("valid");
+  }
+
+  return true;
+}
+
+
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.innerHTML = `
+    <div class="notification-content">
+      <i class="fa-solid ${getNotificationIcon(type)}"></i>
+      <span>${message}</span>
+      <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+  `;
+
+  
+  if (!document.getElementById('notification-styles')) {
+    const styles = document.createElement('style');
+    styles.id = 'notification-styles';
+    styles.textContent = `
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        padding: 16px 20px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transform: translateX(400px);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        max-width: 400px;
+        backdrop-filter: blur(10px);
+      }
+      .notification.show {
+        transform: translateX(0);
+      }
+      .notification-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+      .notification-error {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+      }
+      .notification-info {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      }
+      .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .notification-close {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 4px;
+        margin-left: auto;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+      }
+      .notification-close:hover {
+        opacity: 1;
+      }
+    `;
+    document.head.appendChild(styles);
+  }
+
+  document.body.appendChild(notification);
+  
+  
+  setTimeout(() => notification.classList.add('show'), 100);
+  
+  
+  setTimeout(() => {
+    notification.style.transform = 'translateX(400px)';
+    setTimeout(() => notification.remove(), 400);
+  }, 5000);
+}
+
+function getNotificationIcon(type) {
+  const icons = {
+    success: 'fa-check-circle',
+    error: 'fa-exclamation-circle',
+    info: 'fa-info-circle'
+  };
+  return icons[type] || icons.info;
+}
+
+function resetFloatingLabels() {
+  document.querySelectorAll('input, textarea, select').forEach(field => {
+    field.value = '';
+    field.classList.remove('valid', 'invalid');
+    field.parentElement.classList.remove('has-value', 'focused');
+  });
+}
+
+function addMicroAnimations() {
+  
+  document.querySelectorAll(".contact-item-box").forEach((item, index) => {
+    item.addEventListener("mouseenter", function () {
+      this.style.transform = "translateX(15px) translateY(-5px) scale(1.02)";
+      this.style.background = "rgba(255, 255, 255, 0.15)";
+    });
+
+    item.addEventListener("mouseleave", function () {
+      this.style.transform = "";
+      this.style.background = "";
+    });
+  });
+
+  
+  const messageTextarea = document.getElementById("message");
+  let typingTimer;
+  
+  messageTextarea.addEventListener("input", function () {
+    clearTimeout(typingTimer);
+    this.style.height = "auto";
+    this.style.height = this.scrollHeight + "px";
+    
+    
+    this.style.borderColor = "#3b82f6";
+    
+    typingTimer = setTimeout(() => {
+      this.style.borderColor = "";
+    }, 1000);
+  });
+
+  
+  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+    anchor.addEventListener("click", function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute("href"));
+      if (target) {
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    });
+  });
+
+  
+  window.addEventListener("scroll", () => {
+    const navbar = document.querySelector(".navbar");
+    if (navbar) {
+      const scrolled = window.pageYOffset;
+      if (scrolled > 100) {
+        navbar.style.background = "rgba(255, 255, 255, 0.98)";
+        navbar.style.backdropFilter = "blur(20px)";
+        navbar.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.1)";
+      } else {
+        navbar.style.background = "rgba(255, 255, 255, 0.95)";
+        navbar.style.backdropFilter = "blur(15px)";
+        navbar.style.boxShadow = "";
+      }
+    }
+  });
+}
+
+
+const enhancedStyles = document.createElement("style");
+enhancedStyles.textContent = `
+  .form-group input.valid, 
+  .form-group textarea.valid, 
+  .form-group select.valid {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+  }
+  
+  .form-group input.invalid, 
+  .form-group textarea.invalid, 
+  .form-group select.invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  .form-group.focused input,
+  .form-group.focused textarea,
+  .form-group.focused select {
+    transform: translateY(-2px);
+  }
+
+  .stagger-animate {
+    animation: slideInUp 0.6s ease both;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Additional label positioning fixes */
+  .form-group select:focus + label,
+  .form-group.has-value select + label {
+    top: -8px !important;
+    left: 16px !important;
+    font-size: 12px !important;
+    color: #3b82f6 !important;
+    font-weight: 700 !important;
+    background: white !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+  }
+
+  .form-group input:not(:placeholder-shown) + label,
+  .form-group textarea:not(:placeholder-shown) + label {
+    top: -8px !important;
+    left: 16px !important;
+    font-size: 12px !important;
+    color: #3b82f6 !important;
+    font-weight: 700 !important;
+    background: white !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+  }
+`;
+document.head.appendChild(enhancedStyles);
 
