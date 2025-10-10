@@ -1,56 +1,25 @@
-        var submissions = [
-            {
-                id: 1,
-                name: "John Smith",
-                email: "john@example.com",
-                subject: "Product Inquiry",
-                type: "Product Support",
-                date: "2024-09-25",
-                status: "Pending Response",
-                message: "Hi, I'm interested in learning more about your premium subscription plans. Could you provide me with detailed pricing information and feature comparisons? I'm particularly interested in the enterprise features and bulk discounts. Thank you!"
-            },
-            {
-                id: 2,
-                name: "Sarah Johnson",
-                email: "sarah@company.com",
-                subject: "Technical Issue",
-                type: "Technical Support",
-                date: "2024-09-24",
-                status: "Responded",
-                message: "I'm experiencing login issues with my account. Every time I try to log in, I get an error message saying 'Invalid credentials' even though I'm sure my password is correct. I've tried resetting my password multiple times but the issue persists. Can you please help me resolve this?"
-            },
-            {
-                id: 3,
-                name: "Mike Wilson",
-                email: "mike.wilson@email.com",
-                subject: "Billing Question",
-                type: "Billing",
-                date: "2024-09-23",
-                status: "Pending Response",
-                message: "I have a question about my recent invoice. I noticed I was charged twice for the same service this month. The charges appeared on September 1st and September 15th. Could you please look into this and provide clarification? My account number is #12345."
-            },
-            {
-                id: 4,
-                name: "Emma Davis",
-                email: "emma@startup.com",
-                subject: "Feature Request",
-                type: "General",
-                date: "2024-09-22",
-                status: "Responded",
-                message: "I love using your platform! I have a suggestion for a new feature that could really benefit users like me. It would be great if you could add a dark mode option to the dashboard. Many of us work late hours and it would be easier on the eyes. Is this something you're considering for future updates?"
-            },
-            {
-                id: 5,
-                name: "David Brown",
-                email: "david.brown@corp.com",
-                subject: "Integration Support",
-                type: "Technical Support",
-                date: "2024-09-21",
-                status: "Pending Response",
-                message: "We're trying to integrate your API with our existing system but running into some authentication issues. Our development team has followed the documentation but we're getting a 401 error when making requests. Could someone from your technical team provide guidance on proper authentication setup?"
-            }
-        ];
+        let submissions = [];
+        const API_BASE_URL = '/api/v1';
 
+        
+        async function fetchSubmissions() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/contact-us`);
+                if (!res.ok) throw new Error('Failed to fetch submissions');
+                const data = await res.json();
+
+                submissions = Array.isArray(data.submissions) ? data.submissions : data;
+                filteredSubmissions = [...submissions];
+                updateStats();
+                loadSubmissions();
+            } catch (err) {
+                showNotification('Error loading submissions: ' + err.message, 'error');
+                submissions = [];
+                filteredSubmissions = [];
+                updateStats();
+                loadSubmissions();
+            }
+        }
         var currentSubmission = null;
         var currentSort = { column: null, direction: 'asc' };
         var filteredSubmissions = [...submissions];
@@ -94,11 +63,18 @@
         }
 
         function updateStats() {
-            var total = submissions.length;
-            var pending = submissions.filter(function(s) { return s.status === 'Pending Response'; }).length;
-            var responded = submissions.filter(function(s) { return s.status === 'Responded'; }).length;
-            var responseRate = total > 0 ? Math.round((responded / total) * 100) : 0;
             
+            var total = submissions.length;
+            var pending = submissions.filter(function(s) {
+                var status = (s.status || '').toLowerCase();
+                return status === 'pending' || status === 'pending response';
+            }).length;
+            var responded = submissions.filter(function(s) {
+                var status = (s.status || '').toLowerCase();
+                return status === 'responded';
+            }).length;
+            var responseRate = total > 0 ? Math.round((responded / total) * 100) : 0;
+
             document.getElementById('totalCount').textContent = total;
             document.getElementById('pendingCount').textContent = pending;
             document.getElementById('respondedCount').textContent = responded;
@@ -119,11 +95,13 @@
             var typeFilter = document.getElementById('typeFilter').value;
 
             filteredSubmissions = submissions.filter(function(submission) {
+                
+                var fullName = ((submission.first_name || '') + ' ' + (submission.last_name || '')).toLowerCase();
                 var matchesSearch = !searchTerm || 
-                    submission.name.toLowerCase().includes(searchTerm) ||
-                    submission.email.toLowerCase().includes(searchTerm) ||
-                    submission.subject.toLowerCase().includes(searchTerm) ||
-                    submission.message.toLowerCase().includes(searchTerm);
+                    fullName.includes(searchTerm) ||
+                    (submission.email || '').toLowerCase().includes(searchTerm) ||
+                    (submission.subject || '').toLowerCase().includes(searchTerm) ||
+                    (submission.message || '').toLowerCase().includes(searchTerm);
                     
                 var matchesStatus = !statusFilter || submission.status === statusFilter;
                 var matchesType = !typeFilter || submission.type === typeFilter;
@@ -138,7 +116,7 @@
             var direction = currentSort.column === column && currentSort.direction === 'asc' ? 'desc' : 'asc';
             currentSort = { column: column, direction: direction };
 
-            // Update visual indicators
+            
             document.querySelectorAll('th').forEach(function(th) {
                 th.classList.remove('sort-asc', 'sort-desc');
             });
@@ -173,22 +151,29 @@
                 noResults.style.display = 'none';
             }
 
-            filteredSubmissions.forEach(function(submission) {
+            filteredSubmissions.forEach(function(submission, index) {
                 var row = tbody.insertRow();
-                var formattedDate = new Date(submission.date).toLocaleDateString('en-US', {
+                
+                var fullName = (submission.first_name || '') + (submission.last_name ? ' ' + submission.last_name : '');
+                
+                var formattedDate = submission.submitted_at ? new Date(submission.submitted_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
-                });
+                }) : '';
                 
-                row.innerHTML = 
-                    '<td><strong>' + submission.name + '</strong></td>' +
-                    '<td>' + submission.email + '</td>' +
-                    '<td>' + (submission.subject.length > 40 ? submission.subject.substring(0, 40) + '...' : submission.subject) + '</td>' +
-                    '<td>' + submission.type + '</td>' +
+                var subject = submission.subject ? (submission.subject.length > 40 ? submission.subject.substring(0, 40) + '...' : submission.subject) : '';
+                
+                var statusText = submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : '';
+                var statusClass = submission.status ? 'status-' + submission.status.toLowerCase().replace(' ', '-') : '';
+                row.innerHTML =
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td><strong>' + fullName + '</strong></td>' +
+                    '<td>' + (submission.email || '') + '</td>' +
+                    '<td>' + subject + '</td>' +
                     '<td>' + formattedDate + '</td>' +
-                    '<td><span class="status-badge status-' + submission.status.toLowerCase().replace(' ', '-') + '">' + submission.status + '</span></td>' +
-                    '<td><button class="view-btn" onclick="openModal(' + submission.id + ')"><i class="fas fa-eye"></i>View Details</button></td>';
+                    '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
+                    '<td><button class="view-btn" onclick="openModal(' + submission.id + ')"><i class="fas fa-eye"></i> View</button></td>';
             });
         }
 
@@ -196,21 +181,22 @@
             currentSubmission = submissions.find(function(s) { return s.id === id; });
             if (!currentSubmission) return;
 
-            document.getElementById('modalName').textContent = currentSubmission.name;
-            document.getElementById('modalEmail').textContent = currentSubmission.email;
-            document.getElementById('modalSubject').textContent = currentSubmission.subject;
-            document.getElementById('modalType').textContent = currentSubmission.type;
-            document.getElementById('modalDate').textContent = new Date(currentSubmission.date).toLocaleDateString('en-US', {
+            
+            var fullName = (currentSubmission.first_name || '') + (currentSubmission.last_name ? ' ' + currentSubmission.last_name : '');
+            document.getElementById('modalName').textContent = fullName;
+            document.getElementById('modalEmail').textContent = currentSubmission.email || '';
+            document.getElementById('modalSubject').textContent = currentSubmission.subject || '';
+            document.getElementById('modalType').textContent = currentSubmission.type || '';
+            document.getElementById('modalDate').textContent = currentSubmission.submitted_at ? new Date(currentSubmission.submitted_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
-            });
+            }) : '';
             document.getElementById('modalId').textContent = '#' + currentSubmission.id;
-            document.getElementById('modalMessage').textContent = currentSubmission.message;
-            document.getElementById('statusSelect').value = currentSubmission.status;
+            document.getElementById('modalMessage').textContent = currentSubmission.message || '';
+            document.getElementById('statusSelect').value = currentSubmission.status || '';
 
-            // Reset form
-            document.getElementById('replySubject').value = 'Re: ' + currentSubmission.subject;
+            document.getElementById('replySubject').value = 'Re: ' + (currentSubmission.subject || '');
             document.getElementById('templateSelect').value = '';
             document.getElementById('replyMessage').value = '';
             document.getElementById('templateInfo').style.display = 'none';
@@ -230,11 +216,11 @@
             var oldStatus = currentSubmission.status;
             currentSubmission.status = newStatus;
             
-            // Update in main array
+            
             var submissionIndex = submissions.findIndex(function(s) { return s.id === currentSubmission.id; });
             if (submissionIndex !== -1) {
                 submissions[submissionIndex].status = newStatus;
-                filterSubmissions(); // Refresh display
+                filterSubmissions(); 
                 updateStats();
                 
                 if (oldStatus !== newStatus) {
@@ -252,11 +238,12 @@
 
             if (selectedTemplate && emailTemplates[selectedTemplate]) {
                 var template = emailTemplates[selectedTemplate];
+                var fullName = (currentSubmission.first_name || '') + (currentSubmission.last_name ? ' ' + currentSubmission.last_name : '');
                 replySubject.value = template.subject;
-                replyMessage.value = template.message.replace('[Customer Name]', currentSubmission.name);
+                replyMessage.value = template.message.replace('[Customer Name]', fullName);
                 templateInfo.style.display = 'block';
             } else if (selectedTemplate === 'custom') {
-                replySubject.value = 'Re: ' + currentSubmission.subject;
+                replySubject.value = 'Re: ' + (currentSubmission.subject || '');
                 replyMessage.value = '';
                 templateInfo.style.display = 'none';
             } else {
@@ -274,15 +261,15 @@
                 return;
             }
 
-            // Disable button during sending
+            
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Sending...';
 
-            // Simulate sending delay
+            
             setTimeout(function() {
                 showNotification('Email sent successfully to ' + currentSubmission.email + '!');
 
-                // Update status if it was pending
+                
                 if (currentSubmission.status === 'Pending Response') {
                     currentSubmission.status = 'Responded';
                     document.getElementById('statusSelect').value = 'Responded';
@@ -295,19 +282,19 @@
                     }
                 }
 
-                // Reset form
-                document.getElementById('replySubject').value = 'Re: ' + currentSubmission.subject;
+                
+                document.getElementById('replySubject').value = 'Re: ' + (currentSubmission.subject || '');
                 document.getElementById('replyMessage').value = '';
                 document.getElementById('templateSelect').value = '';
                 document.getElementById('templateInfo').style.display = 'none';
 
-                // Re-enable button
+                
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>Send Response';
             }, 2000);
         }
 
-        // Event listeners
+        
         document.getElementById('submissionModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeModal();
@@ -320,7 +307,7 @@
             }
         });
 
-        // Auto-save draft functionality
+        
         var draftTimer;
         document.getElementById('replyMessage').addEventListener('input', function() {
             clearTimeout(draftTimer);
@@ -329,15 +316,13 @@
             }, 2000);
         });
 
-        // Initialize
+        
         function init() {
-            updateStats();
-            loadSubmissions();
+            fetchSubmissions();
             
-            // Set initial date sort (newest first)
-            sortTable('date');
-            currentSort.direction = 'desc';
-            sortTable('date');
         }
 
         init();
+
+        window.openModal = openModal;   
+        window.closeModal = closeModal;
