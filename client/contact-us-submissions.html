@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/fonts.css">
     <link rel="stylesheet" href="/css/contact-us-submissions.css">
     <link rel="stylesheet" href="/css/navigation.css">
@@ -15,90 +18,101 @@
     <div id="navbarContainer"></div>
 
         <div class="main-content">
-        <div class="container">
-        <div class="header">
-            <div class="header-content">
-                <div>
-                    <h1>Contact Submissions</h1>
-                    <p>Manage and respond to customer inquiries</p>
+        <div class="contact-container">
+            <!-- Breadcrumb Navigation -->
+            <div class="breadcrumb-container">
+                <nav class="breadcrumb-nav">
+                    <a href="/adminDashboard.html">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <span class="breadcrumb-separator">></span>
+                    <span class="breadcrumb-current">Contact Submissions</span>
+                </nav>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <i class="fas fa-inbox"></i>
+                    <span class="stat-label">Total Submissions</span>
+                    <span class="stat-value" id="totalCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="stat-label">Pending Response</span>
+                    <span class="stat-value" id="pendingCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span class="stat-label">Responded</span>
+                    <span class="stat-value" id="respondedCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="stat-label">Response Rate</span>
+                    <span class="stat-value" id="responseRate">0%</span>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="controls-row">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search submissions..." id="searchInput" oninput="filterSubmissions()">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="statusFilter">Status</label>
+                        <select id="statusFilter" class="filter-select" onchange="filterSubmissions()">
+                            <option value="">All Status</option>
+                            <option value="Pending Response">Pending Response</option>
+                            <option value="Responded">Responded</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="fromDate">From Date</label>
+                        <input type="date" id="fromDate" class="filter-date">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="toDate">To Date</label>
+                        <input type="date" id="toDate" class="filter-date">
+                    </div>
+
+                    <button class="clear-filters-btn" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
+                </div>
+            </div>
+
+            <div class="contact-table">
+                <table id="submissionsTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th class="sortable" onclick="sortTable('name')">Name</th>
+                            <th class="sortable" onclick="sortTable('email')">Email</th>
+                            <th class="sortable" onclick="sortTable('subject')">Subject</th>
+                            <th class="sortable" onclick="sortTable('date')">Date</th>
+                            <th class="sortable" onclick="sortTable('status')">Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Submissions will be populated here -->
+                    </tbody>
+                </table>
+                
+                <div id="noResults" class="no-results" style="display: none;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 0;">
+                        <i class="fas fa-inbox" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                        <div style="color: #64748b; font-size: 1.25rem;">No contact submissions found</div>
+                        <div style="font-size: 1rem; color: #94a3b8;">Try adjusting your search or filter criteria</div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="stats-bar">
-            <div class="stat-item">
-                <i class="fas fa-inbox"></i>
-                <span class="stat-label">Total Submissions</span>
-                <span class="stat-value" id="totalCount">0</span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-clock"></i>
-                <span class="stat-label">Pending Response</span>
-                <span class="stat-value" id="pendingCount">0</span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-check-circle"></i>
-                <span class="stat-label">Responded</span>
-                <span class="stat-value" id="respondedCount">0</span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-chart-line"></i>
-                <span class="stat-label">Response Rate</span>
-                <span class="stat-value" id="responseRate">0%</span>
-            </div>
-        </div>
-
-        <div class="controls">
-            <div class="search-container">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search submissions..." oninput="filterSubmissions()">
-            </div>
-            
-            <div class="filter-controls">
-                <select class="form-select" id="statusFilter" onchange="filterSubmissions()">
-                    <option value="">All Status</option>
-                    <option value="Pending Response">Pending Response</option>
-                    <option value="Responded">Responded</option>
-                </select>
-                
-                <select class="form-select" id="typeFilter" onchange="filterSubmissions()">
-                    <option value="">All Types</option>
-                    <option value="Product Support">Product Support</option>
-                    <option value="Technical Support">Technical Support</option>
-                    <option value="Billing">Billing</option>
-                    <option value="General">General</option>
-                </select>
-                
-                <button class="btn btn-secondary" onclick="clearFilters()">
-                    <i class="fas fa-times"></i>
-                    Clear Filters
-                </button>
-            </div>
-        </div>
-        
-        <div class="table-container">
-            <table class="table" id="submissionsTable">
-                <thead class="table-header">
-                    <tr>
-                        <th class="sortable" onclick="sortTable('name')">Name</th>
-                        <th class="sortable" onclick="sortTable('email')">Email</th>
-                        <th class="sortable" onclick="sortTable('subject')">Subject</th>
-                        <th class="sortable" onclick="sortTable('type')">Type</th>
-                        <th class="sortable" onclick="sortTable('date')">Date</th>
-                        <th class="sortable" onclick="sortTable('status')">Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            
-            <div id="noResults" class="no-results" style="display: none;">
-                <i class="fas fa-search"></i>
-                <h3>No submissions found</h3>
-                <p>Try adjusting your search or filter criteria</p>
-            </div>
-        </div>
-    </div>
     </div>
 
     <div id="submissionModal" class="modal">
