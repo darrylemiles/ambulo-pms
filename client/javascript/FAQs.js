@@ -1,5 +1,5 @@
 import fetchCompanyDetails from "../api/loadCompanyInfo.js";
-import { fetchFaqs, clearFaqsCache } from "../utils/loadFaqs.js";
+import { fetchFaqs, clearFaqsCache } from "../api/loadFaqs.js";
 
 let faqIdCounter = 0;
 let currentEditingId = null;
