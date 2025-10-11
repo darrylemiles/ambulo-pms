@@ -539,6 +539,38 @@ body:has(.sidebar.collapsed) .main-content,
   border-right: none;
 }
 
+/* Clickable subject links in submissions table */
+.subject-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+.subject-link:hover {
+  text-decoration: underline;
+}
+
+/* smaller, subtle link for appended property id */
+.subject-link.small {
+  font-size: 0.85rem;
+  color: rgba(34, 106, 197, 0.9);
+  margin-left: 6px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.subject-link.small:hover {
+  text-decoration: underline;
+}
+
+/* stronger selector to ensure small id link styling takes precedence in the table */
+.contact-table td .subject-link.small {
+  font-size: 0.85rem !important;
+  color: rgba(34, 106, 197, 0.9) !important;
+  margin-left: 6px !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  vertical-align: baseline;
+}
+
 .contact-table tbody tr {
   transition: all 0.2s ease;
   cursor: pointer;
@@ -614,6 +646,84 @@ body:has(.sidebar.collapsed) .main-content,
   background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* ------- Property availability badges ------- */
+/* These override or complement the generic status-badge classes for property modal */
+.property-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.2px;
+  min-width: 84px;
+  height: auto;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
+}
+
+/* Available */
+.property-available {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #065f46;
+  border: 1px solid rgba(16,185,129,0.12);
+}
+.property-available:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(6,182,129,0.12);
+}
+
+/* Occupied / Leased */
+.property-occupied,
+.property-leased {
+  background: linear-gradient(135deg, #fef3f2 0%, #fee2e2 100%);
+  color: #7f1d1d;
+  border: 1px solid rgba(239,68,68,0.08);
+}
+.property-occupied:hover,
+.property-leased:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(239,68,68,0.08);
+}
+
+/* Reserved or Pending */
+.property-reserved,
+.property-pending {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  color: #92400e;
+  border: 1px solid rgba(245,158,11,0.08);
+}
+.property-reserved:hover,
+.property-pending:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(245,158,11,0.08);
+}
+
+/* Maintenance / Unavailable */
+.property-maintenance,
+.property-unavailable {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  color: #1e3a8a;
+  border: 1px solid rgba(59,130,246,0.08);
+}
+.property-maintenance:hover,
+.property-unavailable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59,130,246,0.08);
+}
+
+/* Archived / Draft */
+.property-archived,
+.property-draft {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  border: 1px solid rgba(71,85,105,0.06);
+}
+.property-archived:hover,
+.property-draft:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(71,85,105,0.06);
 }
 
 /* Additional status variations */
@@ -735,6 +845,11 @@ body:has(.sidebar.collapsed) .main-content,
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Ensure the property detail modal appears above the submission modal */
+#propertyDetailModal {
+  z-index: 1100;
 }
 
 @keyframes fadeIn {

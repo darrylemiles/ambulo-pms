@@ -296,7 +296,9 @@
                     day: 'numeric'
                 }) : '';
                 
-                var subject = submission.subject ? (submission.subject.length > 40 ? submission.subject.substring(0, 40) + '...' : submission.subject) : '';
+                var rawSubject = submission.subject || '';
+                var sanitized = sanitizeSubject(rawSubject);
+                var subject = sanitized.length > 60 ? sanitized.substring(0, 60) + '...' : sanitized;
                 
                 var statusText = submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : '';
                 var statusClass = submission.status ? 'status-' + submission.status.toLowerCase().replace(' ', '-') : '';
@@ -306,7 +308,7 @@
                     '<td>' + (startIndex + index + 1) + '</td>' +
                     '<td><strong>' + fullName + '</strong></td>' +
                     '<td>' + (submission.email || '') + '</td>' +
-                    '<td>' + subject + '</td>' +
+                    '<td>' + renderSubjectCell(subject, rawSubject, submission) + '</td>' +
                     '<td>' + formattedDate + '</td>' +
                     '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
                     '<td><button class="view-btn" onclick="openModal(' + submission.id + ')"><i class="fas fa-eye"></i> View</button></td>';
@@ -369,8 +371,62 @@
             var fullName = (currentSubmission.first_name || '') + (currentSubmission.last_name ? ' ' + currentSubmission.last_name : '');
             document.getElementById('modalName').textContent = fullName;
             document.getElementById('modalEmail').textContent = currentSubmission.email || '';
-            document.getElementById('modalSubject').textContent = currentSubmission.subject || '';
-            document.getElementById('modalType').textContent = currentSubmission.type || '';
+            
+            var rawSub = currentSubmission.subject || '';
+            var sanitized = sanitizeSubject(rawSub);
+            var propId = null;
+            var propName = null;
+            
+            if (currentSubmission.property || currentSubmission.property_info) {
+                var p = currentSubmission.property || currentSubmission.property_info;
+                propId = p.property_id || p.propertyId || p.id || null;
+                propName = p.property_name || p.name || null;
+            }
+            
+            if (!propId) {
+                var m = rawSub.match(/\[property:\s*([A-Za-z0-9-]+)\s*\|\s*([^\]]+)\]/i) 
+                        || rawSub.match(/property[:#]?\s*([A-Za-z0-9-]+)\s*[-|:]\s*([^\(]+)/i)
+                        || rawSub.match(/property_name[:=]\s*([^|;\n\r]+)/i);
+                if (m) {
+                    propId = m[1] || propId;
+                    propName = (m[2] || '').trim();
+                }
+            }
+
+            var modalSubjectEl = document.getElementById('modalSubject');
+            
+            if (!propId && rawSub) {
+                var mUuid = rawSub.match(/[-\s:|#\u2013\u2014]*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s*$/i);
+                if (mUuid && mUuid[1]) {
+                    propId = mUuid[1];
+                } else {
+                    var mNum = rawSub.match(/[-\s:|#\u2013\u2014]*(\d{4,})\s*$/);
+                    if (mNum && mNum[1]) propId = mNum[1];
+                }
+            }
+
+            
+            var baseName = propName || rawSub || '';
+            if (propId && baseName) {
+                try {
+                    var rx = new RegExp('[\\s\\-:|#\\u2013\\u2014]*' + escapeRegExp(String(propId)) + '\\s*$', 'i');
+                    baseName = baseName.replace(rx, '');
+                } catch (e) { /* noop */ }
+                
+                baseName = baseName.replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+            }
+
+            if (propId) {
+                var cleanId = String(propId).trim().replace(/^[-\s:|#\u2013\u2014]+|[-\s:|#\u2013\u2014]+$/g, '');
+                var linkText = ((propName ? propName : baseName) || sanitized) + ' - ' + cleanId;
+                modalSubjectEl.innerHTML = '<a href="#" title="View property" class="subject-link" onclick="openPropertyModal(\'' + cleanId.replace(/'/g, "\\'") + '\', ' + (currentSubmission.id || 'null') + '); return false;">' + escapeHtml(linkText) + '</a>';
+            } else {
+                
+                var clean = (rawSub || '').replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+                modalSubjectEl.textContent = sanitizeSubject(clean);
+            }
+            
+            if (document.getElementById('modalType')) document.getElementById('modalType').textContent = '';
             document.getElementById('modalDate').textContent = currentSubmission.submitted_at ? new Date(currentSubmission.submitted_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
@@ -378,9 +434,23 @@
             }) : '';
             document.getElementById('modalId').textContent = '#' + currentSubmission.id;
             document.getElementById('modalMessage').textContent = currentSubmission.message || '';
-            document.getElementById('statusSelect').value = currentSubmission.status || '';
+            
+            var badge = document.getElementById('modalStatusBadge');
+            if (badge) {
+                var st = currentSubmission.status || 'Pending Response';
+                badge.textContent = st;
+                badge.className = 'status-badge ' + ('status-' + st.toLowerCase().replace(/ /g, '-'));
+            }
 
-            document.getElementById('replySubject').value = 'Re: ' + (currentSubmission.subject || '');
+            
+            var replyBase = sanitizeSubject(currentSubmission.subject || '');
+            if (propName) {
+                
+                replyBase = sanitizeSubject(propName);
+            }
+            
+            replyBase = replyBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, '');
+            document.getElementById('replySubject').value = 'Re: ' + replyBase;
             document.getElementById('templateSelect').value = '';
             document.getElementById('replyMessage').value = '';
             document.getElementById('templateInfo').style.display = 'none';
@@ -395,21 +465,25 @@
 
         function updateStatus() {
             if (!currentSubmission) return;
+
             
-            var newStatus = document.getElementById('statusSelect').value;
-            var oldStatus = currentSubmission.status;
+            var oldStatus = currentSubmission.status || 'Pending Response';
+            var newStatus = oldStatus.toLowerCase().includes('respond') ? 'Pending Response' : 'Responded';
             currentSubmission.status = newStatus;
-            
-            
+
             var submissionIndex = submissions.findIndex(function(s) { return s.id === currentSubmission.id; });
             if (submissionIndex !== -1) {
                 submissions[submissionIndex].status = newStatus;
                 filterSubmissions(); 
                 updateStats();
-                
-                if (oldStatus !== newStatus) {
-                    showNotification('Status updated successfully!');
-                }
+                showNotification('Status updated to "' + newStatus + '"', 'success');
+            }
+
+            
+            var badge = document.getElementById('modalStatusBadge');
+            if (badge) {
+                badge.textContent = newStatus;
+                badge.className = 'status-badge ' + ('status-' + newStatus.toLowerCase().replace(/ /g, '-'));
             }
         }
 
@@ -427,7 +501,9 @@
                 replyMessage.value = template.message.replace('[Customer Name]', fullName);
                 templateInfo.style.display = 'block';
             } else if (selectedTemplate === 'custom') {
-                replySubject.value = 'Re: ' + (currentSubmission.subject || '');
+                var customBase = sanitizeSubject(currentSubmission.subject || '');
+                customBase = customBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, '');
+                replySubject.value = 'Re: ' + customBase;
                 replyMessage.value = '';
                 templateInfo.style.display = 'none';
             } else {
@@ -456,7 +532,11 @@
                 
                 if (currentSubmission.status === 'Pending Response') {
                     currentSubmission.status = 'Responded';
-                    document.getElementById('statusSelect').value = 'Responded';
+                    var badge = document.getElementById('modalStatusBadge');
+                    if (badge) {
+                        badge.textContent = 'Responded';
+                        badge.className = 'status-badge status-responded';
+                    }
                     
                     var submissionIndex = submissions.findIndex(function(s) { return s.id === currentSubmission.id; });
                     if (submissionIndex !== -1) {
@@ -467,7 +547,16 @@
                 }
 
                 
-                document.getElementById('replySubject').value = 'Re: ' + (currentSubmission.subject || '');
+                
+                var postReplyBase = sanitizeSubject(currentSubmission.subject || '');
+                if (currentSubmission.property || currentSubmission.property_info) {
+                    var p = currentSubmission.property || currentSubmission.property_info;
+                    if (p.property_name || p.name) postReplyBase = sanitizeSubject(p.property_name || p.name);
+                } else if (typeof propName !== 'undefined' && propName) {
+                    postReplyBase = sanitizeSubject(propName);
+                }
+                postReplyBase = postReplyBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, '');
+                document.getElementById('replySubject').value = 'Re: ' + postReplyBase;
                 document.getElementById('replyMessage').value = '';
                 document.getElementById('templateSelect').value = '';
                 document.getElementById('templateInfo').style.display = 'none';
@@ -501,6 +590,186 @@
         });
 
         
+        function sanitizeSubject(text) {
+            if (!text) return '';
+            
+            
+            return text.replace(/\[?\s*(?:property[_\s-]?id|propertyid|prop[_\s-]?id|property)\s*[:=#-]?\s*([A-Za-z0-9-]*\d+[A-Za-z0-9-]*)\s*\]?/gi, '')
+                       
+                       .replace(/\(?#\s*\d+\)?/g, '')
+                       .replace(/\(property\s*#\s*\d+\)/gi, '')
+                       
+                       .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '')
+                       .trim();
+        }
+
+        function renderSubjectCell(displayText, rawText, submission) {
+                    
+                    
+                    try {
+                        var propId = null;
+                        var propName = null;
+                        if (submission && (submission.property || submission.property_info)) {
+                            var p = submission.property || submission.property_info;
+                            propId = p.property_id || p.propertyId || p.id || null;
+                            propName = p.property_name || p.name || null;
+                        }
+
+                        if (!propId && rawText) {
+                            var m = rawText.match(/\[property:\s*([A-Za-z0-9-]+)\s*\|\s*([^\]]+)\]/i)
+                                    || rawText.match(/property[:#]?\s*([A-Za-z0-9-]+)\s*[-|:]\s*([^\(]+)/i)
+                                    || rawText.match(/property[_\s-]?id[:=#]?\s*([A-Za-z0-9-]+)/i);
+                            if (m) {
+                                propId = propId || (m[1] && m[1].trim());
+                                propName = propName || (m[2] && m[2].trim());
+                            }
+                        }
+
+                        if (propId) {
+                            
+                            var label = escapeHtml(displayText || (propName || propId));
+                            var idLink = ' <a href="#" title="View property" class="subject-link small" onclick="openPropertyModal(\'' + String(propId).replace(/'/g, "\\'") + '\',' + (submission.id || 'null') + '); return false;">' + escapeHtml(propId) + '</a>';
+                            return label + idLink;
+                        }
+                    } catch (e) {
+                        console.warn('renderSubjectCell error', e);
+                    }
+                    return escapeHtml(displayText);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        
+        function escapeRegExp(str) {
+            return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        async function openPropertyModal(propertyId, submissionId) {
+            try {
+                
+                var submission = submissions.find(s => s.id === submissionId) || null;
+                var prop = null;
+                if (submission && (submission.property || submission.property_info)) {
+                    prop = submission.property || submission.property_info;
+                }
+
+                if (!prop) {
+                    prop = await fetchPropertyById(propertyId);
+                }
+
+                showPropertyInModal(prop || { property_name: 'Unknown', street: '', city: '', province: '', base_rent: '—', floor_area_sqm: '—' });
+                document.getElementById('propertyDetailModal').classList.add('show');
+            } catch (err) {
+                console.warn('Failed to open property modal', err);
+                showNotification('Could not load property details', 'error');
+            }
+        }
+
+        function closePropertyModal() {
+            document.getElementById('propertyDetailModal').classList.remove('show');
+        }
+
+        async function fetchPropertyById(id) {
+            if (!id) return null;
+            const cleanId = String(id).trim();
+
+            function unwrapProperty(payload) {
+                if (!payload) return null;
+                
+                if (payload.property) return payload.property;
+                if (payload.data) {
+                    const d = payload.data;
+                    if (d.property) return d.property;
+                    if (Array.isArray(d) && d.length) return d[0];
+                    if (typeof d === 'object') return d;
+                }
+                if (payload.properties) {
+                    const arr = payload.properties;
+                    if (Array.isArray(arr) && arr.length) {
+                        
+                        const found = arr.find(p => (p.property_id || p.id) === cleanId);
+                        return found || arr[0];
+                    }
+                }
+                if (Array.isArray(payload) && payload.length) return payload[0];
+                
+                if (payload.property_id || payload.property_name || payload.name) return payload;
+                return null;
+            }
+
+            const endpoints = [
+                '/api/v1/properties/' + encodeURIComponent(cleanId),
+                '/api/v1/properties?id=' + encodeURIComponent(cleanId)
+            ];
+            for (const url of endpoints) {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) {
+                        
+                        continue;
+                    }
+                    const data = await res.json();
+                    const prop = unwrapProperty(data);
+                    if (prop) return prop;
+                } catch (e) {
+                    
+                }
+            }
+            return null;
+        }
+
+        function showPropertyInModal(p) {
+            if (!p) p = {};
+            const name = p.property_name || p.name || 'Unknown Property';
+            document.getElementById('propertyDetailTitle').textContent = name || 'Property Details';
+            document.getElementById('propertyDetailName').textContent = name;
+
+            
+            const addrObj = (p.address && typeof p.address === 'object' && !Array.isArray(p.address)) ? p.address : null;
+            const addressParts = [
+                p.building_name || (addrObj && addrObj.building_name),
+                p.street || (addrObj && addrObj.street),
+                p.barangay || (addrObj && addrObj.barangay),
+                p.city || (addrObj && addrObj.city) || p.city_town,
+                p.province || (addrObj && addrObj.province),
+                p.postal_code || (addrObj && addrObj.postal_code),
+                p.country || (addrObj && addrObj.country)
+            ].filter(Boolean);
+            const address = addressParts.join(', ');
+            document.getElementById('propertyDetailAddress').textContent = address || (p.location || '');
+
+            const rent = p.base_rent ?? p.rent ?? p.monthly_rent;
+            document.getElementById('propertyDetailRent').textContent = (rent !== undefined && rent !== null && rent !== '') ? String(rent) : '—';
+
+            const area = p.floor_area_sqm ?? p.area_sqm ?? p.floor_area;
+            document.getElementById('propertyDetailArea').textContent = (area !== undefined && area !== null && area !== '') ? (area + ' sqm') : '—';
+
+            const status = (p.property_status || p.status || '').toString().trim();
+            
+            function mapPropertyStatusClass(st) {
+                if (!st) return '';
+                const s = st.toLowerCase();
+                if (s === 'available') return 'property-available';
+                if (s === 'occupied' || s === 'leased' || s === 'rented') return 'property-occupied';
+                if (s.includes('maintenance') || s === 'under maintenance') return 'property-maintenance';
+                if (s === 'reserved' || s === 'pending') return 'property-reserved';
+                
+                return 'property-archived';
+            }
+            const propClass = mapPropertyStatusClass(status);
+            if (status) {
+                document.getElementById('propertyDetailStatus').innerHTML = '<span class="property-status ' + propClass + '">' + escapeHtml(status) + '</span>';
+            } else {
+                document.getElementById('propertyDetailStatus').innerHTML = '';
+            }
+            const img = p.display_image || p.image_url || (p.images && p.images[0]) || '';
+            if (img) document.getElementById('propertyDetailImage').src = img;
+        }
+
+        
         function init() {
             
             loadDynamicCompanyInfo();
@@ -516,3 +785,6 @@
         window.clearFilters = clearFilters;
         window.sortTable = sortTable;
         window.updateStatus = updateStatus;
+        
+        window.openPropertyModal = openPropertyModal;
+        window.closePropertyModal = closePropertyModal;

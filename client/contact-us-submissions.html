@@ -119,6 +119,44 @@
         </div>
     </div>
 
+    <!-- Lightweight Property Detail Modal -->
+    <div id="propertyDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h2 id="propertyDetailTitle">Property Details</h2>
+                    <p class="modal-subtitle" id="propertyDetailSubtitle">Basic property information</p>
+                </div>
+                <button class="close-btn" onclick="closePropertyModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="padding:24px; max-width:820px;">
+                    <div style="display:flex; gap:16px; align-items:center;">
+                        <img id="propertyDetailImage" src="/assets/image1.jpg" alt="property" style="width:140px; height:100px; object-fit:cover; border-radius:8px; border:1px solid rgba(0,0,0,0.06);">
+                        <div>
+                            <h3 id="propertyDetailName" style="margin:0 0 8px 0;"></h3>
+                            <div id="propertyDetailAddress" style="color:#475569; font-size:0.95rem;"></div>
+                            <div id="propertyDetailStatus" style="margin-top:8px;"></div>
+                        </div>
+                    </div>
+                    <hr style="margin:18px 0;" />
+                    <div style="display:flex; gap:24px;">
+                        <div>
+                            <div style="font-weight:700; color:#0f172a;">Base Rent</div>
+                            <div id="propertyDetailRent" style="color:#475569;">—</div>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; color:#0f172a;">Floor Area</div>
+                            <div id="propertyDetailArea" style="color:#475569;">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="submissionModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -148,8 +186,8 @@
                             <span id="modalSubject"></span>
                         </div>
                         <div class="detail-item">
-                            <label>Inquiry Type</label>
-                            <span id="modalType"></span>
+                            <label>Current Status</label>
+                            <span id="modalStatusBadge" class="status-badge">&nbsp;</span>
                         </div>
                         <div class="detail-item">
                             <label>Submission Date</label>
@@ -166,13 +204,7 @@
                         <p id="modalMessage"></p>
                     </div>
 
-                    <div class="status-section">
-                        <label style="font-weight: 700; color: #0ea5e9; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Current Status:</label>
-                        <select id="statusSelect" class="status-select" onchange="updateStatus()">
-                            <option value="Pending Response">Pending Response</option>
-                            <option value="Responded">Responded</option>
-                        </select>
-                    </div>
+                    <!-- status is shown as a badge above; status control removed from modal UI -->
                 </div>
 
                 <!-- Right Section: Compose Response -->
