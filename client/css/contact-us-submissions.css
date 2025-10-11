@@ -664,6 +664,47 @@ body:has(.sidebar.collapsed) .main-content,
   transform: translateY(-1px);
 }
 
+/* Pagination styles */
+.pagination-container {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 14px 12px;
+  background: transparent;
+  border-top: 1px solid var(--border-light);
+}
+
+.pagination-container .btn {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.18s ease;
+}
+
+.pagination-container .btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--primary-color);
+}
+
+.pagination-container .btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+
+.pagination-container .btn.active {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(14,165,233,0.12);
+}
+
 /* Table numbering column */
 .contact-table th:first-child,
 .contact-table td:first-child {

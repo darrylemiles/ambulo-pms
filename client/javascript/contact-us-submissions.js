@@ -47,22 +47,54 @@
         }
 
         
-        async function fetchSubmissions() {
+        
+        var currentPage = 1;
+        var pageLimit = 10;
+        var totalItems = 0;
+        
+        var serverStats = null;
+
+        async function fetchSubmissions(page = 1) {
             try {
-                const res = await fetch(`${API_BASE_URL}/contact-us`);
+                currentPage = page || 1;
+
+                
+                const search = document.getElementById('searchInput') ? document.getElementById('searchInput').value.trim() : '';
+                const status = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : '';
+                const type = document.getElementById('typeFilter') ? document.getElementById('typeFilter').value : '';
+
+                const params = new URLSearchParams();
+                params.set('page', String(currentPage));
+                params.set('limit', String(pageLimit));
+                if (search) params.set('search', search);
+                if (status) params.set('status', status);
+                if (type) params.set('type', type);
+
+                const url = `${API_BASE_URL}/contact-us?${params.toString()}`;
+                const res = await fetch(url);
                 if (!res.ok) throw new Error('Failed to fetch submissions');
                 const data = await res.json();
 
-                submissions = Array.isArray(data.submissions) ? data.submissions : data;
+                
+                serverStats = data.stats || data.totals || data.counts || null;
+
+                
+                submissions = Array.isArray(data.submissions) ? data.submissions : (Array.isArray(data) ? data : (data.submissions || []));
+                totalItems = typeof data.total === 'number' ? data.total : (data.totalCount || submissions.length);
+                pageLimit = typeof data.limit === 'number' ? data.limit : pageLimit;
+
                 filteredSubmissions = [...submissions];
                 updateStats();
                 loadSubmissions();
+                renderPagination();
             } catch (err) {
                 showNotification('Error loading submissions: ' + err.message, 'error');
                 submissions = [];
                 filteredSubmissions = [];
+                totalItems = 0;
                 updateStats();
                 loadSubmissions();
+                renderPagination();
             }
         }
         var currentSubmission = null;
@@ -109,21 +141,78 @@
 
         function updateStats() {
             
-            var total = submissions.length;
-            var pending = submissions.filter(function(s) {
+            var pageTotal = submissions.length;
+            var pagePending = submissions.filter(function(s) {
                 var status = (s.status || '').toLowerCase();
-                return status === 'pending' || status === 'pending response';
+                return status === 'pending' || status === 'pending response' || status === 'new';
             }).length;
-            var responded = submissions.filter(function(s) {
+            var pageResponded = submissions.filter(function(s) {
                 var status = (s.status || '').toLowerCase();
-                return status === 'responded';
+                return status === 'responded' || status === 'replied' || status === 'resolved';
             }).length;
-            var responseRate = total > 0 ? Math.round((responded / total) * 100) : 0;
+            var pageResponseRate = pageTotal > 0 ? Math.round((pageResponded / pageTotal) * 100) : 0;
 
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('pendingCount').textContent = pending;
-            document.getElementById('respondedCount').textContent = responded;
-            document.getElementById('responseRate').textContent = responseRate + '%';
+            
+            document.getElementById('totalCount').textContent = pageTotal;
+            document.getElementById('pendingCount').textContent = pagePending;
+            document.getElementById('respondedCount').textContent = pageResponded;
+            document.getElementById('responseRate').textContent = pageResponseRate + '%';
+
+            
+            if (serverStats && (typeof serverStats.total === 'number' || typeof serverStats.pending === 'number' || typeof serverStats.responded === 'number')) {
+                var sTotal = serverStats.total || totalItems || pageTotal;
+                var sPending = serverStats.pending || serverStats.pendingCount || (serverStats.statusCounts && serverStats.statusCounts.pending) || pagePending;
+                var sResponded = serverStats.responded || serverStats.replied || serverStats.respondedCount || (serverStats.statusCounts && serverStats.statusCounts.responded) || pageResponded;
+                document.getElementById('totalCount').textContent = sTotal;
+                document.getElementById('pendingCount').textContent = sPending;
+                document.getElementById('respondedCount').textContent = sResponded;
+                var sRate = sTotal > 0 ? Math.round((sResponded / sTotal) * 100) : 0;
+                document.getElementById('responseRate').textContent = sRate + '%';
+                return;
+            }
+
+            
+            var total = typeof totalItems === 'number' && totalItems >= 0 ? totalItems : pageTotal;
+            if (!total || total <= pageTotal) {
+                
+                return;
+            }
+
+            (async function fetchAggregatedCounts() {
+                try {
+                    const perPage = 1000; 
+                    const pages = Math.max(1, Math.ceil(total / perPage));
+
+                    var aggPending = 0;
+                    var aggResponded = 0;
+
+                    for (let p = 1; p <= pages; p++) {
+                        const params = new URLSearchParams();
+                        params.set('page', String(p));
+                        params.set('limit', String(perPage));
+                        const url = `${API_BASE_URL}/contact-us?${params.toString()}`;
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error('Failed to fetch page ' + p + ' for aggregated stats');
+                        const data = await res.json();
+                        const rows = Array.isArray(data.submissions) ? data.submissions : (Array.isArray(data) ? data : (data.submissions || []));
+                        rows.forEach(function(s) {
+                            const st = (s.status || '').toLowerCase();
+                            if (st === 'pending' || st === 'pending response' || st === 'new') aggPending++;
+                            else if (st === 'responded' || st === 'replied' || st === 'resolved') aggResponded++;
+                        });
+                    }
+
+                    
+                    var finalTotal = total;
+                    document.getElementById('totalCount').textContent = finalTotal;
+                    document.getElementById('pendingCount').textContent = aggPending;
+                    document.getElementById('respondedCount').textContent = aggResponded;
+                    var finalRate = finalTotal > 0 ? Math.round((aggResponded / finalTotal) * 100) : 0;
+                    document.getElementById('responseRate').textContent = finalRate + '%';
+                } catch (err) {
+                    console.warn('Aggregated stats load failed:', err);
+                }
+            })();
         }
 
         function clearFilters() {
@@ -211,8 +300,10 @@
                 
                 var statusText = submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : '';
                 var statusClass = submission.status ? 'status-' + submission.status.toLowerCase().replace(' ', '-') : '';
+                
+                var startIndex = Math.max(0, (Number(currentPage || 1) - 1) * Number(pageLimit || 10));
                 row.innerHTML =
-                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + (startIndex + index + 1) + '</td>' +
                     '<td><strong>' + fullName + '</strong></td>' +
                     '<td>' + (submission.email || '') + '</td>' +
                     '<td>' + subject + '</td>' +
@@ -220,6 +311,54 @@
                     '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
                     '<td><button class="view-btn" onclick="openModal(' + submission.id + ')"><i class="fas fa-eye"></i> View</button></td>';
             });
+        }
+
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            if (!container) return;
+
+            container.innerHTML = '';
+            const totalPages = Math.max(1, Math.ceil((totalItems || 0) / pageLimit));
+
+            const prev = document.createElement('button');
+            prev.textContent = '‹ Prev';
+            prev.className = 'btn';
+            prev.disabled = currentPage <= 1;
+            prev.onclick = () => changePage(currentPage - 1);
+            container.appendChild(prev);
+
+            
+            const maxButtons = 7;
+            let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let end = Math.min(totalPages, start + maxButtons - 1);
+            if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+
+            for (let p = start; p <= end; p++) {
+                const btn = document.createElement('button');
+                btn.textContent = String(p);
+                btn.className = 'btn';
+                if (p === currentPage) {
+                    btn.disabled = true;
+                    btn.style.fontWeight = '700';
+                } else {
+                    btn.onclick = (() => changePage(p));
+                }
+                container.appendChild(btn);
+            }
+
+            const next = document.createElement('button');
+            next.textContent = 'Next ›';
+            next.className = 'btn';
+            next.disabled = currentPage >= totalPages;
+            next.onclick = () => changePage(currentPage + 1);
+            container.appendChild(next);
+        }
+
+        function changePage(page) {
+            if (page < 1) page = 1;
+            const totalPages = Math.max(1, Math.ceil((totalItems || 0) / pageLimit));
+            if (page > totalPages) page = totalPages;
+            fetchSubmissions(page);
         }
 
         function openModal(id) {
