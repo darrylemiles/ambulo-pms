@@ -1,5 +1,50 @@
+        import fetchCompanyDetails from '../api/loadCompanyInfo.js';
+
         let submissions = [];
         const API_BASE_URL = '/api/v1';
+
+        async function loadDynamicCompanyInfo() {
+            try {
+                const company = await fetchCompanyDetails();
+                if (!company) return;
+
+                if (company.company_name) {
+                    document.title = 'Contact Submissions';
+                }
+
+                try {
+                    const icons = document.querySelectorAll('link[rel~="icon"]');
+                    if (icons && icons.length) {
+                        icons.forEach(link => {
+                            
+                            if (company.icon_logo_url) link.href = company.icon_logo_url;
+                            else if (company.alt_logo_url) link.href = company.alt_logo_url;
+                        });
+                    } else {
+                        
+                        const link = document.createElement('link');
+                        link.rel = 'icon';
+                        link.type = 'image/png';
+                        link.href = company.icon_logo_url || company.alt_logo_url || '/assets/favicon/favicon-32x32.png';
+                        document.head.appendChild(link);
+                    }
+                } catch (e) {
+                    console.warn('Failed to set favicon', e);
+                }
+
+                
+                try {
+                    const logoContainer = document.getElementById('companyLogo');
+                    if (logoContainer && company.logoHtml) {
+                        logoContainer.innerHTML = company.logoHtml;
+                    }
+                } catch (e) {
+                    
+                }
+            } catch (err) {
+                console.warn('Could not load company details:', err);
+            }
+        }
 
         
         async function fetchSubmissions() {
@@ -318,6 +363,8 @@
 
         
         function init() {
+            
+            loadDynamicCompanyInfo();
             fetchSubmissions();
             
         }
@@ -326,3 +373,7 @@
 
         window.openModal = openModal;   
         window.closeModal = closeModal;
+        window.filterSubmissions = filterSubmissions;
+        window.clearFilters = clearFilters;
+        window.sortTable = sortTable;
+        window.updateStatus = updateStatus;
