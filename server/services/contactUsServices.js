@@ -67,11 +67,24 @@ const getAllContactUsEntries = async (options = {}) => {
         }
 
         if (options.status && String(options.status).trim() !== '') {
-            const st = String(options.status).trim().toLowerCase();
+            let st = String(options.status).trim().toLowerCase();
+            
+            if (st === 'pending response' || st === 'pending-response') st = 'pending';
+            if (st === 'responded' || st === 'replied' || st === 'resolved') st = 'replied';
             if (allowedStatuses.has(st)) {
                 whereClauses.push('status = ?');
                 whereParams.push(st);
             }
+        }
+
+        
+        if (options.fromDate && String(options.fromDate).trim() !== '') {
+            whereClauses.push('DATE(submitted_at) >= ?');
+            whereParams.push(String(options.fromDate).trim());
+        }
+        if (options.toDate && String(options.toDate).trim() !== '') {
+            whereClauses.push('DATE(submitted_at) <= ?');
+            whereParams.push(String(options.toDate).trim());
         }
 
         let whereSQL = '';
