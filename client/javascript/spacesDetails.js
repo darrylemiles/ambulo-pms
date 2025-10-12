@@ -239,7 +239,7 @@ window.handleContactSubmit = async function handleContactSubmit(e) {
     email: email,
     phone_number: phone || null,
     subject: '',
-    business_type: 'other',
+    business_type: subject || 'other',
     preferred_space_size: null,
     monthly_budget_range: null,
     message: message
