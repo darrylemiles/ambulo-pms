@@ -113,10 +113,10 @@ const MESSAGES = {
 
 
 const SUBJECT_LINES = [
-    { value: 'general', label: 'General Inquiry' },
-    { value: 'property-availability', label: 'Property Availability / Viewing Request' },
-    { value: 'leasing-terms', label: 'Leasing / Rental Terms' },
-    { value: 'feedback', label: 'Feedback or Suggestions' }
+    { value: 'General Inquiry', label: 'General Inquiry' },
+    { value: 'Property Availability', label: 'Property Availability / Viewing Request' },
+    { value: 'Leasing Terms', label: 'Leasing / Rental Terms' },
+    { value: 'Feedback', label: 'Feedback or Suggestions' }
 ];
 
 
