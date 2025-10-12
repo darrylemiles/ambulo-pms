@@ -124,28 +124,457 @@ var currentSubmission = null;
 var currentSort = { column: null, direction: "asc" };
 var filteredSubmissions = [...submissions];
 
+
+
+
 var emailTemplates = {
-    "product-support": {
-        subject: "Re: Product Inquiry - Detailed Information",
+    "general-inquiry": {
+        subject: function (ctx) {
+            return ctx.propertyName
+                ? "Re: " + ctx.propertyName + " — General Inquiry"
+                : "Re: General Inquiry";
+        },
         message:
-            "Dear [Customer Name],\n\nThank you for your interest in our premium subscription plans. I'm happy to provide you with the detailed information you requested.\n\nOur premium plans include:\n- Advanced features and functionality\n- Priority customer support\n- Extended storage options\n- Enterprise-level security\n\nFor detailed pricing and bulk discount information, I've attached our pricing guide. I'd also be happy to schedule a call to discuss your specific needs and how we can best serve your organization.\n\nPlease let me know if you have any questions or would like to proceed with a consultation.\n\nBest regards,\n[Your Name]\nCustomer Success Team",
-    },
-    "technical-support": {
-        subject: "Re: Technical Issue - Resolution Steps",
-        message:
-            "Dear [Customer Name],\n\nThank you for contacting our technical support team. I understand you're experiencing issues, and I'm here to help resolve this for you.\n\nBased on your description, here are the steps we recommend:\n\n1. Clear your browser cache and cookies\n2. Try logging in using an incognito/private browsing window\n3. Ensure you're using the correct login URL\n4. Check if caps lock is enabled when entering your password\n\nIf these steps don't resolve the issue, please don't hesitate to reach out. We can also schedule a screen-sharing session to work through this together.\n\nOur technical team is available Monday-Friday 9AM-6PM EST for additional support.\n\nBest regards,\n[Your Name]\nTechnical Support Team",
-    },
-    billing: {
-        subject: "Re: Billing Question - Account Review",
-        message:
-            "Dear [Customer Name],\n\nThank you for reaching out regarding your billing inquiry. I've reviewed your account and can see the charges you're referring to.\n\nI've identified the duplicate charge and have initiated a refund for the incorrect billing. You should see the refund processed within 3-5 business days. I've also added a credit to your account as an apology for the inconvenience.\n\nI've reviewed your billing settings to prevent this from happening again. If you have any additional questions about your account or billing, please don't hesitate to contact us.\n\nBest regards,\n[Your Name]\nBilling Support Team",
+            "Dear {{name}},\n\nThank you for reaching out with your inquiry. We're happy to help and appreciate your interest." +
+            "\n\nIf you have any additional details or questions you’d like us to consider, just reply to this email and we’ll get right back to you." +
+            "\n\nBest regards,\n[Your Name]\nLeasing Team",
     },
     general: {
-        subject: "Re: Your Inquiry - We're Here to Help",
+        
+        subject: function (ctx) {
+            return emailTemplates["general-inquiry"].subject(ctx);
+        },
+        message: emailTemplates ? undefined : "", 
+    },
+    "property-availability": {
+        subject: function (ctx) {
+            return ctx.propertyName
+                ? "Re: Availability for " + ctx.propertyName
+                : "Re: Property Availability";
+        },
         message:
-            "Dear [Customer Name],\n\nThank you for contacting us and for your suggestion about adding a dark mode option. We really appreciate feedback from users like you!\n\nI'm pleased to let you know that dark mode is actually on our development roadmap for the next quarter. Your feedback helps us prioritize features that matter most to our users.\n\nI'll make sure to add you to our beta testing list so you can try out the dark mode feature before it's officially released.\n\nWe value your feedback and are always looking for ways to improve our service. If you have any additional questions or suggestions, please don't hesitate to contact us.\n\nBest regards,\n[Your Name]\nCustomer Service Team",
+            "Dear {{name}},\n\nThanks for your interest. I'm checking the current availability for{{propertyNamePrefix}} and will confirm the units/spaces and earliest move-in dates." +
+            "\n\nIn the meantime, please let us know your expected timeline so we can recommend the best options for you." +
+            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+    },
+    availability: {
+        subject: function (ctx) {
+            return emailTemplates["property-availability"].subject(ctx);
+        },
+        message: emailTemplates ? undefined : "",
+    },
+    "leasing-terms": {
+        subject: function (ctx) {
+            return ctx.propertyName
+                ? "Re: Leasing Terms — " + ctx.propertyName
+                : "Re: Leasing Terms";
+        },
+        message:
+            "Dear {{name}},\n\nBelow is a summary of our standard leasing terms for{{propertyNamePrefix}}. Specifics may vary by space and final negotiation:" +
+            "\n\n• Lease Term: Typically minimum of 24 months, extendable up to 60 months (5 years)\n• Security Deposit: 1-2 months equivalent\n• Advance Rent: 2 months equivalent\n• Fit-out Period: Subject to approval and space condition\n• Inclusions: Basic building services; utilities billed separately unless otherwise stated" +
+            "\n\nIf you'd like, I can prepare an initial proposal based on your requirements." +
+            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+    },
+    leasing: {
+        subject: function (ctx) {
+            return emailTemplates["leasing-terms"].subject(ctx);
+        },
+        message: emailTemplates ? undefined : "",
+    },
+    feedback: {
+        subject: function () {
+            return "Re: Your Feedback";
+        },
+        message:
+            "Dear {{name}},\n\nThank you for sharing your feedback. We truly appreciate you taking the time to help us improve." +
+            "\n\nWe’ve noted your comments and will review them with the team. If you’re open to it, we’d love to ask a few follow-up questions to better understand your experience." +
+            "\n\nBest regards,\n[Your Name]\nCustomer Experience",
+    },
+    "schedule-viewing": {
+        subject: function (ctx) {
+            return ctx.propertyName
+                ? "Re: Schedule a Viewing — " + ctx.propertyName
+                : "Re: Schedule a Viewing";
+        },
+        message:
+            "Dear {{name}},\n\nWe’d be happy to schedule a viewing{{propertyNameSuffix}}. Please let us know your preferred dates and time windows (e.g., weekdays 10am–4pm), and the number of attendees." +
+            "\n\nOnce we receive your availability, we’ll confirm the appointment and share any visitor/access guidelines." +
+            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+    },
+    viewing: {
+        subject: function (ctx) {
+            return emailTemplates["schedule-viewing"].subject(ctx);
+        },
+        message: emailTemplates ? undefined : "",
+    },
+    "confirmation-viewing": {
+        subject: function (ctx) {
+            return ctx.propertyName
+                ? "Re: Viewing Confirmed — " + ctx.propertyName
+                : "Re: Viewing Confirmed";
+        },
+        message:
+            "Dear {{name}},\n\nYour viewing appointment{{propertyNameSuffix}} has been confirmed for [DATE & TIME]. Please arrive 10–15 minutes early to allow time for building access and registration." +
+            "\n\nOn the day, kindly bring a valid government-issued ID. If you need to reschedule, reply to this email at least 24 hours in advance and we’ll arrange a new time." +
+            "\n\nWe look forward to meeting you and showing you around." +
+            "\n\nBest regards,\n[Your Name]\nLeasing Team",
     },
 };
+
+
+emailTemplates.general.message = emailTemplates["general-inquiry"].message;
+emailTemplates.availability.message = emailTemplates["property-availability"].message;
+emailTemplates.leasing.message = emailTemplates["leasing-terms"].message;
+emailTemplates.viewing.message = emailTemplates["schedule-viewing"].message;
+
+
+
+function normalizeTemplateKey(val) {
+    if (!val) return '';
+    var s = String(val).trim().toLowerCase();
+    s = s.replace(/\s+/g, '-').replace(/_/g, '-');
+    if (s.includes('general')) return 'general-inquiry';
+    if (s.includes('availability')) return 'property-availability';
+    if (s.includes('lease')) return 'leasing-terms';
+    if (s.includes('feedback')) return 'feedback';
+    if (s.includes('confirmation')) return 'confirmation-viewing';
+    if (s.includes('view')) return 'schedule-viewing';
+    return s;
+}
+
+
+function getSubmissionContext(sub) {
+    var first = (sub.first_name || '').trim();
+    var last = (sub.last_name || '').trim();
+    var name = (first + ' ' + last).trim() || (sub.name || '').trim() || 'there';
+    var businessType = sub.business_type || sub.businessType || sub.company_type || sub.type || '';
+    var preferredSize = sub.preferred_space_size || sub.preferredSpaceSize || sub.space_size || '';
+    var monthlyBudgetRaw = sub.monthly_budget_range || sub.monthly_budget || sub.budget_range || sub.budget || '';
+    var propertyName = '';
+    var propertyId = '';
+    try {
+        if (sub.property || sub.property_info) {
+            var p = sub.property || sub.property_info;
+            var addr = (p.address && typeof p.address === 'object' && !Array.isArray(p.address)) ? p.address : null;
+            var unitName = p.property_name || p.name || p.unit_name || p.unit || '';
+            var buildingName = p.building_name || p.building || (addr && (addr.building_name || addr.building)) || p.buildingName || p.project_name || p.development_name || '';
+            
+            if (buildingName && unitName) {
+                var unitLower = unitName.toLowerCase();
+                var buildLower = buildingName.toLowerCase();
+                
+                if (unitLower.indexOf(buildLower) === -1) {
+                    propertyName = buildingName + ' - ' + unitName;
+                } else {
+                    propertyName = unitName;
+                }
+            } else {
+                propertyName = unitName || buildingName || '';
+            }
+            propertyId = p.property_id || p.propertyId || p.id || '';
+        }
+
+        var subjectStr = sub.subject || '';
+        if ((!propertyName || !propertyId) && subjectStr) {
+            
+            var mBracket = subjectStr.match(/\[property:\s*([A-Za-z0-9-]+)\s*\|\s*([^\]]+)\]/i);
+            if (mBracket) {
+                propertyId = propertyId || (mBracket[1] || '').trim();
+                propertyName = propertyName || (mBracket[2] || '').trim();
+            }
+
+            
+            if (!propertyName || !propertyId) {
+                var mPair = subjectStr.match(/property[:#]?\s*([A-Za-z0-9-]+)\s*[-|:]\s*([^\(\n\r]+)/i);
+                if (mPair) {
+                    propertyId = propertyId || (mPair[1] || '').trim();
+                    var nm = (mPair[2] || '').trim();
+                    
+                    nm = nm.replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+                    propertyName = propertyName || nm;
+                }
+            }
+
+            
+            if (!propertyName) {
+                var mName = subjectStr.match(/property_name[:=]\s*([^|;\n\r]+)/i);
+                if (mName) {
+                    var nm2 = (mName[1] || '').trim().replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+                    propertyName = nm2;
+                }
+            }
+
+            
+            if (!propertyId) {
+                var idMatch = subjectStr.match(/property[_\s-]?id\s*[:=#]?\s*([A-Za-z0-9-]+)/i);
+                if (idMatch) {
+                    propertyId = (idMatch[1] || '').trim();
+                }
+            }
+
+            
+            if (!propertyId) {
+                var mUuid = subjectStr.match(/[-\s:|#\u2013\u2014]*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s*$/i);
+                if (mUuid && mUuid[1]) {
+                    propertyId = mUuid[1];
+                } else {
+                    var mNum = subjectStr.match(/[-\s:|#\u2013\u2014]*(\d{4,})\s*$/);
+                    if (mNum && mNum[1]) propertyId = mNum[1];
+                }
+            }
+
+            
+            if (!propertyName) {
+                var mFor = subjectStr.match(/\bfor\s+([^\-\u2013\u2014\|:]+)\s*$/i);
+                if (mFor && mFor[1]) {
+                    propertyName = mFor[1].trim();
+                }
+            }
+
+            
+            
+            if (!propertyName) {
+                var emIdx = subjectStr.lastIndexOf('\u2014');
+                var enIdx = subjectStr.lastIndexOf('\u2013');
+                var spacedHyIdx = subjectStr.lastIndexOf(' - ');
+                var sepIndex = -1;
+                if (emIdx !== -1) sepIndex = emIdx; else if (enIdx !== -1) sepIndex = enIdx; else if (spacedHyIdx !== -1) sepIndex = spacedHyIdx;
+                if (sepIndex !== -1) {
+                    var after = subjectStr.slice(sepIndex + 1).trim();
+                    if (sepIndex === spacedHyIdx) after = subjectStr.slice(sepIndex + 3).trim();
+                    after = after.replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+                    propertyName = after;
+                }
+            }
+
+            
+            if (!propertyName && propertyId) {
+                try {
+                    var rx = new RegExp('^(.+?)[\\s\\-\\u2013\\u2014:|\\/]*' + escapeRegExp(String(propertyId)) + '\\s*$', 'i');
+                    var mLeft = subjectStr.match(rx);
+                    if (mLeft && mLeft[1]) {
+                        var left = mLeft[1].trim();
+                        left = left
+                            .replace(/^re\s*[:\-]?\s*/i, '')
+                            .replace(/^\[[^\]]+\]\s*/, '')
+                            .trim();
+                        
+                        var forIdx = left.toLowerCase().lastIndexOf(' for ');
+                        if (forIdx !== -1) {
+                            propertyName = left.slice(forIdx + 5).trim();
+                        } else {
+                            
+                            var lastEm = left.lastIndexOf('\u2014');
+                            var lastEn = left.lastIndexOf('\u2013');
+                            var lastHy = left.lastIndexOf(' - ');
+                            var idx = Math.max(lastEm, lastEn, lastHy);
+                            if (idx !== -1) {
+                                propertyName = (idx === lastHy ? left.slice(idx + 3) : left.slice(idx + 1)).trim();
+                            } else {
+                                
+                                propertyName = left;
+                            }
+                        }
+                        
+                        if (propertyName && /\s-\s/.test(propertyName)) {
+                            propertyName = propertyName; 
+                        }
+                    }
+                } catch (e) { /* noop */ }
+            }
+
+            
+            if (!propertyName) {
+                var cleaned = subjectStr
+                    .replace(/^re\s*[:\-]?\s*/i, '')
+                    .replace(/\[property:[^\]]+\]/ig, '')
+                    .replace(/[\s\-\u2013\u2014:|\/]+$/g, '')
+                    .trim();
+                var fIdx = cleaned.toLowerCase().lastIndexOf(' for ');
+                if (fIdx !== -1) {
+                    propertyName = cleaned.slice(fIdx + 5).trim();
+                } else {
+                    var le = cleaned.lastIndexOf('\u2014');
+                    var ln = cleaned.lastIndexOf('\u2013');
+                    var lh = cleaned.lastIndexOf(' - ');
+                    var sidx = Math.max(le, ln, lh);
+                    if (sidx !== -1) {
+                        propertyName = (sidx === lh ? cleaned.slice(sidx + 3) : cleaned.slice(sidx + 1)).trim();
+                        
+                        
+                        if (propertyName && !/\s-\s/.test(propertyName) && sidx === lh) {
+                            var leftSide = cleaned.slice(0, sidx).trim();
+                            
+                            
+                            var lastSepIdx = Math.max(leftSide.lastIndexOf('\u2014'), leftSide.lastIndexOf('\u2013'), leftSide.lastIndexOf(':'));
+                            var candidateBuilding = lastSepIdx !== -1 ? leftSide.slice(lastSepIdx + 1).trim() : leftSide;
+                            if (candidateBuilding && candidateBuilding.length > 2) {
+                                propertyName = candidateBuilding + ' - ' + propertyName;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } catch (e) { /* noop */ }
+
+    
+    try {
+        var pn = propertyName && String(propertyName).trim();
+        if (pn) {
+            var isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pn);
+            var isLongNumber = /^\d{6,}$/.test(pn);
+            var equalsId = propertyId && pn.toLowerCase() === String(propertyId).trim().toLowerCase();
+            if (isUuid || isLongNumber || equalsId) {
+                propertyName = '';
+            }
+        }
+    } catch (e) { /* noop */ }
+
+    
+    try {
+        function cleanPropName(name, pid) {
+            if (!name) return '';
+            var s = String(name).trim();
+            
+            s = s.replace(/\[property:[^\]]+\]/ig, '').trim();
+            
+            if (pid) {
+                var rx = new RegExp('[\\s\\-\\u2013\\u2014:|\\/]*' + escapeRegExp(String(pid)) + '\\s*$', 'i');
+                s = s.replace(rx, '').trim();
+            }
+            
+            s = s.replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '').trim();
+            
+            s = s.replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '').trim();
+            
+            s = s.replace(/\(\s*(?:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}|\d{4,})\s*\)\s*$/i, '').trim();
+            
+            s = s.replace(/[\s\-\u2013\u2014:|\/]+$/g, '').trim();
+            return s;
+        }
+        if (propertyName) {
+            propertyName = cleanPropName(propertyName, propertyId);
+        }
+    } catch (e) { /* noop */ }
+
+    return {
+        name: name,
+        firstName: first,
+        lastName: last,
+        email: sub.email || '',
+        businessType: businessType,
+        preferredSize: preferredSize,
+        monthlyBudget: monthlyBudgetRaw,
+        propertyName: propertyName,
+        propertyId: propertyId,
+        
+        propertyNamePrefix: propertyName ? (' ' + propertyName) : ' this property',
+        propertyNameSuffix: propertyName ? (' for ' + propertyName) : '',
+    };
+}
+
+
+function fillTemplate(str, ctx) {
+    if (!str) return '';
+    return String(str).replace(/\{\{\s*(\w+)\s*\}\}/g, function (_, key) {
+        return (ctx[key] !== undefined && ctx[key] !== null) ? String(ctx[key]) : '';
+    });
+}
+
+
+async function buildDetailsSection(ctx) {
+    
+    if (ctx && ctx.propertyId && (!currentSubmission || !currentSubmission.property)) {
+        try {
+            var fetchedIfMissing = await fetchPropertyById(ctx.propertyId);
+            if (fetchedIfMissing && (fetchedIfMissing.property_name || fetchedIfMissing.name)) {
+                ctx.propertyName = fetchedIfMissing.property_name || fetchedIfMissing.name;
+                ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
+                ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
+                try { if (currentSubmission) currentSubmission.property = fetchedIfMissing; } catch (e) { /* noop */ }
+            }
+        } catch (e) { /* noop */ }
+    }
+
+    
+    if (ctx && ctx.propertyId && (!ctx.propertyName || !ctx.propertyName.trim())) {
+        try {
+            var fetched = await fetchPropertyById(ctx.propertyId);
+            if (fetched && (fetched.property_name || fetched.name)) {
+                ctx.propertyName = fetched.property_name || fetched.name;
+                ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
+                ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
+                try { if (currentSubmission) currentSubmission.property = fetched; } catch (e) { /* noop */ }
+            }
+        } catch (e) { /* noop */ }
+    }
+
+    
+    var lines = [];
+    if (ctx && ctx.propertyName) lines.push('• Property: ' + ctx.propertyName);
+    if (ctx && ctx.businessType) lines.push('• Business/Inquiry Type: ' + ctx.businessType);
+    if (ctx && ctx.preferredSize) lines.push('• Space Size: ' + ctx.preferredSize);
+    if (ctx && ctx.monthlyBudget) lines.push('• Monthly Rent: ' + formatBudgetText(ctx.monthlyBudget));
+
+    if (!lines.length) return '';
+    return '\n\nYour submission details:\n' + lines.join('\n');
+}
+
+function formatBudgetText(raw) {
+    if (!raw) return '';
+    var s = String(raw).trim();
+    var mRange = s.match(/([0-9,.]+)\s*[-–—]\s*([0-9,.]+)/);
+    if (mRange) {
+        var n1 = Number(mRange[1].replace(/[^0-9.]/g, ''));
+        var n2 = Number(mRange[2].replace(/[^0-9.]/g, ''));
+        if (!isNaN(n1) && !isNaN(n2)) return '₱' + n1.toLocaleString() + ' – ₱' + n2.toLocaleString();
+    }
+    var mUnder = s.match(/under\s*\D*([0-9,.]+)/i);
+    if (mUnder) {
+        var n = Number(mUnder[1].replace(/[^0-9.]/g, ''));
+        if (!isNaN(n)) return 'Under ₱' + n.toLocaleString();
+    }
+    var mOver = s.match(/over\s*\D*([0-9,.]+)/i);
+    if (mOver) {
+        var n2 = Number(mOver[1].replace(/[^0-9.]/g, ''));
+        if (!isNaN(n2)) return 'Over ₱' + n2.toLocaleString();
+    }
+    var num = Number(s.replace(/[^0-9.-]+/g, ''));
+    if (!isNaN(num) && /\d/.test(s)) return '₱' + num.toLocaleString();
+    return s;
+}
+
+
+function ensureTemplateLoader() {
+    var el = document.getElementById('templateLoader');
+    if (el) return el;
+    var sel = document.getElementById('templateSelect');
+    if (!sel) return null;
+    el = document.createElement('span');
+    el.id = 'templateLoader';
+    el.style.marginLeft = '8px';
+    el.style.fontSize = '0.9rem';
+    el.style.color = 'var(--text-muted)';
+    el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    sel.parentNode.insertBefore(el, sel.nextSibling);
+    el.style.display = 'none';
+    return el;
+}
+
+function showTemplateLoading() {
+    try {
+        var t = ensureTemplateLoader();
+        if (t) t.style.display = 'inline-block';
+    } catch (e) { /* noop */ }
+}
+
+function hideTemplateLoading() {
+    try {
+        var t = document.getElementById('templateLoader');
+        if (t) t.style.display = 'none';
+    } catch (e) { /* noop */ }
+}
 
 function showNotification(message, type = "success") {
     var notification = document.getElementById("notification");
@@ -465,7 +894,7 @@ function changePage(page) {
     fetchSubmissions(page);
 }
 
-function openModal(id) {
+async function openModal(id) {
     currentSubmission = submissions.find(function (s) {
         return s.id === id;
     });
@@ -486,7 +915,21 @@ function openModal(id) {
     if (currentSubmission.property || currentSubmission.property_info) {
         var p = currentSubmission.property || currentSubmission.property_info;
         propId = p.property_id || p.propertyId || p.id || null;
-        propName = p.property_name || p.name || null;
+        
+        try {
+            var addr = (p.address && typeof p.address === 'object' && !Array.isArray(p.address)) ? p.address : null;
+            var unitName = p.property_name || p.name || p.unit_name || p.unit || '';
+            var buildingName = p.building_name || p.building || (addr && (addr.building_name || addr.building)) || p.buildingName || p.project_name || p.development_name || '';
+            if (buildingName && unitName) {
+                var unitLower = unitName.toLowerCase();
+                var buildLower = buildingName.toLowerCase();
+                propName = unitLower.indexOf(buildLower) === -1 ? (buildingName + ' - ' + unitName) : unitName;
+            } else {
+                propName = unitName || buildingName || null;
+            }
+        } catch (e) {
+            propName = p.property_name || p.name || null;
+        }
     }
 
     if (!propId) {
@@ -498,6 +941,23 @@ function openModal(id) {
             propId = m[1] || propId;
             propName = (m[2] || "").trim();
         }
+    }
+
+    
+    if (propId) {
+        try {
+            const fetched = await fetchPropertyById(propId);
+            if (fetched) {
+                
+                if (fetched.property_name || fetched.name) {
+                    propName = fetched.property_name || fetched.name;
+                }
+                
+                try {
+                    currentSubmission.property = fetched;
+                } catch (e) { /* noop */ }
+            }
+        } catch (e) { /* noop */ }
     }
 
     var modalSubjectEl = document.getElementById("modalSubject");
@@ -752,7 +1212,16 @@ function openModal(id) {
 
     var replyBase = sanitizeSubject(currentSubmission.subject || "");
     if (propName) {
-        replyBase = sanitizeSubject(propName);
+        
+        try {
+            var pn = String(propName);
+            pn = pn.replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '').trim();
+            pn = pn.replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '').trim();
+            pn = pn.replace(/[\s\-\u2013\u2014:|\/]+$/g, '').trim();
+            replyBase = sanitizeSubject(pn);
+        } catch (e) {
+            replyBase = sanitizeSubject(propName);
+        }
     }
 
     replyBase = replyBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, "");
@@ -797,27 +1266,120 @@ function updateStatus() {
     }
 }
 
-function loadTemplate() {
+async function loadTemplate() {
     var templateSelect = document.getElementById("templateSelect");
     var selectedTemplate = templateSelect.value;
     var replyMessage = document.getElementById("replyMessage");
     var replySubject = document.getElementById("replySubject");
     var templateInfo = document.getElementById("templateInfo");
 
-    if (selectedTemplate && emailTemplates[selectedTemplate]) {
-        var template = emailTemplates[selectedTemplate];
-        var fullName =
-            (currentSubmission.first_name || "") +
-            (currentSubmission.last_name ? " " + currentSubmission.last_name : "");
-        replySubject.value = template.subject;
-        replyMessage.value = template.message.replace("[Customer Name]", fullName);
-        templateInfo.style.display = "block";
-    } else if (selectedTemplate === "custom") {
+    var key = normalizeTemplateKey(selectedTemplate);
+    if (selectedTemplate === "custom") {
         var customBase = sanitizeSubject(currentSubmission.subject || "");
         customBase = customBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, "");
         replySubject.value = "Re: " + customBase;
         replyMessage.value = "";
         templateInfo.style.display = "none";
+        return;
+    }
+
+    if (key && emailTemplates[key]) {
+        var template = emailTemplates[key];
+        var ctx = getSubmissionContext(currentSubmission);
+
+        
+
+        
+        
+        
+        if (ctx && ctx.propertyId) {
+            
+            if (currentSubmission && currentSubmission.property && (currentSubmission.property.property_name || currentSubmission.property.name)) {
+                ctx.propertyName = currentSubmission.property.property_name || currentSubmission.property.name;
+                ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
+                ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
+            }
+
+            
+            var needFetch = false;
+            try {
+                if (!currentSubmission || !currentSubmission.property) {
+                    needFetch = true;
+                } else {
+                    var attachedName = (currentSubmission.property.property_name || currentSubmission.property.name || '').toString().trim();
+                    var parsedName = (ctx.propertyName || '').toString().trim();
+                    if (attachedName && parsedName && attachedName.toLowerCase() !== parsedName.toLowerCase()) {
+                        
+                        needFetch = true;
+                    }
+                }
+            } catch (e) { needFetch = true; }
+
+            if (needFetch) {
+                showTemplateLoading();
+                try {
+                    var fetched = await fetchPropertyById(ctx.propertyId);
+                    if (fetched) {
+                        
+                        try { if (currentSubmission) currentSubmission.property = fetched; } catch (e) { /* noop */ }
+                        if (fetched.property_name || fetched.name) {
+                            ctx.propertyName = fetched.property_name || fetched.name;
+                            ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
+                            ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
+                        }
+                    }
+                } catch (e) { /* noop */ } finally { hideTemplateLoading(); }
+            }
+        }
+
+        
+        try {
+            for (var k in ctx) {
+                if (!Object.prototype.hasOwnProperty.call(ctx, k)) continue;
+                try {
+                    var v = ctx[k];
+                    if (v && typeof v.then === 'function') {
+                        ctx[k] = await v;
+                    }
+                } catch (e) {
+                    ctx[k] = '';
+                }
+            }
+            
+            for (var kk in ctx) {
+                if (!Object.prototype.hasOwnProperty.call(ctx, kk)) continue;
+                var vv = ctx[kk];
+                if (vv !== null && typeof vv === 'object') {
+                    try { ctx[kk] = String(vv); } catch (e) { ctx[kk] = ''; }
+                }
+            }
+        } catch (e) { /* noop */ }
+
+        
+        var subj = typeof template.subject === 'function' ? template.subject(ctx) : fillTemplate(template.subject, ctx);
+        var baseMsg = fillTemplate(template.message, ctx);
+
+        
+        var details = await Promise.resolve(buildDetailsSection(ctx));
+        var msg = baseMsg;
+        if (details) {
+            var anchorIdx = -1;
+            var anchors = ["\n\nBest regards,", "\n\nRegards,", "\n\nSincerely,"];
+            for (var i = 0; i < anchors.length; i++) {
+                var idx = baseMsg.lastIndexOf(anchors[i]);
+                if (idx !== -1) { anchorIdx = idx; break; }
+            }
+            if (anchorIdx !== -1) {
+                msg = baseMsg.slice(0, anchorIdx) + details + baseMsg.slice(anchorIdx);
+            } else {
+                msg = baseMsg + details;
+            }
+        }
+
+        replySubject.value = subj;
+        replyMessage.value = msg;
+        templateInfo.style.display = "block";
+
     } else {
         templateInfo.style.display = "none";
     }
@@ -865,10 +1427,27 @@ function sendResponse() {
         var postReplyBase = sanitizeSubject(currentSubmission.subject || "");
         if (currentSubmission.property || currentSubmission.property_info) {
             var p = currentSubmission.property || currentSubmission.property_info;
-            if (p.property_name || p.name)
-                postReplyBase = sanitizeSubject(p.property_name || p.name);
+            if (p.property_name || p.name) {
+                var baseName = p.property_name || p.name;
+                try {
+                    baseName = String(baseName)
+                        .replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '')
+                        .replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '')
+                        .replace(/[\s\-\u2013\u2014:|\/]+$/g, '')
+                        .trim();
+                } catch (e) { /* noop */ }
+                postReplyBase = sanitizeSubject(baseName);
+            }
         } else if (typeof propName !== "undefined" && propName) {
-            postReplyBase = sanitizeSubject(propName);
+            var pb = propName;
+            try {
+                pb = String(pb)
+                    .replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '')
+                    .replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '')
+                    .replace(/[\s\-\u2013\u2014:|\/]+$/g, '')
+                    .trim();
+            } catch (e) { /* noop */ }
+            postReplyBase = sanitizeSubject(pb);
         }
         postReplyBase = postReplyBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, "");
         document.getElementById("replySubject").value = "Re: " + postReplyBase;
@@ -1148,7 +1727,8 @@ window.filterSubmissions = filterSubmissions;
 window.clearFilters = clearFilters;
 window.sortTable = sortTable;
 window.updateStatus = updateStatus;
-
+window.loadTemplate = loadTemplate;
+window.sendResponse = sendResponse;
 window.openPropertyModal = openPropertyModal;
 window.closePropertyModal = closePropertyModal;
 
