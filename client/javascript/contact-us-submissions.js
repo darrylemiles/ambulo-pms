@@ -124,9 +124,6 @@ var currentSubmission = null;
 var currentSort = { column: null, direction: "asc" };
 var filteredSubmissions = [...submissions];
 
-
-
-
 var emailTemplates = {
     "general-inquiry": {
         subject: function (ctx) {
@@ -137,14 +134,13 @@ var emailTemplates = {
         message:
             "Dear {{name}},\n\nThank you for reaching out with your inquiry. We're happy to help and appreciate your interest." +
             "\n\nIf you have any additional details or questions you’d like us to consider, just reply to this email and we’ll get right back to you." +
-            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+            "\n\n\nBest regards,\n[Your Name]\nLeasing Team",
     },
     general: {
-        
         subject: function (ctx) {
             return emailTemplates["general-inquiry"].subject(ctx);
         },
-        message: emailTemplates ? undefined : "", 
+        message: emailTemplates ? undefined : "",
     },
     "property-availability": {
         subject: function (ctx) {
@@ -155,7 +151,7 @@ var emailTemplates = {
         message:
             "Dear {{name}},\n\nThanks for your interest. I'm checking the current availability for{{propertyNamePrefix}} and will confirm the units/spaces and earliest move-in dates." +
             "\n\nIn the meantime, please let us know your expected timeline so we can recommend the best options for you." +
-            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+            "\n\n\nBest regards,\n[Your Name]\nLeasing Team",
     },
     availability: {
         subject: function (ctx) {
@@ -173,7 +169,7 @@ var emailTemplates = {
             "Dear {{name}},\n\nBelow is a summary of our standard leasing terms for{{propertyNamePrefix}}. Specifics may vary by space and final negotiation:" +
             "\n\n• Lease Term: Typically minimum of 24 months, extendable up to 60 months (5 years)\n• Security Deposit: 1-2 months equivalent\n• Advance Rent: 2 months equivalent\n• Fit-out Period: Subject to approval and space condition\n• Inclusions: Basic building services; utilities billed separately unless otherwise stated" +
             "\n\nIf you'd like, I can prepare an initial proposal based on your requirements." +
-            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+            "\n\n\nBest regards,\n[Your Name]\nLeasing Team",
     },
     leasing: {
         subject: function (ctx) {
@@ -188,7 +184,7 @@ var emailTemplates = {
         message:
             "Dear {{name}},\n\nThank you for sharing your feedback. We truly appreciate you taking the time to help us improve." +
             "\n\nWe’ve noted your comments and will review them with the team. If you’re open to it, we’d love to ask a few follow-up questions to better understand your experience." +
-            "\n\nBest regards,\n[Your Name]\nCustomer Experience",
+            "\n\n\nBest regards,\n[Your Name]\nCustomer Experience",
     },
     "schedule-viewing": {
         subject: function (ctx) {
@@ -199,7 +195,7 @@ var emailTemplates = {
         message:
             "Dear {{name}},\n\nWe’d be happy to schedule a viewing{{propertyNameSuffix}}. Please let us know your preferred dates and time windows (e.g., weekdays 10am–4pm), and the number of attendees." +
             "\n\nOnce we receive your availability, we’ll confirm the appointment and share any visitor/access guidelines." +
-            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+            "\n\n\nBest regards,\n[Your Name]\nLeasing Team",
     },
     viewing: {
         subject: function (ctx) {
@@ -217,104 +213,123 @@ var emailTemplates = {
             "Dear {{name}},\n\nYour viewing appointment{{propertyNameSuffix}} has been confirmed for [DATE & TIME]. Please arrive 10–15 minutes early to allow time for building access and registration." +
             "\n\nOn the day, kindly bring a valid government-issued ID. If you need to reschedule, reply to this email at least 24 hours in advance and we’ll arrange a new time." +
             "\n\nWe look forward to meeting you and showing you around." +
-            "\n\nBest regards,\n[Your Name]\nLeasing Team",
+            "\n\n\nBest regards,\n[Your Name]\nLeasing Team",
     },
 };
 
-
 emailTemplates.general.message = emailTemplates["general-inquiry"].message;
-emailTemplates.availability.message = emailTemplates["property-availability"].message;
+emailTemplates.availability.message =
+    emailTemplates["property-availability"].message;
 emailTemplates.leasing.message = emailTemplates["leasing-terms"].message;
 emailTemplates.viewing.message = emailTemplates["schedule-viewing"].message;
 
-
-
 function normalizeTemplateKey(val) {
-    if (!val) return '';
+    if (!val) return "";
     var s = String(val).trim().toLowerCase();
-    s = s.replace(/\s+/g, '-').replace(/_/g, '-');
-    if (s.includes('general')) return 'general-inquiry';
-    if (s.includes('availability')) return 'property-availability';
-    if (s.includes('lease')) return 'leasing-terms';
-    if (s.includes('feedback')) return 'feedback';
-    if (s.includes('confirmation')) return 'confirmation-viewing';
-    if (s.includes('view')) return 'schedule-viewing';
+    s = s.replace(/\s+/g, "-").replace(/_/g, "-");
+    if (s.includes("general")) return "general-inquiry";
+    if (s.includes("availability")) return "property-availability";
+    if (s.includes("lease")) return "leasing-terms";
+    if (s.includes("feedback")) return "feedback";
+    if (s.includes("confirmation")) return "confirmation-viewing";
+    if (s.includes("view")) return "schedule-viewing";
     return s;
 }
 
-
 function getSubmissionContext(sub) {
-    var first = (sub.first_name || '').trim();
-    var last = (sub.last_name || '').trim();
-    var name = (first + ' ' + last).trim() || (sub.name || '').trim() || 'there';
-    var businessType = sub.business_type || sub.businessType || sub.company_type || sub.type || '';
-    var preferredSize = sub.preferred_space_size || sub.preferredSpaceSize || sub.space_size || '';
-    var monthlyBudgetRaw = sub.monthly_budget_range || sub.monthly_budget || sub.budget_range || sub.budget || '';
-    var propertyName = '';
-    var propertyId = '';
+    var first = (sub.first_name || "").trim();
+    var last = (sub.last_name || "").trim();
+    var name = (first + " " + last).trim() || (sub.name || "").trim() || "there";
+    var businessType =
+        sub.business_type || sub.businessType || sub.company_type || sub.type || "";
+    var preferredSize =
+        sub.preferred_space_size || sub.preferredSpaceSize || sub.space_size || "";
+    var monthlyBudgetRaw =
+        sub.monthly_budget_range ||
+        sub.monthly_budget ||
+        sub.budget_range ||
+        sub.budget ||
+        "";
+    var propertyName = "";
+    var propertyId = "";
     try {
         if (sub.property || sub.property_info) {
             var p = sub.property || sub.property_info;
-            var addr = (p.address && typeof p.address === 'object' && !Array.isArray(p.address)) ? p.address : null;
-            var unitName = p.property_name || p.name || p.unit_name || p.unit || '';
-            var buildingName = p.building_name || p.building || (addr && (addr.building_name || addr.building)) || p.buildingName || p.project_name || p.development_name || '';
-            
+            var addr =
+                p.address && typeof p.address === "object" && !Array.isArray(p.address)
+                    ? p.address
+                    : null;
+            var unitName = p.property_name || p.name || p.unit_name || p.unit || "";
+            var buildingName =
+                p.building_name ||
+                p.building ||
+                (addr && (addr.building_name || addr.building)) ||
+                p.buildingName ||
+                p.project_name ||
+                p.development_name ||
+                "";
+
             if (buildingName && unitName) {
                 var unitLower = unitName.toLowerCase();
                 var buildLower = buildingName.toLowerCase();
-                
+
                 if (unitLower.indexOf(buildLower) === -1) {
-                    propertyName = buildingName + ' - ' + unitName;
+                    propertyName = buildingName + " - " + unitName;
                 } else {
                     propertyName = unitName;
                 }
             } else {
-                propertyName = unitName || buildingName || '';
+                propertyName = unitName || buildingName || "";
             }
-            propertyId = p.property_id || p.propertyId || p.id || '';
+            propertyId = p.property_id || p.propertyId || p.id || "";
         }
 
-        var subjectStr = sub.subject || '';
+        var subjectStr = sub.subject || "";
         if ((!propertyName || !propertyId) && subjectStr) {
-            
-            var mBracket = subjectStr.match(/\[property:\s*([A-Za-z0-9-]+)\s*\|\s*([^\]]+)\]/i);
+            var mBracket = subjectStr.match(
+                /\[property:\s*([A-Za-z0-9-]+)\s*\|\s*([^\]]+)\]/i
+            );
             if (mBracket) {
-                propertyId = propertyId || (mBracket[1] || '').trim();
-                propertyName = propertyName || (mBracket[2] || '').trim();
+                propertyId = propertyId || (mBracket[1] || "").trim();
+                propertyName = propertyName || (mBracket[2] || "").trim();
             }
 
-            
             if (!propertyName || !propertyId) {
-                var mPair = subjectStr.match(/property[:#]?\s*([A-Za-z0-9-]+)\s*[-|:]\s*([^\(\n\r]+)/i);
+                var mPair = subjectStr.match(
+                    /property[:#]?\s*([A-Za-z0-9-]+)\s*[-|:]\s*([^\(\n\r]+)/i
+                );
                 if (mPair) {
-                    propertyId = propertyId || (mPair[1] || '').trim();
-                    var nm = (mPair[2] || '').trim();
-                    
-                    nm = nm.replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+                    propertyId = propertyId || (mPair[1] || "").trim();
+                    var nm = (mPair[2] || "").trim();
+
+                    nm = nm.replace(/[\s\-\u2013\u2014:|\/]+$/g, "");
                     propertyName = propertyName || nm;
                 }
             }
 
-            
             if (!propertyName) {
                 var mName = subjectStr.match(/property_name[:=]\s*([^|;\n\r]+)/i);
                 if (mName) {
-                    var nm2 = (mName[1] || '').trim().replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+                    var nm2 = (mName[1] || "")
+                        .trim()
+                        .replace(/[\s\-\u2013\u2014:|\/]+$/g, "");
                     propertyName = nm2;
                 }
             }
 
-            
             if (!propertyId) {
-                var idMatch = subjectStr.match(/property[_\s-]?id\s*[:=#]?\s*([A-Za-z0-9-]+)/i);
+                var idMatch = subjectStr.match(
+                    /property[_\s-]?id\s*[:=#]?\s*([A-Za-z0-9-]+)/i
+                );
                 if (idMatch) {
-                    propertyId = (idMatch[1] || '').trim();
+                    propertyId = (idMatch[1] || "").trim();
                 }
             }
 
-            
             if (!propertyId) {
-                var mUuid = subjectStr.match(/[-\s:|#\u2013\u2014]*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s*$/i);
+                var mUuid = subjectStr.match(
+                    /[-\s:|#\u2013\u2014]*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s*$/i
+                );
                 if (mUuid && mUuid[1]) {
                     propertyId = mUuid[1];
                 } else {
@@ -323,7 +338,6 @@ function getSubmissionContext(sub) {
                 }
             }
 
-            
             if (!propertyName) {
                 var mFor = subjectStr.match(/\bfor\s+([^\-\u2013\u2014\|:]+)\s*$/i);
                 if (mFor && mFor[1]) {
@@ -331,249 +345,546 @@ function getSubmissionContext(sub) {
                 }
             }
 
-            
-            
             if (!propertyName) {
-                var emIdx = subjectStr.lastIndexOf('\u2014');
-                var enIdx = subjectStr.lastIndexOf('\u2013');
-                var spacedHyIdx = subjectStr.lastIndexOf(' - ');
+                var emIdx = subjectStr.lastIndexOf("\u2014");
+                var enIdx = subjectStr.lastIndexOf("\u2013");
+                var spacedHyIdx = subjectStr.lastIndexOf(" - ");
                 var sepIndex = -1;
-                if (emIdx !== -1) sepIndex = emIdx; else if (enIdx !== -1) sepIndex = enIdx; else if (spacedHyIdx !== -1) sepIndex = spacedHyIdx;
+                if (emIdx !== -1) sepIndex = emIdx;
+                else if (enIdx !== -1) sepIndex = enIdx;
+                else if (spacedHyIdx !== -1) sepIndex = spacedHyIdx;
                 if (sepIndex !== -1) {
                     var after = subjectStr.slice(sepIndex + 1).trim();
-                    if (sepIndex === spacedHyIdx) after = subjectStr.slice(sepIndex + 3).trim();
-                    after = after.replace(/[\s\-\u2013\u2014:|\/]+$/g, '');
+                    if (sepIndex === spacedHyIdx)
+                        after = subjectStr.slice(sepIndex + 3).trim();
+                    after = after.replace(/[\s\-\u2013\u2014:|\/]+$/g, "");
                     propertyName = after;
                 }
             }
 
-            
             if (!propertyName && propertyId) {
                 try {
-                    var rx = new RegExp('^(.+?)[\\s\\-\\u2013\\u2014:|\\/]*' + escapeRegExp(String(propertyId)) + '\\s*$', 'i');
+                    var rx = new RegExp(
+                        "^(.+?)[\\s\\-\\u2013\\u2014:|\\/]*" +
+                        escapeRegExp(String(propertyId)) +
+                        "\\s*$",
+                        "i"
+                    );
                     var mLeft = subjectStr.match(rx);
                     if (mLeft && mLeft[1]) {
                         var left = mLeft[1].trim();
                         left = left
-                            .replace(/^re\s*[:\-]?\s*/i, '')
-                            .replace(/^\[[^\]]+\]\s*/, '')
+                            .replace(/^re\s*[:\-]?\s*/i, "")
+                            .replace(/^\[[^\]]+\]\s*/, "")
                             .trim();
-                        
-                        var forIdx = left.toLowerCase().lastIndexOf(' for ');
+
+                        var forIdx = left.toLowerCase().lastIndexOf(" for ");
                         if (forIdx !== -1) {
                             propertyName = left.slice(forIdx + 5).trim();
                         } else {
-                            
-                            var lastEm = left.lastIndexOf('\u2014');
-                            var lastEn = left.lastIndexOf('\u2013');
-                            var lastHy = left.lastIndexOf(' - ');
+                            var lastEm = left.lastIndexOf("\u2014");
+                            var lastEn = left.lastIndexOf("\u2013");
+                            var lastHy = left.lastIndexOf(" - ");
                             var idx = Math.max(lastEm, lastEn, lastHy);
                             if (idx !== -1) {
-                                propertyName = (idx === lastHy ? left.slice(idx + 3) : left.slice(idx + 1)).trim();
+                                propertyName = (
+                                    idx === lastHy ? left.slice(idx + 3) : left.slice(idx + 1)
+                                ).trim();
                             } else {
-                                
                                 propertyName = left;
                             }
                         }
-                        
+
                         if (propertyName && /\s-\s/.test(propertyName)) {
-                            propertyName = propertyName; 
+                            propertyName = propertyName;
                         }
                     }
-                } catch (e) { /* noop */ }
+                } catch (e) {
+                    /* noop */
+                }
             }
 
-            
             if (!propertyName) {
                 var cleaned = subjectStr
-                    .replace(/^re\s*[:\-]?\s*/i, '')
-                    .replace(/\[property:[^\]]+\]/ig, '')
-                    .replace(/[\s\-\u2013\u2014:|\/]+$/g, '')
+                    .replace(/^re\s*[:\-]?\s*/i, "")
+                    .replace(/\[property:[^\]]+\]/gi, "")
+                    .replace(/[\s\-\u2013\u2014:|\/]+$/g, "")
                     .trim();
-                var fIdx = cleaned.toLowerCase().lastIndexOf(' for ');
+                var fIdx = cleaned.toLowerCase().lastIndexOf(" for ");
                 if (fIdx !== -1) {
                     propertyName = cleaned.slice(fIdx + 5).trim();
                 } else {
-                    var le = cleaned.lastIndexOf('\u2014');
-                    var ln = cleaned.lastIndexOf('\u2013');
-                    var lh = cleaned.lastIndexOf(' - ');
+                    var le = cleaned.lastIndexOf("\u2014");
+                    var ln = cleaned.lastIndexOf("\u2013");
+                    var lh = cleaned.lastIndexOf(" - ");
                     var sidx = Math.max(le, ln, lh);
                     if (sidx !== -1) {
-                        propertyName = (sidx === lh ? cleaned.slice(sidx + 3) : cleaned.slice(sidx + 1)).trim();
-                        
-                        
+                        propertyName = (
+                            sidx === lh ? cleaned.slice(sidx + 3) : cleaned.slice(sidx + 1)
+                        ).trim();
+
                         if (propertyName && !/\s-\s/.test(propertyName) && sidx === lh) {
                             var leftSide = cleaned.slice(0, sidx).trim();
-                            
-                            
-                            var lastSepIdx = Math.max(leftSide.lastIndexOf('\u2014'), leftSide.lastIndexOf('\u2013'), leftSide.lastIndexOf(':'));
-                            var candidateBuilding = lastSepIdx !== -1 ? leftSide.slice(lastSepIdx + 1).trim() : leftSide;
+
+                            var lastSepIdx = Math.max(
+                                leftSide.lastIndexOf("\u2014"),
+                                leftSide.lastIndexOf("\u2013"),
+                                leftSide.lastIndexOf(":")
+                            );
+                            var candidateBuilding =
+                                lastSepIdx !== -1
+                                    ? leftSide.slice(lastSepIdx + 1).trim()
+                                    : leftSide;
                             if (candidateBuilding && candidateBuilding.length > 2) {
-                                propertyName = candidateBuilding + ' - ' + propertyName;
+                                propertyName = candidateBuilding + " - " + propertyName;
                             }
                         }
                     }
                 }
             }
         }
-    } catch (e) { /* noop */ }
+    } catch (e) {
+        /* noop */
+    }
 
-    
     try {
         var pn = propertyName && String(propertyName).trim();
         if (pn) {
-            var isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pn);
+            var isUuid =
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                    pn
+                );
             var isLongNumber = /^\d{6,}$/.test(pn);
-            var equalsId = propertyId && pn.toLowerCase() === String(propertyId).trim().toLowerCase();
+            var equalsId =
+                propertyId &&
+                pn.toLowerCase() === String(propertyId).trim().toLowerCase();
             if (isUuid || isLongNumber || equalsId) {
-                propertyName = '';
+                propertyName = "";
             }
         }
-    } catch (e) { /* noop */ }
+    } catch (e) {
+        /* noop */
+    }
 
-    
     try {
         function cleanPropName(name, pid) {
-            if (!name) return '';
+            if (!name) return "";
             var s = String(name).trim();
-            
-            s = s.replace(/\[property:[^\]]+\]/ig, '').trim();
-            
+
+            s = s.replace(/\[property:[^\]]+\]/gi, "").trim();
+
             if (pid) {
-                var rx = new RegExp('[\\s\\-\\u2013\\u2014:|\\/]*' + escapeRegExp(String(pid)) + '\\s*$', 'i');
-                s = s.replace(rx, '').trim();
+                var rx = new RegExp(
+                    "[\\s\\-\\u2013\\u2014:|\\/]*" + escapeRegExp(String(pid)) + "\\s*$",
+                    "i"
+                );
+                s = s.replace(rx, "").trim();
             }
-            
-            s = s.replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '').trim();
-            
-            s = s.replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '').trim();
-            
-            s = s.replace(/\(\s*(?:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}|\d{4,})\s*\)\s*$/i, '').trim();
-            
-            s = s.replace(/[\s\-\u2013\u2014:|\/]+$/g, '').trim();
+
+            s = s
+                .replace(
+                    /[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i,
+                    ""
+                )
+                .trim();
+
+            s = s.replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, "").trim();
+
+            s = s
+                .replace(
+                    /\(\s*(?:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}|\d{4,})\s*\)\s*$/i,
+                    ""
+                )
+                .trim();
+
+            s = s.replace(/[\s\-\u2013\u2014:|\/]+$/g, "").trim();
             return s;
         }
         if (propertyName) {
             propertyName = cleanPropName(propertyName, propertyId);
         }
-    } catch (e) { /* noop */ }
+    } catch (e) {
+        /* noop */
+    }
 
     return {
         name: name,
         firstName: first,
         lastName: last,
-        email: sub.email || '',
+        email: sub.email || "",
         businessType: businessType,
         preferredSize: preferredSize,
         monthlyBudget: monthlyBudgetRaw,
         propertyName: propertyName,
         propertyId: propertyId,
-        
-        propertyNamePrefix: propertyName ? (' ' + propertyName) : ' this property',
-        propertyNameSuffix: propertyName ? (' for ' + propertyName) : '',
+
+        propertyNamePrefix: propertyName ? " " + propertyName : " this property",
+        propertyNameSuffix: propertyName ? " for " + propertyName : "",
     };
 }
 
-
 function fillTemplate(str, ctx) {
-    if (!str) return '';
+    if (!str) return "";
     return String(str).replace(/\{\{\s*(\w+)\s*\}\}/g, function (_, key) {
-        return (ctx[key] !== undefined && ctx[key] !== null) ? String(ctx[key]) : '';
+        return ctx[key] !== undefined && ctx[key] !== null ? String(ctx[key]) : "";
     });
 }
 
-
-async function buildDetailsSection(ctx) {
-    
-    if (ctx && ctx.propertyId && (!currentSubmission || !currentSubmission.property)) {
+function getReplyMessageText() {
+    var editor = document.getElementById("replyEditor");
+    if (editor) {
         try {
-            var fetchedIfMissing = await fetchPropertyById(ctx.propertyId);
-            if (fetchedIfMissing && (fetchedIfMissing.property_name || fetchedIfMissing.name)) {
-                ctx.propertyName = fetchedIfMissing.property_name || fetchedIfMissing.name;
-                ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
-                ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
-                try { if (currentSubmission) currentSubmission.property = fetchedIfMissing; } catch (e) { /* noop */ }
-            }
-        } catch (e) { /* noop */ }
+            var html = editor.innerHTML || "";
+
+            html = html.replace(/<br\s*\/?>/gi, "\n");
+            html = html.replace(/<\/p>/gi, "\n\n");
+            html = html.replace(/<\/div>/gi, "\n");
+            html = html.replace(/<li>/gi, "\n• ");
+
+            var tmp = document.createElement("div");
+            tmp.innerHTML = html;
+            return String(tmp.textContent || tmp.innerText || "").trim();
+        } catch (e) {
+            /* fallback */
+        }
+    }
+    var el = document.getElementById("replyMessage");
+    if (!el) return "";
+    try {
+        if (typeof el.value !== "undefined") return String(el.value);
+        return String(el.innerText || el.textContent || "");
+    } catch (e) {
+        return "";
+    }
+}
+
+function setReplyMessageText(val) {
+    var editor = document.getElementById("replyEditor");
+    var el = document.getElementById("replyMessage");
+    if (editor) {
+        try {
+            editor.innerHTML = textToHtml(val || "");
+        } catch (e) {
+            editor.textContent = val || "";
+        }
+    }
+    if (!el) return;
+    try {
+        if (typeof el.value !== "undefined") el.value = String(val || "");
+        else el.innerText = String(val || "");
+    } catch (e) {
+        try {
+            el.innerText = String(val || "");
+        } catch (e) {
+            /* noop */
+        }
+    }
+}
+
+function setupComposeEditor() {
+    var editor = document.getElementById("replyEditor");
+    var textarea = document.getElementById("replyMessage");
+    var toolbar = document.getElementById("composeToolbar");
+    if (!editor) return;
+
+    if (toolbar) {
+        toolbar.querySelectorAll("button").forEach(function (btn) {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                var cmd = btn.getAttribute("data-cmd");
+                var val = btn.getAttribute("data-value") || null;
+                if (!cmd) return;
+                if (cmd === "createLink") {
+                    var url = prompt(
+                        "Enter URL (include http:// or https://):",
+                        "https://"
+                    );
+                    if (url) document.execCommand("createLink", false, url);
+                } else if (cmd === "formatBlock" && val) {
+                    document.execCommand("formatBlock", false, val);
+                } else {
+                    document.execCommand(cmd, false, val);
+                }
+                syncEditorToTextarea();
+                try {
+                    editor.focus();
+                } catch (e) { }
+            });
+        });
     }
 
-    
-    if (ctx && ctx.propertyId && (!ctx.propertyName || !ctx.propertyName.trim())) {
+    function syncEditorToTextarea() {
+        if (!textarea) return;
+        try {
+            var html = editor.innerHTML || "";
+
+            var tmp = document.createElement("div");
+
+            var t = html
+                .replace(/<br\s*\/?>(\s*)/gi, "\n")
+                .replace(/<\/p>/gi, "\n\n")
+                .replace(/<\/div>/gi, "\n")
+                .replace(/<li>/gi, "\n• ");
+            tmp.innerHTML = t;
+            textarea.value = tmp.textContent || tmp.innerText || "";
+        } catch (e) { }
+    }
+
+    editor.addEventListener("input", function () {
+        syncEditorToTextarea();
+    });
+    editor.addEventListener("blur", function () {
+        syncEditorToTextarea();
+    });
+}
+
+function textToHtml(text) {
+    if (!text && text !== "") return "";
+    var s = String(text || "");
+
+    s = escapeHtml(s);
+
+    s = s.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+    var parts = s
+        .split(/\n{2,}/g)
+        .map(function (p) {
+            return p.trim();
+        })
+        .filter(function (p) {
+            return p.length > 0;
+        });
+    if (!parts.length) return "<p></p>";
+    var html = parts
+        .map(function (p) {
+            var inner = p.replace(/\n/g, "<br>");
+            return '<p style="margin:0 0 12px;">' + inner + "</p>";
+        })
+        .join("");
+    return html;
+}
+
+function cleanEditorHtml(html) {
+    if (!html) return "";
+    try {
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = String(html);
+
+        const ALLOWED_TAGS = new Set([
+            "p",
+            "br",
+            "b",
+            "strong",
+            "i",
+            "em",
+            "u",
+            "ul",
+            "ol",
+            "li",
+            "a",
+            "blockquote",
+            "div",
+            "span",
+        ]);
+
+        function sanitizeNode(node) {
+            if (node.nodeType === Node.TEXT_NODE) return;
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                node.remove();
+                return;
+            }
+            const tag = node.tagName.toLowerCase();
+
+            try {
+                const styleAttr =
+                    (node.getAttribute && node.getAttribute("style")) || "";
+                if (styleAttr && typeof styleAttr === "string") {
+                    const s = styleAttr.toLowerCase();
+                    const wrappers = [];
+                    if (/font-weight\s*:\s*(bold|700|800|900|bolder)/.test(s))
+                        wrappers.push("strong");
+                    if (/font-style\s*:\s*italic/.test(s)) wrappers.push("em");
+                    if (/text-decoration\s*:\s*underline/.test(s)) wrappers.push("u");
+                    if (wrappers.length && node.tagName.toLowerCase() === "span") {
+                        let outer = document.createElement(wrappers[0]);
+                        let current = outer;
+                        for (let i = 1; i < wrappers.length; i++) {
+                            const w = document.createElement(wrappers[i]);
+                            current.appendChild(w);
+                            current = w;
+                        }
+                        while (node.firstChild) current.appendChild(node.firstChild);
+                        node.parentNode.replaceChild(outer, node);
+
+                        sanitizeNode(outer);
+                        return;
+                    }
+                }
+            } catch (e) {
+                /* ignore style handling errors */
+            }
+
+            if (!ALLOWED_TAGS.has(tag)) {
+                if (node.childNodes && node.childNodes.length) {
+                    const parent = node.parentNode;
+                    while (node.firstChild) parent.insertBefore(node.firstChild, node);
+                }
+                node.parentNode.removeChild(node);
+                return;
+            }
+
+            for (let i = node.attributes.length - 1; i >= 0; i--) {
+                const attr = node.attributes[i].name.toLowerCase();
+                if (tag === "a" && attr === "href") {
+                    const v = node.getAttribute("href") || "";
+                    if (!/^\s*(https?:|mailto:)/i.test(v)) {
+                        node.removeAttribute("href");
+                    }
+                } else {
+                    node.removeAttribute(node.attributes[i].name);
+                }
+            }
+
+            const children = Array.from(node.childNodes);
+            children.forEach(sanitizeNode);
+        }
+
+        const children = Array.from(wrapper.childNodes);
+        children.forEach(sanitizeNode);
+
+        return wrapper.innerHTML;
+    } catch (e) {
+        return "";
+    }
+}
+
+async function buildDetailsSection(ctx) {
+    if (
+        ctx &&
+        ctx.propertyId &&
+        (!currentSubmission || !currentSubmission.property)
+    ) {
+        try {
+            var fetchedIfMissing = await fetchPropertyById(ctx.propertyId);
+            if (
+                fetchedIfMissing &&
+                (fetchedIfMissing.property_name || fetchedIfMissing.name)
+            ) {
+                ctx.propertyName =
+                    fetchedIfMissing.property_name || fetchedIfMissing.name;
+                ctx.propertyNameSuffix = ctx.propertyName
+                    ? " for " + ctx.propertyName
+                    : "";
+                ctx.propertyNamePrefix = ctx.propertyName
+                    ? " " + ctx.propertyName
+                    : " this property";
+                try {
+                    if (currentSubmission) currentSubmission.property = fetchedIfMissing;
+                } catch (e) {
+                    /* noop */
+                }
+            }
+        } catch (e) {
+            /* noop */
+        }
+    }
+
+    if (
+        ctx &&
+        ctx.propertyId &&
+        (!ctx.propertyName || !ctx.propertyName.trim())
+    ) {
         try {
             var fetched = await fetchPropertyById(ctx.propertyId);
             if (fetched && (fetched.property_name || fetched.name)) {
                 ctx.propertyName = fetched.property_name || fetched.name;
-                ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
-                ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
-                try { if (currentSubmission) currentSubmission.property = fetched; } catch (e) { /* noop */ }
+                ctx.propertyNamePrefix = ctx.propertyName
+                    ? " " + ctx.propertyName
+                    : " this property";
+                ctx.propertyNameSuffix = ctx.propertyName
+                    ? " for " + ctx.propertyName
+                    : "";
+                try {
+                    if (currentSubmission) currentSubmission.property = fetched;
+                } catch (e) {
+                    /* noop */
+                }
             }
-        } catch (e) { /* noop */ }
+        } catch (e) {
+            /* noop */
+        }
     }
 
-    
     var lines = [];
-    if (ctx && ctx.propertyName) lines.push('• Property: ' + ctx.propertyName);
-    if (ctx && ctx.businessType) lines.push('• Business/Inquiry Type: ' + ctx.businessType);
-    if (ctx && ctx.preferredSize) lines.push('• Space Size: ' + ctx.preferredSize);
-    if (ctx && ctx.monthlyBudget) lines.push('• Monthly Rent: ' + formatBudgetText(ctx.monthlyBudget));
+    if (ctx && ctx.propertyName) lines.push("• Property: " + ctx.propertyName);
+    if (ctx && ctx.businessType)
+        lines.push("• Business/Inquiry Type: " + ctx.businessType);
+    if (ctx && ctx.preferredSize)
+        lines.push("• Space Size: " + ctx.preferredSize);
+    if (ctx && ctx.monthlyBudget)
+        lines.push("• Monthly Rent: " + formatBudgetText(ctx.monthlyBudget));
 
-    if (!lines.length) return '';
-    return '\n\nYour submission details:\n' + lines.join('\n');
+    if (!lines.length) return "";
+    return "\n\nYour submission details:\n" + lines.join("\n");
 }
 
 function formatBudgetText(raw) {
-    if (!raw) return '';
+    if (!raw) return "";
     var s = String(raw).trim();
     var mRange = s.match(/([0-9,.]+)\s*[-–—]\s*([0-9,.]+)/);
     if (mRange) {
-        var n1 = Number(mRange[1].replace(/[^0-9.]/g, ''));
-        var n2 = Number(mRange[2].replace(/[^0-9.]/g, ''));
-        if (!isNaN(n1) && !isNaN(n2)) return '₱' + n1.toLocaleString() + ' – ₱' + n2.toLocaleString();
+        var n1 = Number(mRange[1].replace(/[^0-9.]/g, ""));
+        var n2 = Number(mRange[2].replace(/[^0-9.]/g, ""));
+        if (!isNaN(n1) && !isNaN(n2))
+            return "₱" + n1.toLocaleString() + " – ₱" + n2.toLocaleString();
     }
     var mUnder = s.match(/under\s*\D*([0-9,.]+)/i);
     if (mUnder) {
-        var n = Number(mUnder[1].replace(/[^0-9.]/g, ''));
-        if (!isNaN(n)) return 'Under ₱' + n.toLocaleString();
+        var n = Number(mUnder[1].replace(/[^0-9.]/g, ""));
+        if (!isNaN(n)) return "Under ₱" + n.toLocaleString();
     }
     var mOver = s.match(/over\s*\D*([0-9,.]+)/i);
     if (mOver) {
-        var n2 = Number(mOver[1].replace(/[^0-9.]/g, ''));
-        if (!isNaN(n2)) return 'Over ₱' + n2.toLocaleString();
+        var n2 = Number(mOver[1].replace(/[^0-9.]/g, ""));
+        if (!isNaN(n2)) return "Over ₱" + n2.toLocaleString();
     }
-    var num = Number(s.replace(/[^0-9.-]+/g, ''));
-    if (!isNaN(num) && /\d/.test(s)) return '₱' + num.toLocaleString();
+    var num = Number(s.replace(/[^0-9.-]+/g, ""));
+    if (!isNaN(num) && /\d/.test(s)) return "₱" + num.toLocaleString();
     return s;
 }
 
-
 function ensureTemplateLoader() {
-    var el = document.getElementById('templateLoader');
+    var el = document.getElementById("templateLoader");
     if (el) return el;
-    var sel = document.getElementById('templateSelect');
+    var sel = document.getElementById("templateSelect");
     if (!sel) return null;
-    el = document.createElement('span');
-    el.id = 'templateLoader';
-    el.style.marginLeft = '8px';
-    el.style.fontSize = '0.9rem';
-    el.style.color = 'var(--text-muted)';
+    el = document.createElement("span");
+    el.id = "templateLoader";
+    el.style.marginLeft = "8px";
+    el.style.fontSize = "0.9rem";
+    el.style.color = "var(--text-muted)";
     el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
     sel.parentNode.insertBefore(el, sel.nextSibling);
-    el.style.display = 'none';
+    el.style.display = "none";
     return el;
 }
 
 function showTemplateLoading() {
     try {
         var t = ensureTemplateLoader();
-        if (t) t.style.display = 'inline-block';
-    } catch (e) { /* noop */ }
+        if (t) t.style.display = "inline-block";
+    } catch (e) {
+        /* noop */
+    }
 }
 
 function hideTemplateLoading() {
     try {
-        var t = document.getElementById('templateLoader');
-        if (t) t.style.display = 'none';
-    } catch (e) { /* noop */ }
+        var t = document.getElementById("templateLoader");
+        if (t) t.style.display = "none";
+    } catch (e) {
+        /* noop */
+    }
 }
 
 function showNotification(message, type = "success") {
@@ -915,15 +1226,28 @@ async function openModal(id) {
     if (currentSubmission.property || currentSubmission.property_info) {
         var p = currentSubmission.property || currentSubmission.property_info;
         propId = p.property_id || p.propertyId || p.id || null;
-        
+
         try {
-            var addr = (p.address && typeof p.address === 'object' && !Array.isArray(p.address)) ? p.address : null;
-            var unitName = p.property_name || p.name || p.unit_name || p.unit || '';
-            var buildingName = p.building_name || p.building || (addr && (addr.building_name || addr.building)) || p.buildingName || p.project_name || p.development_name || '';
+            var addr =
+                p.address && typeof p.address === "object" && !Array.isArray(p.address)
+                    ? p.address
+                    : null;
+            var unitName = p.property_name || p.name || p.unit_name || p.unit || "";
+            var buildingName =
+                p.building_name ||
+                p.building ||
+                (addr && (addr.building_name || addr.building)) ||
+                p.buildingName ||
+                p.project_name ||
+                p.development_name ||
+                "";
             if (buildingName && unitName) {
                 var unitLower = unitName.toLowerCase();
                 var buildLower = buildingName.toLowerCase();
-                propName = unitLower.indexOf(buildLower) === -1 ? (buildingName + ' - ' + unitName) : unitName;
+                propName =
+                    unitLower.indexOf(buildLower) === -1
+                        ? buildingName + " - " + unitName
+                        : unitName;
             } else {
                 propName = unitName || buildingName || null;
             }
@@ -943,21 +1267,23 @@ async function openModal(id) {
         }
     }
 
-    
     if (propId) {
         try {
             const fetched = await fetchPropertyById(propId);
             if (fetched) {
-                
                 if (fetched.property_name || fetched.name) {
                     propName = fetched.property_name || fetched.name;
                 }
-                
+
                 try {
                     currentSubmission.property = fetched;
-                } catch (e) { /* noop */ }
+                } catch (e) {
+                    /* noop */
+                }
             }
-        } catch (e) { /* noop */ }
+        } catch (e) {
+            /* noop */
+        }
     }
 
     var modalSubjectEl = document.getElementById("modalSubject");
@@ -1199,6 +1525,32 @@ async function openModal(id) {
             })
             : "";
     document.getElementById("modalId").textContent = "#" + currentSubmission.id;
+
+    try {
+        var repliedEl = document.getElementById("modalRepliedAt");
+        if (repliedEl) {
+            var repliedRaw =
+                currentSubmission.replied_at || currentSubmission.repliedAt || null;
+            if (repliedRaw) {
+                var repliedDate = new Date(repliedRaw);
+                if (!isNaN(repliedDate.getTime())) {
+                    repliedEl.textContent = repliedDate.toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                    });
+                } else {
+                    repliedEl.textContent = String(repliedRaw);
+                }
+            } else {
+                repliedEl.textContent = "";
+            }
+        }
+    } catch (e) {
+        /* noop */
+    }
     document.getElementById("modalMessage").textContent =
         currentSubmission.message || "";
 
@@ -1212,12 +1564,16 @@ async function openModal(id) {
 
     var replyBase = sanitizeSubject(currentSubmission.subject || "");
     if (propName) {
-        
         try {
             var pn = String(propName);
-            pn = pn.replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '').trim();
-            pn = pn.replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '').trim();
-            pn = pn.replace(/[\s\-\u2013\u2014:|\/]+$/g, '').trim();
+            pn = pn
+                .replace(
+                    /[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i,
+                    ""
+                )
+                .trim();
+            pn = pn.replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, "").trim();
+            pn = pn.replace(/[\s\-\u2013\u2014:|\/]+$/g, "").trim();
             replyBase = sanitizeSubject(pn);
         } catch (e) {
             replyBase = sanitizeSubject(propName);
@@ -1227,7 +1583,7 @@ async function openModal(id) {
     replyBase = replyBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, "");
     document.getElementById("replySubject").value = "Re: " + replyBase;
     document.getElementById("templateSelect").value = "";
-    document.getElementById("replyMessage").value = "";
+    setReplyMessageText("");
     document.getElementById("templateInfo").style.display = "none";
 
     document.getElementById("submissionModal").classList.add("show");
@@ -1287,79 +1643,111 @@ async function loadTemplate() {
         var template = emailTemplates[key];
         var ctx = getSubmissionContext(currentSubmission);
 
-        
-
-        
-        
-        
         if (ctx && ctx.propertyId) {
-            
-            if (currentSubmission && currentSubmission.property && (currentSubmission.property.property_name || currentSubmission.property.name)) {
-                ctx.propertyName = currentSubmission.property.property_name || currentSubmission.property.name;
-                ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
-                ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
+            if (
+                currentSubmission &&
+                currentSubmission.property &&
+                (currentSubmission.property.property_name ||
+                    currentSubmission.property.name)
+            ) {
+                ctx.propertyName =
+                    currentSubmission.property.property_name ||
+                    currentSubmission.property.name;
+                ctx.propertyNamePrefix = ctx.propertyName
+                    ? " " + ctx.propertyName
+                    : " this property";
+                ctx.propertyNameSuffix = ctx.propertyName
+                    ? " for " + ctx.propertyName
+                    : "";
             }
 
-            
             var needFetch = false;
             try {
                 if (!currentSubmission || !currentSubmission.property) {
                     needFetch = true;
                 } else {
-                    var attachedName = (currentSubmission.property.property_name || currentSubmission.property.name || '').toString().trim();
-                    var parsedName = (ctx.propertyName || '').toString().trim();
-                    if (attachedName && parsedName && attachedName.toLowerCase() !== parsedName.toLowerCase()) {
-                        
+                    var attachedName = (
+                        currentSubmission.property.property_name ||
+                        currentSubmission.property.name ||
+                        ""
+                    )
+                        .toString()
+                        .trim();
+                    var parsedName = (ctx.propertyName || "").toString().trim();
+                    if (
+                        attachedName &&
+                        parsedName &&
+                        attachedName.toLowerCase() !== parsedName.toLowerCase()
+                    ) {
                         needFetch = true;
                     }
                 }
-            } catch (e) { needFetch = true; }
+            } catch (e) {
+                needFetch = true;
+            }
 
             if (needFetch) {
                 showTemplateLoading();
                 try {
                     var fetched = await fetchPropertyById(ctx.propertyId);
                     if (fetched) {
-                        
-                        try { if (currentSubmission) currentSubmission.property = fetched; } catch (e) { /* noop */ }
+                        try {
+                            if (currentSubmission) currentSubmission.property = fetched;
+                        } catch (e) {
+                            /* noop */
+                        }
                         if (fetched.property_name || fetched.name) {
                             ctx.propertyName = fetched.property_name || fetched.name;
-                            ctx.propertyNamePrefix = ctx.propertyName ? (' ' + ctx.propertyName) : ' this property';
-                            ctx.propertyNameSuffix = ctx.propertyName ? (' for ' + ctx.propertyName) : '';
+                            ctx.propertyNamePrefix = ctx.propertyName
+                                ? " " + ctx.propertyName
+                                : " this property";
+                            ctx.propertyNameSuffix = ctx.propertyName
+                                ? " for " + ctx.propertyName
+                                : "";
                         }
                     }
-                } catch (e) { /* noop */ } finally { hideTemplateLoading(); }
+                } catch (e) {
+                    /* noop */
+                } finally {
+                    hideTemplateLoading();
+                }
             }
         }
 
-        
         try {
             for (var k in ctx) {
                 if (!Object.prototype.hasOwnProperty.call(ctx, k)) continue;
                 try {
                     var v = ctx[k];
-                    if (v && typeof v.then === 'function') {
+                    if (v && typeof v.then === "function") {
                         ctx[k] = await v;
                     }
                 } catch (e) {
-                    ctx[k] = '';
+                    ctx[k] = "";
                 }
             }
-            
+
             for (var kk in ctx) {
                 if (!Object.prototype.hasOwnProperty.call(ctx, kk)) continue;
                 var vv = ctx[kk];
-                if (vv !== null && typeof vv === 'object') {
-                    try { ctx[kk] = String(vv); } catch (e) { ctx[kk] = ''; }
+                if (vv !== null && typeof vv === "object") {
+                    try {
+                        ctx[kk] = String(vv);
+                    } catch (e) {
+                        ctx[kk] = "";
+                    }
                 }
             }
-        } catch (e) { /* noop */ }
+        } catch (e) {
+            /* noop */
+        }
 
-        
-        var subj = typeof template.subject === 'function' ? template.subject(ctx) : fillTemplate(template.subject, ctx);
+        var subj =
+            typeof template.subject === "function"
+                ? template.subject(ctx)
+                : fillTemplate(template.subject, ctx);
         var baseMsg = fillTemplate(template.message, ctx);
 
-        
         var details = await Promise.resolve(buildDetailsSection(ctx));
         var msg = baseMsg;
         if (details) {
@@ -1367,7 +1755,10 @@ async function loadTemplate() {
             var anchors = ["\n\nBest regards,", "\n\nRegards,", "\n\nSincerely,"];
             for (var i = 0; i < anchors.length; i++) {
                 var idx = baseMsg.lastIndexOf(anchors[i]);
-                if (idx !== -1) { anchorIdx = idx; break; }
+                if (idx !== -1) {
+                    anchorIdx = idx;
+                    break;
+                }
             }
             if (anchorIdx !== -1) {
                 msg = baseMsg.slice(0, anchorIdx) + details + baseMsg.slice(anchorIdx);
@@ -1377,17 +1768,16 @@ async function loadTemplate() {
         }
 
         replySubject.value = subj;
-        replyMessage.value = msg;
+        setReplyMessageText(msg);
         templateInfo.style.display = "block";
-
     } else {
         templateInfo.style.display = "none";
     }
 }
 
-function sendResponse() {
+async function sendResponse() {
     var subject = document.getElementById("replySubject").value.trim();
-    var message = document.getElementById("replyMessage").value.trim();
+    var message = getReplyMessageText().trim();
     var sendBtn = document.querySelector(".send-btn");
 
     if (!subject || !message) {
@@ -1401,27 +1791,67 @@ function sendResponse() {
     sendBtn.disabled = true;
     sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Sending...';
 
-    setTimeout(function () {
+    try {
+        const entryId = currentSubmission && currentSubmission.id;
+
+        var editor = document.getElementById("replyEditor");
+        var htmlPayload = null;
+        try {
+            if (editor && editor.innerHTML && editor.innerHTML.trim() !== "") {
+                htmlPayload = cleanEditorHtml(editor.innerHTML);
+            } else {
+                htmlPayload = textToHtml(message);
+            }
+        } catch (e) {
+            htmlPayload = textToHtml(message);
+        }
+
+        const res = await fetch(`${API_BASE_URL}/contact-us/${entryId}/reply`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                to: currentSubmission.email,
+                subject,
+                message,
+                html: htmlPayload,
+            }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Failed to send email");
+        }
+
+        var serverBody = null;
+        try {
+            serverBody = await res.json().catch(() => null);
+        } catch (e) {
+            serverBody = null;
+        }
         showNotification(
             "Email sent successfully to " + currentSubmission.email + "!"
         );
 
-        if (currentSubmission.status === "Pending Response") {
-            currentSubmission.status = "Responded";
-            var badge = document.getElementById("modalStatusBadge");
-            if (badge) {
-                badge.textContent = "Responded";
-                badge.className = "status-badge status-responded";
-            }
+        currentSubmission.status = "Responded";
+        var badge = document.getElementById("modalStatusBadge");
+        if (badge) {
+            badge.textContent = "Responded";
+            badge.className = "status-badge status-responded";
+        }
+        var submissionIndex = submissions.findIndex(function (s) {
+            return s.id === currentSubmission.id;
+        });
+        if (submissionIndex !== -1) {
+            submissions[submissionIndex].status = "Responded";
 
-            var submissionIndex = submissions.findIndex(function (s) {
-                return s.id === currentSubmission.id;
-            });
-            if (submissionIndex !== -1) {
-                submissions[submissionIndex].status = "Responded";
-                filterSubmissions();
-                updateStats();
+            var newRepliedAt = null;
+            if (serverBody && (serverBody.replied_at || serverBody.repliedAt)) {
+                newRepliedAt = serverBody.replied_at || serverBody.repliedAt;
+            } else {
+                newRepliedAt = new Date().toISOString();
             }
+            submissions[submissionIndex].replied_at = newRepliedAt;
+            filterSubmissions();
+            updateStats();
         }
 
         var postReplyBase = sanitizeSubject(currentSubmission.subject || "");
@@ -1431,33 +1861,56 @@ function sendResponse() {
                 var baseName = p.property_name || p.name;
                 try {
                     baseName = String(baseName)
-                        .replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '')
-                        .replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '')
-                        .replace(/[\s\-\u2013\u2014:|\/]+$/g, '')
+                        .replace(
+                            /[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i,
+                            ""
+                        )
+                        .replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, "")
+                        .replace(/[\s\-\u2013\u2014:|\/]+$/g, "")
                         .trim();
-                } catch (e) { /* noop */ }
+                } catch (e) {
+                    /* noop */
+                }
                 postReplyBase = sanitizeSubject(baseName);
             }
-        } else if (typeof propName !== "undefined" && propName) {
-            var pb = propName;
-            try {
-                pb = String(pb)
-                    .replace(/[\s\-–—:|#\/]*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*$/i, '')
-                    .replace(/[\s\-–—:|#\/]*\d{4,}\s*$/, '')
-                    .replace(/[\s\-\u2013\u2014:|\/]+$/g, '')
-                    .trim();
-            } catch (e) { /* noop */ }
-            postReplyBase = sanitizeSubject(pb);
         }
         postReplyBase = postReplyBase.replace(/[\s\-\u2013\u2014:\|\/]+$/g, "");
         document.getElementById("replySubject").value = "Re: " + postReplyBase;
-        document.getElementById("replyMessage").value = "";
+        setReplyMessageText("");
         document.getElementById("templateSelect").value = "";
         document.getElementById("templateInfo").style.display = "none";
 
+        try {
+            var repliedEl = document.getElementById("modalRepliedAt");
+            if (repliedEl) {
+                var repliedRaw =
+                    (serverBody && (serverBody.replied_at || serverBody.repliedAt)) ||
+                    new Date().toISOString();
+                var repliedDate = new Date(repliedRaw);
+                if (!isNaN(repliedDate.getTime())) {
+                    repliedEl.textContent = repliedDate.toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                    });
+                } else {
+                    repliedEl.textContent = String(repliedRaw);
+                }
+                try {
+                    currentSubmission.replied_at = repliedRaw;
+                } catch (e) { }
+            }
+        } catch (e) {
+            /* noop */
+        }
+    } catch (e) {
+        showNotification(e.message || "Failed to send email", "error");
+    } finally {
         sendBtn.disabled = false;
         sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>Send Response';
-    }, 2000);
+    }
 }
 
 document
@@ -1475,12 +1928,23 @@ document.addEventListener("keydown", function (e) {
 });
 
 var draftTimer;
-document.getElementById("replyMessage").addEventListener("input", function () {
-    clearTimeout(draftTimer);
-    draftTimer = setTimeout(function () {
-        console.log("Draft saved automatically");
-    }, 2000);
-});
+function attachDraftSaver() {
+    var editor = document.getElementById("replyEditor");
+    var textarea = document.getElementById("replyMessage");
+    var target = editor || textarea;
+    if (!target) return;
+    target.addEventListener("input", function () {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(function () {
+            console.log("Draft saved automatically");
+        }, 2000);
+    });
+}
+try {
+    attachDraftSaver();
+} catch (e) {
+    /* noop */
+}
 
 function sanitizeSubject(text) {
     if (!text) return "";
@@ -1695,6 +2159,11 @@ function showPropertyInModal(p) {
 function init() {
     loadDynamicCompanyInfo();
     fetchSubmissions();
+    try {
+        setupComposeEditor();
+    } catch (e) {
+        /* noop */
+    }
 
     var fd = document.getElementById("fromDate");
     var td = document.getElementById("toDate");
@@ -1721,17 +2190,6 @@ function init() {
 
 init();
 
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.filterSubmissions = filterSubmissions;
-window.clearFilters = clearFilters;
-window.sortTable = sortTable;
-window.updateStatus = updateStatus;
-window.loadTemplate = loadTemplate;
-window.sendResponse = sendResponse;
-window.openPropertyModal = openPropertyModal;
-window.closePropertyModal = closePropertyModal;
-
 function mapStatusForApi(val) {
     if (!val) return "";
     var s = String(val).trim().toLowerCase();
@@ -1742,3 +2200,78 @@ function mapStatusForApi(val) {
     if (s === "archived") return "archived";
     return s;
 }
+
+async function previewResponse() {
+    try {
+        var subject = document.getElementById("replySubject").value.trim();
+        var message = getReplyMessageText().trim();
+        if (!message && !subject) {
+            showNotification("Please add a subject or message to preview.", "error");
+            return;
+        }
+        const entryId = currentSubmission && currentSubmission.id;
+        if (!entryId) {
+            showNotification("No submission selected to preview.", "error");
+            return;
+        }
+
+        var previewEditor = document.getElementById("replyEditor");
+        var previewHtml = null;
+        try {
+            if (
+                previewEditor &&
+                previewEditor.innerHTML &&
+                previewEditor.innerHTML.trim() !== ""
+            ) {
+                previewHtml = cleanEditorHtml(previewEditor.innerHTML);
+            } else {
+                previewHtml = textToHtml(message);
+            }
+        } catch (e) {
+            previewHtml = textToHtml(message);
+        }
+
+        const res = await fetch(
+            `${API_BASE_URL}/contact-us/${entryId}/reply-preview`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subject: subject || null,
+                    message: message || null,
+                    html: previewHtml,
+                }),
+            }
+        );
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Failed to render preview");
+        }
+        const html = await res.text();
+        const w = window.open("", "_blank");
+        if (!w) {
+            showNotification(
+                "Popup blocked. Please allow popups for preview.",
+                "error"
+            );
+            return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+    } catch (e) {
+        showNotification(e.message || "Failed to preview email", "error");
+    }
+}
+
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.filterSubmissions = filterSubmissions;
+window.clearFilters = clearFilters;
+window.sortTable = sortTable;
+window.updateStatus = updateStatus;
+window.loadTemplate = loadTemplate;
+window.sendResponse = sendResponse;
+window.previewResponse = previewResponse;
+window.openPropertyModal = openPropertyModal;
+window.closePropertyModal = closePropertyModal;

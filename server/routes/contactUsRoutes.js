@@ -5,7 +5,9 @@ import {
     getAllContactUsEntries,
     getContactUsEntryById,
     editContactUsEntry,
-    deleteContactUsEntry
+    deleteContactUsEntry,
+    sendContactReply,
+    previewContactReply
  } from '../controllers/contactUsControllers.js';
 
 const router = express.Router();
@@ -15,5 +17,8 @@ router.get('/', getAllContactUsEntries);
 router.get('/:entry_id', getContactUsEntryById);
 router.patch('/:entry_id', protect, editContactUsEntry);
 router.delete('/:entry_id', protect, deleteContactUsEntry);
+router.post('/:entry_id/reply', protect, sendContactReply);
+router.get('/:entry_id/reply-preview', protect, previewContactReply);
+router.post('/:entry_id/reply-preview', protect, previewContactReply);
 
 export default router;

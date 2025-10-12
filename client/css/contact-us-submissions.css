@@ -1132,7 +1132,7 @@ body:has(.sidebar.collapsed) .main-content,
 }
 
 .compose-section h3 {
-  color: #0ea5e9;
+  color: #0daf7a;
   font-size: 1.3rem;
   font-weight: 700;
   margin-bottom: 20px;
@@ -1146,6 +1146,45 @@ body:has(.sidebar.collapsed) .main-content,
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Compose toolbar and rich editor */
+.compose-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.compose-toolbar button {
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+.compose-toolbar button:hover {
+  background: #f8fafc;
+  border-color: var(--primary-color);
+}
+.reply-editor {
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  background: white;
+  font-family: Poppins, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+}
+.reply-editor:focus {
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.08);
+  border-color: var(--primary-color);
+}
+.reply-editor[contenteditable]:empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
 }
 
 .form-label {
@@ -1187,7 +1226,7 @@ body:has(.sidebar.collapsed) .main-content,
 }
 
 .send-btn {
-  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
   padding: 14px 28px;
@@ -1213,6 +1252,42 @@ body:has(.sidebar.collapsed) .main-content,
   left: -100%;
   width: 100%;
   height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.send-btn:hover::before { left: 100%; }
+.send-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Preview button alongside send */
+.preview-btn {
+  /* swapped to use send button's primary colors */
+  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.preview-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(
     90deg,
     transparent,
@@ -1221,18 +1296,15 @@ body:has(.sidebar.collapsed) .main-content,
   );
   transition: left 0.5s ease;
 }
-
-.send-btn:hover::before {
+.preview-btn:hover::before {
   left: 100%;
 }
-
-.send-btn:hover {
+.preview-btn:hover {
   background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
-
-.send-btn:disabled {
+.preview-btn:disabled {
   background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
   cursor: not-allowed;
   transform: none;
