@@ -3,7 +3,10 @@ import conn from "./../config/db.js";
 const pool = await conn();
 
 const createCharge = async (charge = {}) => {
+    const conn = await pool.getConnection();
     try {
+        await conn.beginTransaction();
+
         let {
             lease_id,
             charge_type,
@@ -13,15 +16,16 @@ const createCharge = async (charge = {}) => {
             due_date,
             is_recurring,
             status,
-        } = charge || {}; 
+            frequency, 
+        } = charge || {};
 
-        const query = `
-        INSERT INTO charges 
-        (lease_id, charge_type, description, amount, charge_date, due_date, is_recurring, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        const insertChargeSql = `
+            INSERT INTO charges 
+            (lease_id, charge_type, description, amount, charge_date, due_date, is_recurring, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const [result] = await pool.query(query, [
+        const [chargeResult] = await conn.query(insertChargeSql, [
             lease_id,
             charge_type,
             description,
@@ -31,8 +35,53 @@ const createCharge = async (charge = {}) => {
             is_recurring,
             status,
         ]);
-        return { charge_id: result.insertId, ...charge };
+        const charge_id = chargeResult.insertId;
+
+        let template_id = null;
+        const recurringEnabled = is_recurring === 1 || is_recurring === true || is_recurring === "1" || is_recurring === "true";
+        if (recurringEnabled) {
+            
+            const mapFreq = (f) => {
+                if (!f) return 'Monthly';
+                const v = String(f).toLowerCase();
+                if (v === 'monthly') return 'Monthly';
+                if (v === 'quarterly') return 'Quarterly';
+                if (v === 'semi-annually' || v === 'semiannually' || v === 'semi_annually') return 'Semi-annually';
+                if (v === 'annually' || v === 'yearly') return 'Annually';
+                return 'Monthly';
+            };
+            const freqEnum = mapFreq(frequency);
+
+            const insertTemplateSql = `
+                INSERT INTO recurring_templates
+                (lease_id, charge_type, description, amount, frequency, next_due, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+            `;
+            const [tmplRes] = await conn.query(insertTemplateSql, [
+                lease_id,
+                charge_type,
+                description,
+                amount,
+                freqEnum,
+                due_date, 
+            ]);
+            template_id = tmplRes.insertId;
+
+            
+            try {
+                await conn.query(`UPDATE charges SET template_id = ? WHERE charge_id = ?`, [template_id, charge_id]);
+            } catch (e) {
+                
+                throw e;
+            }
+        }
+
+        await conn.commit();
+        conn.release();
+        return { charge_id, template_id, ...charge };
     } catch (error) {
+        await conn.rollback();
+        conn.release();
         console.error("Error creating charge:", error);
         throw error;
     }
