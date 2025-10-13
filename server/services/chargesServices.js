@@ -38,9 +38,36 @@ const createCharge = async (charge = {}) => {
     }
 };
 
-const getAllCharges = async () => {
+const getAllCharges = async (queryParams = {}) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM charges");
+        
+        
+        const sql = `
+        SELECT
+            c.*, 
+            l.lease_id,
+            CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
+            p.property_name,
+            IFNULL(pay_sum.total_paid, 0) AS total_paid,
+            CASE
+                WHEN c.status = 'Waived' THEN 'WAIVED'
+                WHEN IFNULL(pay_sum.total_paid, 0) >= c.amount THEN 'PAID'
+                WHEN IFNULL(pay_sum.total_paid, 0) > 0 THEN 'PARTIALLY_PAID'
+                ELSE 'UNPAID'
+            END AS canonical_status
+        FROM charges c
+        LEFT JOIN (
+            SELECT charge_id, IFNULL(SUM(amount_paid), 0) AS total_paid
+            FROM payments
+            GROUP BY charge_id
+        ) pay_sum ON pay_sum.charge_id = c.charge_id
+        LEFT JOIN leases l ON c.lease_id = l.lease_id
+        LEFT JOIN users u ON l.user_id = u.user_id
+        LEFT JOIN properties p ON l.property_id = p.property_id
+        ORDER BY c.charge_date DESC, c.due_date DESC
+        `;
+
+        const [rows] = await pool.query(sql);
         return rows;
     } catch (error) {
         console.error("Error fetching all charges:", error);

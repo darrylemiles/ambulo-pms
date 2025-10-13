@@ -163,6 +163,36 @@ const STATUS_MAPPINGS = {
     }
 };
 
+const CHARGE_STATUSES = {
+    UNPAID: 'UNPAID',
+    PARTIALLY_PAID: 'PARTIALLY_PAID',
+    PAID: 'PAID',
+    WAIVED: 'WAIVED'
+};
+
+const CHARGE_STATUS_MAPPINGS = {
+    [CHARGE_STATUSES.UNPAID]: {
+        label: 'Unpaid',
+        color: '#ef4444', 
+        textColor: '#ffffff'
+    },
+    [CHARGE_STATUSES.PARTIALLY_PAID]: {
+        label: 'Partially Paid',
+        color: '#f59e0b', 
+        textColor: '#ffffff'
+    },
+    [CHARGE_STATUSES.PAID]: {
+        label: 'Paid',
+        color: '#10b981', 
+        textColor: '#ffffff'
+    },
+    [CHARGE_STATUSES.WAIVED]: {
+        label: 'Waived',
+        color: '#6b7280', 
+        textColor: '#ffffff'
+    }
+};
+
 
 const PRIORITY_MAPPINGS = {
     [PRIORITY_LEVELS.LOW]: {
@@ -207,6 +237,8 @@ if (typeof module !== 'undefined' && module.exports) {
         MESSAGES,
         SUBJECT_LINES,
         STATUS_MAPPINGS,
+        CHARGE_STATUSES,
+        CHARGE_STATUS_MAPPINGS,
         PRIORITY_MAPPINGS,
         PAGINATION
     };
@@ -224,6 +256,8 @@ if (typeof module !== 'undefined' && module.exports) {
         MESSAGES,
         SUBJECT_LINES,
         STATUS_MAPPINGS,
+        CHARGE_STATUSES,
+        CHARGE_STATUS_MAPPINGS,
         PRIORITY_MAPPINGS,
         PAGINATION
     };
