@@ -9,8 +9,10 @@ const chargesTable = `CREATE TABLE IF NOT EXISTS charges (
 	due_date date not null,
 	is_recurring boolean default false not null,
 	status enum('Unpaid', 'Partially Paid', 'Paid', 'Waived') default 'Unpaid' not null,
+	template_id int default null,
 
-	foreign key (lease_id) references leases(lease_id)
-)`;
+	foreign key (lease_id) references leases(lease_id),
+	foreign key (template_id) references recurring_templates(template_id)
+) ENGINE=InnoDB;`;
 
 export default chargesTable;

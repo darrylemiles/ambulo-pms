@@ -28,6 +28,7 @@ import faqsTable from "./faqsTable.js";
 import contactSubmissionsTable from "./contactSubmissionsTable.js";
 
 //payment-related
+import recurringPaymentsTable from "./recurringPaymentsTable.js";
 import chargesTable from "./chargesTable.js";
 import paymentsTable from "./paymentsTable.js";
 import paymentProofTable from "./paymentProofTable.js";
@@ -66,11 +67,13 @@ const tables = async (dbConnection) => {
     contactSubmissionsTable,
 
     //payment-related
+    recurringPaymentsTable,
     chargesTable,
     paymentsTable,
     paymentProofTable,
     chargesAuditTable,
-    paymentsAuditTable
+    paymentsAuditTable,
+    
   ];
 
   for (const query of queries) {
