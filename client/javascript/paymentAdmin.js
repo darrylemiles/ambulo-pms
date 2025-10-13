@@ -185,6 +185,27 @@ function formatDate(dateString) {
     });
 }
 
+
+function formatForDateInput(d) {
+    if (!d) return "";
+    try {
+        
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+
+        
+        const parsed = new Date(d);
+        if (!isNaN(parsed.getTime())) {
+            const y = parsed.getFullYear();
+            const m = String(parsed.getMonth() + 1).padStart(2, '0');
+            const day = String(parsed.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+    } catch (e) {
+        console.error('formatForDateInput parse error', e);
+    }
+    return "";
+}
+
 function getDaysUntilDue(dueDate) {
     const due = new Date(dueDate);
     const today = new Date();
@@ -943,28 +964,73 @@ window.editRecurringTemplate = function (id) {
     }
 };
 
-function openStandardEditModal(charge, lease) {
-    document.getElementById("editChargeId").value = charge.id;
-    document.getElementById("editChargeType").value = charge.type;
-    document.getElementById("editChargeDescription").value = charge.description;
-    document.getElementById("editChargeAmount").value = charge.amount;
-    document.getElementById("editChargeDueDate").value = charge.dueDate;
-    document.getElementById("editChargeNotes").value = charge.notes || "";
+async function openStandardEditModal(charge, lease) {
+    
+    let serverCharge = null;
+    try {
+        const resp = await fetch(`${API_BASE_URL}/charges/${charge.id}`);
+        if (resp.ok) {
+            serverCharge = await resp.json();
+        }
+    } catch (e) {
+        console.error('Failed to fetch latest charge for edit:', e);
+    }
+
+    const use = serverCharge || charge;
+
+    
+    const toInputDate = (d) => {
+        if (!d) return "";
+        
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+        
+        if (d.indexOf && d.indexOf('T') > -1) return d.split('T')[0];
+        
+        if (d.indexOf && d.indexOf(' ') > -1) return d.split(' ')[0];
+        
+        const parsed = new Date(d);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toISOString().slice(0, 10);
+        }
+        return "";
+    };
+
+    const mapped = {
+        id: use.charge_id || use.id,
+        type: use.charge_type || use.type,
+        description: use.description,
+        amount: parseFloat(use.amount || use.amount_paid || 0) || 0,
+        dueDate: formatForDateInput(use.due_date || use.dueDate || ""),
+        status: use.status,
+        template_id: use.template_id || null,
+    };
+
+    document.getElementById("editChargeId").value = mapped.id;
+    document.getElementById("editChargeType").value = mapped.type;
+    document.getElementById("editChargeDescription").value = mapped.description || "";
+    document.getElementById("editChargeAmount").value = mapped.amount;
+    document.getElementById("editChargeDueDate").value = mapped.dueDate;
 
     document.getElementById(
         "editChargeTenantInfo"
     ).textContent = `${lease.tenant} - ${lease.unit}`;
 
+    
+    currentEditingCharge = mapped;
+
     createModalsAndDialogs();
     openModal("editChargeModal");
 }
 
-function openRecurringEditModal(charge, lease) {
+async function openRecurringEditModal(charge, lease) {
     const existingModal = document.getElementById("editRecurringModal");
     if (existingModal) existingModal.remove();
 
     injectEnhancedButtonStyles();
 
+    
+    
+    const embeddedNextDue = formatForDateInput(charge.dueDate || charge.next_due || "");
     const modalHTML = `
         <div id="editRecurringModal" class="modal" style="display: flex;">
             <div class="modal-content">
@@ -979,10 +1045,8 @@ function openRecurringEditModal(charge, lease) {
                     </div>
                     
                     <form id="editRecurringForm" onsubmit="handleEditRecurringSubmission(event)">
-                        <input type="hidden" id="editRecurringTemplateId" value="${charge.template_id || ""
-        }">
-                        <input type="hidden" id="editRecurringChargeId" value="${charge.id
-        }">
+                        <input type="hidden" id="editRecurringTemplateId" value="${charge.template_id || ""}">
+                        <input type="hidden" id="editRecurringChargeId" value="${charge.id}">
                         
                         <div class="form-row">
                             <div class="form-group">
@@ -997,16 +1061,14 @@ function openRecurringEditModal(charge, lease) {
                             
                             <div class="form-group">
                                 <label for="editRecurringAmount">Amount <span class="required-indicator">*</span></label>
-                                <input type="number" id="editRecurringAmount" name="amount" step="0.01" min="0" value="${charge.amount || 0
-        }" required>
+                                <input type="number" id="editRecurringAmount" name="amount" step="0.01" min="0" value="${charge.amount || 0}" required>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="editRecurringNextDue">Next Due Date <span class="required-indicator">*</span></label>
-                                <input type="date" id="editRecurringNextDue" name="next_due" value="${charge.dueDate || ""
-        }" required>
+                                <input type="date" id="editRecurringNextDue" name="next_due" value="${embeddedNextDue}" required>
                             </div>
                             
                             <div class="form-group">
@@ -1037,32 +1099,94 @@ function openRecurringEditModal(charge, lease) {
 
     document.body.insertAdjacentHTML("beforeend", modalHTML);
 
-    document.getElementById("editRecurringFrequency").value = "Monthly";
+    
+    const templateId = charge.template_id;
+    if (templateId) {
+        try {
+            const token = getJwtToken();
+            const resp = await fetch(`${API_BASE_URL}/charges/recurring-templates/${templateId}`, {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : "",
+                },
+            });
+            if (resp.ok) {
+                const tmpl = await resp.json();
+                
+                const freqEl = document.getElementById("editRecurringFrequency");
+                const amtEl = document.getElementById("editRecurringAmount");
+                const nextEl = document.getElementById("editRecurringNextDue");
+                const autoEl = document.getElementById("editRecurringAutoGenUntil");
+                const activeEl = document.getElementById("editRecurringActive");
+                const tmplIdEl = document.getElementById("editRecurringTemplateId");
+
+                tmplIdEl.value = tmpl.template_id || templateId;
+                if (freqEl) freqEl.value = tmpl.frequency || "Monthly";
+                if (amtEl) amtEl.value = tmpl.amount || 0;
+                if (nextEl) nextEl.value = formatForDateInput(tmpl.next_due || tmpl.nextDue || tmpl.due_date || "");
+                if (autoEl) autoEl.value = formatForDateInput(tmpl.auto_generate_until || tmpl.auto_gen_until || tmpl.autoGenerateUntil || "");
+                if (activeEl) activeEl.checked = tmpl.is_active == 1 || tmpl.is_active === true;
+            }
+        } catch (e) {
+            console.error('Failed to fetch recurring template:', e);
+        }
+    }
 }
 
-window.handleEditRecurringSubmission = function (event) {
+window.handleEditRecurringSubmission = async function (event) {
     event.preventDefault();
 
-    const formData = new FormData(event.target);
-    const templateData = {
-        template_id: document.getElementById("editRecurringTemplateId").value,
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn && submitBtn.setAttribute('disabled', 'true');
+    submitBtn && submitBtn.classList.add('loading');
+
+    const formData = new FormData(form);
+    const templateId = document.getElementById("editRecurringTemplateId").value;
+    if (!templateId) {
+        showAlert("This recurring charge doesn't have a template to edit.", "error");
+        submitBtn && submitBtn.removeAttribute('disabled');
+        submitBtn && submitBtn.classList.remove('loading');
+        return;
+    }
+
+    const payload = {
         frequency: formData.get("frequency"),
         amount: parseFloat(formData.get("amount")),
         next_due: formData.get("next_due"),
-        auto_gen_until: formData.get("auto_gen_until") || null,
+        auto_generate_until: formData.get("auto_gen_until") || null,
         is_active: document.getElementById("editRecurringActive").checked ? 1 : 0,
     };
 
-    console.log("Edit recurring template:", templateData);
+    try {
+        const token = getJwtToken();
+        const resp = await fetch(`${API_BASE_URL}/charges/recurring-templates/${templateId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: token ? `Bearer ${token}` : "",
+            },
+            body: JSON.stringify(payload),
+        });
 
-    showAlert(
-        "Recurring template update functionality will be integrated with backend.",
-        "info"
-    );
-    closeModal("editRecurringModal");
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `Failed to update recurring template (${resp.status})`);
+        }
+
+        showAlert("Recurring template updated successfully!", "success");
+        closeModal("editRecurringModal");
+        
+        fetchCharges();
+    } catch (e) {
+        console.error(e);
+        showAlert(e.message || "Failed to update recurring template", "error");
+    } finally {
+        submitBtn && submitBtn.removeAttribute('disabled');
+        submitBtn && submitBtn.classList.remove('loading');
+    }
 };
 
-function handleEditChargeSubmission(event) {
+async function handleEditChargeSubmission(event) {
     event.preventDefault();
 
     if (!currentEditingCharge) {
@@ -1070,42 +1194,77 @@ function handleEditChargeSubmission(event) {
         return;
     }
 
-    const formData = new FormData(event.target);
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn && submitBtn.setAttribute('disabled', 'true');
+    submitBtn && submitBtn.classList.add('loading');
+
+    const formData = new FormData(form);
     const updatedData = {
         type: formData.get("type"),
-        description: formData.get("description").trim(),
+        description: (formData.get("description") || "").trim(),
         amount: parseFloat(formData.get("amount")),
         dueDate: formData.get("dueDate"),
-        notes: formData.get("notes").trim(),
+        
     };
 
     if (!updatedData.description) {
         showAlert("Description is required", "error");
+        submitBtn && submitBtn.removeAttribute('disabled');
+        submitBtn && submitBtn.classList.remove('loading');
         return;
     }
-
-    if (updatedData.amount <= 0) {
+    if (isNaN(updatedData.amount) || updatedData.amount <= 0) {
         showAlert("Amount must be greater than zero", "error");
+        submitBtn && submitBtn.removeAttribute('disabled');
+        submitBtn && submitBtn.classList.remove('loading');
         return;
     }
-
     if (!updatedData.dueDate) {
         showAlert("Due date is required", "error");
+        submitBtn && submitBtn.removeAttribute('disabled');
+        submitBtn && submitBtn.classList.remove('loading');
         return;
     }
 
-    Object.assign(currentEditingCharge, updatedData);
+    
+    const payload = {
+        charge_type: updatedData.type,
+        description: updatedData.description,
+        amount: updatedData.amount,
+        due_date: updatedData.dueDate,
+    };
 
-    const newStatus = getChargeStatus(currentEditingCharge);
-    currentEditingCharge.status = newStatus;
+    try {
+        const token = getJwtToken();
+        const resp = await fetch(`${API_BASE_URL}/charges/${currentEditingCharge.id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: token ? `Bearer ${token}` : "",
+            },
+            body: JSON.stringify(payload),
+        });
 
-    syncDataArrays();
-    filteredCharges = [...charges];
-    updateStatistics();
-    renderChargesTable();
-    closeModal("editChargeModal");
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `Failed to update charge (${resp.status})`);
+        }
 
-    showAlert("Charge updated successfully!", "success");
+        showAlert("Charge updated successfully!", "success");
+        closeModal("editChargeModal");
+        
+        await fetchCharges();
+        
+        updateStatistics();
+        renderChargesTable();
+    } catch (e) {
+        console.error(e);
+        showAlert(e.message || "Failed to update charge", "error");
+    } finally {
+        submitBtn && submitBtn.removeAttribute('disabled');
+        submitBtn && submitBtn.classList.remove('loading');
+    }
 }
 
 function removeCharge(id) {
@@ -1284,8 +1443,7 @@ function viewChargeDetails(chargeId) {
     );
     document.getElementById("viewChargeStatus").innerHTML =
         getStatusDisplay(charge);
-    document.getElementById("viewChargeNotes").textContent =
-        charge.notes || "No additional notes";
+    
 
     const relatedPayments =
         lease.paymentHistory?.filter((p) => p.chargeId === charge.id) || [];
@@ -2168,10 +2326,6 @@ function createModalsAndDialogs() {
                             <input type="date" id="editChargeDueDate" name="dueDate" required>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="editChargeNotes">Notes</label>
-                            <textarea id="editChargeNotes" name="notes" rows="3"></textarea>
-                        </div>
                         
                         <div class="modal-actions">
                             <button type="button" class="btn-secondary" onclick="closeModal('editChargeModal')">Cancel</button>
@@ -2223,10 +2377,7 @@ function createModalsAndDialogs() {
                             <label>Description:</label>
                             <span id="viewChargeDescription"></span>
                         </div>
-                        <div class="detail-item full-width">
-                            <label>Notes:</label>
-                            <span id="viewChargeNotes"></span>
-                        </div>
+                        <!-- notes removed from view modal -->
                     </div>
                     
                     <div class="payment-history-section">
