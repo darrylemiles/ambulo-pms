@@ -88,6 +88,36 @@ const deleteChargeById = expressAsync(async (req, res) => {
     }
 });
 
+
+const getRecurringTemplateById = expressAsync(async (req, res) => {
+    try {
+        const result = await chargesServices.getRecurringTemplateById(
+            req.params.templateId
+        );
+        res.json(result);
+    } catch (error) {
+        console.error("Error fetching recurring template:", error);
+        res
+            .status(500)
+            .json({ message: error.message || "Failed to fetch recurring template" });
+    }
+});
+
+const updateRecurringTemplateById = expressAsync(async (req, res) => {
+    try {
+        const result = await chargesServices.updateRecurringTemplateById(
+            req.params.templateId,
+            req.body
+        );
+        res.json(result);
+    } catch (error) {
+        console.error("Error updating recurring template:", error);
+        res
+            .status(500)
+            .json({ message: error.message || "Failed to update recurring template" });
+    }
+});
+
 export {
     createCharge,
     getAllCharges,
@@ -96,4 +126,6 @@ export {
     getChargeByLeaseId,
     updateChargeById,
     deleteChargeById,
+    getRecurringTemplateById,
+    updateRecurringTemplateById,
 };

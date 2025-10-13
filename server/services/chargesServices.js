@@ -2,6 +2,17 @@ import conn from "./../config/db.js";
 
 const pool = await conn();
 
+
+const normalizeFrequency = (f) => {
+    if (!f) return "Monthly";
+    const v = String(f).toLowerCase();
+    if (v === "monthly") return "Monthly";
+    if (v === "quarterly") return "Quarterly";
+    if (v === "semi-annually" || v === "semiannually" || v === "semi_annually") return "Semi-annually";
+    if (v === "annually" || v === "yearly") return "Annually";
+    return "Monthly";
+};
+
 const createCharge = async (charge = {}) => {
     const conn = await pool.getConnection();
     try {
@@ -41,16 +52,7 @@ const createCharge = async (charge = {}) => {
         const recurringEnabled = is_recurring === 1 || is_recurring === true || is_recurring === "1" || is_recurring === "true";
         if (recurringEnabled) {
             
-            const mapFreq = (f) => {
-                if (!f) return 'Monthly';
-                const v = String(f).toLowerCase();
-                if (v === 'monthly') return 'Monthly';
-                if (v === 'quarterly') return 'Quarterly';
-                if (v === 'semi-annually' || v === 'semiannually' || v === 'semi_annually') return 'Semi-annually';
-                if (v === 'annually' || v === 'yearly') return 'Annually';
-                return 'Monthly';
-            };
-            const freqEnum = mapFreq(frequency);
+            const freqEnum = normalizeFrequency(frequency);
 
             const insertTemplateSql = `
                 INSERT INTO recurring_templates
@@ -120,6 +122,82 @@ const getAllCharges = async (queryParams = {}) => {
         return rows;
     } catch (error) {
         console.error("Error fetching all charges:", error);
+        throw error;
+    }
+};
+
+
+const getRecurringTemplateById = async (templateId) => {
+    try {
+        const [rows] = await pool.query(
+            "SELECT * FROM recurring_templates WHERE template_id = ?",
+            [templateId]
+        );
+        return rows[0] || null;
+    } catch (error) {
+        console.error(`Error fetching recurring template with id ${templateId}:`, error);
+        throw error;
+    }
+};
+
+
+const updateRecurringTemplateById = async (templateId, tmpl = {}) => {
+    try {
+        if (!templateId) throw new Error("templateId is required");
+
+        const fields = [];
+        const values = [];
+
+        
+        const {
+            frequency,
+            amount,
+            next_due,
+            auto_generate_until,
+            auto_gen_until,
+            is_active,
+            description,
+            charge_type,
+        } = tmpl || {};
+
+        if (frequency !== undefined) {
+            fields.push(`frequency = ?`);
+            values.push(normalizeFrequency(frequency));
+        }
+        if (amount !== undefined) {
+            fields.push(`amount = ?`);
+            values.push(amount);
+        }
+        if (next_due !== undefined) {
+            fields.push(`next_due = ?`);
+            values.push(next_due);
+        }
+        const autoUntil = auto_generate_until !== undefined ? auto_generate_until : auto_gen_until;
+        if (autoUntil !== undefined) {
+            fields.push(`auto_generate_until = ?`);
+            values.push(autoUntil);
+        }
+        if (is_active !== undefined) {
+            fields.push(`is_active = ?`);
+            values.push(is_active ? 1 : 0);
+        }
+        if (description !== undefined) {
+            fields.push(`description = ?`);
+            values.push(description);
+        }
+        if (charge_type !== undefined) {
+            fields.push(`charge_type = ?`);
+            values.push(charge_type);
+        }
+
+        if (fields.length === 0) return await getRecurringTemplateById(templateId);
+
+        const sql = `UPDATE recurring_templates SET ${fields.join(", ")} WHERE template_id = ?`;
+        values.push(templateId);
+        await pool.query(sql, values);
+        return await getRecurringTemplateById(templateId);
+    } catch (error) {
+        console.error(`Error updating recurring template with id ${templateId}:`, error);
         throw error;
     }
 };
@@ -203,4 +281,6 @@ export default {
     getChargeByLeaseId,
     updateChargeById,
     deleteChargeById,
+    getRecurringTemplateById,
+    updateRecurringTemplateById,
 };

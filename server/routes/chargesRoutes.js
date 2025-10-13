@@ -7,7 +7,9 @@ import {
     getChargeByUserId,
     getChargeByLeaseId,
     updateChargeById,
-    deleteChargeById
+    deleteChargeById,
+    getRecurringTemplateById,
+    updateRecurringTemplateById
 } from "../controllers/chargesControllers.js";
 
 const router = express.Router();
@@ -19,6 +21,9 @@ router.get('/users/:userId', getChargeByUserId);
 router.get('/leases/:leaseId', getChargeByLeaseId);
 router.patch('/:id', protect, updateChargeById);
 router.delete('/:id', protect, deleteChargeById);
+
+router.get('/recurring-templates/:templateId', protect, getRecurringTemplateById);
+router.patch('/recurring-templates/:templateId', protect, updateRecurringTemplateById);
 
 export default router;
 
