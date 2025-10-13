@@ -1,293 +1,115 @@
 import fetchCompanyDetails from "../api/loadCompanyInfo.js";
 
+const API_BASE_URL = "/api/v1";
+
 async function setDynamicInfo() {
-  const company = await fetchCompanyDetails();
-  if (!company) return;
+    const company = await fetchCompanyDetails();
+    if (!company) return;
 
-  const favicon = document.querySelector('link[rel="icon"]');
-  if (favicon && company.icon_logo_url) {
-    favicon.href = company.icon_logo_url;
-  }
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon && company.icon_logo_url) {
+        favicon.href = company.icon_logo_url;
+    }
 
-  document.title = company.company_name
-    ? `Manage Payment - ${company.company_name}`
-    : "Manage Payment";
+    document.title = company.company_name
+        ? `Manage Payment - ${company.company_name}`
+        : "Manage Payment";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  setDynamicInfo();
+    setDynamicInfo();
 });
 
+async function fetchCharges() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/charges`);
+        if (!res.ok) throw new Error("Failed to fetch charges from server");
+        const serverCharges = await res.json();
 
-const leasesData = [
-    {
-        id: 'lease-1',
-        tenant: 'Maria Santos',
-        unit: 'Unit 201-A',
-        period: 'Jan 2025 - Dec 2025',
-        email: 'maria.santos@email.com',
-        phone: '+63 917 123 4567',
-        paymentHistory: [
-            {
-                id: 'pay-1',
-                chargeId: 25,
-                amount: 2800,
-                paymentDate: '2025-01-08',
-                paymentMethod: 'gcash',
-                reference: 'GC-2025-0108-001',
-                description: 'Electricity - November 2024',
-                type: 'utility',
-                processedBy: 'Admin User',
-                notes: 'Payment processed successfully via GCash'
-            },
-            {
-                id: 'pay-2',
-                chargeId: 26,
-                amount: 25000,
-                paymentDate: '2025-01-05',
-                paymentMethod: 'cash',
-                reference: 'CSH-2025-0105-002',
-                description: 'Monthly Rent - December 2024',
-                type: 'rent',
-                processedBy: 'Admin User',
-                notes: 'Cash payment received on time'
-            },
-            {
-                id: 'pay-3',
-                chargeId: 2,
-                amount: 1600,
-                paymentDate: '2025-01-10',
-                paymentMethod: 'gcash',
-                reference: 'GC-2025-0110-003',
-                description: 'Partial payment - Electricity December 2024',
-                type: 'utility',
-                processedBy: 'Admin User',
-                notes: 'Partial payment received via GCash'
-            },
-            {
-                id: 'pay-4',
-                chargeId: 3,
-                amount: 4500,
-                paymentDate: '2025-01-12',
-                paymentMethod: 'cash',
-                reference: 'CSH-2025-0112-004',
-                description: 'AC Unit Repair - Full Payment',
-                type: 'maintenance',
-                processedBy: 'Admin User',
-                notes: 'Full payment received in cash'
+        serverCharges.forEach((row) => {
+            const mappedCharge = {
+                id: row.charge_id || row.id,
+                type: row.charge_type || row.type,
+                description: row.description || "",
+                amount:
+                    typeof row.amount === "number"
+                        ? row.amount
+                        : parseFloat(row.amount) || 0,
+
+                total_paid:
+                    typeof row.total_paid === "number"
+                        ? row.total_paid
+                        : parseFloat(row.total_paid) || 0,
+                canonical_status:
+                    row.canonical_status ||
+                    (row.status
+                        ? String(row.status).toUpperCase().replace(/\s+/g, "_")
+                        : null),
+                dueDate: row.due_date || row.dueDate || row.due_date_time || null,
+                status: row.status || "Unpaid",
+                createdDate: row.charge_date || row.createdDate || null,
+                notes: row.notes || "",
+                isRecurring: !!row.is_recurring,
+                leaseId: row.lease_id || row.leaseId || null,
+            };
+
+            let lease = null;
+            if (mappedCharge.leaseId) {
+                lease = leasesData.find(
+                    (l) =>
+                        l.id === mappedCharge.leaseId || l.lease_id === mappedCharge.leaseId
+                );
             }
-        ],
-        charges: [
-            { 
-                id: 1, 
-                type: 'rent', 
-                description: 'Monthly Rent - January 2025', 
-                amount: 25000, 
-                dueDate: '2025-01-05', 
-                status: 'overdue',
-                createdDate: '2024-12-28',
-                notes: 'Monthly rental payment for Unit 201-A for January 2025. Payment is now overdue.'
-            },
-            { 
-                id: 2, 
-                type: 'utility', 
-                description: 'Electricity - December 2024', 
-                amount: 3200, 
-                dueDate: '2025-01-15', 
-                status: 'due-soon',
-                createdDate: '2024-12-30',
-                notes: 'Electricity consumption for December 2024 - 420 kWh usage. Due soon.'
-            },
-            { 
-                id: 3, 
-                type: 'maintenance', 
-                description: 'AC Unit Repair', 
-                amount: 4500, 
-                dueDate: '2025-01-20', 
-                status: 'pending',
-                createdDate: '2025-01-02',
-                notes: 'Emergency repair of AC unit in living room. Parts and labor included.'
-            },
-            { 
-                id: 4, 
-                type: 'penalty', 
-                description: 'Late Payment Fee - December Rent', 
-                amount: 500, 
-                dueDate: '2025-01-05', 
-                status: 'overdue',
-                createdDate: '2024-12-20',
-                notes: 'Late payment penalty for December rent (5 days overdue). 2.5% penalty rate.'
+
+            if (!lease) {
+                const tenantName = row.tenant_name || null;
+                const propName = row.property_name || null;
+                if (tenantName && propName) {
+                    lease = leasesData.find(
+                        (l) =>
+                            (l.tenant &&
+                                l.tenant.toLowerCase() === tenantName.toLowerCase()) ||
+                            (l.unit && l.unit.toLowerCase() === propName.toLowerCase())
+                    );
+                }
             }
-        ]
-    },
-    {
-        id: 'lease-2',
-        tenant: 'Juan Dela Cruz',
-        unit: 'Unit 305-B',
-        period: 'Mar 2024 - Feb 2025',
-        email: 'juan.delacruz@email.com',
-        phone: '+63 918 234 5678',
-        paymentHistory: [
-            {
-                id: 'pay-5',
-                chargeId: 5,
-                amount: 18500,
-                paymentDate: '2025-01-03',
-                paymentMethod: 'cash',
-                reference: 'CSH-2025-0103-005',
-                description: 'Monthly Rent - January 2025',
-                type: 'rent',
-                processedBy: 'Admin User',
-                notes: 'Cash payment received on time'
-            },
-            {
-                id: 'pay-6',
-                chargeId: 27,
-                amount: 2400,
-                paymentDate: '2025-01-10',
-                paymentMethod: 'gcash',
-                reference: 'GC-2025-0110-006',
-                description: 'Water Bill - December 2024',
-                type: 'utility',
-                processedBy: 'System Auto',
-                notes: 'GCash payment processed successfully'
+
+            if (lease) {
+                lease.charges = lease.charges || [];
+
+                const exists = lease.charges.some((c) => c.id === mappedCharge.id);
+                if (!exists) {
+                    lease.charges.push(mappedCharge);
+                }
+            } else {
+                const placeholderLease = {
+                    id: mappedCharge.leaseId || `lease-${mappedCharge.id}`,
+                    tenant: row.tenant_name ? row.tenant_name : "Unknown Tenant",
+                    unit: row.property_name ? row.property_name : "Unknown Unit",
+                    email: row.email || "",
+                    phone: row.phone_number || "",
+                    paymentHistory: [],
+                    charges: [mappedCharge],
+                };
+                leasesData.push(placeholderLease);
             }
-        ],
-        charges: [
-            { 
-                id: 6, 
-                type: 'utility', 
-                description: 'Electricity - December 2024', 
-                amount: 2800, 
-                dueDate: '2025-01-18', 
-                status: 'due-soon',
-                createdDate: '2024-12-30',
-                notes: 'Electricity consumption for December 2024 - 380 kWh usage. Due soon.'
-            },
-            { 
-                id: 7, 
-                type: 'rent', 
-                description: 'Monthly Rent - February 2025', 
-                amount: 18500, 
-                dueDate: '2025-02-05', 
-                status: 'pending',
-                createdDate: '2025-01-28',
-                notes: 'Monthly rental payment for Unit 305-B for February 2025.'
-            }
-        ]
-    },
-    {
-        id: 'lease-3',
-        tenant: 'Elena Fernandez',
-        unit: 'Unit 501-E',
-        period: 'Nov 2024 - Oct 2025',
-        email: 'elena.fernandez@email.com',
-        phone: '+63 921 567 8901',
-        paymentHistory: [
-            {
-                id: 'pay-13',
-                chargeId: 22,
-                amount: 32000,
-                paymentDate: '2025-01-02',
-                paymentMethod: 'gcash',
-                reference: 'GC-2025-0102-013',
-                description: 'Monthly Rent - January 2025',
-                type: 'rent',
-                processedBy: 'System Auto',
-                notes: 'GCash payment received early'
-            },
-            {
-                id: 'pay-14',
-                chargeId: 28,
-                amount: 1200,
-                paymentDate: '2025-01-08',
-                paymentMethod: 'cash',
-                reference: 'CSH-2025-0108-014',
-                description: 'Plumbing Repair - Kitchen Sink',
-                type: 'maintenance',
-                processedBy: 'Admin User',
-                notes: 'Emergency plumbing repair completed and paid in cash'
-            }
-        ],
-        charges: [
-            { 
-                id: 23, 
-                type: 'utility', 
-                description: 'Electricity - December 2024', 
-                amount: 4500, 
-                dueDate: '2025-01-12', 
-                status: 'overdue',
-                createdDate: '2024-12-30',
-                notes: 'Electricity consumption for December 2024 - 550 kWh usage. Payment is overdue.'
-            },
-            { 
-                id: 24, 
-                type: 'maintenance', 
-                description: 'Elevator Maintenance Fee', 
-                amount: 800, 
-                dueDate: '2025-01-25', 
-                status: 'pending',
-                createdDate: '2025-01-05',
-                notes: 'Monthly elevator maintenance fee for penthouse access.'
-            }
-        ]
-    },
-    {
-        id: 'lease-4',
-        tenant: 'Robert Chen',
-        unit: 'Unit 102-C',
-        period: 'Jun 2024 - May 2025',
-        email: 'robert.chen@email.com',
-        phone: '+63 922 678 9012',
-        paymentHistory: [
-            {
-                id: 'pay-15',
-                chargeId: 29,
-                amount: 22000,
-                paymentDate: '2024-12-28',
-                paymentMethod: 'gcash',
-                reference: 'GC-2024-1228-015',
-                description: 'Monthly Rent - December 2024',
-                type: 'rent',
-                processedBy: 'Admin User',
-                notes: 'GCash payment received early for end of year'
-            }
-        ],
-        charges: [
-            { 
-                id: 8, 
-                type: 'rent', 
-                description: 'Monthly Rent - January 2025', 
-                amount: 22000, 
-                dueDate: '2025-01-03', 
-                status: 'overdue',
-                createdDate: '2024-12-28',
-                notes: 'Monthly rental payment for Unit 102-C. Payment is significantly overdue.'
-            },
-            { 
-                id: 9, 
-                type: 'utility', 
-                description: 'Water Bill - December 2024', 
-                amount: 800, 
-                dueDate: '2025-01-16', 
-                status: 'due-soon',
-                createdDate: '2024-12-30',
-                notes: 'Water consumption for December 2024. Due soon.'
-            },
-            { 
-                id: 10, 
-                type: 'penalty', 
-                description: 'Late Payment Fee - January Rent', 
-                amount: 1100, 
-                dueDate: '2025-01-10', 
-                status: 'overdue',
-                createdDate: '2025-01-05',
-                notes: 'Late payment penalty for January rent (5% penalty rate applied).'
-            }
-        ]
+        });
+
+        syncDataArrays();
+        renderChargesTable();
+        renderPaymentsTable();
+    } catch (error) {
+        console.error("Error fetching charges from server:", error);
+
+        syncDataArrays();
     }
-];
+}
 
+document.addEventListener("DOMContentLoaded", () => {
+    fetchCharges();
+});
+
+const leasesData = [];
 
 let filteredCharges = [];
 let filteredPayments = [];
@@ -296,57 +118,54 @@ let editingChargeId = null;
 let currentPaymentCharge = null;
 let currentViewingCharge = null;
 let chargeToDelete = null;
-let currentPaymentFilter = 'all';
+let currentPaymentFilter = "all";
 let currentEditingCharge = null;
-
 
 let charges = [];
 let payments = [];
 
-
 function syncDataArrays() {
     charges = [];
     payments = [];
-    
-    leasesData.forEach(lease => {
-        lease.charges.forEach(charge => {
-            if (charge.status !== 'paid') {
+
+    leasesData.forEach((lease) => {
+        lease.charges.forEach((charge) => {
+            if (charge.status !== "paid") {
                 charges.push({
                     ...charge,
                     tenant: lease.tenant,
                     email: lease.email,
-                    unit: lease.unit
+                    unit: lease.unit,
                 });
             }
         });
-        
+
         if (lease.paymentHistory) {
-            lease.paymentHistory.forEach(payment => {
+            lease.paymentHistory.forEach((payment) => {
                 payments.push({
                     ...payment,
                     tenant: lease.tenant,
                     email: lease.email,
-                    unit: lease.unit
+                    unit: lease.unit,
                 });
             });
         }
     });
-    
+
     filteredCharges = [...charges];
     filteredPayments = [...payments];
 }
 
-
 function formatCurrency(amount) {
-    return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+    return `₱${amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-PH', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit'
+    return date.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
     });
 }
 
@@ -358,80 +177,110 @@ function getDaysUntilDue(dueDate) {
     return diffDays;
 }
 
-
 function getChargeStatus(charge) {
-    
-    if (charge.status === 'paid') return 'paid';
-    if (charge.status === 'overdue') return 'overdue';
-    if (charge.status === 'due-soon') return 'due-soon';
-    if (charge.status === 'pending') return 'pending';
-    
-    
-    const daysUntilDue = getDaysUntilDue(charge.dueDate);
-    
-    if (daysUntilDue < 0) return 'overdue';
-    if (daysUntilDue <= 3) return 'due-soon';
-    return 'pending';
-}
+    if (charge.status === "paid") return "paid";
+    if (charge.status === "overdue") return "overdue";
+    if (charge.status === "due-soon") return "due-soon";
+    if (charge.status === "pending") return "pending";
 
+    const daysUntilDue = getDaysUntilDue(charge.dueDate);
+
+    if (daysUntilDue < 0) return "overdue";
+    if (daysUntilDue <= 3) return "due-soon";
+    return "pending";
+}
 
 function getChargeStatusByDate(dueDate) {
     const daysUntilDue = getDaysUntilDue(dueDate);
-    
-    if (daysUntilDue < 0) return 'overdue';
-    if (daysUntilDue <= 3) return 'due-soon';
-    return 'pending';
-}
 
+    if (daysUntilDue < 0) return "overdue";
+    if (daysUntilDue <= 3) return "due-soon";
+    return "pending";
+}
 
 function getPaidAmountForCharge(chargeId) {
     return payments
-        .filter(payment => payment.chargeId === chargeId)
+        .filter((payment) => payment.chargeId === chargeId)
         .reduce((total, payment) => total + payment.amount, 0);
 }
 
-
 function getStatusIcon(status) {
     const icons = {
-        'paid': '<i class="fas fa-check"></i>',
-        'partial': '<i class="fas fa-clock"></i>',
-        'overdue': '<i class="fas fa-exclamation"></i>',
-        'due-soon': '<i class="fas fa-hourglass-half"></i>',
-        'pending': '<i class="fas fa-clock"></i>'
+        paid: '<i class="fas fa-check"></i>',
+        partial: '<i class="fas fa-clock"></i>',
+        overdue: '<i class="fas fa-exclamation"></i>',
+        "due-soon": '<i class="fas fa-hourglass-half"></i>',
+        pending: '<i class="fas fa-clock"></i>',
     };
     return icons[status] || '<i class="fas fa-clock"></i>';
 }
 
-
 function getStatusText(status) {
     const texts = {
-        'paid': 'Paid',
-        'partial': 'Partial',
-        'overdue': 'Overdue',
-        'due-soon': 'Due Soon',
-        'pending': 'Pending'
+        paid: "Paid",
+        partial: "Partial",
+        overdue: "Overdue",
+        "due-soon": "Due Soon",
+        unpaid: "Unpaid",
     };
-    return texts[status] || 'Pending';
+    return texts[status] || "Unpaid";
 }
 
 function getStatusDisplay(charge) {
-    const status = getChargeStatus(charge);
+    const chargeStatus = getChargeStatus(charge);
     const daysUntilDue = getDaysUntilDue(charge.dueDate);
-    
-    switch (status) {
-        case 'overdue':
+
+    const mappings =
+        (window.AppConstants && window.AppConstants.CHARGE_STATUS_MAPPINGS) ||
+        (typeof CHARGE_STATUS_MAPPINGS !== "undefined" && CHARGE_STATUS_MAPPINGS) ||
+        null;
+
+    let mapped = null;
+    if (charge.canonical_status) {
+        mapped = String(charge.canonical_status).toUpperCase();
+    } else {
+        if (chargeStatus === "paid") mapped = "PAID";
+        else if (chargeStatus === "partial") mapped = "PARTIALLY_PAID";
+        else if (
+            chargeStatus === "overdue" ||
+            chargeStatus === "unpaid" ||
+            chargeStatus === "due-soon"
+        )
+            mapped = "UNPAID";
+        else mapped = "UNPAID";
+    }
+
+    if (mappings && mappings[mapped]) {
+        const cfg = mappings[mapped];
+        const label = cfg.label || mapped;
+
+        let extra = "";
+        if (chargeStatus === "overdue")
+            extra = ` &middot; ${Math.abs(daysUntilDue)}d overdue`;
+        else if (chargeStatus === "due-soon")
+            extra = ` &middot; Due in ${daysUntilDue}d`;
+
+        const bg = cfg.color || "#e5e7eb";
+        const color = cfg.textColor || "#111827";
+        return `<span class="status-indicator" style="background: ${bg}; color: ${color};">${label}${extra}</span>`;
+    }
+
+    switch (chargeStatus) {
+        case "overdue":
             return `<span class="status-indicator overdue">
-                <i class="fas fa-exclamation-triangle"></i> ${Math.abs(daysUntilDue)} days overdue
+                <i class="fas fa-exclamation-triangle"></i> ${Math.abs(
+                daysUntilDue
+            )} days overdue
             </span>`;
-        case 'due-soon':
+        case "due-soon":
             return `<span class="status-indicator due-soon">
                 <i class="fas fa-clock"></i> Due in ${daysUntilDue} days
             </span>`;
-        case 'paid':
+        case "paid":
             return `<span class="status-indicator paid">
                 <i class="fas fa-check-circle"></i> Paid
             </span>`;
-        case 'pending':
+        case "pending":
             return `<span class="status-indicator pending">
                 <i class="fas fa-clock"></i> Due in ${daysUntilDue} days
             </span>`;
@@ -442,12 +291,11 @@ function getStatusDisplay(charge) {
     }
 }
 
-
 function injectEnhancedButtonStyles() {
-    if (document.getElementById('enhanced-modal-styles')) return;
-    
-    const styleSheet = document.createElement('style');
-    styleSheet.id = 'enhanced-modal-styles';
+    if (document.getElementById("enhanced-modal-styles")) return;
+
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "enhanced-modal-styles";
     styleSheet.textContent = `
         .modal-actions {
             display: flex;
@@ -525,21 +373,26 @@ function injectEnhancedButtonStyles() {
             transform: translateY(-1px);
         }
     `;
-    
+
     document.head.appendChild(styleSheet);
 }
 
 function generateReference(method) {
     const prefixes = {
-        'cash': 'CSH',
-        'gcash': 'GC'
+        cash: "CSH",
+        gcash: "GC",
     };
-    
+
     const date = new Date();
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    
-    return `${prefixes[method] || 'PAY'}-${dateStr.slice(0, 4)}-${dateStr.slice(4, 8)}-${random}`;
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
+    const random = Math.floor(Math.random() * 1000)
+        .toString()
+        .padStart(3, "0");
+
+    return `${prefixes[method] || "PAY"}-${dateStr.slice(0, 4)}-${dateStr.slice(
+        4,
+        8
+    )}-${random}`;
 }
 
 function capitalizeFirst(str) {
@@ -548,30 +401,29 @@ function capitalizeFirst(str) {
 
 function getCurrentMonth() {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-
-function showAlert(message, type = 'info') {
+function showAlert(message, type = "info") {
     const alertColors = {
-        success: '#10b981',
-        error: '#ef4444', 
-        warning: '#f59e0b',
-        info: '#3b82f6'
+        success: "#10b981",
+        error: "#ef4444",
+        warning: "#f59e0b",
+        info: "#3b82f6",
     };
 
     const alertIcons = {
-        success: 'check-circle',
-        error: 'exclamation-triangle',
-        warning: 'exclamation-circle',
-        info: 'info-circle'
+        success: "check-circle",
+        error: "exclamation-triangle",
+        warning: "exclamation-circle",
+        info: "info-circle",
     };
 
-    const existingAlerts = document.querySelectorAll('.alert-notification');
-    existingAlerts.forEach(alert => alert.remove());
+    const existingAlerts = document.querySelectorAll(".alert-notification");
+    existingAlerts.forEach((alert) => alert.remove());
 
-    const alert = document.createElement('div');
-    alert.className = 'alert-notification';
+    const alert = document.createElement("div");
+    alert.className = "alert-notification";
     alert.style.background = alertColors[type];
     alert.innerHTML = `
         <i class="fas fa-${alertIcons[type]}"></i>
@@ -582,78 +434,92 @@ function showAlert(message, type = 'info') {
 
     setTimeout(() => {
         if (alert.parentNode) {
-            alert.style.animation = 'slideOutRight 0.3s ease forwards';
+            alert.style.animation = "slideOutRight 0.3s ease forwards";
             setTimeout(() => alert.remove(), 300);
         }
     }, 4000);
 }
 
-
 function updateStatistics() {
     syncDataArrays();
-    
+
     const totalCharges = charges.length;
-    const overdueCharges = charges.filter(c => getChargeStatus(c) === 'overdue').length;
-    const dueSoonCharges = charges.filter(c => getChargeStatus(c) === 'due-soon').length;
+    const overdueCharges = charges.filter(
+        (c) => getChargeStatus(c) === "overdue"
+    ).length;
+    const dueSoonCharges = charges.filter(
+        (c) => getChargeStatus(c) === "due-soon"
+    ).length;
     const totalChargesAmount = charges.reduce((sum, c) => sum + c.amount, 0);
-    
+
     const totalPayments = payments.length;
     const totalPaidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-    
-    
-    const outstandingElement = document.getElementById('outstanding-charges');
-    const collectedElement = document.getElementById('collected-amount');
-    const pendingElement = document.getElementById('pending-charges');
-    const revenueElement = document.getElementById('total-revenue');
-    
-    if (outstandingElement) outstandingElement.textContent = totalCharges;
-    if (collectedElement) collectedElement.textContent = formatCurrency(totalPaidAmount);
-    if (pendingElement) pendingElement.textContent = overdueCharges;
-    if (revenueElement) revenueElement.textContent = formatCurrency(totalChargesAmount);
-    
-    
-    const activeCharges = charges.filter(c => c.status !== 'paid').length;
-    const chargesTotalStat = document.getElementById('charges-total-stat');
-    const chargesOverdueStat = document.getElementById('charges-overdue-stat');
-    const chargesActiveStat = document.getElementById('charges-active-stat');
-    
-    if (chargesTotalStat) chargesTotalStat.textContent = `${totalCharges} Total`;
-    if (chargesOverdueStat) chargesOverdueStat.textContent = `${overdueCharges} Overdue`;
-    if (chargesActiveStat) chargesActiveStat.textContent = `${dueSoonCharges} Due Soon`;
-    
-    
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const monthlyPayments = payments.filter(p => p.paymentDate.startsWith(currentMonth));
-    const monthlyAmount = monthlyPayments.reduce((sum, p) => sum + p.amount, 0);
-    
-    const paymentsCountStat = document.getElementById('payments-count-stat');
-    const paymentsAmountStat = document.getElementById('payments-amount-stat');
-    const paymentsMonthStat = document.getElementById('payments-month-stat');
-    
-    if (paymentsCountStat) paymentsCountStat.textContent = `${totalPayments} Payments`;
-    if (paymentsAmountStat) paymentsAmountStat.textContent = `${formatCurrency(totalPaidAmount)} Collected`;
-    if (paymentsMonthStat) paymentsMonthStat.textContent = `This Month: ${formatCurrency(monthlyAmount)}`;
-}
 
+    const outstandingElement = document.getElementById("outstanding-charges");
+    const collectedElement = document.getElementById("collected-amount");
+    const pendingElement = document.getElementById("pending-charges");
+    const revenueElement = document.getElementById("total-revenue");
+
+    if (outstandingElement) outstandingElement.textContent = totalCharges;
+    if (collectedElement)
+        collectedElement.textContent = formatCurrency(totalPaidAmount);
+    if (pendingElement) pendingElement.textContent = overdueCharges;
+    if (revenueElement)
+        revenueElement.textContent = formatCurrency(totalChargesAmount);
+
+    const activeCharges = charges.filter((c) => c.status !== "paid").length;
+    const chargesTotalStat = document.getElementById("charges-total-stat");
+    const chargesOverdueStat = document.getElementById("charges-overdue-stat");
+    const chargesActiveStat = document.getElementById("charges-active-stat");
+
+    if (chargesTotalStat) chargesTotalStat.textContent = `${totalCharges} Total`;
+    if (chargesOverdueStat)
+        chargesOverdueStat.textContent = `${overdueCharges} Overdue`;
+    if (chargesActiveStat)
+        chargesActiveStat.textContent = `${dueSoonCharges} Due Soon`;
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const monthlyPayments = payments.filter((p) =>
+        p.paymentDate.startsWith(currentMonth)
+    );
+    const monthlyAmount = monthlyPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    const paymentsCountStat = document.getElementById("payments-count-stat");
+    const paymentsAmountStat = document.getElementById("payments-amount-stat");
+    const paymentsMonthStat = document.getElementById("payments-month-stat");
+
+    if (paymentsCountStat)
+        paymentsCountStat.textContent = `${totalPayments} Payments`;
+    if (paymentsAmountStat)
+        paymentsAmountStat.textContent = `${formatCurrency(
+            totalPaidAmount
+        )} Collected`;
+    if (paymentsMonthStat)
+        paymentsMonthStat.textContent = `This Month: ${formatCurrency(
+            monthlyAmount
+        )}`;
+}
 
 function findChargeById(chargeId) {
     for (let lease of leasesData) {
-        const charge = lease.charges.find(charge => charge.id === chargeId);
+        const charge = lease.charges.find((charge) => charge.id === chargeId);
         if (charge) return charge;
     }
     return null;
 }
 
 function findLeaseByChargeId(chargeId) {
-    return leasesData.find(lease => 
-        lease.charges.some(charge => charge.id === chargeId)
+    return leasesData.find((lease) =>
+        lease.charges.some((charge) => charge.id === chargeId)
     );
 }
 
 function findPaymentById(paymentId) {
     for (let lease of leasesData) {
         if (lease.paymentHistory) {
-            const payment = lease.paymentHistory.find(payment => payment.id === paymentId);
+            const payment = lease.paymentHistory.find(
+                (payment) => payment.id === paymentId
+            );
             if (payment) return payment;
         }
     }
@@ -661,89 +527,75 @@ function findPaymentById(paymentId) {
 }
 
 function findLeaseByPaymentId(paymentId) {
-    return leasesData.find(lease => 
-        lease.paymentHistory && lease.paymentHistory.some(payment => payment.id === paymentId)
+    return leasesData.find(
+        (lease) =>
+            lease.paymentHistory &&
+            lease.paymentHistory.some((payment) => payment.id === paymentId)
     );
 }
 
-
 function addNewCharge() {
-    
-    const form = document.getElementById('addChargeForm');
-    if (form) form.reset();
-    
-    
-    const nextMonth = new Date();
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const defaultDueDate = nextMonth.toISOString().split('T')[0];
-    
-    const dueDateField = document.getElementById('addChargeDueDate');
-    if (dueDateField) dueDateField.value = defaultDueDate;
-    
-    createModalsAndDialogs();
-    openModal('addChargeModal');
+    // Create and show the new advanced add charges modal
+    createAdvancedAddChargesModal();
+    openModal("advancedAddChargeModal");
 }
-
 
 function handleAddChargeSubmission(event) {
     event.preventDefault();
-    
+
     const formData = new FormData(event.target);
     const chargeData = {
-        tenant: formData.get('tenant').trim(),
-        unit: formData.get('unit').trim(),
-        type: formData.get('type'),
-        description: formData.get('description').trim(),
-        amount: parseFloat(formData.get('amount')),
-        dueDate: formData.get('dueDate'),
-        notes: formData.get('notes').trim(),
-        createdDate: new Date().toISOString().split('T')[0],
-        status: 'pending'
+        tenant: formData.get("tenant").trim(),
+        unit: formData.get("unit").trim(),
+        type: formData.get("type"),
+        description: formData.get("description").trim(),
+        amount: parseFloat(formData.get("amount")),
+        dueDate: formData.get("dueDate"),
+        notes: formData.get("notes").trim(),
+        createdDate: new Date().toISOString().split("T")[0],
+        status: "pending",
     };
-    
-    
+
     if (!chargeData.tenant || !chargeData.unit) {
-        showAlert('Tenant name and unit are required', 'error');
+        showAlert("Tenant name and unit are required", "error");
         return;
     }
-    
+
     if (!chargeData.description) {
-        showAlert('Description is required', 'error');
+        showAlert("Description is required", "error");
         return;
     }
-    
+
     if (chargeData.amount <= 0) {
-        showAlert('Amount must be greater than zero', 'error');
+        showAlert("Amount must be greater than zero", "error");
         return;
     }
-    
+
     if (!chargeData.dueDate) {
-        showAlert('Due date is required', 'error');
+        showAlert("Due date is required", "error");
         return;
     }
-    
-    
-    let lease = leasesData.find(l => 
-        l.tenant.toLowerCase() === chargeData.tenant.toLowerCase() && 
-        l.unit.toLowerCase() === chargeData.unit.toLowerCase()
+
+    let lease = leasesData.find(
+        (l) =>
+            l.tenant.toLowerCase() === chargeData.tenant.toLowerCase() &&
+            l.unit.toLowerCase() === chargeData.unit.toLowerCase()
     );
-    
+
     if (!lease) {
-        
         lease = {
             id: `lease-${Date.now()}`,
             tenant: chargeData.tenant,
             unit: chargeData.unit,
-            period: 'New Lease',
-            email: 'contact@property.com',
-            phone: 'Not provided',
+            period: "New Lease",
+            email: "contact@property.com",
+            phone: "Not provided",
             paymentHistory: [],
-            charges: []
+            charges: [],
         };
         leasesData.push(lease);
     }
-    
-    
+
     const newCharge = {
         id: Date.now(),
         type: chargeData.type,
@@ -752,229 +604,228 @@ function handleAddChargeSubmission(event) {
         dueDate: chargeData.dueDate,
         status: getChargeStatusByDate(chargeData.dueDate),
         createdDate: chargeData.createdDate,
-        notes: chargeData.notes || `Charge created on ${formatDate(chargeData.createdDate)}`
+        notes:
+            chargeData.notes ||
+            `Charge created on ${formatDate(chargeData.createdDate)}`,
     };
-    
+
     lease.charges.push(newCharge);
-    
+
     syncDataArrays();
     filteredCharges = [...charges];
     updateStatistics();
     renderChargesTable();
-    closeModal('addChargeModal');
-    
-    showAlert(`New charge of ${formatCurrency(chargeData.amount)} added successfully!`, 'success');
-}
+    closeModal("addChargeModal");
 
+    showAlert(
+        `New charge of ${formatCurrency(chargeData.amount)} added successfully!`,
+        "success"
+    );
+}
 
 function editCharge(id) {
     const charge = findChargeById(id);
     const lease = findLeaseByChargeId(id);
-    
+
     if (!charge || !lease) {
-        showAlert('Charge not found', 'error');
+        showAlert("Charge not found", "error");
         return;
     }
-    
-    currentEditingCharge = charge;
-    
-    
-    document.getElementById('editChargeId').value = charge.id;
-    document.getElementById('editChargeType').value = charge.type;
-    document.getElementById('editChargeDescription').value = charge.description;
-    document.getElementById('editChargeAmount').value = charge.amount;
-    document.getElementById('editChargeDueDate').value = charge.dueDate;
-    document.getElementById('editChargeNotes').value = charge.notes || '';
-    
-    
-    document.getElementById('editChargeTenantInfo').textContent = `${lease.tenant} - ${lease.unit}`;
-    
-    createModalsAndDialogs();
-    openModal('editChargeModal');
-}
 
+    currentEditingCharge = charge;
+
+    document.getElementById("editChargeId").value = charge.id;
+    document.getElementById("editChargeType").value = charge.type;
+    document.getElementById("editChargeDescription").value = charge.description;
+    document.getElementById("editChargeAmount").value = charge.amount;
+    document.getElementById("editChargeDueDate").value = charge.dueDate;
+    document.getElementById("editChargeNotes").value = charge.notes || "";
+
+    document.getElementById(
+        "editChargeTenantInfo"
+    ).textContent = `${lease.tenant} - ${lease.unit}`;
+
+    createModalsAndDialogs();
+    openModal("editChargeModal");
+}
 
 function handleEditChargeSubmission(event) {
     event.preventDefault();
-    
+
     if (!currentEditingCharge) {
-        showAlert('No charge selected for editing', 'error');
+        showAlert("No charge selected for editing", "error");
         return;
     }
-    
+
     const formData = new FormData(event.target);
     const updatedData = {
-        type: formData.get('type'),
-        description: formData.get('description').trim(),
-        amount: parseFloat(formData.get('amount')),
-        dueDate: formData.get('dueDate'),
-        notes: formData.get('notes').trim()
+        type: formData.get("type"),
+        description: formData.get("description").trim(),
+        amount: parseFloat(formData.get("amount")),
+        dueDate: formData.get("dueDate"),
+        notes: formData.get("notes").trim(),
     };
-    
-    
+
     if (!updatedData.description) {
-        showAlert('Description is required', 'error');
+        showAlert("Description is required", "error");
         return;
     }
-    
+
     if (updatedData.amount <= 0) {
-        showAlert('Amount must be greater than zero', 'error');
+        showAlert("Amount must be greater than zero", "error");
         return;
     }
-    
+
     if (!updatedData.dueDate) {
-        showAlert('Due date is required', 'error');
+        showAlert("Due date is required", "error");
         return;
     }
-    
-    
+
     Object.assign(currentEditingCharge, updatedData);
-    
-    
+
     const newStatus = getChargeStatus(currentEditingCharge);
     currentEditingCharge.status = newStatus;
-    
+
     syncDataArrays();
     filteredCharges = [...charges];
     updateStatistics();
     renderChargesTable();
-    closeModal('editChargeModal');
-    
-    showAlert('Charge updated successfully!', 'success');
-}
+    closeModal("editChargeModal");
 
+    showAlert("Charge updated successfully!", "success");
+}
 
 function removeCharge(id) {
     const charge = findChargeById(id);
     const lease = findLeaseByChargeId(id);
-    
+
     if (!charge || !lease) {
-        showAlert('Charge not found', 'error');
+        showAlert("Charge not found", "error");
         return;
     }
-    
-    chargeToDelete = { charge, lease };
-    
-    
-    document.getElementById('deleteChargeTenant').textContent = lease.tenant;
-    document.getElementById('deleteChargeUnit').textContent = lease.unit;
-    document.getElementById('deleteChargeDescription').textContent = charge.description;
-    document.getElementById('deleteChargeAmount').textContent = formatCurrency(charge.amount);
-    document.getElementById('deleteChargeDueDate').textContent = formatDate(charge.dueDate);
-    
-    createModalsAndDialogs();
-    openModal('deleteChargeModal');
-}
 
+    chargeToDelete = { charge, lease };
+
+    document.getElementById("deleteChargeTenant").textContent = lease.tenant;
+    document.getElementById("deleteChargeUnit").textContent = lease.unit;
+    document.getElementById("deleteChargeDescription").textContent =
+        charge.description;
+    document.getElementById("deleteChargeAmount").textContent = formatCurrency(
+        charge.amount
+    );
+    document.getElementById("deleteChargeDueDate").textContent = formatDate(
+        charge.dueDate
+    );
+
+    createModalsAndDialogs();
+    openModal("deleteChargeModal");
+}
 
 function confirmDeleteCharge() {
     if (!chargeToDelete) {
-        showAlert('No charge selected for deletion', 'error');
+        showAlert("No charge selected for deletion", "error");
         return;
     }
-    
+
     const { charge, lease } = chargeToDelete;
-    
-    
-    const chargeIndex = lease.charges.findIndex(c => c.id === charge.id);
+
+    const chargeIndex = lease.charges.findIndex((c) => c.id === charge.id);
     if (chargeIndex > -1) {
         lease.charges.splice(chargeIndex, 1);
     }
-    
-    
+
     if (lease.paymentHistory) {
-        lease.paymentHistory = lease.paymentHistory.filter(p => p.chargeId !== charge.id);
+        lease.paymentHistory = lease.paymentHistory.filter(
+            (p) => p.chargeId !== charge.id
+        );
     }
-    
+
     syncDataArrays();
     filteredCharges = [...charges];
     filteredPayments = [...payments];
     updateStatistics();
     renderChargesTable();
     renderPaymentsTable();
-    closeModal('deleteChargeModal');
-    
-    showAlert('Charge deleted successfully!', 'success');
+    closeModal("deleteChargeModal");
+
+    showAlert("Charge deleted successfully!", "success");
     chargeToDelete = null;
 }
-
 
 function recordPayment(chargeId) {
     const charge = findChargeById(chargeId);
     const lease = findLeaseByChargeId(chargeId);
-    
+
     if (!charge || !lease) {
-        showAlert('Charge not found', 'error');
+        showAlert("Charge not found", "error");
         return;
     }
 
     currentPaymentCharge = charge;
-    document.getElementById('paymentChargeId').value = chargeId;
-    document.getElementById('paymentAmount').value = charge.amount;
-    document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
-    
-    createModalsAndDialogs();
-    openModal('paymentModal');
-}
+    document.getElementById("paymentChargeId").value = chargeId;
+    document.getElementById("paymentAmount").value = charge.amount;
+    document.getElementById("paymentDate").value = new Date()
+        .toISOString()
+        .split("T")[0];
 
+    createModalsAndDialogs();
+    openModal("paymentModal");
+}
 
 function handlePaymentSubmission(event) {
     event.preventDefault();
-    
+
     if (!currentPaymentCharge) {
-        showAlert('No charge selected for payment', 'error');
+        showAlert("No charge selected for payment", "error");
         return;
     }
-    
+
     const formData = new FormData(event.target);
     const paymentData = {
-        amount: parseFloat(formData.get('amount')),
-        paymentMethod: formData.get('method'),
-        reference: formData.get('reference').trim(),
-        paymentDate: formData.get('date'),
-        notes: 'Payment recorded through admin interface'
+        amount: parseFloat(formData.get("amount")),
+        paymentMethod: formData.get("method"),
+        reference: formData.get("reference").trim(),
+        paymentDate: formData.get("date"),
+        notes: "Payment recorded through admin interface",
     };
-    
-    
+
     if (paymentData.amount <= 0) {
-        showAlert('Payment amount must be greater than zero', 'error');
+        showAlert("Payment amount must be greater than zero", "error");
         return;
     }
-    
+
     if (!paymentData.paymentMethod) {
-        showAlert('Please select a payment method', 'error');
+        showAlert("Please select a payment method", "error");
         return;
     }
-    
-    
+
     if (!paymentData.reference) {
         paymentData.reference = generateReference(paymentData.paymentMethod);
     }
-    
+
     const lease = findLeaseByChargeId(currentPaymentCharge.id);
     const charge = findChargeById(currentPaymentCharge.id);
-    
+
     if (!lease || !charge) {
-        showAlert('Charge or lease not found', 'error');
+        showAlert("Charge or lease not found", "error");
         return;
     }
-    
-    
+
     const newPayment = {
         id: `pay-${Date.now()}`,
         chargeId: currentPaymentCharge.id,
         ...paymentData,
         description: currentPaymentCharge.description,
         type: currentPaymentCharge.type,
-        processedBy: 'Admin User'
+        processedBy: "Admin User",
     };
-    
+
     if (!lease.paymentHistory) {
         lease.paymentHistory = [];
     }
-    
+
     lease.paymentHistory.unshift(newPayment);
-    charge.status = 'paid';
+    charge.status = "paid";
 
     syncDataArrays();
     filteredCharges = [...charges];
@@ -982,160 +833,182 @@ function handlePaymentSubmission(event) {
     updateStatistics();
     renderChargesTable();
     renderPaymentsTable();
-    closeModal('paymentModal');
-    
-    showAlert(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, 'success');
+    closeModal("paymentModal");
+
+    showAlert(
+        `Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`,
+        "success"
+    );
     currentPaymentCharge = null;
 }
-
 
 function viewChargeDetails(chargeId) {
     const charge = findChargeById(chargeId);
     const lease = findLeaseByChargeId(chargeId);
-    
+
     if (!charge || !lease) {
-        showAlert('Charge not found', 'error');
+        showAlert("Charge not found", "error");
         return;
     }
-    
+
     currentViewingCharge = charge;
-    
-    
-    document.getElementById('viewChargeTenant').textContent = lease.tenant;
-    document.getElementById('viewChargeUnit').textContent = lease.unit;
-    document.getElementById('viewChargeType').textContent = capitalizeFirst(charge.type);
-    document.getElementById('viewChargeDescription').textContent = charge.description;
-    document.getElementById('viewChargeAmount').textContent = formatCurrency(charge.amount);
-    document.getElementById('viewChargeDueDate').textContent = formatDate(charge.dueDate);
-    document.getElementById('viewChargeCreatedDate').textContent = formatDate(charge.createdDate);
-    document.getElementById('viewChargeStatus').innerHTML = getStatusDisplay(charge);
-    document.getElementById('viewChargeNotes').textContent = charge.notes || 'No additional notes';
-    
-    
-    const relatedPayments = lease.paymentHistory?.filter(p => p.chargeId === charge.id) || [];
-    const paymentHistoryDiv = document.getElementById('viewChargePaymentHistory');
-    
+
+    document.getElementById("viewChargeTenant").textContent = lease.tenant;
+    document.getElementById("viewChargeUnit").textContent = lease.unit;
+    document.getElementById("viewChargeType").textContent = capitalizeFirst(
+        charge.type
+    );
+    document.getElementById("viewChargeDescription").textContent =
+        charge.description;
+    document.getElementById("viewChargeAmount").textContent = formatCurrency(
+        charge.amount
+    );
+    document.getElementById("viewChargeDueDate").textContent = formatDate(
+        charge.dueDate
+    );
+    document.getElementById("viewChargeCreatedDate").textContent = formatDate(
+        charge.createdDate
+    );
+    document.getElementById("viewChargeStatus").innerHTML =
+        getStatusDisplay(charge);
+    document.getElementById("viewChargeNotes").textContent =
+        charge.notes || "No additional notes";
+
+    const relatedPayments =
+        lease.paymentHistory?.filter((p) => p.chargeId === charge.id) || [];
+    const paymentHistoryDiv = document.getElementById("viewChargePaymentHistory");
+
     if (relatedPayments.length > 0) {
-        paymentHistoryDiv.innerHTML = relatedPayments.map(payment => `
+        paymentHistoryDiv.innerHTML = relatedPayments
+            .map(
+                (payment) => `
             <div class="payment-history-item">
                 <div class="payment-info">
                     <strong>${formatCurrency(payment.amount)}</strong>
-                    <span class="payment-method">${capitalizeFirst(payment.paymentMethod)}</span>
+                    <span class="payment-method">${capitalizeFirst(
+                    payment.paymentMethod
+                )}</span>
                 </div>
                 <div class="payment-details">
                     <div>Date: ${formatDate(payment.paymentDate)}</div>
                     <div>Reference: ${payment.reference}</div>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join("");
     } else {
-        paymentHistoryDiv.innerHTML = '<p class="no-payments">No payments recorded for this charge</p>';
+        paymentHistoryDiv.innerHTML =
+            '<p class="no-payments">No payments recorded for this charge</p>';
     }
-    
+
     createModalsAndDialogs();
-    openModal('viewChargeModal');
+    openModal("viewChargeModal");
 }
 
-
 function filterCharges() {
-    const searchTerm = document.getElementById('charges-search')?.value.toLowerCase() || '';
-    const typeFilter = document.getElementById('charges-type')?.value || '';
-    const statusFilter = document.getElementById('charges-status')?.value || '';
-    const dateFilter = document.getElementById('charges-date')?.value || '';
-    
-    filteredCharges = charges.filter(charge => {
-        const matchesSearch = !searchTerm || 
+    const searchTerm =
+        document.getElementById("charges-search")?.value.toLowerCase() || "";
+    const typeFilter = document.getElementById("charges-type")?.value || "";
+    const statusFilter = document.getElementById("charges-status")?.value || "";
+    const dateFilter = document.getElementById("charges-date")?.value || "";
+
+    filteredCharges = charges.filter((charge) => {
+        const matchesSearch =
+            !searchTerm ||
             charge.tenant.toLowerCase().includes(searchTerm) ||
             charge.unit.toLowerCase().includes(searchTerm) ||
             charge.description.toLowerCase().includes(searchTerm);
-            
+
         const matchesType = !typeFilter || charge.type === typeFilter;
-        const matchesStatus = !statusFilter || getChargeStatus(charge) === statusFilter;
+        const matchesStatus =
+            !statusFilter || getChargeStatus(charge) === statusFilter;
         const matchesDate = !dateFilter || charge.dueDate.startsWith(dateFilter);
-        
+
         return matchesSearch && matchesType && matchesStatus && matchesDate;
     });
-    
+
     renderChargesTable();
 }
 
 function filterPayments() {
-    const searchTerm = document.getElementById('payments-search')?.value.toLowerCase() || '';
-    const methodFilter = document.getElementById('payments-method')?.value || '';
-    const typeFilter = document.getElementById('payments-type')?.value || '';
-    const dateFilter = document.getElementById('payments-date')?.value || '';
-    
-    filteredPayments = payments.filter(payment => {
-        const matchesSearch = !searchTerm ||
+    const searchTerm =
+        document.getElementById("payments-search")?.value.toLowerCase() || "";
+    const methodFilter = document.getElementById("payments-method")?.value || "";
+    const typeFilter = document.getElementById("payments-type")?.value || "";
+    const dateFilter = document.getElementById("payments-date")?.value || "";
+
+    filteredPayments = payments.filter((payment) => {
+        const matchesSearch =
+            !searchTerm ||
             payment.tenant.toLowerCase().includes(searchTerm) ||
             payment.unit.toLowerCase().includes(searchTerm) ||
             payment.description.toLowerCase().includes(searchTerm) ||
             payment.reference.toLowerCase().includes(searchTerm);
-            
-        const matchesMethod = !methodFilter || payment.paymentMethod === methodFilter;
+
+        const matchesMethod =
+            !methodFilter || payment.paymentMethod === methodFilter;
         const matchesType = !typeFilter || payment.type === typeFilter;
-        const matchesDate = !dateFilter || payment.paymentDate.startsWith(dateFilter);
-        
+        const matchesDate =
+            !dateFilter || payment.paymentDate.startsWith(dateFilter);
+
         return matchesSearch && matchesMethod && matchesType && matchesDate;
     });
-    
+
     renderPaymentsTable();
 }
 
-
 function resetChargesFilters() {
-    const searchEl = document.getElementById('charges-search');
-    const typeEl = document.getElementById('charges-type');
-    const statusEl = document.getElementById('charges-status');
-    const dateEl = document.getElementById('charges-date');
-    
-    if (searchEl) searchEl.value = '';
-    if (typeEl) typeEl.value = '';
-    if (statusEl) statusEl.value = '';
-    if (dateEl) dateEl.value = '';
-    
+    const searchEl = document.getElementById("charges-search");
+    const typeEl = document.getElementById("charges-type");
+    const statusEl = document.getElementById("charges-status");
+    const dateEl = document.getElementById("charges-date");
+
+    if (searchEl) searchEl.value = "";
+    if (typeEl) typeEl.value = "";
+    if (statusEl) statusEl.value = "";
+    if (dateEl) dateEl.value = "";
+
     filteredCharges = [...charges];
     renderChargesTable();
 }
 
 function resetPaymentsFilters() {
-    const searchEl = document.getElementById('payments-search');
-    const methodEl = document.getElementById('payments-method');
-    const typeEl = document.getElementById('payments-type');
-    const dateEl = document.getElementById('payments-date');
-    
-    if (searchEl) searchEl.value = '';
-    if (methodEl) methodEl.value = '';
-    if (typeEl) typeEl.value = '';
-    if (dateEl) dateEl.value = '';
-    
+    const searchEl = document.getElementById("payments-search");
+    const methodEl = document.getElementById("payments-method");
+    const typeEl = document.getElementById("payments-type");
+    const dateEl = document.getElementById("payments-date");
+
+    if (searchEl) searchEl.value = "";
+    if (methodEl) methodEl.value = "";
+    if (typeEl) typeEl.value = "";
+    if (dateEl) dateEl.value = "";
+
     filteredPayments = [...payments];
     renderPaymentsTable();
 }
 
-
 function filterByType(type) {
-    const typeEl = document.getElementById('charges-type');
+    const typeEl = document.getElementById("charges-type");
     if (typeEl) {
-        typeEl.value = type === 'charges' ? '' : type;
+        typeEl.value = type === "charges" ? "" : type;
         filterCharges();
     }
 }
 
 function filterByStatus(status) {
-    const statusEl = document.getElementById('charges-status');
+    const statusEl = document.getElementById("charges-status");
     if (statusEl) {
         statusEl.value = status;
         filterCharges();
     }
 }
 
-
 function renderChargesTable() {
-    const tbody = document.getElementById('charges-tbody');
-    const mobileCards = document.getElementById('charges-mobile');
+    const tbody = document.getElementById("charges-tbody");
+    const mobileCards = document.getElementById("charges-mobile");
     if (!tbody) return;
-    
+
     if (filteredCharges.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -1150,31 +1023,35 @@ function renderChargesTable() {
         `;
         return;
     }
-    
-    tbody.innerHTML = filteredCharges.map((charge, index) => {
-        
-        const paidAmount = getPaidAmountForCharge(charge.id);
-        const totalAmount = charge.amount;
-        const paymentProgress = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
-        const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
-        const isFullyPaid = paidAmount >= totalAmount;
-        
-        
-        const isRecurring = charge.type === 'rent' || charge.description.toLowerCase().includes('monthly');
-        
-        
-        let chargeStatus = getChargeStatus(charge);
-        if (isFullyPaid) chargeStatus = 'paid';
-        else if (isPartiallyPaid) chargeStatus = 'partial';
-        
-        return `
+
+    tbody.innerHTML = filteredCharges
+        .map((charge, index) => {
+            const paidAmount = getPaidAmountForCharge(charge.id);
+            const totalAmount = charge.amount;
+            const paymentProgress =
+                totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
+            const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
+            const isFullyPaid = paidAmount >= totalAmount;
+
+            const isRecurring =
+                charge.type === "rent" ||
+                charge.description.toLowerCase().includes("monthly");
+
+            let chargeStatus = getChargeStatus(charge);
+            if (isFullyPaid) chargeStatus = "paid";
+            else if (isPartiallyPaid) chargeStatus = "partial";
+
+            return `
             <tr class="charge-row ${chargeStatus}" style="position: relative;">
-                ${isRecurring ? `
+                ${isRecurring
+                    ? `
                     <div class="recurring-indicator">
                         <div class="recurring-tooltip">Recurring Payment</div>
                     </div>
-                ` : ''}
-                <td class="td-number">${String(index + 1).padStart(2, '0')}</td>
+                `
+                    : ""
+                }
+                <td class="td-number">${String(index + 1).padStart(2, "0")}</td>
                 <td class="td-tenant">
                     <div class="tenant-info">
                         <strong>${charge.tenant}</strong>
@@ -1186,56 +1063,71 @@ function renderChargesTable() {
                     </div>
                 </td>
                 <td class="td-type">
-                    <span class="badge ${charge.type}">${capitalizeFirst(charge.type)}</span>
+                    <span class="badge ${charge.type}">${capitalizeFirst(
+                    charge.type
+                )}</span>
                 </td>
                 <td class="charge-description">
                     ${charge.description}
-                    ${isRecurring ? '<i class="fas fa-refresh" style="margin-left: 8px; color: #f59e0b; font-size: 10px;" title="Recurring"></i>' : ''}
+                    ${isRecurring
+                    ? '<i class="fas fa-refresh" style="margin-left: 8px; color: #f59e0b; font-size: 10px;" title="Recurring"></i>'
+                    : ""
+                }
                 </td>
                 <td class="td-total">${formatCurrency(totalAmount)}</td>
                 <td class="td-paid">
                     <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                        <span style="font-weight: 700;">${formatCurrency(paidAmount)}</span>
-                        ${paidAmount > 0 ? `
+                        <span style="font-weight: 700;">${formatCurrency(
+                    paidAmount
+                )}</span>
+                        ${paidAmount > 0
+                    ? `
                             <div class="payment-progress">
                                 <div class="progress-bar">
                                     <div class="progress-fill" style="width: ${paymentProgress}%"></div>
                                 </div>
-                                <span class="progress-text">${Math.round(paymentProgress)}%</span>
+                                <span class="progress-text">${Math.round(
+                        paymentProgress
+                    )}%</span>
                             </div>
-                        ` : ''}
+                        `
+                    : ""
+                }
                     </div>
                 </td>
                 <td class="td-status">
-                    <span class="status-indicator ${chargeStatus}">
-                        ${getStatusIcon(chargeStatus)}
-                        ${getStatusText(chargeStatus)}
-                    </span>
+                    ${getStatusDisplay(charge)}
                 </td>
                 <td class="due-date">${formatDate(charge.dueDate)}</td>
                 <td class="td-actions">
                     <div class="action-buttons">
-                        <button onclick="viewChargeDetails(${charge.id})" class="btn btn-sm btn-info" title="View Details">
+                        <button onclick="viewChargeDetails(${charge.id
+                })" class="btn btn-sm btn-info" title="View Details">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button onclick="editCharge(${charge.id})" class="btn btn-sm btn-warning" title="Edit">
+                        <button onclick="editCharge(${charge.id
+                })" class="btn btn-sm btn-warning" title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
-                        ${!isFullyPaid ? `
+                        ${!isFullyPaid
+                    ? `
                             <button onclick="recordPayment(${charge.id})" class="btn btn-sm btn-success" title="Record Payment">
                                 <i class="fas fa-credit-card"></i>
                             </button>
-                        ` : ''}
-                        <button onclick="removeCharge(${charge.id})" class="btn btn-sm btn-danger" title="Delete">
+                        `
+                    : ""
+                }
+                        <button onclick="removeCharge(${charge.id
+                })" class="btn btn-sm btn-danger" title="Delete">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
             </tr>
         `;
-    }).join('');
-    
-    // Render Mobile Cards
+        })
+        .join("");
+
     if (mobileCards) {
         if (filteredCharges.length === 0) {
             mobileCards.innerHTML = `
@@ -1247,100 +1139,128 @@ function renderChargesTable() {
             `;
             return;
         }
-        
-        mobileCards.innerHTML = filteredCharges.map((charge, index) => {
-            const paidAmount = getPaidAmountForCharge(charge.id);
-            const totalAmount = charge.amount;
-            const paymentProgress = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
-            const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
-            const isFullyPaid = paidAmount >= totalAmount;
-            const isRecurring = charge.type === 'rent' || charge.description.toLowerCase().includes('monthly');
-            
-            let chargeStatus = getChargeStatus(charge);
-            if (isFullyPaid) chargeStatus = 'paid';
-            else if (isPartiallyPaid) chargeStatus = 'partial';
-            
-            return `
+
+        mobileCards.innerHTML = filteredCharges
+            .map((charge, index) => {
+                const paidAmount = getPaidAmountForCharge(charge.id);
+                const totalAmount = charge.amount;
+                const paymentProgress =
+                    totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
+                const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
+                const isFullyPaid = paidAmount >= totalAmount;
+                const isRecurring =
+                    charge.type === "rent" ||
+                    charge.description.toLowerCase().includes("monthly");
+
+                let chargeStatus = getChargeStatus(charge);
+                if (isFullyPaid) chargeStatus = "paid";
+                else if (isPartiallyPaid) chargeStatus = "partial";
+
+                return `
                 <div class="mobile-card charges">
-                    ${isRecurring ? '<div class="recurring-indicator"><div class="recurring-tooltip">Recurring Payment</div></div>' : ''}
+                    ${isRecurring
+                        ? '<div class="recurring-indicator"><div class="recurring-tooltip">Recurring Payment</div></div>'
+                        : ""
+                    }
                     
                     <div class="card-header">
                         <div class="card-title">
                             ${charge.tenant} - ${charge.unit}
-                            ${isRecurring ? '<i class="fas fa-refresh" style="margin-left: 6px; color: #f59e0b; font-size: 10px;"></i>' : ''}
+                            ${isRecurring
+                        ? '<i class="fas fa-refresh" style="margin-left: 6px; color: #f59e0b; font-size: 10px;"></i>'
+                        : ""
+                    }
                         </div>
-                        <div class="card-number">${String(index + 1).padStart(2, '0')}</div>
+                        <div class="card-number">${String(index + 1).padStart(
+                        2,
+                        "0"
+                    )}</div>
                     </div>
                     
-                    <div class="card-amount charge">${formatCurrency(totalAmount)}</div>
+                    <div class="card-amount charge">${formatCurrency(
+                        totalAmount
+                    )}</div>
                     
                     <div class="card-details">
                         <div class="card-detail-row">
                             <span class="card-detail-label">Type</span>
                             <span class="card-detail-value">
-                                <span class="badge ${charge.type}">${capitalizeFirst(charge.type)}</span>
+                                <span class="badge ${charge.type
+                    }">${capitalizeFirst(charge.type)}</span>
                             </span>
                         </div>
                         <div class="card-detail-row">
                             <span class="card-detail-label">Description</span>
-                            <span class="card-detail-value">${charge.description}</span>
+                            <span class="card-detail-value">${charge.description
+                    }</span>
                         </div>
                         <div class="card-detail-row">
                             <span class="card-detail-label">Paid Amount</span>
                             <span class="card-detail-value">
                                 ${formatCurrency(paidAmount)}
-                                ${paidAmount > 0 ? `
+                                ${paidAmount > 0
+                        ? `
                                     <div class="payment-progress">
                                         <div class="progress-bar">
                                             <div class="progress-fill" style="width: ${paymentProgress}%"></div>
                                         </div>
-                                        <span class="progress-text">${Math.round(paymentProgress)}%</span>
+                                        <span class="progress-text">${Math.round(
+                            paymentProgress
+                        )}%</span>
                                     </div>
-                                ` : ''}
+                                `
+                        : ""
+                    }
                             </span>
                         </div>
                         <div class="card-detail-row">
                             <span class="card-detail-label">Status</span>
                             <span class="card-detail-value">
-                                <span class="status-indicator ${chargeStatus}">
-                                    ${getStatusIcon(chargeStatus)}
-                                    ${getStatusText(chargeStatus)}
-                                </span>
+                                ${getStatusDisplay(charge)}
                             </span>
                         </div>
                         <div class="card-detail-row">
                             <span class="card-detail-label">Due Date</span>
-                            <span class="card-detail-value">${formatDate(charge.dueDate)}</span>
+                            <span class="card-detail-value">${formatDate(
+                        charge.dueDate
+                    )}</span>
                         </div>
                     </div>
                     
                     <div class="card-actions">
-                        <button onclick="viewChargeDetails(${charge.id})" class="btn btn-sm btn-info" title="View Details">
+                        <button onclick="viewChargeDetails(${charge.id
+                    })" class="btn btn-sm btn-info" title="View Details">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button onclick="editCharge(${charge.id})" class="btn btn-sm btn-warning" title="Edit">
+                        <button onclick="editCharge(${charge.id
+                    })" class="btn btn-sm btn-warning" title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
-                        ${!isFullyPaid ? `
+                        ${!isFullyPaid
+                        ? `
                             <button onclick="recordPayment(${charge.id})" class="btn btn-sm btn-success" title="Record Payment">
                                 <i class="fas fa-credit-card"></i>
                             </button>
-                        ` : ''}
-                        <button onclick="removeCharge(${charge.id})" class="btn btn-sm btn-danger" title="Delete">
+                        `
+                        : ""
+                    }
+                        <button onclick="removeCharge(${charge.id
+                    })" class="btn btn-sm btn-danger" title="Delete">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
             `;
-        }).join('');
+            })
+            .join("");
     }
 }
 
 function renderPaymentsTable() {
-    const tbody = document.getElementById('payments-tbody');
-    const mobileCards = document.getElementById('payments-mobile');
+    const tbody = document.getElementById("payments-tbody");
+    const mobileCards = document.getElementById("payments-mobile");
     if (!tbody) return;
-    
+
     if (filteredPayments.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -1355,8 +1275,10 @@ function renderPaymentsTable() {
         `;
         return;
     }
-    
-    tbody.innerHTML = filteredPayments.map(payment => `
+
+    tbody.innerHTML = filteredPayments
+        .map(
+            (payment) => `
         <tr class="payment-row">
             <td>
                 <div class="tenant-info">
@@ -1372,25 +1294,30 @@ function renderPaymentsTable() {
             <td class="payment-description">${payment.description}</td>
             <td class="payment-amount">${formatCurrency(payment.amount)}</td>
             <td>
-                <span class="payment-method">${capitalizeFirst(payment.paymentMethod)}</span>
+                <span class="payment-method">${capitalizeFirst(
+                payment.paymentMethod
+            )}</span>
             </td>
             <td>
                 <code class="reference-code">${payment.reference}</code>
             </td>
             <td class="actions-cell">
                 <div class="action-buttons">
-                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
+                    <button onclick="viewPaymentDetails('${payment.id
+                }')" class="btn btn-sm btn-info" title="View Details">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="generateReceipt('${payment.id}')" class="btn btn-sm btn-success" title="View Receipt">
+                    <button onclick="generateReceipt('${payment.id
+                }')" class="btn btn-sm btn-success" title="View Receipt">
                         <i class="fas fa-receipt"></i>
                     </button>
                 </div>
             </td>
         </tr>
-    `).join('');
-    
-    // Render Mobile Cards
+    `
+        )
+        .join("");
+
     if (mobileCards) {
         if (filteredPayments.length === 0) {
             mobileCards.innerHTML = `
@@ -1402,66 +1329,83 @@ function renderPaymentsTable() {
             `;
             return;
         }
-        
-        mobileCards.innerHTML = filteredPayments.map((payment, index) => `
+
+        mobileCards.innerHTML = filteredPayments
+            .map(
+                (payment, index) => `
             <div class="mobile-card payments">
                 <div class="card-header">
-                    <div class="card-title">${payment.tenant} - ${payment.unit}</div>
-                    <div class="card-number">${String(index + 1).padStart(2, '0')}</div>
+                    <div class="card-title">${payment.tenant} - ${payment.unit
+                    }</div>
+                    <div class="card-number">${String(index + 1).padStart(
+                        2,
+                        "0"
+                    )}</div>
                 </div>
                 
-                <div class="card-amount payment">${formatCurrency(payment.amount)}</div>
+                <div class="card-amount payment">${formatCurrency(
+                        payment.amount
+                    )}</div>
                 
                 <div class="card-details">
                     <div class="card-detail-row">
                         <span class="card-detail-label">Payment Date</span>
-                        <span class="card-detail-value">${formatDate(payment.paymentDate)}</span>
+                        <span class="card-detail-value">${formatDate(
+                        payment.paymentDate
+                    )}</span>
                     </div>
                     <div class="card-detail-row">
                         <span class="card-detail-label">Description</span>
-                        <span class="card-detail-value">${payment.description}</span>
+                        <span class="card-detail-value">${payment.description
+                    }</span>
                     </div>
                     <div class="card-detail-row">
                         <span class="card-detail-label">Method</span>
                         <span class="card-detail-value">
-                            <span class="payment-method">${capitalizeFirst(payment.paymentMethod)}</span>
+                            <span class="payment-method">${capitalizeFirst(
+                        payment.paymentMethod
+                    )}</span>
                         </span>
                     </div>
                     <div class="card-detail-row">
                         <span class="card-detail-label">Reference</span>
-                        <span class="card-detail-value">${payment.reference}</span>
+                        <span class="card-detail-value">${payment.reference
+                    }</span>
                     </div>
                     <div class="card-detail-row">
                         <span class="card-detail-label">Processed By</span>
-                        <span class="card-detail-value">${payment.processedBy}</span>
+                        <span class="card-detail-value">${payment.processedBy
+                    }</span>
                     </div>
                 </div>
                 
                 <div class="card-actions">
-                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
+                    <button onclick="viewPaymentDetails('${payment.id
+                    }')" class="btn btn-sm btn-info" title="View Details">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="generateReceipt('${payment.id}')" class="btn btn-sm btn-success" title="View Receipt">
+                    <button onclick="generateReceipt('${payment.id
+                    }')" class="btn btn-sm btn-success" title="View Receipt">
                         <i class="fas fa-receipt"></i>
                     </button>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join("");
     }
 }
-
 
 function generateReceipt(paymentId) {
     const payment = findPaymentById(paymentId);
     const lease = findLeaseByPaymentId(paymentId);
-    
+
     if (!payment || !lease) {
-        showAlert('Payment not found', 'error');
+        showAlert("Payment not found", "error");
         return;
     }
-    
-    
-    const receiptWindow = window.open('', '_blank', 'width=800,height=600');
+
+    const receiptWindow = window.open("", "_blank", "width=800,height=600");
     const receiptHTML = `
         <!DOCTYPE html>
         <html>
@@ -1561,7 +1505,9 @@ function generateReceipt(paymentId) {
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Payment Date:</span>
-                        <span class="detail-value">${formatDate(payment.paymentDate)}</span>
+                        <span class="detail-value">${formatDate(
+        payment.paymentDate
+    )}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Tenant:</span>
@@ -1577,15 +1523,20 @@ function generateReceipt(paymentId) {
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Payment Method:</span>
-                        <span class="detail-value">${capitalizeFirst(payment.paymentMethod)}</span>
+                        <span class="detail-value">${capitalizeFirst(
+        payment.paymentMethod
+    )}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Amount:</span>
-                        <span class="detail-value amount-highlight">${formatCurrency(payment.amount)}</span>
+                        <span class="detail-value amount-highlight">${formatCurrency(
+        payment.amount
+    )}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Processed By:</span>
-                        <span class="detail-value">${payment.processedBy || 'System'}</span>
+                        <span class="detail-value">${payment.processedBy || "System"
+        }</span>
                     </div>
                 </div>
                 
@@ -1597,20 +1548,18 @@ function generateReceipt(paymentId) {
         </body>
         </html>
     `;
-    
+
     receiptWindow.document.write(receiptHTML);
     receiptWindow.document.close();
 }
 
-
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        
-        
-        const firstInput = modal.querySelector('input, textarea, select');
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+
+        const firstInput = modal.querySelector("input, textarea, select");
         if (firstInput) {
             setTimeout(() => firstInput.focus(), 100);
         }
@@ -1620,28 +1569,25 @@ function openModal(modalId) {
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
     }
-    
-    
-    if (modalId === 'paymentModal') {
+
+    if (modalId === "paymentModal") {
         currentPaymentCharge = null;
     }
-    if (modalId === 'viewChargeModal') {
+    if (modalId === "viewChargeModal") {
         currentViewingCharge = null;
     }
-    if (modalId === 'editChargeModal') {
+    if (modalId === "editChargeModal") {
         currentEditingCharge = null;
     }
-    if (modalId === 'deleteChargeModal') {
+    if (modalId === "deleteChargeModal") {
         chargeToDelete = null;
     }
 }
 
-
 function showSection(sectionName) {
-    
     syncDataArrays();
     filteredCharges = [...charges];
     filteredPayments = [...payments];
@@ -1650,10 +1596,8 @@ function showSection(sectionName) {
     renderPaymentsTable();
 }
 
-
 function createModalsAndDialogs() {
-    
-    if (document.getElementById('paymentModal')) return;
+    if (document.getElementById("paymentModal")) return;
 
     injectEnhancedButtonStyles();
 
@@ -1919,36 +1863,1025 @@ function createModalsAndDialogs() {
             </div>
         </div>
     `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalsHTML);
+
+    document.body.insertAdjacentHTML("beforeend", modalsHTML);
 }
 
+// Advanced Add Charges Modal - adapted from add-charges functionality
+function createAdvancedAddChargesModal() {
+    // Remove existing modal if present
+    const existingModal = document.getElementById("advancedAddChargeModal");
+    if (existingModal) {
+        existingModal.remove();
+    }
 
-function initializeEventListeners() {
+    // Modal state variables
+    let chargeCounter = 0;
+    let currentMode = 'single';
     
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = 'none';
-            document.body.style.overflow = 'auto';
+    // Sample tenant data - in real implementation, this should come from API
+    const tenants = [
+        {id: 1, name: 'Maria Santos', unit: 'Unit 201-A', email: 'maria.santos@email.com', phone: '+63 917 123 4567'},
+        {id: 2, name: 'Juan Dela Cruz', unit: 'Unit 305-B', email: 'juan.delacruz@email.com', phone: '+63 918 234 5678'},
+        {id: 3, name: 'Ana Rodriguez', unit: 'Unit 102-C', email: 'ana.rodriguez@email.com', phone: '+63 919 345 6789'},
+        {id: 4, name: 'Carlos Mendoza', unit: 'Unit 404-D', email: 'carlos.mendoza@email.com', phone: '+63 920 456 7890'},
+        {id: 5, name: 'Lisa Garcia', unit: 'Unit 501-E', email: 'lisa.garcia@email.com', phone: '+63 921 567 8901'},
+        {id: 6, name: 'Mike Johnson', unit: 'Unit 603-F', email: 'mike.johnson@email.com', phone: '+63 922 678 9012'},
+        {id: 7, name: 'Sarah Lee', unit: 'Unit 702-G', email: 'sarah.lee@email.com', phone: '+63 923 789 0123'},
+        {id: 8, name: 'David Brown', unit: 'Unit 805-H', email: 'david.brown@email.com', phone: '+63 924 890 1234'}
+    ];
+
+    const modalHTML = `
+        <div id="advancedAddChargeModal" class="modal" style="display: flex;">
+            <div class="modal-content modal-xl">
+                <div class="modal-header modal-header-blue">
+                    <h3><i class="fas fa-plus-circle"></i> Add Charges</h3>
+                    <p class="modal-subtitle">Create single or multiple charges efficiently</p>
+                    <span class="close" onclick="closeModal('advancedAddChargeModal')">&times;</span>
+                </div>
+                <div class="modal-body modal-body-charges">
+                    <form id="advancedChargesForm">
+                        <!-- Mode Toggle -->
+                        <div class="advanced-mode-toggle">
+                            <button type="button" class="advanced-mode-btn active" onclick="toggleAdvancedMode('single')">
+                                <i class="fas fa-file"></i> Single Charge
+                            </button>
+                            <button type="button" class="advanced-mode-btn" onclick="toggleAdvancedMode('multiple')">
+                                <i class="fas fa-files"></i> Multiple Charges
+                            </button>
+                        </div>
+
+                        <!-- Bulk Actions (Hidden by default) -->
+                        <div class="advanced-bulk-actions" id="advancedBulkActions" style="display: none;">
+                            <div class="advanced-bulk-title">
+                                <i class="fas fa-magic"></i> Apply to All Charges
+                            </div>
+                            <div class="advanced-bulk-fields">
+                                <div class="advanced-field-group">
+                                    <label class="advanced-field-label">Bulk Due Date</label>
+                                    <input type="date" class="advanced-field-input" id="advancedBulkDueDate">
+                                </div>
+                                <div class="advanced-field-group">
+                                    <label class="advanced-field-label">Bulk Charge Date</label>
+                                    <input type="date" class="advanced-field-input" id="advancedBulkChargeDate">
+                                </div>
+                                <div class="advanced-field-group">
+                                    <label class="advanced-field-label">Bulk Charge Type</label>
+                                    <select class="advanced-field-select" id="advancedBulkChargeType">
+                                        <option value="">Select charge type...</option>
+                                        <option value="rent">Monthly Rent</option>
+                                        <option value="utilities">Utilities</option>
+                                        <option value="maintenance">Maintenance Fee</option>
+                                        <option value="parking">Parking Fee</option>
+                                        <option value="late_fee">Late Payment Fee</option>
+                                        <option value="security_deposit">Security Deposit</option>
+                                        <option value="cleaning">Cleaning Fee</option>
+                                        <option value="internet">Internet Fee</option>
+                                        <option value="cable_tv">Cable TV</option>
+                                        <option value="association_dues">Association Dues</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="advanced-field-group">
+                                    <label class="advanced-field-label">Bulk Amount</label>
+                                    <input type="number" class="advanced-field-input" id="advancedBulkAmount" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                            <button type="button" class="advanced-apply-bulk-btn" onclick="applyAdvancedBulkSettings()">
+                                <i class="fas fa-check"></i> Apply to All
+                            </button>
+                        </div>
+
+                        <!-- Charges List -->
+                        <div class="advanced-charges-list" id="advancedChargesList">
+                            <!-- Charges will be added here dynamically -->
+                        </div>
+
+                        <!-- Add Charge Button (Hidden in single mode) -->
+                        <div class="advanced-add-charge-container" id="advancedAddChargeContainer" style="display: none;">
+                            <button type="button" class="advanced-add-charge-btn" onclick="addAdvancedNewCharge()">
+                                <i class="fas fa-plus"></i> Add Another Charge
+                            </button>
+                        </div>
+
+                        <!-- Charges Summary -->
+                        <div class="advanced-charges-summary" id="advancedChargesSummary" style="display: none;">
+                            <div class="advanced-summary-title">
+                                <i class="fas fa-chart-bar"></i> Summary
+                            </div>
+                            <div class="advanced-summary-stats">
+                                <div class="advanced-stat-item">
+                                    <span class="advanced-stat-value" id="advancedTotalCharges">0</span>
+                                    <span class="advanced-stat-label">Total Charges</span>
+                                </div>
+                                <div class="advanced-stat-item">
+                                    <span class="advanced-stat-value" id="advancedTotalAmount">₱0.00</span>
+                                    <span class="advanced-stat-label">Total Amount</span>
+                                </div>
+                                <div class="advanced-stat-item">
+                                    <span class="advanced-stat-value" id="advancedUniqueTenants">0</span>
+                                    <span class="advanced-stat-label">Unique Tenants</span>
+                                </div>
+                                <div class="advanced-stat-item">
+                                    <span class="advanced-stat-value" id="advancedRecurringCharges">0</span>
+                                    <span class="advanced-stat-label">Recurring Charges</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-actions modal-actions-blue">
+                    <button type="button" class="btn-secondary" onclick="resetAdvancedAllCharges()">
+                        <i class="fas fa-undo"></i> Reset All
+                    </button>
+                    <button type="button" class="btn-info" onclick="previewAdvancedAllCharges()">
+                        <i class="fas fa-eye"></i> Preview All
+                    </button>
+                    <button type="button" class="btn-primary" onclick="submitAdvancedCharges()">
+                        <i class="fas fa-plus"></i> <span id="advancedSubmitText">Add Charge</span>
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('advancedAddChargeModal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+    
+    // Add CSS styles for the modal
+    injectAdvancedChargesModalStyles();
+
+    // Set up the functions for this modal instance
+    setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode);
+    
+    // Initialize default values and add first charge
+    setAdvancedDefaultDates();
+    addAdvancedNewCharge();
+}
+
+function injectAdvancedChargesModalStyles() {
+    if (document.getElementById("advanced-charges-modal-styles")) return;
+
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "advanced-charges-modal-styles";
+    styleSheet.textContent = `
+        /* Modal Enhancements */
+        .modal-xl {
+            max-width: 95vw;
+            width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header-blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 24px 32px;
+            position: relative;
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            margin: 4px 0 0 0;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .modal-body-charges {
+            padding: 32px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-actions-blue {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Mode Toggle */
+        .advanced-mode-toggle {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .advanced-mode-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .advanced-mode-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Bulk Actions */
+        .advanced-bulk-actions {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .advanced-bulk-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .advanced-bulk-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .advanced-apply-bulk-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .advanced-apply-bulk-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Field Styling */
+        .advanced-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .advanced-field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .advanced-field-label.required::after {
+            content: '*';
+            color: #ef4444;
+            margin-left: 4px;
+        }
+
+        .advanced-field-input,
+        .advanced-field-select,
+        .advanced-field-textarea {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .advanced-field-input:focus,
+        .advanced-field-select:focus,
+        .advanced-field-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .advanced-field-textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        /* Charges List */
+        .advanced-charges-list {
+            margin-bottom: 24px;
+        }
+
+        .advanced-charge-item {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .advanced-charge-item:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .advanced-charge-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .advanced-charge-number {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .advanced-charge-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .advanced-remove-charge-btn,
+        .advanced-duplicate-charge-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .advanced-remove-charge-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .advanced-duplicate-charge-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .advanced-remove-charge-btn:hover,
+        .advanced-duplicate-charge-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .advanced-charge-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            padding: 20px;
+        }
+
+        /* Add Charge Button */
+        .advanced-add-charge-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .advanced-add-charge-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .advanced-add-charge-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Summary */
+        .advanced-charges-summary {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .advanced-summary-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .advanced-summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .advanced-stat-item {
+            text-align: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .advanced-stat-value {
+            display: block;
+            font-size: 20px;
+            font-weight: 700;
+            color: #3b82f6;
+            margin-bottom: 4px;
+        }
+
+        .advanced-stat-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Recurring Options */
+        .advanced-recurring-options {
+            display: none;
+            grid-column: 1 / -1;
+        }
+
+        .advanced-recurring-options.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-xl {
+                max-width: 95vw;
+                width: 95vw;
+                margin: 20px;
+            }
+
+            .modal-body-charges {
+                padding: 16px;
+            }
+
+            .advanced-charge-fields {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .advanced-bulk-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .advanced-summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    `;
+
+    document.head.appendChild(styleSheet);
+}
+
+function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode) {
+    // Set default dates
+    window.setAdvancedDefaultDates = function() {
+        const today = new Date();
+        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 5);
+        
+        const bulkChargeDate = document.getElementById('advancedBulkChargeDate');
+        const bulkDueDate = document.getElementById('advancedBulkDueDate');
+        
+        if (bulkChargeDate) bulkChargeDate.value = today.toISOString().split('T')[0];
+        if (bulkDueDate) bulkDueDate.value = nextMonth.toISOString().split('T')[0];
+    };
+
+    // Toggle mode
+    window.toggleAdvancedMode = function(mode) {
+        currentMode = mode;
+        const modeButtons = document.querySelectorAll('.advanced-mode-btn');
+        const bulkActions = document.getElementById('advancedBulkActions');
+        const addChargeContainer = document.getElementById('advancedAddChargeContainer');
+        const chargesSummary = document.getElementById('advancedChargesSummary');
+        const submitText = document.getElementById('advancedSubmitText');
+
+        // Update active button
+        modeButtons.forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        if (mode === 'multiple') {
+            bulkActions.style.display = 'block';
+            addChargeContainer.style.display = 'flex';
+            chargesSummary.style.display = 'block';
+            submitText.textContent = 'Add All Charges';
+        } else {
+            bulkActions.style.display = 'none';
+            addChargeContainer.style.display = 'none';
+            chargesSummary.style.display = 'none';
+            submitText.textContent = 'Add Charge';
+        }
+        
+        updateAdvancedSummary();
+    };
+
+    // Add new charge
+    window.addAdvancedNewCharge = function() {
+        chargeCounter++;
+        const chargesList = document.getElementById('advancedChargesList');
+        
+        const chargeItem = document.createElement('div');
+        chargeItem.className = 'advanced-charge-item';
+        chargeItem.id = `advancedCharge-${chargeCounter}`;
+        
+        chargeItem.innerHTML = `
+            <div class="advanced-charge-item-header">
+                <span class="advanced-charge-number">Charge #${chargeCounter}</span>
+                <div class="advanced-charge-actions">
+                    <button type="button" class="advanced-duplicate-charge-btn" onclick="duplicateAdvancedCharge(${chargeCounter})">
+                        <i class="fas fa-copy"></i> Duplicate
+                    </button>
+                    <button type="button" class="advanced-remove-charge-btn" onclick="removeAdvancedCharge(${chargeCounter})">
+                        <i class="fas fa-times"></i> Remove
+                    </button>
+                </div>
+            </div>
+            
+            <div class="advanced-charge-fields">
+                <div class="advanced-field-group">
+                    <label class="advanced-field-label required">Tenant</label>
+                    <select class="advanced-field-select" name="advancedTenant_${chargeCounter}" required onchange="updateAdvancedSummary()">
+                        <option value="">Choose a tenant...</option>
+                        ${tenants.map(tenant => `
+                            <option value="${tenant.id}" data-unit="${tenant.unit}" data-email="${tenant.email}" data-phone="${tenant.phone}">
+                                ${tenant.name}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                
+                <div class="advanced-field-group">
+                    <label class="advanced-field-label required">Charge Type</label>
+                    <select class="advanced-field-select" name="advancedChargeType_${chargeCounter}" required onchange="updateAdvancedSummary()">
+                        <option value="">Select charge type...</option>
+                        <option value="rent">Monthly Rent</option>
+                        <option value="utilities">Utilities</option>
+                        <option value="maintenance">Maintenance Fee</option>
+                        <option value="parking">Parking Fee</option>
+                        <option value="late_fee">Late Payment Fee</option>
+                        <option value="security_deposit">Security Deposit</option>
+                        <option value="cleaning">Cleaning Fee</option>
+                        <option value="internet">Internet Fee</option>
+                        <option value="cable_tv">Cable TV</option>
+                        <option value="association_dues">Association Dues</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="advanced-field-group">
+                    <label class="advanced-field-label required">Amount</label>
+                    <input type="number" class="advanced-field-input" name="advancedAmount_${chargeCounter}" step="0.01" min="0" 
+                           placeholder="0.00" required oninput="updateAdvancedSummary()">
+                </div>
+                
+                <div class="advanced-field-group">
+                    <label class="advanced-field-label required">Due Date</label>
+                    <input type="date" class="advanced-field-input" name="advancedDueDate_${chargeCounter}" required>
+                </div>
+                
+                <div class="advanced-field-group">
+                    <label class="advanced-field-label required">Charge Date</label>
+                    <input type="date" class="advanced-field-input" name="advancedChargeDate_${chargeCounter}" required>
+                </div>
+                
+                <div class="advanced-field-group" style="grid-column: 1 / -1;">
+                    <label class="advanced-field-label">Description</label>
+                    <textarea class="advanced-field-textarea" name="advancedDescription_${chargeCounter}" 
+                              placeholder="Enter charge description (optional)..."></textarea>
+                </div>
+                
+                <div class="advanced-field-group">
+                    <label class="advanced-field-label">
+                        <input type="checkbox" name="advancedIsRecurring_${chargeCounter}" onchange="toggleAdvancedRecurringOptions(${chargeCounter}); updateAdvancedSummary();" style="margin-right: 8px;">
+                        Recurring Charge
+                    </label>
+                </div>
+                
+                <div class="advanced-field-group advanced-recurring-options" id="advancedRecurring-${chargeCounter}">
+                    <label class="advanced-field-label">Frequency</label>
+                    <select class="advanced-field-select" name="advancedRecurringFrequency_${chargeCounter}">
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="semi-annually">Semi-Annually</option>
+                        <option value="annually">Annually</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        
+        chargesList.appendChild(chargeItem);
+        
+        // Set default dates for the new charge
+        const today = new Date();
+        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 5);
+        
+        chargeItem.querySelector(`input[name="advancedChargeDate_${chargeCounter}"]`).value = today.toISOString().split('T')[0];
+        chargeItem.querySelector(`input[name="advancedDueDate_${chargeCounter}"]`).value = nextMonth.toISOString().split('T')[0];
+        
+        updateAdvancedSummary();
+        
+        // Animate the new charge item
+        chargeItem.style.opacity = '0';
+        chargeItem.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            chargeItem.style.transition = 'all 0.3s ease';
+            chargeItem.style.opacity = '1';
+            chargeItem.style.transform = 'translateY(0)';
+        }, 10);
+    };
+
+    // Remove charge
+    window.removeAdvancedCharge = function(id) {
+        if (chargeCounter <= 1) {
+            showAlert('At least one charge is required.', 'error');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to remove this charge?')) {
+            const chargeItem = document.getElementById(`advancedCharge-${id}`);
+            if (chargeItem) {
+                chargeItem.style.transition = 'all 0.3s ease';
+                chargeItem.style.opacity = '0';
+                chargeItem.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    chargeItem.remove();
+                    renumberAdvancedCharges();
+                    updateAdvancedSummary();
+                }, 300);
+            }
         }
     };
-    
-    
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
+
+    // Duplicate charge
+    window.duplicateAdvancedCharge = function(id) {
+        const sourceCharge = document.getElementById(`advancedCharge-${id}`);
+        if (!sourceCharge) return;
+        
+        // Get all field values from source charge
+        const sourceData = {};
+        const sourceFields = sourceCharge.querySelectorAll('input, select, textarea');
+        sourceFields.forEach(field => {
+            if (field.type === 'checkbox') {
+                sourceData[field.name] = field.checked;
+            } else {
+                sourceData[field.name] = field.value;
+            }
+        });
+        
+        // Create new charge
+        addAdvancedNewCharge();
+        
+        // Populate new charge with source data (excluding ID-specific fields)
+        const newCharge = document.getElementById(`advancedCharge-${chargeCounter}`);
+        const newFields = newCharge.querySelectorAll('input, select, textarea');
+        
+        newFields.forEach(field => {
+            const baseName = field.name.replace(`_${chargeCounter}`, '');
+            const sourceFieldName = Object.keys(sourceData).find(name => 
+                name.includes(baseName) && name !== field.name
+            );
             
+            if (sourceFieldName && sourceData[sourceFieldName] !== undefined) {
+                if (field.type === 'checkbox') {
+                    field.checked = sourceData[sourceFieldName];
+                } else {
+                    field.value = sourceData[sourceFieldName];
+                }
+            }
+        });
+        
+        updateAdvancedSummary();
+        showAlert('Charge duplicated successfully!', 'success');
+    };
+
+    // Renumber charges
+    function renumberAdvancedCharges() {
+        const chargeItems = document.querySelectorAll('.advanced-charge-item');
+        chargeItems.forEach((item, index) => {
+            const chargeNumber = item.querySelector('.advanced-charge-number');
+            if (chargeNumber) {
+                chargeNumber.textContent = `Charge #${index + 1}`;
+            }
+        });
+        chargeCounter = chargeItems.length;
+    }
+
+    // Toggle recurring options
+    window.toggleAdvancedRecurringOptions = function(id) {
+        const checkbox = document.querySelector(`input[name="advancedIsRecurring_${id}"]`);
+        const recurringOptions = document.getElementById(`advancedRecurring-${id}`);
+        
+        if (checkbox && recurringOptions) {
+            if (checkbox.checked) {
+                recurringOptions.classList.add('show');
+            } else {
+                recurringOptions.classList.remove('show');
+            }
+        }
+    };
+
+    // Apply bulk settings
+    window.applyAdvancedBulkSettings = function() {
+        const bulkDueDate = document.getElementById('advancedBulkDueDate').value;
+        const bulkChargeDate = document.getElementById('advancedBulkChargeDate').value;
+        const bulkChargeType = document.getElementById('advancedBulkChargeType').value;
+        const bulkAmount = document.getElementById('advancedBulkAmount').value;
+        
+        let appliedCount = 0;
+        
+        document.querySelectorAll('.advanced-charge-item').forEach(item => {
+            if (bulkDueDate) {
+                const dueDateField = item.querySelector('input[name*="DueDate"]');
+                if (dueDateField) {
+                    dueDateField.value = bulkDueDate;
+                    appliedCount++;
+                }
+            }
+            
+            if (bulkChargeDate) {
+                const chargeDateField = item.querySelector('input[name*="ChargeDate"]');
+                if (chargeDateField) {
+                    chargeDateField.value = bulkChargeDate;
+                    appliedCount++;
+                }
+            }
+            
+            if (bulkChargeType) {
+                const chargeTypeField = item.querySelector('select[name*="ChargeType"]');
+                if (chargeTypeField) {
+                    chargeTypeField.value = bulkChargeType;
+                    appliedCount++;
+                }
+            }
+            
+            if (bulkAmount) {
+                const amountField = item.querySelector('input[name*="Amount"]');
+                if (amountField) {
+                    amountField.value = bulkAmount;
+                    appliedCount++;
+                }
+            }
+        });
+        
+        updateAdvancedSummary();
+        showAlert(`Bulk settings applied to ${Math.ceil(appliedCount / 4)} charges!`, 'success');
+    };
+
+    // Update summary
+    window.updateAdvancedSummary = function() {
+        const chargeItems = document.querySelectorAll('.advanced-charge-item');
+        let totalAmount = 0;
+        let uniqueTenants = new Set();
+        let recurringCount = 0;
+        
+        chargeItems.forEach(item => {
+            const amountField = item.querySelector('input[name*="Amount"]');
+            const tenantField = item.querySelector('select[name*="Tenant"]');
+            const recurringField = item.querySelector('input[name*="IsRecurring"]');
+            
+            if (amountField && amountField.value) {
+                totalAmount += parseFloat(amountField.value) || 0;
+            }
+            
+            if (tenantField && tenantField.value) {
+                uniqueTenants.add(tenantField.value);
+            }
+            
+            if (recurringField && recurringField.checked) {
+                recurringCount++;
+            }
+        });
+        
+        document.getElementById('advancedTotalCharges').textContent = chargeItems.length;
+        document.getElementById('advancedTotalAmount').textContent = `₱${totalAmount.toLocaleString('en-PH', {minimumFractionDigits: 2})}`;
+        document.getElementById('advancedUniqueTenants').textContent = uniqueTenants.size;
+        document.getElementById('advancedRecurringCharges').textContent = recurringCount;
+    };
+
+    // Reset all charges
+    window.resetAdvancedAllCharges = function() {
+        if (confirm('Are you sure you want to reset all charges? This will remove all entered data.')) {
+            const chargesList = document.getElementById('advancedChargesList');
+            chargesList.innerHTML = '';
+            chargeCounter = 0;
+            addAdvancedNewCharge();
+            updateAdvancedSummary();
+            showAlert('All charges have been reset.', 'success');
+        }
+    };
+
+    // Preview all charges
+    window.previewAdvancedAllCharges = function() {
+        const chargeItems = document.querySelectorAll('.advanced-charge-item');
+        let isValid = true;
+        let previewData = [];
+        
+        chargeItems.forEach((item, index) => {
+            const tenantField = item.querySelector('select[name*="Tenant"]');
+            const typeField = item.querySelector('select[name*="ChargeType"]');
+            const amountField = item.querySelector('input[name*="Amount"]');
+            const dueDateField = item.querySelector('input[name*="DueDate"]');
+            
+            if (!tenantField.value || !typeField.value || !amountField.value || !dueDateField.value) {
+                isValid = false;
+                item.style.border = '2px solid #ef4444';
+                setTimeout(() => {
+                    item.style.border = '2px solid #e5e7eb';
+                }, 3000);
+            } else {
+                const tenantName = tenantField.options[tenantField.selectedIndex].text;
+                previewData.push({
+                    tenant: tenantName,
+                    type: typeField.value,
+                    amount: parseFloat(amountField.value),
+                    dueDate: dueDateField.value
+                });
+            }
+        });
+        
+        if (!isValid) {
+            showAlert('Please fill in all required fields for all charges.', 'error');
+            return;
+        }
+        
+        // Show preview in a simple alert for now - could be enhanced with a proper modal
+        let previewText = 'Charges Preview:\\n\\n';
+        previewData.forEach((charge, index) => {
+            previewText += `${index + 1}. ${charge.tenant} - ${charge.type}: ₱${charge.amount.toLocaleString('en-PH', {minimumFractionDigits: 2})} (Due: ${charge.dueDate})\\n`;
+        });
+        
+        alert(previewText);
+    };
+
+    // Submit charges
+    window.submitAdvancedCharges = function() {
+        const chargeItems = document.querySelectorAll('.advanced-charge-item');
+        let isValid = true;
+        let chargeData = [];
+        
+        chargeItems.forEach((item, index) => {
+            const tenantField = item.querySelector('select[name*="Tenant"]');
+            const typeField = item.querySelector('select[name*="ChargeType"]');
+            const amountField = item.querySelector('input[name*="Amount"]');
+            const dueDateField = item.querySelector('input[name*="DueDate"]');
+            const chargeDateField = item.querySelector('input[name*="ChargeDate"]');
+            const descriptionField = item.querySelector('textarea[name*="Description"]');
+            const recurringField = item.querySelector('input[name*="IsRecurring"]');
+            const frequencyField = item.querySelector('select[name*="RecurringFrequency"]');
+            
+            if (!tenantField.value || !typeField.value || !amountField.value || !dueDateField.value || !chargeDateField.value) {
+                isValid = false;
+                item.style.border = '2px solid #ef4444';
+                setTimeout(() => {
+                    item.style.border = '2px solid #e5e7eb';
+                }, 3000);
+            } else {
+                const tenant = tenants.find(t => t.id == tenantField.value);
+                chargeData.push({
+                    tenant: tenant ? tenant.name : '',
+                    unit: tenant ? tenant.unit : '',
+                    type: typeField.value,
+                    description: descriptionField.value || `${typeField.options[typeField.selectedIndex].text} charge`,
+                    amount: parseFloat(amountField.value),
+                    dueDate: dueDateField.value,
+                    chargeDate: chargeDateField.value,
+                    isRecurring: recurringField.checked,
+                    frequency: recurringField.checked ? frequencyField.value : null,
+                    status: "pending"
+                });
+            }
+        });
+        
+        if (!isValid) {
+            showAlert('Please fill in all required fields for all charges.', 'error');
+            return;
+        }
+        
+        // Process the charge data - add to existing leasesData structure
+        chargeData.forEach(chargeInfo => {
+            let lease = leasesData.find(
+                (l) =>
+                    l.tenant.toLowerCase() === chargeInfo.tenant.toLowerCase() &&
+                    l.unit.toLowerCase() === chargeInfo.unit.toLowerCase()
+            );
+
+            if (!lease) {
+                lease = {
+                    id: `lease-${Date.now()}-${Math.random()}`,
+                    tenant: chargeInfo.tenant,
+                    unit: chargeInfo.unit,
+                    period: "New Lease",
+                    email: "contact@property.com",
+                    phone: "Not provided",
+                    paymentHistory: [],
+                    charges: [],
+                };
+                leasesData.push(lease);
+            }
+
+            const newCharge = {
+                id: Date.now() + Math.random(),
+                type: chargeInfo.type,
+                description: chargeInfo.description,
+                amount: chargeInfo.amount,
+                dueDate: chargeInfo.dueDate,
+                status: getChargeStatusByDate(chargeInfo.dueDate),
+                createdDate: chargeInfo.chargeDate,
+                notes: chargeInfo.isRecurring ? 
+                    `Recurring ${chargeInfo.frequency} charge created on ${formatDate(chargeInfo.chargeDate)}` :
+                    `Charge created on ${formatDate(chargeInfo.chargeDate)}`,
+                isRecurring: chargeInfo.isRecurring
+            };
+
+            lease.charges.push(newCharge);
+        });
+
+        // Update the UI
+        syncDataArrays();
+        filteredCharges = [...charges];
+        updateStatistics();
+        renderChargesTable();
+        closeModal("advancedAddChargeModal");
+
+        const message = chargeData.length === 1 ? 
+            `Charge of ${formatCurrency(chargeData[0].amount)} added successfully!` :
+            `${chargeData.length} charges totaling ${formatCurrency(chargeData.reduce((sum, c) => sum + c.amount, 0))} added successfully!`;
+        
+        showAlert(message, "success");
+    };
+}
+
+function initializeEventListeners() {
+    window.onclick = function (event) {
+        if (event.target.classList.contains("modal")) {
+            event.target.style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+    };
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
             const openModals = document.querySelectorAll('.modal[style*="flex"]');
-            openModals.forEach(modal => {
-                modal.style.display = 'none';
+            openModals.forEach((modal) => {
+                modal.style.display = "none";
             });
-            document.body.style.overflow = 'auto';
+            document.body.style.overflow = "auto";
         }
     });
-    
-    
-    document.addEventListener('change', function(event) {
-        if (event.target.id === 'paymentMethod') {
-            const referenceField = document.getElementById('paymentReference');
+
+    document.addEventListener("change", function (event) {
+        if (event.target.id === "paymentMethod") {
+            const referenceField = document.getElementById("paymentReference");
             if (referenceField && !referenceField.value) {
                 referenceField.placeholder = `Auto-generate ${event.target.value.toUpperCase()} reference`;
             }
@@ -1956,21 +2889,17 @@ function initializeEventListeners() {
     });
 }
 
-
-
 function viewPaymentDetails(paymentId) {
     const payment = findPaymentById(paymentId);
     const lease = findLeaseByPaymentId(paymentId);
-    
+
     if (!payment || !lease) {
-        showAlert('Payment not found', 'error');
+        showAlert("Payment not found", "error");
         return;
     }
-    
-    
+
     const relatedCharge = findChargeById(payment.chargeId);
-    
-    
+
     const modalHTML = `
         <div id="viewPaymentModal" class="modal" style="display: flex;">
             <div class="modal-content">
@@ -1998,7 +2927,9 @@ function viewPaymentDetails(paymentId) {
                         </div>
                         <div class="detail-item">
                             <label>Amount:</label>
-                            <span class="amount-highlight">${formatCurrency(payment.amount)}</span>
+                            <span class="amount-highlight">${formatCurrency(
+        payment.amount
+    )}</span>
                         </div>
                         <div class="detail-item">
                             <label>Payment Date:</label>
@@ -2006,7 +2937,9 @@ function viewPaymentDetails(paymentId) {
                         </div>
                         <div class="detail-item">
                             <label>Method:</label>
-                            <span>${capitalizeFirst(payment.paymentMethod)}</span>
+                            <span>${capitalizeFirst(
+        payment.paymentMethod
+    )}</span>
                         </div>
                         <div class="detail-item">
                             <label>Reference:</label>
@@ -2014,7 +2947,7 @@ function viewPaymentDetails(paymentId) {
                         </div>
                         <div class="detail-item">
                             <label>Processed By:</label>
-                            <span>${payment.processedBy || 'System'}</span>
+                            <span>${payment.processedBy || "System"}</span>
                         </div>
                         <div class="detail-item full-width">
                             <label>Description:</label>
@@ -2022,27 +2955,34 @@ function viewPaymentDetails(paymentId) {
                         </div>
                         <div class="detail-item full-width">
                             <label>Notes:</label>
-                            <span>${payment.notes || 'No additional notes'}</span>
+                            <span>${payment.notes || "No additional notes"
+        }</span>
                         </div>
                     </div>
                     
-                    ${relatedCharge ? `
+                    ${relatedCharge
+            ? `
                         <div class="charge-info-section">
                             <h4>Related Charge Information</h4>
                             <div class="charge-info-item">
                                 <label>Original Due Date:</label>
-                                <span>${formatDate(relatedCharge.dueDate)}</span>
+                                <span>${formatDate(
+                relatedCharge.dueDate
+            )}</span>
                             </div>
                             <div class="charge-info-item">
                                 <label>Charge Status:</label>
                                 <span>Paid</span>
                             </div>
                         </div>
-                    ` : ''}
+                    `
+            : ""
+        }
                     
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('viewPaymentModal')">Close</button>
-                        <button type="button" class="btn-success" onclick="generateReceipt('${payment.id}')">
+                        <button type="button" class="btn-success" onclick="generateReceipt('${payment.id
+        }')">
                             <i class="fas fa-receipt"></i> View Receipt
                         </button>
                     </div>
@@ -2050,23 +2990,20 @@ function viewPaymentDetails(paymentId) {
             </div>
         </div>
     `;
-    
-    
-    const existingModal = document.getElementById('viewPaymentModal');
+
+    const existingModal = document.getElementById("viewPaymentModal");
     if (existingModal) {
         existingModal.remove();
     }
-    
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
 }
 
-
 function injectPaymentModalStyles() {
-    if (document.getElementById('payment-modal-styles')) return;
-    
-    const styleSheet = document.createElement('style');
-    styleSheet.id = 'payment-modal-styles';
+    if (document.getElementById("payment-modal-styles")) return;
+
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "payment-modal-styles";
     styleSheet.textContent = `
         .modal {
             display: none;
@@ -2336,48 +3273,40 @@ function injectPaymentModalStyles() {
             to { opacity: 0; transform: translateX(100px); }
         }
     `;
-    
+
     document.head.appendChild(styleSheet);
 }
 
-
 function switchTab(tabName) {
-    
-    const tabButtons = document.querySelectorAll('.tab-button');
-    tabButtons.forEach(button => {
-        button.classList.remove('active');
+    const tabButtons = document.querySelectorAll(".tab-button");
+    tabButtons.forEach((button) => {
+        button.classList.remove("active");
     });
-    
-    
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabContents.forEach(content => {
-        content.classList.remove('active');
+
+    const tabContents = document.querySelectorAll(".tab-content");
+    tabContents.forEach((content) => {
+        content.classList.remove("active");
     });
-    
-    
+
     const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
     if (activeButton) {
-        activeButton.classList.add('active');
+        activeButton.classList.add("active");
     }
-    
-    
+
     const activeContent = document.getElementById(`${tabName}-tab`);
     if (activeContent) {
-        activeContent.classList.add('active');
+        activeContent.classList.add("active");
     }
-    
-    
-    localStorage.setItem('activePaymentTab', tabName);
-    
+
+    localStorage.setItem("activePaymentTab", tabName);
+
     console.log(`Switched to ${tabName} tab`);
 }
 
-
 function initializeActiveTab() {
-    const savedTab = localStorage.getItem('activePaymentTab') || 'charges';
+    const savedTab = localStorage.getItem("activePaymentTab") || "charges";
     switchTab(savedTab);
 }
-
 
 window.showSection = showSection;
 window.switchTab = switchTab;
@@ -2401,37 +3330,25 @@ window.confirmDeleteCharge = confirmDeleteCharge;
 window.viewPaymentDetails = viewPaymentDetails;
 window.generateReceipt = generateReceipt;
 
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("Initializing Payment Management System...");
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing Payment Management System...');
-    
-    
     injectEnhancedButtonStyles();
     injectPaymentModalStyles();
-    
-    
+
     createModalsAndDialogs();
-    
-    
+
     syncDataArrays();
-    
-    
+
     filteredCharges = [...charges];
     filteredPayments = [...payments];
-    
-    
+
     updateStatistics();
-    
-    
+
     renderChargesTable();
     renderPaymentsTable();
-    
-    
+
     initializeEventListeners();
-    
-    
+
     initializeActiveTab();
-    
-    console.log('Payment Management System initialized successfully');
-    console.log('Charges:', charges.length, 'Payments:', payments.length);
 });

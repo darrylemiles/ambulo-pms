@@ -680,11 +680,11 @@ body:has(.sidebar.collapsed) .main-content,
 }
 
 .data-table .th-tenant {
-  min-width: 70px;
+  min-width: 60px;
 }
 
 .data-table .th-unit {
-  width: 270px;
+  width: 280px;
 }
 
 .data-table .th-type {
@@ -723,18 +723,18 @@ body:has(.sidebar.collapsed) .main-content,
   background: #f8fafc;
   color: #374151;
   border-bottom: 2px solid #e5e7eb;
-  font-weight: 600;
+  font-weight: 700;
+  padding: 15px 20px 15px 12px;
 }
 
 .payments-table th {
   background: #f8fafc;
   color: #374151;
   border-bottom: 2px solid #e5e7eb;
-  font-weight: 600;
 }
 
 .data-table td {
-  padding: 5px 10px;
+  padding: 5px 13px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
   vertical-align: middle;
   font-size: 13px;
@@ -1072,6 +1072,11 @@ body:has(.sidebar.collapsed) .main-content,
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(147, 51, 234, 0.25);
 }
+
+/* Charge status specific classes (used by paymentAdmin.js) */
+/* Charge-specific `.status-indicator.charge-*` classes removed.
+   Status badge colors are now driven by `CHARGE_STATUS_MAPPINGS` and
+   applied inline by JavaScript to avoid CSS precedence issues. */
 
 .payment-method {
   background: #f3f4f6;
