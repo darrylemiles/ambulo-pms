@@ -1,6 +1,27 @@
 import fetchCompanyDetails from "../api/loadCompanyInfo.js";
+import { getJwtToken } from "../utils/getCookie.js";
+
+const tenantsCache = { data: null, fetchedAt: 0, ttl: 1000 * 60 * 5 };
+const leasesCache = {}; 
+const propertiesCache = {}; 
+
+const leasesData = [];
+
+let filteredCharges = [];
+let filteredPayments = [];
+let filteredData = [...leasesData];
+let editingChargeId = null;
+let currentPaymentCharge = null;
+let currentViewingCharge = null;
+let chargeToDelete = null;
+let currentPaymentFilter = "all";
+let currentEditingCharge = null;
+
+let charges = [];
+let payments = [];
 
 const API_BASE_URL = "/api/v1";
+
 
 async function setDynamicInfo() {
     const company = await fetchCompanyDetails();
@@ -19,6 +40,17 @@ async function setDynamicInfo() {
 document.addEventListener("DOMContentLoaded", () => {
     setDynamicInfo();
 });
+
+
+const CHARGE_TYPES_LIST = (window.AppConstants && window.AppConstants.CHARGE_TYPES)
+    || (typeof CHARGE_TYPES !== 'undefined' && CHARGE_TYPES)
+    || [
+        { value: 'Rent', label: 'Rent' },
+        { value: 'Utility', label: 'Utility' },
+        { value: 'Maintenance', label: 'Maintenance' },
+        { value: 'Late Fee', label: 'Late Fee' },
+        { value: 'Others', label: 'Others' }
+    ];
 
 async function fetchCharges() {
     try {
@@ -109,20 +141,6 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchCharges();
 });
 
-const leasesData = [];
-
-let filteredCharges = [];
-let filteredPayments = [];
-let filteredData = [...leasesData];
-let editingChargeId = null;
-let currentPaymentCharge = null;
-let currentViewingCharge = null;
-let chargeToDelete = null;
-let currentPaymentFilter = "all";
-let currentEditingCharge = null;
-
-let charges = [];
-let payments = [];
 
 function syncDataArrays() {
     charges = [];
@@ -372,6 +390,31 @@ function injectEnhancedButtonStyles() {
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
             transform: translateY(-1px);
         }
+
+        /* Button loading spinner */
+        .btn-primary.loading,
+        .btn-secondary.loading,
+        .btn-success.loading,
+        .btn-danger.loading {
+            opacity: 0.9;
+            cursor: wait;
+        }
+        .btn-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        .btn-primary.loading .btn-spinner,
+        .btn-secondary.loading .btn-spinner,
+        .btn-success.loading .btn-spinner,
+        .btn-danger.loading .btn-spinner {
+            margin-right: 8px;
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     `;
 
     document.head.appendChild(styleSheet);
@@ -535,10 +578,184 @@ function findLeaseByPaymentId(paymentId) {
 }
 
 function addNewCharge() {
-    // Create and show the new advanced add charges modal
-    createAdvancedAddChargesModal();
-    openModal("advancedAddChargeModal");
+    
+    fetchTenants()
+        .then((tenants) => {
+            createAdvancedAddChargesModal(tenants);
+            openModal("advancedAddChargeModal");
+        })
+        .catch((err) => {
+            console.error('Failed to fetch tenants, opening modal with sample data', err);
+            createAdvancedAddChargesModal();
+            openModal("advancedAddChargeModal");
+        });
 }
+
+
+async function fetchTenants() {
+    const now = Date.now();
+    if (tenantsCache.data && now - tenantsCache.fetchedAt < tenantsCache.ttl) {
+        return tenantsCache.data;
+    }
+    try {
+        const res = await fetch(`${API_BASE_URL}/users?role=TENANT&limit=1000`);
+        if (!res.ok) {
+            console.warn('fetchTenants: non-ok response', res.status);
+            return tenantsCache.data || [];
+        }
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : (json.users || json.data || []);
+        const normalized = list.map(u => ({
+            user_id: u.user_id || u.id || u.userId || '',
+            first_name: u.first_name || u.firstName || u.first || '',
+            last_name: u.last_name || u.lastName || u.last || '',
+            suffix: u.suffix || '',
+            unit: u.unit || u.unit_number || u.unitNumber || '',
+            email: u.email || '',
+            phone: u.phone_number || u.phone || ''
+        }));
+        tenantsCache.data = normalized;
+        tenantsCache.fetchedAt = Date.now();
+        return normalized;
+    } catch (error) {
+        console.error('Error fetching tenants:', error);
+        return tenantsCache.data || [];
+    }
+}
+
+
+async function fetchLeasesForUser(userId) {
+    if (!userId) return [];
+    const now = Date.now();
+    if (leasesCache[userId] && now - leasesCache[userId].fetchedAt < 1000 * 60 * 5) {
+        return leasesCache[userId].data;
+    }
+    try {
+        const res = await fetch(`${API_BASE_URL}/leases?user_id=${encodeURIComponent(userId)}&limit=1000`);
+        if (!res.ok) return [];
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : (json.leases || json.data || []);
+        leasesCache[userId] = { data: list, fetchedAt: Date.now() };
+        return list;
+    } catch (err) {
+        console.error('Error fetching leases for user', userId, err);
+        return [];
+    }
+}
+
+
+async function fetchPropertyName(propertyId) {
+    if (!propertyId) return null;
+    const cached = propertiesCache[propertyId];
+    const now = Date.now();
+    if (cached && now - cached.fetchedAt < 1000 * 60 * 10) return cached.name;
+    try {
+        const res = await fetch(`${API_BASE_URL}/properties/${encodeURIComponent(propertyId)}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        
+        const name = (json && (json.property_name || (json.property && json.property.property_name))) || null;
+        propertiesCache[propertyId] = { name, fetchedAt: Date.now() };
+        return name;
+    } catch (e) {
+        console.warn('Failed to fetch property name for', propertyId, e);
+        return null;
+    }
+}
+
+
+window.populateLeaseOptionsForCharge = async function(id) {
+    try {
+        const tenantSelect = document.querySelector(`select[name="advancedTenant_${id}"]`);
+        const leaseSelect = document.getElementById(`advancedLease_${id}`);
+        if (!tenantSelect || !leaseSelect) return;
+
+        const userId = tenantSelect.value;
+        
+        leaseSelect.disabled = true;
+        leaseSelect.innerHTML = '<option value="">Loading leases...</option>';
+
+        if (!userId) {
+            leaseSelect.innerHTML = '<option value="">Select lease...</option>';
+            leaseSelect.disabled = false;
+            return;
+        }
+
+    
+    const userKey = String(userId);
+    let leases = await fetchLeasesForUser(userId);
+        
+        const enriched = await Promise.all((leases || []).map(async (l) => {
+            if (!l.property_name && l.property_id) {
+                const pName = await fetchPropertyName(l.property_id);
+                if (pName) l.property_name = pName;
+            }
+            return l;
+        }));
+        leases = enriched;
+        
+        const directMatches = (leases || []).filter(l => {
+            if (!l) return false;
+            
+            if (l.user_id && String(l.user_id) === userKey) return true;
+            if (l.userId && String(l.userId) === userKey) return true;
+            return false;
+        });
+
+        if (directMatches.length > 0) {
+            leases = directMatches;
+        } else {
+            
+            const selectedOption = tenantSelect.options[tenantSelect.selectedIndex];
+            const tenantName = selectedOption ? selectedOption.text : '';
+            const tenantUnit = selectedOption ? selectedOption.getAttribute('data-unit') : '';
+            const fallbackMatches = (leases || []).filter(l => {
+                if (!l) return false;
+                if (tenantName && l.tenant && String(l.tenant).toLowerCase() === String(tenantName).toLowerCase()) return true;
+                if (tenantUnit && (l.unit || l.unit_number) && String(l.unit || l.unit_number) === String(tenantUnit)) return true;
+                return false;
+            });
+            if (fallbackMatches.length > 0) {
+                leases = fallbackMatches;
+            } else {
+                leases = [];
+            }
+        }
+        leaseSelect.innerHTML = '';
+        if (!leases || leases.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'No leases found for tenant';
+            leaseSelect.appendChild(opt);
+            leaseSelect.disabled = false;
+            return;
+        }
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select lease...';
+        leaseSelect.appendChild(placeholder);
+
+        leases.forEach(lease => {
+            const opt = document.createElement('option');
+            const leaseId = lease.lease_id || lease.id || '';
+            const propertyName = lease.property_name || lease.property || '';
+            const unit = lease.unit || lease.unit_number || '';
+            
+            const labelParts = [];
+            if (unit) labelParts.push(unit);
+            if (propertyName) labelParts.push(propertyName);
+            opt.value = leaseId;
+            opt.textContent = labelParts.length ? labelParts.join(' — ') : (leaseId || 'Lease');
+            opt.dataset.propertyId = lease.property_id || '';
+            leaseSelect.appendChild(opt);
+        });
+
+        leaseSelect.disabled = false;
+    } catch (err) {
+        console.error('populateLeaseOptionsForCharge error', err);
+    }
+};
 
 function handleAddChargeSubmission(event) {
     event.preventDefault();
@@ -1033,24 +1250,18 @@ function renderChargesTable() {
             const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
             const isFullyPaid = paidAmount >= totalAmount;
 
-            const isRecurring =
-                charge.type === "rent" ||
-                charge.description.toLowerCase().includes("monthly");
+            
+            const isRecurring = !!charge.isRecurring || (typeof charge.description === 'string' && charge.description.toLowerCase().includes("monthly"));
 
             let chargeStatus = getChargeStatus(charge);
             if (isFullyPaid) chargeStatus = "paid";
             else if (isPartiallyPaid) chargeStatus = "partial";
 
+            const typeClass = (charge.type || '').toString().trim().toLowerCase().replace(/\s+/g, '-');
+            const typeLabel = capitalizeFirst(charge.type || '');
+
             return `
             <tr class="charge-row ${chargeStatus}" style="position: relative;">
-                ${isRecurring
-                    ? `
-                    <div class="recurring-indicator">
-                        <div class="recurring-tooltip">Recurring Payment</div>
-                    </div>
-                `
-                    : ""
-                }
                 <td class="td-number">${String(index + 1).padStart(2, "0")}</td>
                 <td class="td-tenant">
                     <div class="tenant-info">
@@ -1063,16 +1274,11 @@ function renderChargesTable() {
                     </div>
                 </td>
                 <td class="td-type">
-                    <span class="badge ${charge.type}">${capitalizeFirst(
-                    charge.type
-                )}</span>
+                    <span class="badge ${typeClass}" aria-label="${typeLabel}">${typeLabel}</span>
                 </td>
                 <td class="charge-description">
                     ${charge.description}
-                    ${isRecurring
-                    ? '<i class="fas fa-refresh" style="margin-left: 8px; color: #f59e0b; font-size: 10px;" title="Recurring"></i>'
-                    : ""
-                }
+                    ${isRecurring ? '<span class="recurring-pill"><i class="fas fa-rotate"></i> Recurring</span>' : ''}
                 </td>
                 <td class="td-total">${formatCurrency(totalAmount)}</td>
                 <td class="td-paid">
@@ -1148,9 +1354,7 @@ function renderChargesTable() {
                     totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
                 const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
                 const isFullyPaid = paidAmount >= totalAmount;
-                const isRecurring =
-                    charge.type === "rent" ||
-                    charge.description.toLowerCase().includes("monthly");
+                const isRecurring = !!charge.isRecurring || (typeof charge.description === 'string' && charge.description.toLowerCase().includes("monthly"));
 
                 let chargeStatus = getChargeStatus(charge);
                 if (isFullyPaid) chargeStatus = "paid";
@@ -1166,10 +1370,7 @@ function renderChargesTable() {
                     <div class="card-header">
                         <div class="card-title">
                             ${charge.tenant} - ${charge.unit}
-                            ${isRecurring
-                        ? '<i class="fas fa-refresh" style="margin-left: 6px; color: #f59e0b; font-size: 10px;"></i>'
-                        : ""
-                    }
+                            ${isRecurring ? '<span class="recurring-pill"><i class="fas fa-rotate"></i> Recurring</span>' : ''}
                         </div>
                         <div class="card-number">${String(index + 1).padStart(
                         2,
@@ -1185,8 +1386,7 @@ function renderChargesTable() {
                         <div class="card-detail-row">
                             <span class="card-detail-label">Type</span>
                             <span class="card-detail-value">
-                                <span class="badge ${charge.type
-                    }">${capitalizeFirst(charge.type)}</span>
+                    <span class="badge ${(charge.type||'').toString().toLowerCase().replace(/\s+/g,'-')}">${capitalizeFirst(charge.type||'')}</span>
                             </span>
                         </div>
                         <div class="card-detail-row">
@@ -1867,29 +2067,20 @@ function createModalsAndDialogs() {
     document.body.insertAdjacentHTML("beforeend", modalsHTML);
 }
 
-// Advanced Add Charges Modal - adapted from add-charges functionality
-function createAdvancedAddChargesModal() {
-    // Remove existing modal if present
+
+function createAdvancedAddChargesModal(tenantsParam) {
+    
     const existingModal = document.getElementById("advancedAddChargeModal");
     if (existingModal) {
         existingModal.remove();
     }
 
-    // Modal state variables
+    
     let chargeCounter = 0;
     let currentMode = 'single';
     
-    // Sample tenant data - in real implementation, this should come from API
-    const tenants = [
-        {id: 1, name: 'Maria Santos', unit: 'Unit 201-A', email: 'maria.santos@email.com', phone: '+63 917 123 4567'},
-        {id: 2, name: 'Juan Dela Cruz', unit: 'Unit 305-B', email: 'juan.delacruz@email.com', phone: '+63 918 234 5678'},
-        {id: 3, name: 'Ana Rodriguez', unit: 'Unit 102-C', email: 'ana.rodriguez@email.com', phone: '+63 919 345 6789'},
-        {id: 4, name: 'Carlos Mendoza', unit: 'Unit 404-D', email: 'carlos.mendoza@email.com', phone: '+63 920 456 7890'},
-        {id: 5, name: 'Lisa Garcia', unit: 'Unit 501-E', email: 'lisa.garcia@email.com', phone: '+63 921 567 8901'},
-        {id: 6, name: 'Mike Johnson', unit: 'Unit 603-F', email: 'mike.johnson@email.com', phone: '+63 922 678 9012'},
-        {id: 7, name: 'Sarah Lee', unit: 'Unit 702-G', email: 'sarah.lee@email.com', phone: '+63 923 789 0123'},
-        {id: 8, name: 'David Brown', unit: 'Unit 805-H', email: 'david.brown@email.com', phone: '+63 924 890 1234'}
-    ];
+    const tenants = (Array.isArray(tenantsParam) && tenantsParam.length) ? tenantsParam : [];
+    
 
     const modalHTML = `
         <div id="advancedAddChargeModal" class="modal" style="display: flex;">
@@ -1929,17 +2120,7 @@ function createAdvancedAddChargesModal() {
                                     <label class="advanced-field-label">Bulk Charge Type</label>
                                     <select class="advanced-field-select" id="advancedBulkChargeType">
                                         <option value="">Select charge type...</option>
-                                        <option value="rent">Monthly Rent</option>
-                                        <option value="utilities">Utilities</option>
-                                        <option value="maintenance">Maintenance Fee</option>
-                                        <option value="parking">Parking Fee</option>
-                                        <option value="late_fee">Late Payment Fee</option>
-                                        <option value="security_deposit">Security Deposit</option>
-                                        <option value="cleaning">Cleaning Fee</option>
-                                        <option value="internet">Internet Fee</option>
-                                        <option value="cable_tv">Cable TV</option>
-                                        <option value="association_dues">Association Dues</option>
-                                        <option value="other">Other</option>
+                                        ${CHARGE_TYPES_LIST.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
                                     </select>
                                 </div>
                                 <div class="advanced-field-group">
@@ -2008,13 +2189,13 @@ function createAdvancedAddChargesModal() {
 
     document.body.insertAdjacentHTML("beforeend", modalHTML);
     
-    // Add CSS styles for the modal
+    
     injectAdvancedChargesModalStyles();
 
-    // Set up the functions for this modal instance
+    
     setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode);
     
-    // Initialize default values and add first charge
+    
     setAdvancedDefaultDates();
     addAdvancedNewCharge();
 }
@@ -2383,7 +2564,7 @@ function injectAdvancedChargesModalStyles() {
 }
 
 function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode) {
-    // Set default dates
+    
     window.setAdvancedDefaultDates = function() {
         const today = new Date();
         const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 5);
@@ -2395,7 +2576,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         if (bulkDueDate) bulkDueDate.value = nextMonth.toISOString().split('T')[0];
     };
 
-    // Toggle mode
+    
     window.toggleAdvancedMode = function(mode) {
         currentMode = mode;
         const modeButtons = document.querySelectorAll('.advanced-mode-btn');
@@ -2404,7 +2585,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         const chargesSummary = document.getElementById('advancedChargesSummary');
         const submitText = document.getElementById('advancedSubmitText');
 
-        // Update active button
+        
         modeButtons.forEach(btn => {
             btn.classList.remove('active');
         });
@@ -2425,7 +2606,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         updateAdvancedSummary();
     };
 
-    // Add new charge
+    
     window.addAdvancedNewCharge = function() {
         chargeCounter++;
         const chargesList = document.getElementById('advancedChargesList');
@@ -2450,13 +2631,20 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
             <div class="advanced-charge-fields">
                 <div class="advanced-field-group">
                     <label class="advanced-field-label required">Tenant</label>
-                    <select class="advanced-field-select" name="advancedTenant_${chargeCounter}" required onchange="updateAdvancedSummary()">
+                    <select class="advanced-field-select" name="advancedTenant_${chargeCounter}" required onchange="populateLeaseOptionsForCharge(${chargeCounter}); updateAdvancedSummary()">
                         <option value="">Choose a tenant...</option>
                         ${tenants.map(tenant => `
-                            <option value="${tenant.id}" data-unit="${tenant.unit}" data-email="${tenant.email}" data-phone="${tenant.phone}">
-                                ${tenant.name}
+                            <option value="${tenant.user_id || tenant.id || ''}" data-unit="${tenant.unit || ''}" data-email="${tenant.email || ''}" data-phone="${tenant.phone || ''}">
+                                ${[tenant.first_name || tenant.name || '', tenant.last_name || '', tenant.suffix || ''].filter(Boolean).join(' ').trim()}
                             </option>
                         `).join('')}
+                    </select>
+                </div>
+
+                <div class="advanced-field-group">
+                    <label class="advanced-field-label required">Lease</label>
+                    <select class="advanced-field-select" id="advancedLease_${chargeCounter}" name="advancedLease_${chargeCounter}" required>
+                        <option value="">Select lease...</option>
                     </select>
                 </div>
                 
@@ -2464,17 +2652,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
                     <label class="advanced-field-label required">Charge Type</label>
                     <select class="advanced-field-select" name="advancedChargeType_${chargeCounter}" required onchange="updateAdvancedSummary()">
                         <option value="">Select charge type...</option>
-                        <option value="rent">Monthly Rent</option>
-                        <option value="utilities">Utilities</option>
-                        <option value="maintenance">Maintenance Fee</option>
-                        <option value="parking">Parking Fee</option>
-                        <option value="late_fee">Late Payment Fee</option>
-                        <option value="security_deposit">Security Deposit</option>
-                        <option value="cleaning">Cleaning Fee</option>
-                        <option value="internet">Internet Fee</option>
-                        <option value="cable_tv">Cable TV</option>
-                        <option value="association_dues">Association Dues</option>
-                        <option value="other">Other</option>
+                        ${CHARGE_TYPES_LIST.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
                     </select>
                 </div>
                 
@@ -2521,7 +2699,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         
         chargesList.appendChild(chargeItem);
         
-        // Set default dates for the new charge
+        
         const today = new Date();
         const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 5);
         
@@ -2530,7 +2708,12 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         
         updateAdvancedSummary();
         
-        // Animate the new charge item
+        const tenantSelect = chargeItem.querySelector(`select[name="advancedTenant_${chargeCounter}"]`);
+        if (tenantSelect && tenantSelect.value) {
+            populateLeaseOptionsForCharge(chargeCounter);
+        }
+        
+        
         chargeItem.style.opacity = '0';
         chargeItem.style.transform = 'translateY(20px)';
         setTimeout(() => {
@@ -2540,7 +2723,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         }, 10);
     };
 
-    // Remove charge
+    
     window.removeAdvancedCharge = function(id) {
         if (chargeCounter <= 1) {
             showAlert('At least one charge is required.', 'error');
@@ -2562,12 +2745,12 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         }
     };
 
-    // Duplicate charge
+    
     window.duplicateAdvancedCharge = function(id) {
         const sourceCharge = document.getElementById(`advancedCharge-${id}`);
         if (!sourceCharge) return;
         
-        // Get all field values from source charge
+        
         const sourceData = {};
         const sourceFields = sourceCharge.querySelectorAll('input, select, textarea');
         sourceFields.forEach(field => {
@@ -2578,10 +2761,10 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
             }
         });
         
-        // Create new charge
+        
         addAdvancedNewCharge();
         
-        // Populate new charge with source data (excluding ID-specific fields)
+        
         const newCharge = document.getElementById(`advancedCharge-${chargeCounter}`);
         const newFields = newCharge.querySelectorAll('input, select, textarea');
         
@@ -2604,7 +2787,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         showAlert('Charge duplicated successfully!', 'success');
     };
 
-    // Renumber charges
+    
     function renumberAdvancedCharges() {
         const chargeItems = document.querySelectorAll('.advanced-charge-item');
         chargeItems.forEach((item, index) => {
@@ -2616,7 +2799,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         chargeCounter = chargeItems.length;
     }
 
-    // Toggle recurring options
+    
     window.toggleAdvancedRecurringOptions = function(id) {
         const checkbox = document.querySelector(`input[name="advancedIsRecurring_${id}"]`);
         const recurringOptions = document.getElementById(`advancedRecurring-${id}`);
@@ -2630,7 +2813,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         }
     };
 
-    // Apply bulk settings
+    
     window.applyAdvancedBulkSettings = function() {
         const bulkDueDate = document.getElementById('advancedBulkDueDate').value;
         const bulkChargeDate = document.getElementById('advancedBulkChargeDate').value;
@@ -2677,7 +2860,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         showAlert(`Bulk settings applied to ${Math.ceil(appliedCount / 4)} charges!`, 'success');
     };
 
-    // Update summary
+    
     window.updateAdvancedSummary = function() {
         const chargeItems = document.querySelectorAll('.advanced-charge-item');
         let totalAmount = 0;
@@ -2708,7 +2891,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         document.getElementById('advancedRecurringCharges').textContent = recurringCount;
     };
 
-    // Reset all charges
+    
     window.resetAdvancedAllCharges = function() {
         if (confirm('Are you sure you want to reset all charges? This will remove all entered data.')) {
             const chargesList = document.getElementById('advancedChargesList');
@@ -2720,7 +2903,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         }
     };
 
-    // Preview all charges
+    
     window.previewAdvancedAllCharges = function() {
         const chargeItems = document.querySelectorAll('.advanced-charge-item');
         let isValid = true;
@@ -2754,7 +2937,7 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
             return;
         }
         
-        // Show preview in a simple alert for now - could be enhanced with a proper modal
+        
         let previewText = 'Charges Preview:\\n\\n';
         previewData.forEach((charge, index) => {
             previewText += `${index + 1}. ${charge.tenant} - ${charge.type}: ₱${charge.amount.toLocaleString('en-PH', {minimumFractionDigits: 2})} (Due: ${charge.dueDate})\\n`;
@@ -2763,14 +2946,15 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
         alert(previewText);
     };
 
-    // Submit charges
-    window.submitAdvancedCharges = function() {
+    
+    window.submitAdvancedCharges = async function() {
         const chargeItems = document.querySelectorAll('.advanced-charge-item');
         let isValid = true;
         let chargeData = [];
         
         chargeItems.forEach((item, index) => {
             const tenantField = item.querySelector('select[name*="Tenant"]');
+            const leaseField = item.querySelector('select[name*="Lease"]');
             const typeField = item.querySelector('select[name*="ChargeType"]');
             const amountField = item.querySelector('input[name*="Amount"]');
             const dueDateField = item.querySelector('input[name*="DueDate"]');
@@ -2779,17 +2963,20 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
             const recurringField = item.querySelector('input[name*="IsRecurring"]');
             const frequencyField = item.querySelector('select[name*="RecurringFrequency"]');
             
-            if (!tenantField.value || !typeField.value || !amountField.value || !dueDateField.value || !chargeDateField.value) {
+            if (!tenantField.value || !leaseField.value || !typeField.value || !amountField.value || !dueDateField.value || !chargeDateField.value) {
                 isValid = false;
                 item.style.border = '2px solid #ef4444';
                 setTimeout(() => {
                     item.style.border = '2px solid #e5e7eb';
                 }, 3000);
             } else {
-                const tenant = tenants.find(t => t.id == tenantField.value);
+                const tenant = tenants.find(t => (t.user_id || t.id) == tenantField.value) || null;
+                const leaseId = leaseField.value;
                 chargeData.push({
-                    tenant: tenant ? tenant.name : '',
+                    tenant_id: tenant ? (tenant.user_id || tenant.id) : null,
+                    tenant: tenant ? [tenant.first_name || tenant.name || '', tenant.last_name || '', tenant.suffix || ''].filter(Boolean).join(' ').trim() : '',
                     unit: tenant ? tenant.unit : '',
+                    lease_id: leaseId || null,
                     type: typeField.value,
                     description: descriptionField.value || `${typeField.options[typeField.selectedIndex].text} charge`,
                     amount: parseFloat(amountField.value),
@@ -2806,58 +2993,108 @@ function setupAdvancedChargesModalFunctions(tenants, chargeCounter, currentMode)
             showAlert('Please fill in all required fields for all charges.', 'error');
             return;
         }
-        
-        // Process the charge data - add to existing leasesData structure
-        chargeData.forEach(chargeInfo => {
-            let lease = leasesData.find(
-                (l) =>
-                    l.tenant.toLowerCase() === chargeInfo.tenant.toLowerCase() &&
-                    l.unit.toLowerCase() === chargeInfo.unit.toLowerCase()
-            );
 
-            if (!lease) {
-                lease = {
-                    id: `lease-${Date.now()}-${Math.random()}`,
-                    tenant: chargeInfo.tenant,
-                    unit: chargeInfo.unit,
-                    period: "New Lease",
-                    email: "contact@property.com",
-                    phone: "Not provided",
-                    paymentHistory: [],
-                    charges: [],
+        
+        const modalEl = document.getElementById('advancedAddChargeModal');
+        const submitBtn = document.querySelector('#advancedAddChargeModal .modal-actions-blue .btn-primary');
+        const submitText = document.getElementById('advancedSubmitText');
+        const originalBtnText = submitText ? submitText.textContent : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+        }
+        if (submitText) {
+            submitText.innerHTML = '<span class="btn-spinner"></span> Submitting...';
+        }
+        
+        const disabledEls = [];
+        if (modalEl) {
+            const controls = modalEl.querySelectorAll('input, select, textarea, button');
+            controls.forEach(ctrl => {
+                if (!ctrl.disabled) {
+                    disabledEls.push(ctrl);
+                    ctrl.disabled = true;
+                }
+            });
+            
+            const cancelBtn = modalEl.querySelector('.modal-actions-blue .btn-secondary:last-of-type');
+            if (cancelBtn) cancelBtn.disabled = false;
+        }
+
+        
+        const normalizeChargeType = (t) => {
+            if (!t) return 'Others';
+            const v = String(t).toLowerCase();
+            if (v === 'rent') return 'Rent';
+            if (v === 'utility') return 'Utility';
+            if (v === 'maintenance') return 'Maintenance';
+            if (v === 'late fee' || v === 'late_fee' || v === 'latefee' || v === 'penalty') return 'Late Fee';
+            if (v === 'others' || v === 'other') return 'Others';
+            
+            return t
+                .split(' ')
+                .map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
+                .join(' ');
+        };
+
+        try {
+            const token = getJwtToken();
+            const results = [];
+
+            for (const chargeInfo of chargeData) {
+                const payload = {
+                    lease_id: chargeInfo.lease_id,
+                    charge_type: normalizeChargeType(chargeInfo.type),
+                    description: chargeInfo.description,
+                    amount: chargeInfo.amount,
+                    charge_date: chargeInfo.chargeDate,
+                    due_date: chargeInfo.dueDate,
+                    is_recurring: chargeInfo.isRecurring ? 1 : 0,
+                    status: 'Unpaid',
                 };
-                leasesData.push(lease);
+                if (chargeInfo.isRecurring && chargeInfo.frequency) {
+                    payload.frequency = chargeInfo.frequency;
+                }
+
+                const res = await fetch(`${API_BASE_URL}/charges/create-charge`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text().catch(() => '');
+                    throw new Error(`Failed to create charge (HTTP ${res.status}) ${errText}`);
+                }
+                const json = await res.json();
+                results.push(json);
             }
 
-            const newCharge = {
-                id: Date.now() + Math.random(),
-                type: chargeInfo.type,
-                description: chargeInfo.description,
-                amount: chargeInfo.amount,
-                dueDate: chargeInfo.dueDate,
-                status: getChargeStatusByDate(chargeInfo.dueDate),
-                createdDate: chargeInfo.chargeDate,
-                notes: chargeInfo.isRecurring ? 
-                    `Recurring ${chargeInfo.frequency} charge created on ${formatDate(chargeInfo.chargeDate)}` :
-                    `Charge created on ${formatDate(chargeInfo.chargeDate)}`,
-                isRecurring: chargeInfo.isRecurring
-            };
+            
+            closeModal("advancedAddChargeModal");
+            await fetchCharges();
 
-            lease.charges.push(newCharge);
-        });
-
-        // Update the UI
-        syncDataArrays();
-        filteredCharges = [...charges];
-        updateStatistics();
-        renderChargesTable();
-        closeModal("advancedAddChargeModal");
-
-        const message = chargeData.length === 1 ? 
-            `Charge of ${formatCurrency(chargeData[0].amount)} added successfully!` :
-            `${chargeData.length} charges totaling ${formatCurrency(chargeData.reduce((sum, c) => sum + c.amount, 0))} added successfully!`;
-        
-        showAlert(message, "success");
+            const totalAdded = chargeData.length;
+            const totalAmount = chargeData.reduce((sum, c) => sum + (c.amount || 0), 0);
+            const message = totalAdded === 1
+                ? `Charge of ${formatCurrency(totalAmount)} added successfully!`
+                : `${totalAdded} charges totaling ${formatCurrency(totalAmount)} added successfully!`;
+            showAlert(message, 'success');
+        } catch (e) {
+            console.error('Error submitting charges:', e);
+            showAlert(e.message || 'Failed to submit charges', 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+            }
+            if (submitText) submitText.textContent = originalBtnText || 'Add Charge';
+            
+            disabledEls.forEach(ctrl => { try { ctrl.disabled = false; } catch (_) {} });
+        }
     };
 }
 
@@ -3272,6 +3509,36 @@ function injectPaymentModalStyles() {
             from { opacity: 1; transform: translateX(0); }
             to { opacity: 0; transform: translateX(100px); }
         }
+
+        /* Type badges with distinct colors */
+        .badge { 
+            display: inline-block; 
+            padding: 4px 10px; 
+            border-radius: 9999px; 
+            font-size: 12px; 
+            font-weight: 700; 
+        }
+        .badge.rent { background: #dbeafe; color: #1e40af; }
+        .badge.utility { background: #fef3c7; color: #92400e; }
+        .badge.maintenance { background: #dcfce7; color: #065f46; }
+        .badge.penalty, .badge[aria-label~="Late"] { background: #fee2e2; color: #991b1b; }
+        .badge.others { background: #e5e7eb; color: #374151; }
+
+        /* Recurring pill */
+        .recurring-pill { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            padding: 2px 8px; 
+            border-radius: 9999px; 
+            background: #fffbeb; 
+            color: #92400e; 
+            font-size: 11px; 
+            font-weight: 700;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .recurring-pill i { font-size: 10px; }
     `;
 
     document.head.appendChild(styleSheet);
