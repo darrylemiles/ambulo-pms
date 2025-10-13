@@ -30,6 +30,8 @@ const authUser = async (email, password) => {
         user_id: user.user_id,
         email: user.email,
         role: user.role,
+        first_name: user.first_name,
+        last_name: user.last_name,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
