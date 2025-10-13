@@ -31,6 +31,8 @@ import contactSubmissionsTable from "./contactSubmissionsTable.js";
 import chargesTable from "./chargesTable.js";
 import paymentsTable from "./paymentsTable.js";
 import paymentProofTable from "./paymentProofTable.js";
+import chargesAuditTable from "./chargesAuditTable.js";
+import paymentsAuditTable from "./paymentsAuditTable.js";
 
 const tables = async (dbConnection) => {
   const queries = [
@@ -66,7 +68,9 @@ const tables = async (dbConnection) => {
     //payment-related
     chargesTable,
     paymentsTable,
-    paymentProofTable
+    paymentProofTable,
+    chargesAuditTable,
+    paymentsAuditTable
   ];
 
   for (const query of queries) {
