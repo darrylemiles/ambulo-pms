@@ -212,6 +212,13 @@ const PRIORITY_MAPPINGS = {
     }
 };
 
+const CHARGE_TYPES = [
+    { value: 'Rent', label: 'Rent' },
+    { value: 'Utility', label: 'Utility' },
+    { value: 'Maintenance', label: 'Maintenance' },
+    { value: 'Late Fee', label: 'Late Fee' },
+    { value: 'Others', label: 'Others' }
+];
 
 
 const PAGINATION = {
@@ -239,6 +246,7 @@ if (typeof module !== 'undefined' && module.exports) {
         STATUS_MAPPINGS,
         CHARGE_STATUSES,
         CHARGE_STATUS_MAPPINGS,
+        CHARGE_TYPES,
         PRIORITY_MAPPINGS,
         PAGINATION
     };
@@ -258,6 +266,7 @@ if (typeof module !== 'undefined' && module.exports) {
         STATUS_MAPPINGS,
         CHARGE_STATUSES,
         CHARGE_STATUS_MAPPINGS,
+        CHARGE_TYPES,
         PRIORITY_MAPPINGS,
         PAGINATION
     };
