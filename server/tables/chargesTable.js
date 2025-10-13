@@ -8,7 +8,7 @@ const chargesTable = `CREATE TABLE IF NOT EXISTS charges (
 	charge_date datetime default CURRENT_TIMESTAMP(),
 	due_date date not null,
 	is_recurring boolean default false not null,
-	status enum('Unpaid', 'Partially Paid', 'Paid') default 'Unpaid' not null,
+	status enum('Unpaid', 'Partially Paid', 'Paid', 'Waived') default 'Unpaid' not null,
 
 	foreign key (lease_id) references leases(lease_id)
 )`;
