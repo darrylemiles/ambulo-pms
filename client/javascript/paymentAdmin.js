@@ -20,6 +20,8 @@ let currentEditingCharge = null;
 let charges = [];
 let payments = [];
 
+let currentSort = { key: null, dir: "asc" };
+
 const API_BASE_URL = "/api/v1";
 
 async function setDynamicInfo() {
@@ -36,7 +38,15 @@ async function setDynamicInfo() {
         : "Manage Payment";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function onReady(fn) {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else {
+        fn();
+    }
+}
+
+onReady(() => {
     setDynamicInfo();
 });
 
@@ -50,11 +60,80 @@ const CHARGE_TYPES_LIST = (window.AppConstants &&
         { value: "Others", label: "Others" },
     ];
 
+const CHARGE_STATUSES_CONST = (window.AppConstants &&
+    window.AppConstants.CHARGE_STATUSES) ||
+    (typeof CHARGE_STATUSES !== "undefined" && CHARGE_STATUSES) || {
+    UNPAID: "UNPAID",
+    PARTIALLY_PAID: "PARTIALLY_PAID",
+    PAID: "PAID",
+    WAIVED: "WAIVED",
+};
+
+const CHARGE_STATUS_MAPPINGS_CONST = (window.AppConstants &&
+    window.AppConstants.CHARGE_STATUS_MAPPINGS) ||
+    (typeof CHARGE_STATUS_MAPPINGS !== "undefined" && CHARGE_STATUS_MAPPINGS) || {
+    [CHARGE_STATUSES_CONST.UNPAID]: {
+        label: "Unpaid",
+        color: "#ef4444",
+        textColor: "#ffffff",
+    },
+    [CHARGE_STATUSES_CONST.PARTIALLY_PAID]: {
+        label: "Partially Paid",
+        color: "#f59e0b",
+        textColor: "#ffffff",
+    },
+    [CHARGE_STATUSES_CONST.PAID]: {
+        label: "Paid",
+        color: "#10b981",
+        textColor: "#ffffff",
+    },
+    [CHARGE_STATUSES_CONST.WAIVED]: {
+        label: "Waived",
+        color: "#6b7280",
+        textColor: "#ffffff",
+    },
+};
+
 async function fetchCharges() {
     try {
-        const res = await fetch(`${API_BASE_URL}/charges`);
+        const searchEl = document.getElementById("charges-search");
+        const typeEl = document.getElementById("charges-type");
+        const statusEl = document.getElementById("charges-status");
+        const dateEl = document.getElementById("charges-date");
+
+        const params = new URLSearchParams();
+        if (searchEl && searchEl.value.trim())
+            params.append("q", searchEl.value.trim());
+        if (typeEl && typeEl.value) params.append("charge_type", typeEl.value);
+        if (statusEl && statusEl.value) params.append("status", statusEl.value);
+        if (dateEl && dateEl.value) {
+            const v = dateEl.value;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                params.append("due_date", v);
+            } else if (/^\d{4}-\d{2}$/.test(v)) {
+                const [y, m] = v.split("-").map(Number);
+                const from = `${y}-${String(m).padStart(2, "0")}-01`;
+                const lastDay = new Date(y, m, 0).getDate();
+                const to = `${y}-${String(m).padStart(2, "0")}-${String(
+                    lastDay
+                ).padStart(2, "0")}`;
+                params.append("due_date_from", from);
+                params.append("due_date_to", to);
+            }
+        }
+
+        const url =
+            `${API_BASE_URL}/charges` +
+            (params.toString() ? `?${params.toString()}` : "");
+        const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch charges from server");
         const serverCharges = await res.json();
+
+        leasesData.length = 0;
+        charges = [];
+        payments = [];
+        filteredCharges = [];
+        filteredPayments = [];
 
         serverCharges.forEach((row) => {
             const mappedCharge = {
@@ -92,31 +171,17 @@ async function fetchCharges() {
                 );
             }
 
-            if (!lease) {
-                const tenantName = row.tenant_name || null;
-                const propName = row.property_name || null;
-                if (tenantName && propName) {
-                    lease = leasesData.find(
-                        (l) =>
-                            (l.tenant &&
-                                l.tenant.toLowerCase() === tenantName.toLowerCase()) ||
-                            (l.unit && l.unit.toLowerCase() === propName.toLowerCase())
-                    );
-                }
-            }
-
             if (lease) {
                 lease.charges = lease.charges || [];
-
                 const exists = lease.charges.some((c) => c.id === mappedCharge.id);
-                if (!exists) {
-                    lease.charges.push(mappedCharge);
-                }
+                if (!exists) lease.charges.push(mappedCharge);
             } else {
                 const placeholderLease = {
                     id: mappedCharge.leaseId || `lease-${mappedCharge.id}`,
+                    lease_id: mappedCharge.leaseId || null,
                     tenant: row.tenant_name ? row.tenant_name : "Unknown Tenant",
-                    unit: row.property_name ? row.property_name : "Unknown Unit",
+                    unit: row.unit || row.unit_number || row.property_name || "",
+                    property_name: row.property_name || "",
                     email: row.email || "",
                     phone: row.phone_number || "",
                     paymentHistory: [],
@@ -127,18 +192,80 @@ async function fetchCharges() {
         });
 
         syncDataArrays();
+
+        applyCurrentSort();
         renderChargesTable();
         renderPaymentsTable();
     } catch (error) {
         console.error("Error fetching charges from server:", error);
-
-        syncDataArrays();
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
+    setupChargeFilters();
     fetchCharges();
 });
+
+function setupChargeFilters() {
+    const typeEl = document.getElementById("charges-type");
+    if (typeEl) {
+        const currentVal = typeEl.value || "";
+        typeEl.innerHTML =
+            '<option value="">All Types</option>' +
+            CHARGE_TYPES_LIST.map(
+                (t) => `<option value="${t.value}">${t.label}</option>`
+            ).join("");
+        if (currentVal) typeEl.value = currentVal;
+        typeEl.addEventListener("change", () => fetchCharges());
+    }
+
+    const searchEl = document.getElementById("charges-search");
+    if (searchEl) {
+        let timeout = null;
+        searchEl.addEventListener("input", () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fetchCharges(), 300);
+        });
+    }
+
+    const statusEl = document.getElementById("charges-status");
+    if (statusEl) {
+        const entries = [
+            { value: "", label: "All Statuses" },
+            {
+                value: CHARGE_STATUSES_CONST.UNPAID,
+                label:
+                    CHARGE_STATUS_MAPPINGS_CONST[CHARGE_STATUSES_CONST.UNPAID]?.label ||
+                    "Unpaid",
+            },
+            {
+                value: CHARGE_STATUSES_CONST.PARTIALLY_PAID,
+                label:
+                    CHARGE_STATUS_MAPPINGS_CONST[CHARGE_STATUSES_CONST.PARTIALLY_PAID]
+                        ?.label || "Partially Paid",
+            },
+            {
+                value: CHARGE_STATUSES_CONST.PAID,
+                label:
+                    CHARGE_STATUS_MAPPINGS_CONST[CHARGE_STATUSES_CONST.PAID]?.label ||
+                    "Paid",
+            },
+            {
+                value: CHARGE_STATUSES_CONST.WAIVED,
+                label:
+                    CHARGE_STATUS_MAPPINGS_CONST[CHARGE_STATUSES_CONST.WAIVED]?.label ||
+                    "Waived",
+            },
+        ];
+        statusEl.innerHTML = entries
+            .map((e) => `<option value="${e.value}">${e.label}</option>`)
+            .join("");
+        statusEl.addEventListener("change", () => fetchCharges());
+    }
+
+    const dateEl = document.getElementById("charges-date");
+    if (dateEl) dateEl.addEventListener("change", () => fetchCharges());
+}
 
 function syncDataArrays() {
     charges = [];
@@ -185,23 +312,20 @@ function formatDate(dateString) {
     });
 }
 
-
 function formatForDateInput(d) {
     if (!d) return "";
     try {
-        
         if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
 
-        
         const parsed = new Date(d);
         if (!isNaN(parsed.getTime())) {
             const y = parsed.getFullYear();
-            const m = String(parsed.getMonth() + 1).padStart(2, '0');
-            const day = String(parsed.getDate()).padStart(2, '0');
+            const m = String(parsed.getMonth() + 1).padStart(2, "0");
+            const day = String(parsed.getDate()).padStart(2, "0");
             return `${y}-${m}-${day}`;
         }
     } catch (e) {
-        console.error('formatForDateInput parse error', e);
+        console.error("formatForDateInput parse error", e);
     }
     return "";
 }
@@ -267,36 +391,24 @@ function getStatusDisplay(charge) {
     const chargeStatus = getChargeStatus(charge);
     const daysUntilDue = getDaysUntilDue(charge.dueDate);
 
-    const mappings =
-        (window.AppConstants && window.AppConstants.CHARGE_STATUS_MAPPINGS) ||
-        (typeof CHARGE_STATUS_MAPPINGS !== "undefined" && CHARGE_STATUS_MAPPINGS) ||
-        null;
-
     let mapped = null;
     if (charge.canonical_status) {
         mapped = String(charge.canonical_status).toUpperCase();
     } else {
-        if (chargeStatus === "paid") mapped = "PAID";
-        else if (chargeStatus === "partial") mapped = "PARTIALLY_PAID";
-        else if (
-            chargeStatus === "overdue" ||
-            chargeStatus === "unpaid" ||
-            chargeStatus === "due-soon"
-        )
-            mapped = "UNPAID";
-        else mapped = "UNPAID";
+        if (chargeStatus === "paid") mapped = CHARGE_STATUSES_CONST.PAID;
+        else if (chargeStatus === "partial")
+            mapped = CHARGE_STATUSES_CONST.PARTIALLY_PAID;
+        else mapped = CHARGE_STATUSES_CONST.UNPAID;
     }
 
-    if (mappings && mappings[mapped]) {
-        const cfg = mappings[mapped];
+    const cfg = CHARGE_STATUS_MAPPINGS_CONST[mapped];
+    if (cfg) {
         const label = cfg.label || mapped;
-
         let extra = "";
         if (chargeStatus === "overdue")
             extra = ` &middot; ${Math.abs(daysUntilDue)}d overdue`;
         else if (chargeStatus === "due-soon")
             extra = ` &middot; Due in ${daysUntilDue}d`;
-
         const bg = cfg.color || "#e5e7eb";
         const color = cfg.textColor || "#111827";
         return `<span class="status-indicator" style="background: ${bg}; color: ${color};">${label}${extra}</span>`;
@@ -304,28 +416,95 @@ function getStatusDisplay(charge) {
 
     switch (chargeStatus) {
         case "overdue":
-            return `<span class="status-indicator overdue">
-                <i class="fas fa-exclamation-triangle"></i> ${Math.abs(
+            return `<span class="status-indicator overdue"><i class="fas fa-exclamation-triangle"></i> ${Math.abs(
                 daysUntilDue
-            )} days overdue
-            </span>`;
+            )} days overdue</span>`;
         case "due-soon":
-            return `<span class="status-indicator due-soon">
-                <i class="fas fa-clock"></i> Due in ${daysUntilDue} days
-            </span>`;
+            return `<span class="status-indicator due-soon"><i class="fas fa-clock"></i> Due in ${daysUntilDue} days</span>`;
         case "paid":
-            return `<span class="status-indicator paid">
-                <i class="fas fa-check-circle"></i> Paid
-            </span>`;
+            return `<span class="status-indicator paid"><i class="fas fa-check-circle"></i> Paid</span>`;
         case "pending":
-            return `<span class="status-indicator pending">
-                <i class="fas fa-clock"></i> Due in ${daysUntilDue} days
-            </span>`;
+            return `<span class="status-indicator pending"><i class="fas fa-clock"></i> Due in ${daysUntilDue} days</span>`;
         default:
-            return `<span class="status-indicator pending">
-                <i class="fas fa-clock"></i> Pending
-            </span>`;
+            return `<span class="status-indicator pending"><i class="fas fa-clock"></i> Pending</span>`;
     }
+}
+
+function sortTable(key) {
+    if (currentSort.key === key) {
+        currentSort.dir = currentSort.dir === "asc" ? "desc" : "asc";
+    } else {
+        currentSort.key = key;
+        currentSort.dir = "asc";
+    }
+    applyCurrentSort();
+    renderChargesTable();
+}
+
+function applyCurrentSort() {
+    if (!currentSort.key) return;
+    const dir = currentSort.dir === "asc" ? 1 : -1;
+    const key = currentSort.key;
+
+    const getWeightForStatus = (c) => {
+        const st = (c.canonical_status || "").toUpperCase();
+        switch (st) {
+            case CHARGE_STATUSES_CONST.WAIVED:
+                return 3;
+            case CHARGE_STATUSES_CONST.PAID:
+                return 2;
+            case CHARGE_STATUSES_CONST.PARTIALLY_PAID:
+                return 1;
+            case CHARGE_STATUSES_CONST.UNPAID:
+                return 0;
+            default:
+                return -1;
+        }
+    };
+
+    filteredCharges.sort((a, b) => {
+        let av, bv;
+        switch (key) {
+            case "tenant":
+                av = (a.tenant || "").toLowerCase();
+                bv = (b.tenant || "").toLowerCase();
+                break;
+            case "unit":
+                av = (a.unit || "").toLowerCase();
+                bv = (b.unit || "").toLowerCase();
+                break;
+            case "type":
+                av = (a.type || "").toLowerCase();
+                bv = (b.type || "").toLowerCase();
+                break;
+            case "description":
+                av = (a.description || "").toLowerCase();
+                bv = (b.description || "").toLowerCase();
+                break;
+            case "amount":
+                av = Number(a.amount) || 0;
+                bv = Number(b.amount) || 0;
+                break;
+            case "paid":
+                av = getPaidAmountForCharge(a.id);
+                bv = getPaidAmountForCharge(b.id);
+                break;
+            case "status":
+                av = getWeightForStatus(a);
+                bv = getWeightForStatus(b);
+                break;
+            case "dueDate":
+                av = new Date(a.dueDate || 0).getTime();
+                bv = new Date(b.dueDate || 0).getTime();
+                break;
+            default:
+                av = 0;
+                bv = 0;
+        }
+        if (av < bv) return -1 * dir;
+        if (av > bv) return 1 * dir;
+        return 0;
+    });
 }
 
 function injectEnhancedButtonStyles() {
@@ -692,7 +871,7 @@ async function fetchPropertyName(propertyId) {
     }
 }
 
-window.populateLeaseOptionsForCharge = async function (id) {
+window.populateLeaseOptionsForCharge = async function (id, selectedLeaseId) {
     try {
         const tenantSelect = document.querySelector(
             `select[name="advancedTenant_${id}"]`
@@ -794,6 +973,16 @@ window.populateLeaseOptionsForCharge = async function (id) {
             opt.dataset.propertyId = lease.property_id || "";
             leaseSelect.appendChild(opt);
         });
+
+        if (selectedLeaseId) {
+            const want = String(selectedLeaseId);
+            const match = Array.from(leaseSelect.options).find(
+                (o) => String(o.value) === want
+            );
+            if (match) {
+                leaseSelect.value = want;
+            }
+        }
 
         leaseSelect.disabled = false;
     } catch (err) {
@@ -965,7 +1154,6 @@ window.editRecurringTemplate = function (id) {
 };
 
 async function openStandardEditModal(charge, lease) {
-    
     let serverCharge = null;
     try {
         const resp = await fetch(`${API_BASE_URL}/charges/${charge.id}`);
@@ -973,21 +1161,20 @@ async function openStandardEditModal(charge, lease) {
             serverCharge = await resp.json();
         }
     } catch (e) {
-        console.error('Failed to fetch latest charge for edit:', e);
+        console.error("Failed to fetch latest charge for edit:", e);
     }
 
     const use = serverCharge || charge;
 
-    
     const toInputDate = (d) => {
         if (!d) return "";
-        
+
         if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-        
-        if (d.indexOf && d.indexOf('T') > -1) return d.split('T')[0];
-        
-        if (d.indexOf && d.indexOf(' ') > -1) return d.split(' ')[0];
-        
+
+        if (d.indexOf && d.indexOf("T") > -1) return d.split("T")[0];
+
+        if (d.indexOf && d.indexOf(" ") > -1) return d.split(" ")[0];
+
         const parsed = new Date(d);
         if (!isNaN(parsed.getTime())) {
             return parsed.toISOString().slice(0, 10);
@@ -1007,7 +1194,8 @@ async function openStandardEditModal(charge, lease) {
 
     document.getElementById("editChargeId").value = mapped.id;
     document.getElementById("editChargeType").value = mapped.type;
-    document.getElementById("editChargeDescription").value = mapped.description || "";
+    document.getElementById("editChargeDescription").value =
+        mapped.description || "";
     document.getElementById("editChargeAmount").value = mapped.amount;
     document.getElementById("editChargeDueDate").value = mapped.dueDate;
 
@@ -1015,7 +1203,6 @@ async function openStandardEditModal(charge, lease) {
         "editChargeTenantInfo"
     ).textContent = `${lease.tenant} - ${lease.unit}`;
 
-    
     currentEditingCharge = mapped;
 
     createModalsAndDialogs();
@@ -1028,9 +1215,9 @@ async function openRecurringEditModal(charge, lease) {
 
     injectEnhancedButtonStyles();
 
-    
-    
-    const embeddedNextDue = formatForDateInput(charge.dueDate || charge.next_due || "");
+    const embeddedNextDue = formatForDateInput(
+        charge.dueDate || charge.next_due || ""
+    );
     const modalHTML = `
         <div id="editRecurringModal" class="modal" style="display: flex;">
             <div class="modal-content">
@@ -1045,8 +1232,10 @@ async function openRecurringEditModal(charge, lease) {
                     </div>
                     
                     <form id="editRecurringForm" onsubmit="handleEditRecurringSubmission(event)">
-                        <input type="hidden" id="editRecurringTemplateId" value="${charge.template_id || ""}">
-                        <input type="hidden" id="editRecurringChargeId" value="${charge.id}">
+                        <input type="hidden" id="editRecurringTemplateId" value="${charge.template_id || ""
+        }">
+                        <input type="hidden" id="editRecurringChargeId" value="${charge.id
+        }">
                         
                         <div class="form-row">
                             <div class="form-group">
@@ -1061,7 +1250,8 @@ async function openRecurringEditModal(charge, lease) {
                             
                             <div class="form-group">
                                 <label for="editRecurringAmount">Amount <span class="required-indicator">*</span></label>
-                                <input type="number" id="editRecurringAmount" name="amount" step="0.01" min="0" value="${charge.amount || 0}" required>
+                                <input type="number" id="editRecurringAmount" name="amount" step="0.01" min="0" value="${charge.amount || 0
+        }" required>
                             </div>
                         </div>
                         
@@ -1099,19 +1289,21 @@ async function openRecurringEditModal(charge, lease) {
 
     document.body.insertAdjacentHTML("beforeend", modalHTML);
 
-    
     const templateId = charge.template_id;
     if (templateId) {
         try {
             const token = getJwtToken();
-            const resp = await fetch(`${API_BASE_URL}/charges/recurring-templates/${templateId}`, {
-                headers: {
-                    Authorization: token ? `Bearer ${token}` : "",
-                },
-            });
+            const resp = await fetch(
+                `${API_BASE_URL}/charges/recurring-templates/${templateId}`,
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : "",
+                    },
+                }
+            );
             if (resp.ok) {
                 const tmpl = await resp.json();
-                
+
                 const freqEl = document.getElementById("editRecurringFrequency");
                 const amtEl = document.getElementById("editRecurringAmount");
                 const nextEl = document.getElementById("editRecurringNextDue");
@@ -1122,12 +1314,22 @@ async function openRecurringEditModal(charge, lease) {
                 tmplIdEl.value = tmpl.template_id || templateId;
                 if (freqEl) freqEl.value = tmpl.frequency || "Monthly";
                 if (amtEl) amtEl.value = tmpl.amount || 0;
-                if (nextEl) nextEl.value = formatForDateInput(tmpl.next_due || tmpl.nextDue || tmpl.due_date || "");
-                if (autoEl) autoEl.value = formatForDateInput(tmpl.auto_generate_until || tmpl.auto_gen_until || tmpl.autoGenerateUntil || "");
-                if (activeEl) activeEl.checked = tmpl.is_active == 1 || tmpl.is_active === true;
+                if (nextEl)
+                    nextEl.value = formatForDateInput(
+                        tmpl.next_due || tmpl.nextDue || tmpl.due_date || ""
+                    );
+                if (autoEl)
+                    autoEl.value = formatForDateInput(
+                        tmpl.auto_generate_until ||
+                        tmpl.auto_gen_until ||
+                        tmpl.autoGenerateUntil ||
+                        ""
+                    );
+                if (activeEl)
+                    activeEl.checked = tmpl.is_active == 1 || tmpl.is_active === true;
             }
         } catch (e) {
-            console.error('Failed to fetch recurring template:', e);
+            console.error("Failed to fetch recurring template:", e);
         }
     }
 }
@@ -1137,15 +1339,18 @@ window.handleEditRecurringSubmission = async function (event) {
 
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn && submitBtn.setAttribute('disabled', 'true');
-    submitBtn && submitBtn.classList.add('loading');
+    submitBtn && submitBtn.setAttribute("disabled", "true");
+    submitBtn && submitBtn.classList.add("loading");
 
     const formData = new FormData(form);
     const templateId = document.getElementById("editRecurringTemplateId").value;
     if (!templateId) {
-        showAlert("This recurring charge doesn't have a template to edit.", "error");
-        submitBtn && submitBtn.removeAttribute('disabled');
-        submitBtn && submitBtn.classList.remove('loading');
+        showAlert(
+            "This recurring charge doesn't have a template to edit.",
+            "error"
+        );
+        submitBtn && submitBtn.removeAttribute("disabled");
+        submitBtn && submitBtn.classList.remove("loading");
         return;
     }
 
@@ -1159,30 +1364,35 @@ window.handleEditRecurringSubmission = async function (event) {
 
     try {
         const token = getJwtToken();
-        const resp = await fetch(`${API_BASE_URL}/charges/recurring-templates/${templateId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: token ? `Bearer ${token}` : "",
-            },
-            body: JSON.stringify(payload),
-        });
+        const resp = await fetch(
+            `${API_BASE_URL}/charges/recurring-templates/${templateId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: token ? `Bearer ${token}` : "",
+                },
+                body: JSON.stringify(payload),
+            }
+        );
 
         if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            throw new Error(err.message || `Failed to update recurring template (${resp.status})`);
+            throw new Error(
+                err.message || `Failed to update recurring template (${resp.status})`
+            );
         }
 
         showAlert("Recurring template updated successfully!", "success");
         closeModal("editRecurringModal");
-        
+
         fetchCharges();
     } catch (e) {
         console.error(e);
         showAlert(e.message || "Failed to update recurring template", "error");
     } finally {
-        submitBtn && submitBtn.removeAttribute('disabled');
-        submitBtn && submitBtn.classList.remove('loading');
+        submitBtn && submitBtn.removeAttribute("disabled");
+        submitBtn && submitBtn.classList.remove("loading");
     }
 };
 
@@ -1196,8 +1406,8 @@ async function handleEditChargeSubmission(event) {
 
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn && submitBtn.setAttribute('disabled', 'true');
-    submitBtn && submitBtn.classList.add('loading');
+    submitBtn && submitBtn.setAttribute("disabled", "true");
+    submitBtn && submitBtn.classList.add("loading");
 
     const formData = new FormData(form);
     const updatedData = {
@@ -1205,29 +1415,27 @@ async function handleEditChargeSubmission(event) {
         description: (formData.get("description") || "").trim(),
         amount: parseFloat(formData.get("amount")),
         dueDate: formData.get("dueDate"),
-        
     };
 
     if (!updatedData.description) {
         showAlert("Description is required", "error");
-        submitBtn && submitBtn.removeAttribute('disabled');
-        submitBtn && submitBtn.classList.remove('loading');
+        submitBtn && submitBtn.removeAttribute("disabled");
+        submitBtn && submitBtn.classList.remove("loading");
         return;
     }
     if (isNaN(updatedData.amount) || updatedData.amount <= 0) {
         showAlert("Amount must be greater than zero", "error");
-        submitBtn && submitBtn.removeAttribute('disabled');
-        submitBtn && submitBtn.classList.remove('loading');
+        submitBtn && submitBtn.removeAttribute("disabled");
+        submitBtn && submitBtn.classList.remove("loading");
         return;
     }
     if (!updatedData.dueDate) {
         showAlert("Due date is required", "error");
-        submitBtn && submitBtn.removeAttribute('disabled');
-        submitBtn && submitBtn.classList.remove('loading');
+        submitBtn && submitBtn.removeAttribute("disabled");
+        submitBtn && submitBtn.classList.remove("loading");
         return;
     }
 
-    
     const payload = {
         charge_type: updatedData.type,
         description: updatedData.description,
@@ -1237,33 +1445,38 @@ async function handleEditChargeSubmission(event) {
 
     try {
         const token = getJwtToken();
-        const resp = await fetch(`${API_BASE_URL}/charges/${currentEditingCharge.id}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: token ? `Bearer ${token}` : "",
-            },
-            body: JSON.stringify(payload),
-        });
+        const resp = await fetch(
+            `${API_BASE_URL}/charges/${currentEditingCharge.id}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: token ? `Bearer ${token}` : "",
+                },
+                body: JSON.stringify(payload),
+            }
+        );
 
         if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            throw new Error(err.message || `Failed to update charge (${resp.status})`);
+            throw new Error(
+                err.message || `Failed to update charge (${resp.status})`
+            );
         }
 
         showAlert("Charge updated successfully!", "success");
         closeModal("editChargeModal");
-        
+
         await fetchCharges();
-        
+
         updateStatistics();
         renderChargesTable();
     } catch (e) {
         console.error(e);
         showAlert(e.message || "Failed to update charge", "error");
     } finally {
-        submitBtn && submitBtn.removeAttribute('disabled');
-        submitBtn && submitBtn.classList.remove('loading');
+        submitBtn && submitBtn.removeAttribute("disabled");
+        submitBtn && submitBtn.classList.remove("loading");
     }
 }
 
@@ -1443,7 +1656,6 @@ function viewChargeDetails(chargeId) {
     );
     document.getElementById("viewChargeStatus").innerHTML =
         getStatusDisplay(charge);
-    
 
     const relatedPayments =
         lease.paymentHistory?.filter((p) => p.chargeId === charge.id) || [];
@@ -1478,28 +1690,7 @@ function viewChargeDetails(chargeId) {
 }
 
 function filterCharges() {
-    const searchTerm =
-        document.getElementById("charges-search")?.value.toLowerCase() || "";
-    const typeFilter = document.getElementById("charges-type")?.value || "";
-    const statusFilter = document.getElementById("charges-status")?.value || "";
-    const dateFilter = document.getElementById("charges-date")?.value || "";
-
-    filteredCharges = charges.filter((charge) => {
-        const matchesSearch =
-            !searchTerm ||
-            charge.tenant.toLowerCase().includes(searchTerm) ||
-            charge.unit.toLowerCase().includes(searchTerm) ||
-            charge.description.toLowerCase().includes(searchTerm);
-
-        const matchesType = !typeFilter || charge.type === typeFilter;
-        const matchesStatus =
-            !statusFilter || getChargeStatus(charge) === statusFilter;
-        const matchesDate = !dateFilter || charge.dueDate.startsWith(dateFilter);
-
-        return matchesSearch && matchesType && matchesStatus && matchesDate;
-    });
-
-    renderChargesTable();
+    fetchCharges();
 }
 
 function filterPayments() {
@@ -1540,8 +1731,7 @@ function resetChargesFilters() {
     if (statusEl) statusEl.value = "";
     if (dateEl) dateEl.value = "";
 
-    filteredCharges = [...charges];
-    renderChargesTable();
+    fetchCharges();
 }
 
 function resetPaymentsFilters() {
@@ -3176,6 +3366,23 @@ function setupAdvancedChargesModalFunctions(
             }
         });
 
+        try {
+            const srcLeaseFieldName = Object.keys(sourceData).find((n) =>
+                n.includes("Lease")
+            );
+            const srcLeaseValue = srcLeaseFieldName
+                ? sourceData[srcLeaseFieldName]
+                : null;
+            if (srcLeaseValue) {
+                const tenantField = newCharge.querySelector('select[name*="Tenant"]');
+                if (tenantField && tenantField.value) {
+                    populateLeaseOptionsForCharge(chargeCounter, srcLeaseValue);
+                }
+            }
+        } catch (e) {
+            console.warn("Could not preserve lease selection on duplicate", e);
+        }
+
         updateAdvancedSummary();
         showAlert("Charge duplicated successfully!", "success");
     };
@@ -3373,18 +3580,37 @@ function setupAdvancedChargesModalFunctions(
         let chargeData = [];
 
         chargeItems.forEach((item, index) => {
-            const tenantField = item.querySelector('select[name*="Tenant"]');
-            const leaseField = item.querySelector('select[name*="Lease"]');
-            const typeField = item.querySelector('select[name*="ChargeType"]');
-            const amountField = item.querySelector('input[name*="Amount"]');
-            const dueDateField = item.querySelector('input[name*="DueDate"]');
-            const chargeDateField = item.querySelector('input[name*="ChargeDate"]');
-            const descriptionField = item.querySelector(
-                'textarea[name*="Description"]'
+            const parts = (item.id || "").split("-");
+            const rowNum = parts.length > 1 ? parts[1] : String(index + 1);
+            const tenantField = item.querySelector(
+                `select[name="advancedTenant_${rowNum}"]`
             );
-            const recurringField = item.querySelector('input[name*="IsRecurring"]');
+            const leaseField =
+                document.getElementById(`advancedLease_${rowNum}`) ||
+                item.querySelector(`select[name="advancedLease_${rowNum}"]`);
+            const typeField = item.querySelector(
+                `select[name="advancedChargeType_${rowNum}"]`
+            );
+            const amountField = item.querySelector(
+                `input[name="advancedAmount_${rowNum}"]`
+            );
+            const dueDateField = item.querySelector(
+                `input[name="advancedDueDate_${rowNum}"]`
+            );
+            const chargeDateField = item.querySelector(
+                `input[name="advancedChargeDate_${rowNum}"]`
+            );
+            const descriptionField = item.querySelector(
+                `textarea[name="advancedDescription_${rowNum}"]`
+            );
+            const recurringField = item.querySelector(
+                `input[name="advancedIsRecurring_${rowNum}"]`
+            );
             const frequencyField = item.querySelector(
-                'select[name*="RecurringFrequency"]'
+                `select[name="advancedRecurringFrequency_${rowNum}"]`
+            );
+            const autoUntilField = item.querySelector(
+                `input[name="advancedAutoGenUntil_${rowNum}"]`
             );
 
             if (
@@ -3402,8 +3628,11 @@ function setupAdvancedChargesModalFunctions(
                 }, 3000);
             } else {
                 const tenant =
-                    tenants.find((t) => (t.user_id || t.id) == tenantField.value) || null;
-                const leaseId = leaseField.value;
+                    tenants.find(
+                        (t) => String(t.user_id || t.id) === String(tenantField.value)
+                    ) || null;
+                const leaseId = leaseField ? leaseField.value : null;
+
                 chargeData.push({
                     tenant_id: tenant ? tenant.user_id || tenant.id : null,
                     tenant: tenant
@@ -3427,6 +3656,11 @@ function setupAdvancedChargesModalFunctions(
                     chargeDate: chargeDateField.value,
                     isRecurring: recurringField.checked,
                     frequency: recurringField.checked ? frequencyField.value : null,
+                    autoGenerateUntil: recurringField.checked
+                        ? autoUntilField && autoUntilField.value
+                            ? autoUntilField.value
+                            : null
+                        : null,
                     status: "pending",
                 });
             }
@@ -3505,8 +3739,10 @@ function setupAdvancedChargesModalFunctions(
                     is_recurring: chargeInfo.isRecurring ? 1 : 0,
                     status: "Unpaid",
                 };
-                if (chargeInfo.isRecurring && chargeInfo.frequency) {
-                    payload.frequency = chargeInfo.frequency;
+                if (chargeInfo.isRecurring) {
+                    if (chargeInfo.frequency) payload.frequency = chargeInfo.frequency;
+                    if (chargeInfo.autoGenerateUntil)
+                        payload.auto_generate_until = chargeInfo.autoGenerateUntil;
                 }
 
                 const res = await fetch(`${API_BASE_URL}/charges/create-charge`, {
@@ -4153,8 +4389,6 @@ function switchTab(tabName) {
     }
 
     localStorage.setItem("activePaymentTab", tabName);
-
-    console.log(`Switched to ${tabName} tab`);
 }
 
 function initializeActiveTab() {
@@ -4183,9 +4417,9 @@ window.handleEditChargeSubmission = handleEditChargeSubmission;
 window.confirmDeleteCharge = confirmDeleteCharge;
 window.viewPaymentDetails = viewPaymentDetails;
 window.generateReceipt = generateReceipt;
+window.sortTable = sortTable;
 
 document.addEventListener("DOMContentLoaded", function () {
-
     injectEnhancedButtonStyles();
     injectPaymentModalStyles();
 

@@ -2,13 +2,13 @@ import conn from "./../config/db.js";
 
 const pool = await conn();
 
-
 const normalizeFrequency = (f) => {
     if (!f) return "Monthly";
     const v = String(f).toLowerCase();
     if (v === "monthly") return "Monthly";
     if (v === "quarterly") return "Quarterly";
-    if (v === "semi-annually" || v === "semiannually" || v === "semi_annually") return "Semi-annually";
+    if (v === "semi-annually" || v === "semiannually" || v === "semi_annually")
+        return "Semi-annually";
     if (v === "annually" || v === "yearly") return "Annually";
     return "Monthly";
 };
@@ -27,7 +27,9 @@ const createCharge = async (charge = {}) => {
             due_date,
             is_recurring,
             status,
-            frequency, 
+            frequency,
+            auto_generate_until,
+            auto_gen_until,
         } = charge || {};
 
         const insertChargeSql = `
@@ -49,15 +51,19 @@ const createCharge = async (charge = {}) => {
         const charge_id = chargeResult.insertId;
 
         let template_id = null;
-        const recurringEnabled = is_recurring === 1 || is_recurring === true || is_recurring === "1" || is_recurring === "true";
+        const recurringEnabled =
+            is_recurring === 1 ||
+            is_recurring === true ||
+            is_recurring === "1" ||
+            is_recurring === "true";
         if (recurringEnabled) {
-            
             const freqEnum = normalizeFrequency(frequency);
+            const autoUntil = auto_generate_until || auto_gen_until || due_date;
 
             const insertTemplateSql = `
                 INSERT INTO recurring_templates
-                (lease_id, charge_type, description, amount, frequency, next_due, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, 1)
+                (lease_id, charge_type, description, amount, frequency, next_due, auto_generate_until, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1)
             `;
             const [tmplRes] = await conn.query(insertTemplateSql, [
                 lease_id,
@@ -65,15 +71,17 @@ const createCharge = async (charge = {}) => {
                 description,
                 amount,
                 freqEnum,
-                due_date, 
+                due_date,
+                autoUntil,
             ]);
             template_id = tmplRes.insertId;
 
-            
             try {
-                await conn.query(`UPDATE charges SET template_id = ? WHERE charge_id = ?`, [template_id, charge_id]);
+                await conn.query(
+                    `UPDATE charges SET template_id = ? WHERE charge_id = ?`,
+                    [template_id, charge_id]
+                );
             } catch (e) {
-                
                 throw e;
             }
         }
@@ -91,8 +99,79 @@ const createCharge = async (charge = {}) => {
 
 const getAllCharges = async (queryParams = {}) => {
     try {
-        
-        
+        const where = [];
+        const values = [];
+
+        const q = queryParams.q || queryParams.search || queryParams.term || null;
+        const status = queryParams.status || null;
+        const chargeType = queryParams.charge_type || queryParams.type || null;
+        const dueDate = queryParams.due_date || null;
+        const dueFrom = queryParams.due_date_from || null;
+        const dueTo = queryParams.due_date_to || null;
+
+        if (q) {
+            const like = `%${String(q).trim()}%`;
+            where.push(`(
+                CONCAT(IFNULL(u.first_name,''),' ',IFNULL(u.last_name,'')) LIKE ?
+                OR c.description LIKE ?
+                OR p.property_name LIKE ?
+            )`);
+            values.push(like, like, like);
+        }
+
+        if (chargeType) {
+            where.push(`LOWER(c.charge_type) = LOWER(?)`);
+            values.push(chargeType);
+        }
+
+        if (dueDate) {
+            where.push(`DATE(c.due_date) = ?`);
+            values.push(dueDate);
+        } else if (dueFrom && dueTo) {
+            where.push(`DATE(c.due_date) BETWEEN ? AND ?`);
+            values.push(dueFrom, dueTo);
+        } else if (dueFrom) {
+            where.push(`DATE(c.due_date) >= ?`);
+            values.push(dueFrom);
+        } else if (dueTo) {
+            where.push(`DATE(c.due_date) <= ?`);
+            values.push(dueTo);
+        }
+
+        if (status) {
+            const s = String(status).toUpperCase();
+            if (s === "WAIVED") {
+                where.push(`c.status = 'Waived'`);
+            } else if (s === "PAID") {
+                where.push(`IFNULL(pay_sum.total_paid,0) >= c.amount`);
+            } else if (s === "PARTIALLY_PAID" || s === "PARTIAL") {
+                where.push(
+                    `IFNULL(pay_sum.total_paid,0) > 0 AND IFNULL(pay_sum.total_paid,0) < c.amount`
+                );
+            } else if (s === "UNPAID") {
+                where.push(
+                    `IFNULL(pay_sum.total_paid,0) = 0 AND (c.status IS NULL OR c.status != 'Waived')`
+                );
+            } else if (s === "OVERDUE") {
+                where.push(
+                    `DATE(c.due_date) < CURDATE() AND IFNULL(pay_sum.total_paid,0) < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                );
+            } else if (s === "DUE-SOON" || s === "DUE_SOON") {
+                where.push(
+                    `DATE(c.due_date) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND IFNULL(pay_sum.total_paid,0) < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                );
+            } else if (s === "PENDING") {
+                where.push(
+                    `DATE(c.due_date) > DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND IFNULL(pay_sum.total_paid,0) < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                );
+            } else {
+                where.push(`LOWER(c.status) = ?`);
+                values.push(String(status).toLowerCase());
+            }
+        }
+
+        const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
         const sql = `
         SELECT
             c.*, 
@@ -115,17 +194,17 @@ const getAllCharges = async (queryParams = {}) => {
         LEFT JOIN leases l ON c.lease_id = l.lease_id
         LEFT JOIN users u ON l.user_id = u.user_id
         LEFT JOIN properties p ON l.property_id = p.property_id
+        ${whereClause}
         ORDER BY c.charge_date DESC, c.due_date DESC
         `;
 
-        const [rows] = await pool.query(sql);
+        const [rows] = await pool.query(sql, values);
         return rows;
     } catch (error) {
         console.error("Error fetching all charges:", error);
         throw error;
     }
 };
-
 
 const getRecurringTemplateById = async (templateId) => {
     try {
@@ -135,11 +214,13 @@ const getRecurringTemplateById = async (templateId) => {
         );
         return rows[0] || null;
     } catch (error) {
-        console.error(`Error fetching recurring template with id ${templateId}:`, error);
+        console.error(
+            `Error fetching recurring template with id ${templateId}:`,
+            error
+        );
         throw error;
     }
 };
-
 
 const updateRecurringTemplateById = async (templateId, tmpl = {}) => {
     try {
@@ -148,7 +229,6 @@ const updateRecurringTemplateById = async (templateId, tmpl = {}) => {
         const fields = [];
         const values = [];
 
-        
         const {
             frequency,
             amount,
@@ -172,7 +252,8 @@ const updateRecurringTemplateById = async (templateId, tmpl = {}) => {
             fields.push(`next_due = ?`);
             values.push(next_due);
         }
-        const autoUntil = auto_generate_until !== undefined ? auto_generate_until : auto_gen_until;
+        const autoUntil =
+            auto_generate_until !== undefined ? auto_generate_until : auto_gen_until;
         if (autoUntil !== undefined) {
             fields.push(`auto_generate_until = ?`);
             values.push(autoUntil);
@@ -192,12 +273,17 @@ const updateRecurringTemplateById = async (templateId, tmpl = {}) => {
 
         if (fields.length === 0) return await getRecurringTemplateById(templateId);
 
-        const sql = `UPDATE recurring_templates SET ${fields.join(", ")} WHERE template_id = ?`;
+        const sql = `UPDATE recurring_templates SET ${fields.join(
+            ", "
+        )} WHERE template_id = ?`;
         values.push(templateId);
         await pool.query(sql, values);
         return await getRecurringTemplateById(templateId);
     } catch (error) {
-        console.error(`Error updating recurring template with id ${templateId}:`, error);
+        console.error(
+            `Error updating recurring template with id ${templateId}:`,
+            error
+        );
         throw error;
     }
 };
