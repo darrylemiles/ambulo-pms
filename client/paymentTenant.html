@@ -38,6 +38,22 @@
                     <i class="fas fa-receipt"></i>
                     Payment Breakdown
                 </h2>
+                <div class="filter-row" id="breakdown-filter">
+                    <label for="filter-month" class="sr-only">Month</label>
+                    <select id="filter-month" aria-label="Filter month">
+                        <option value="">All months</option>
+                    </select>
+
+                    <label for="filter-year" class="sr-only">Year</label>
+                    <select id="filter-year" aria-label="Filter year">
+                        <option value="">All years</option>
+                    </select>
+
+                    <button id="reset-filter" class="btn-filter secondary">Reset</button>
+                </div>
+                <div id="total-container">
+                    <!-- Total section will be loaded here -->
+                </div>
                 <div id="breakdown-container">
                     <div class="alert error active" id="no-space-alert">
                         <i class="fas fa-info-circle"></i>

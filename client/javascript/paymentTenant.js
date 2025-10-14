@@ -182,6 +182,8 @@ async function initializePage() {
     loadPaymentHistory();
     showNoSpaceAlert();
 
+    populateMonthYearFilters();
+
     if (rentedSpaces.length > 0) {
         setTimeout(() => {
             selectSpace(rentedSpaces[0].id);
@@ -189,6 +191,77 @@ async function initializePage() {
     }
 
     setupEventListeners();
+}
+
+function populateMonthYearFilters() {
+    const monthSelect = document.getElementById("filter-month");
+    const yearSelect = document.getElementById("filter-year");
+    if (!monthSelect || !yearSelect) return;
+
+    const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+    months.forEach((m, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx + 1).padStart(2, "0");
+        opt.textContent = m;
+        monthSelect.appendChild(opt);
+    });
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    for (let y = currentYear + 1; y >= currentYear - 5; y--) {
+        const opt = document.createElement("option");
+        opt.value = String(y);
+        opt.textContent = String(y);
+        yearSelect.appendChild(opt);
+    }
+
+    const resetBtn = document.getElementById("reset-filter");
+
+    const defaultMonth = String(new Date().getMonth() + 1).padStart(2, "0");
+    const defaultYear = String(currentYear);
+    monthSelect.value = defaultMonth;
+    yearSelect.value = defaultYear;
+
+    monthSelect.addEventListener("change", () => {
+        if (selectedSpace) selectSpace(selectedSpace.id);
+    });
+    yearSelect.addEventListener("change", () => {
+        if (selectedSpace) selectSpace(selectedSpace.id);
+    });
+
+    if (resetBtn)
+        resetBtn.addEventListener("click", () => resetBreakdownFilter());
+}
+
+function getActiveFilter() {
+    const month = document.getElementById("filter-month")?.value || "";
+    const year = document.getElementById("filter-year")?.value || "";
+    return { month, year };
+}
+
+function resetBreakdownFilter() {
+    const monthSel = document.getElementById("filter-month");
+    const yearSel = document.getElementById("filter-year");
+    const now = new Date();
+    const defaultMonth = String(now.getMonth() + 1).padStart(2, "0");
+    const defaultYear = String(now.getFullYear());
+    if (monthSel) monthSel.value = defaultMonth;
+    if (yearSel) yearSel.value = defaultYear;
+
+    if (selectedSpace) selectSpace(selectedSpace.id);
 }
 
 function setupEventListeners() {
@@ -218,7 +291,7 @@ function loadRentedSpaces() {
     const container = document.getElementById("spaces-grid");
 
     if (rentedSpaces.length === 0) {
-                container.innerHTML = `
+        container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon"><i class="fas fa-home"></i></div>
                         <div>No rented spaces found</div>
@@ -236,6 +309,32 @@ function loadRentedSpaces() {
             const urgencyClass =
                 daysUntilDue <= 3 ? "overdue" : daysUntilDue <= 7 ? "pending" : "paid";
 
+            const statusText = String(space.status || "").toLowerCase();
+            let statusClass = "paid";
+            if (statusText.includes("pending") || statusText.includes("processing")) {
+                statusClass = "pending";
+            } else if (
+                statusText.includes("overdue") ||
+                statusText.includes("late") ||
+                statusText.includes("delinquent")
+            ) {
+                statusClass = "overdue";
+            } else if (
+                statusText.includes("inactive") ||
+                statusText.includes("terminated") ||
+                statusText.includes("vacant")
+            ) {
+                statusClass = "overdue";
+            } else if (
+                statusText.includes("paid") ||
+                statusText.includes("active") ||
+                statusText.includes("occupied")
+            ) {
+                statusClass = "paid";
+            }
+
+            if (urgencyClass === "overdue") statusClass = "overdue";
+
             return `
                     <div class="space-card ${space.selected ? "selected" : ""
                 }" onclick="selectSpace('${escapeJsString(
@@ -243,12 +342,11 @@ function loadRentedSpaces() {
                 )}')" data-space-id="${space.id}">
                         <div class="space-header">
                             <div class="space-title">${space.title}</div>
-                            <div class="space-status ${urgencyClass}">${space.status
+                            <div class="space-status ${statusClass}">${space.status
                 }</div>
                         </div>
                         <div class="space-details">
-                            <i class="fas fa-location-dot"></i> ${space.address
-                }
+                            <i class="fas fa-location-dot"></i> ${space.address}
                         </div>
                         <div class="space-details" style="margin-top: 0.5rem; font-weight: 500;">
                             <i class="fas fa-calendar-days"></i> Due: ${formatDate(
@@ -259,14 +357,75 @@ function loadRentedSpaces() {
                     : ""
                 }
                         </div>
-                        <div class="space-rent">₱${space.monthlyRent.toLocaleString()}/month</div>
+                        <div class="space-rent">₱${formatCurrency(
+                    space.monthlyRent
+                )}/month</div>
                     </div>
                 `;
         })
         .join("");
 }
 
-function selectSpace(spaceId) {
+async function fetchPendingCharges(leaseId, filter = {}) {
+    if (!leaseId) return [];
+    try {
+        const token = getJwtToken();
+
+        let url = `${API_BASE_URL}/charges/leases/${encodeURIComponent(leaseId)}`;
+
+        const q = [];
+        if (filter && (filter.month || filter.year)) {
+            const month = filter.month || "";
+            const year = filter.year || "";
+            if (month && year) {
+                const from = `${year}-${month}-01`;
+
+                const lastDay = new Date(
+                    parseInt(year, 10),
+                    parseInt(month, 10),
+                    0
+                ).getDate();
+                const to = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
+                q.push(`due_date_from=${encodeURIComponent(from)}`);
+                q.push(`due_date_to=${encodeURIComponent(to)}`);
+            } else if (year && !month) {
+                q.push(`due_date_from=${encodeURIComponent(year + "-01-01")}`);
+                q.push(`due_date_to=${encodeURIComponent(year + "-12-31")}`);
+            } else if (month && !year) {
+                const now = new Date();
+                const y = String(now.getFullYear());
+                const from = `${y}-${month}-01`;
+                const lastDay = new Date(
+                    parseInt(y, 10),
+                    parseInt(month, 10),
+                    0
+                ).getDate();
+                const to = `${y}-${month}-${String(lastDay).padStart(2, "0")}`;
+                q.push(`due_date_from=${encodeURIComponent(from)}`);
+                q.push(`due_date_to=${encodeURIComponent(to)}`);
+            }
+        }
+
+        if (q.length) url += `?${q.join("&")}`;
+
+        const resp = await fetch(url, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!resp.ok) {
+            console.warn("Failed to fetch charges for lease", leaseId, resp.status);
+            return [];
+        }
+        const data = await resp.json();
+
+        const charges = Array.isArray(data) ? data : data.charges || [];
+        return charges;
+    } catch (e) {
+        console.error("Error fetching pending charges:", e);
+        return [];
+    }
+}
+
+async function selectSpace(spaceId) {
     rentedSpaces.forEach((space) => {
         space.selected = space.id === spaceId;
     });
@@ -274,17 +433,101 @@ function selectSpace(spaceId) {
     selectedSpace = rentedSpaces.find((space) => space.id === spaceId);
 
     loadRentedSpaces();
-    setTimeout(() => {
-        loadPaymentBreakdown();
+    setTimeout(async () => {
+        if (selectedSpace) {
+            try {
+                const activeFilter = getActiveFilter();
+                const charges = await fetchPendingCharges(
+                    selectedSpace.id,
+                    activeFilter
+                );
+                selectedSpace.pendingCharges = charges;
+            } catch (e) {
+                selectedSpace.pendingCharges = [];
+            }
+        }
+
+        await loadPaymentTotal();
+        await loadPaymentBreakdown();
 
         const breakdownElement = document.getElementById("breakdown-container");
         if (breakdownElement) {
             breakdownElement.scrollIntoView({
                 behavior: "smooth",
-                block: "nearest",
+                block: "start",
             });
         }
     }, 150);
+}
+
+function loadPaymentTotal() {
+    const container = document.getElementById("total-container");
+
+    if (!selectedSpace) {
+        if (container) {
+            container.innerHTML = "";
+        }
+        return;
+    }
+
+    const charges =
+        selectedSpace && Array.isArray(selectedSpace.pendingCharges)
+            ? selectedSpace.pendingCharges
+            : [];
+
+    const totalFixed =
+        charges.length > 0
+            ? charges.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0)
+            : [
+                { label: "Monthly Rent", amount: selectedSpace.monthlyRent },
+                {
+                    label: "Electricity",
+                    amount: Math.floor(Math.random() * 1000) + 2000,
+                },
+                { label: "Water", amount: Math.floor(Math.random() * 300) + 600 },
+                { label: "Maintenance Fee", amount: 500 },
+            ].reduce((s, c) => s + c.amount, 0);
+    const currentMonth = new Date().toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+    });
+
+    const activeFilter = getActiveFilter();
+    let displayedTotal = totalFixed;
+    if (charges.length > 0 && (activeFilter.month || activeFilter.year)) {
+        displayedTotal = charges
+            .filter((c) => {
+                const d = c.due_date || c.charge_date || "";
+                if (!d) return false;
+                const dt = new Date(d);
+                if (isNaN(dt.getTime())) return false;
+                const m = String(dt.getMonth() + 1).padStart(2, "0");
+                const y = String(dt.getFullYear());
+                if (activeFilter.month && activeFilter.year)
+                    return m === activeFilter.month && y === activeFilter.year;
+                if (activeFilter.month) return m === activeFilter.month;
+                if (activeFilter.year) return y === activeFilter.year;
+                return true;
+            })
+            .reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+    }
+
+    if (container) {
+        container.innerHTML = `
+                    <div class="total-section">
+                        <div class="total-label">
+                            <i class="fas fa-calendar-days"></i>
+                            ${currentMonth} - Total Due
+                        </div>
+                        <div class="total-amount">₱${formatCurrency(
+            displayedTotal
+        )}</div>
+                        <button class="pay-now-btn" onclick="openPaymentModal(${displayedTotal})">
+                            <i class="fas fa-credit-card"></i> Pay Now
+                        </button>
+                    </div>
+                `;
+    }
 }
 
 function loadPaymentBreakdown() {
@@ -309,6 +552,11 @@ function loadPaymentBreakdown() {
         { label: "Maintenance Fee", amount: 500 },
     ];
 
+    const charges =
+        selectedSpace && Array.isArray(selectedSpace.pendingCharges)
+            ? selectedSpace.pendingCharges
+            : [];
+
     const occasionalCosts = [
         {
             label: "Security Deposit",
@@ -324,37 +572,94 @@ function loadPaymentBreakdown() {
         { label: "Insurance Premium", amount: 2400, due: "Annual" },
     ];
 
-    const totalFixed = fixedCosts.reduce((sum, cost) => sum + cost.amount, 0);
-    const currentMonth = new Date().toLocaleString("en-US", {
-        month: "long",
-        year: "numeric",
-    });
+    const totalFixed =
+        charges.length > 0
+            ? charges.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0)
+            : fixedCosts.reduce((sum, cost) => sum + cost.amount, 0);
+
+    const activeFilter = getActiveFilter();
+    const filterMonth = activeFilter.month;
+    const filterYear = activeFilter.year;
 
     if (container) {
         container.innerHTML = `
                     <div class="breakdown-grid">
                         <div class="breakdown-section">
                             <h3 class="breakdown-title">
-                                <i class="fas fa-calendar-check"></i>
-                                Monthly Fixed Costs
+                                <i class="fas fa-exclamation-circle"></i>
+                                Pending Charges
                             </h3>
-                            ${fixedCosts
-                .map(
-                    (cost) => `
+                            ${charges.length > 0
+                ? charges
+                    .map(
+                        (ch) => `
                                 <div class="breakdown-item">
-                                    <span class="breakdown-label">${cost.label
-                        }</span>
-                                    <span class="breakdown-amount">₱${cost.amount.toLocaleString()}</span>
+                                    <div>
+                                        <div class="breakdown-label">${ch.charge_type ||
+                            ch.description ||
+                            "Charge"
+                            }</div>
+                                        <small style="color: #6b7280;">Due: ${ch.due_date || ch.charge_date || ""
+                            }</small>
+                                    </div>
+                                    <span class="breakdown-amount">₱${formatCurrency(
+                                parseFloat(ch.amount) || 0
+                            )}</span>
                                 </div>
                             `
-                )
-                .join("")}
+                    )
+                    .join("")
+                : fixedCosts
+                    .map(
+                        (cost) => `
+                                <div class="breakdown-item">
+                                    <span class="breakdown-label">${cost.label
+                            }</span>
+                                    <span class="breakdown-amount">₱${formatCurrency(
+                                cost.amount
+                            )}</span>
+                                </div>
+                            `
+                    )
+                    .join("")
+            }
                             <div class="breakdown-item" style="border-top: 2px solid #667eea; padding-top: 0.75rem;">
-                                <span class="breakdown-label">Monthly Total</span>
-                                <span class="breakdown-amount">₱${totalFixed.toLocaleString()}</span>
+                                <span class="breakdown-label">Total Pending</span>
+                                <span class="breakdown-amount">₱${formatCurrency(
+                charges.length > 0 &&
+                    (filterMonth || filterYear)
+                    ? charges
+                        .filter((c) => {
+                            const d =
+                                c.due_date || c.charge_date || "";
+                            if (!d) return false;
+                            const dt = new Date(d);
+                            if (isNaN(dt.getTime())) return false;
+                            const m = String(
+                                dt.getMonth() + 1
+                            ).padStart(2, "0");
+                            const y = String(dt.getFullYear());
+                            if (filterMonth && filterYear)
+                                return (
+                                    m === filterMonth &&
+                                    y === filterYear
+                                );
+                            if (filterMonth)
+                                return m === filterMonth;
+                            if (filterYear)
+                                return y === filterYear;
+                            return true;
+                        })
+                        .reduce(
+                            (s, c) =>
+                                s + (parseFloat(c.amount) || 0),
+                            0
+                        )
+                    : totalFixed
+            )}</span>
                             </div>
                         </div>
-                        
+
                         <div class="breakdown-section">
                             <h3 class="breakdown-title">
                                 <i class="fas fa-clock-rotate-left"></i>
@@ -377,17 +682,6 @@ function loadPaymentBreakdown() {
                 .join("")}
                         </div>
                     </div>
-                    
-                    <div class="total-section">
-                        <div class="total-label">
-                            <i class="fas fa-calendar-days"></i>
-                            ${currentMonth} - Total Due
-                        </div>
-                        <div class="total-amount">₱${totalFixed.toLocaleString()}</div>
-                        <button class="pay-now-btn" onclick="openPaymentModal(${totalFixed})">
-                            <i class="fas fa-credit-card"></i> Pay Now
-                        </button>
-                    </div>
                 `;
     }
 }
@@ -396,7 +690,7 @@ function loadPaymentHistory() {
     const tbody = document.getElementById("payment-tbody");
 
     if (paymentHistory.length === 0) {
-                tbody.innerHTML = `
+        tbody.innerHTML = `
                     <tr>
                         <td colspan="6" class="empty-state">
                             <div class="empty-icon"><i class="fas fa-file-invoice"></i></div>
@@ -611,6 +905,14 @@ function calculateTotalAmount() {
     const maintenance = 500;
 
     return baseRent + utilities + water + maintenance;
+}
+
+function formatCurrency(amount) {
+    try {
+        return Number(amount).toLocaleString();
+    } catch (e) {
+        return amount;
+    }
 }
 
 function generateReference() {
