@@ -618,6 +618,33 @@ function injectEnhancedButtonStyles() {
     document.head.appendChild(styleSheet);
 }
 
+if (!document.getElementById("lease-tooltip-styles")) {
+    const ltStyles = document.createElement("style");
+    ltStyles.id = "lease-tooltip-styles";
+    ltStyles.textContent = `
+        .lease-tooltip { 
+            background: #ffffff; 
+            color: #0f172a; 
+            border: 1px solid rgba(226,232,240,0.9);
+            box-shadow: 0 18px 40px rgba(2,6,23,0.12);
+            border-radius: 8px; 
+            padding: 12px 16px; 
+            font-size: 13px; 
+            line-height: 1.25; 
+            max-width: 360px; 
+            max-height: 320px; 
+            overflow: auto; 
+            z-index: 1000000; 
+        }
+        .lease-tooltip .lt-row { display:flex; justify-content:space-between; gap:8px; padding:4px 0; }
+        .lease-tooltip .lt-label { color:#6b7280; margin-right:12px; }
+        .lease-tooltip .lt-value { text-align:right; font-weight:600; }
+    .lease-tooltip:before { content: ''; position: absolute; width:12px; height:12px; background: #ffffff; transform: rotate(45deg); border-left:1px solid rgba(226,232,240,0.9); border-top:1px solid rgba(226,232,240,0.9); top:-6px; right:22px; box-shadow: -2px -2px 6px rgba(2,6,23,0.04); }
+        .floating-lease-tooltip { position: fixed !important; }
+    `;
+    document.head.appendChild(ltStyles);
+}
+
 function generateReference(method) {
     const prefixes = {
         cash: "CSH",
@@ -846,6 +873,59 @@ async function fetchLeasesForUser(userId) {
     }
 }
 
+async function fetchLeaseById(leaseId) {
+    if (!leaseId) return null;
+    try {
+        const key = String(leaseId);
+        const cached = leasesCache[key];
+        const now = Date.now();
+        if (cached && now - cached.fetchedAt < 1000 * 60 * 5) {
+            return cached.data;
+        }
+
+        const token = typeof getJwtToken === "function" ? getJwtToken() : null;
+        const res = await fetch(
+            `${API_BASE_URL}/leases/${encodeURIComponent(leaseId)}`,
+            {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+        );
+        if (!res.ok) {
+            return null;
+        }
+        const json = await res.json();
+
+        const raw = json && typeof json === "object" ? json.lease || json : null;
+        if (!raw) {
+            leasesCache[key] = { data: null, fetchedAt: Date.now() };
+            return null;
+        }
+
+        const normalized = {
+            start_date:
+                raw.lease_start_date || raw.lease_start || raw.start_date || null,
+            end_date: raw.lease_end_date || raw.lease_end || raw.end_date || null,
+            monthly_rent:
+                raw.monthly_rent != null
+                    ? raw.monthly_rent
+                    : raw.rent || raw.base_rent || null,
+            lease_term_months:
+                raw.lease_term_months != null
+                    ? raw.lease_term_months
+                    : raw.lease_term || raw.term_months || null,
+            late_fee_percentage:
+                raw.late_fee_percentage != null
+                    ? raw.late_fee_percentage
+                    : raw.late_fee || raw.late_fee_percent || null,
+        };
+
+        leasesCache[key] = { data: normalized, fetchedAt: Date.now() };
+        return normalized;
+    } catch (e) {
+        return null;
+    }
+}
+
 async function fetchPropertyName(propertyId) {
     if (!propertyId) return null;
     const cached = propertiesCache[propertyId];
@@ -971,6 +1051,31 @@ window.populateLeaseOptionsForCharge = async function (id, selectedLeaseId) {
                 ? labelParts.join(" — ")
                 : leaseId || "Lease";
             opt.dataset.propertyId = lease.property_id || "";
+
+            try {
+                opt.dataset.leaseJson = JSON.stringify({
+                    lease_id: lease.lease_id || lease.id || "",
+                    start_date:
+                        lease.lease_start_date ||
+                        lease.lease_start ||
+                        lease.start_date ||
+                        "",
+                    end_date:
+                        lease.lease_end_date || lease.lease_end || lease.end_date || "",
+                    monthly_rent:
+                        lease.monthly_rent || lease.rent || lease.base_rent || "",
+                    lease_term_months: lease.lease_term_months || lease.term_months || "",
+                    late_fee_percentage:
+                        lease.late_fee_percentage ||
+                        lease.late_fee ||
+                        lease.late_fee_percent ||
+                        "",
+                    unit: unit || "",
+                    property_name: propertyName || "",
+                });
+            } catch (e) {
+                opt.dataset.leaseJson = "";
+            }
             leaseSelect.appendChild(opt);
         });
 
@@ -987,6 +1092,442 @@ window.populateLeaseOptionsForCharge = async function (id, selectedLeaseId) {
         leaseSelect.disabled = false;
     } catch (err) {
         console.error("populateLeaseOptionsForCharge error", err);
+    }
+};
+
+window.toggleLeaseTooltip = async function (chargeIndex) {
+    try {
+        const tooltip = document.getElementById(`leaseTooltip_${chargeIndex}`);
+        const leaseSelect = document.getElementById(`advancedLease_${chargeIndex}`);
+        const btn = document.getElementById(`viewLeaseBtn_${chargeIndex}`);
+        if (!tooltip || !leaseSelect) return;
+
+        if (tooltip.style.display === "none" || !tooltip.style.display) {
+            const leaseId = leaseSelect.value;
+            if (!leaseId) {
+                tooltip.innerHTML = `<div class="lt-row"><div class="lt-label">No lease selected</div></div>`;
+                tooltip.style.display = "block";
+                return;
+            }
+
+            const opt = leaseSelect.options[leaseSelect.selectedIndex];
+            let leaseData = null;
+            if (opt && opt.dataset && opt.dataset.leaseJson) {
+                try {
+                    leaseData = JSON.parse(opt.dataset.leaseJson);
+                } catch (e) {
+                    leaseData = null;
+                }
+            }
+
+            if (!leaseData) {
+                try {
+                    const parent = leaseSelect.closest(".advanced-charge-item");
+                    const tenantSelect = parent
+                        ? parent.querySelector('select[name^="advancedTenant_"]')
+                        : null;
+                    const userId = tenantSelect ? tenantSelect.value : null;
+                    if (userId) {
+                        const leases = await fetchLeasesForUser(userId);
+                        const found = (leases || []).find(
+                            (l) => String(l.lease_id || l.id) === String(leaseId)
+                        );
+                        if (found) {
+                            leaseData = {
+                                lease_id: found.lease_id || found.id || "",
+                                start_date: found.start_date || found.lease_start || "",
+                                end_date: found.end_date || found.lease_end || "",
+                                monthly_rent:
+                                    found.monthly_rent || found.rent || found.base_rent || "",
+                                lease_term_months:
+                                    found.lease_term_months || found.term_months || "",
+                                late_fee_percentage:
+                                    found.late_fee_percentage ||
+                                    found.late_fee ||
+                                    found.late_fee_percent ||
+                                    "",
+                                unit: found.unit || found.unit_number || "",
+                                property_name: found.property_name || found.property || "",
+                            };
+                        }
+                    }
+                } catch (e) {
+                    /* noop */
+                }
+            }
+
+            renderLeaseTooltip(tooltip, leaseData);
+            tooltip.style.display = "block";
+        } else {
+            tooltip.style.display = "none";
+        }
+    } catch (e) {
+        console.error("toggleLeaseTooltip error", e);
+    }
+};
+
+function renderLeaseTooltip(container, leaseData) {
+    if (!container) return;
+    if (!leaseData) {
+        container.innerHTML = `<div class="lt-row"><div class="lt-label">Lease details not available</div></div>`;
+        return;
+    }
+
+    const fmt = (v) => (v === null || v === undefined || v === "" ? "—" : v);
+    const fmtDateSafe = (d) => {
+        if (!d) return "—";
+        try {
+            const t = new Date(d);
+            if (isNaN(t.getTime())) return escapeHtml(String(d));
+            return formatDate(t.toISOString());
+        } catch (e) {
+            return escapeHtml(String(d));
+        }
+    };
+
+    const rent = leaseData.monthly_rent
+        ? typeof leaseData.monthly_rent === "number"
+            ? formatCurrency(leaseData.monthly_rent)
+            : escapeHtml(String(leaseData.monthly_rent))
+        : "—";
+
+    if (leaseData._loading) {
+        container.innerHTML = `
+            <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(
+            leaseData.property_name || leaseData.unit || ""
+        )}</div>
+            <div class="lt-row"><div class="lt-label">Loading lease details...</div></div>
+        `;
+        return;
+    }
+
+    var propName = leaseData.property_name || leaseData.property || "";
+    var unitStr =
+        leaseData.unit || leaseData.unit_number || leaseData.unit_number || "";
+    var header = "";
+    if (propName) {
+        header = escapeHtml(propName);
+        try {
+            var pnLower = String(propName).toLowerCase();
+            var unitLower = String(unitStr || "").toLowerCase();
+            if (unitStr && unitLower && pnLower.indexOf(unitLower) === -1) {
+                header += unitStr ? " — " + escapeHtml(unitStr) : "";
+            }
+        } catch (e) {
+            header += unitStr ? " — " + escapeHtml(unitStr) : "";
+        }
+    } else if (unitStr) {
+        header = escapeHtml(unitStr);
+    }
+
+    container.innerHTML = `
+        <div style="font-weight:700; margin-bottom:6px;">${header}</div>
+        <div class="lt-row"><div class="lt-label">Start</div><div class="lt-value">${fmtDateSafe(
+        leaseData.start_date
+    )}</div></div>
+        <div class="lt-row"><div class="lt-label">End</div><div class="lt-value">${fmtDateSafe(
+        leaseData.end_date
+    )}</div></div>
+        <div class="lt-row"><div class="lt-label">Monthly Rent</div><div class="lt-value">${rent}</div></div>
+        <div class="lt-row"><div class="lt-label">Term (months)</div><div class="lt-value">${fmt(
+        leaseData.lease_term_months
+    )}</div></div>
+        <div class="lt-row"><div class="lt-label">Late Fee %</div><div class="lt-value">${fmt(
+        leaseData.late_fee_percentage
+    )}</div></div>
+    `;
+}
+
+function escapeHtml(text) {
+    if (text === null || text === undefined) return "";
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+window.toggleModalLeaseTooltip = async function (tooltipId) {
+    try {
+        const container = document.getElementById(tooltipId);
+
+        if (!container) return;
+
+        const existingFloating = document.querySelector(
+            `.floating-lease-tooltip[data-for="${tooltipId}"]`
+        );
+        if (existingFloating) {
+            existingFloating.remove();
+            return;
+        }
+
+        document
+            .querySelectorAll(".floating-lease-tooltip")
+            .forEach((el) => el.remove());
+
+        let leaseData = null;
+        try {
+            const ds = container.dataset || {};
+            if (
+                ds &&
+                (ds.propertyName ||
+                    ds.unit ||
+                    ds.monthlyRent ||
+                    ds.leaseStart ||
+                    ds.leaseEnd)
+            ) {
+                leaseData = {
+                    property_name:
+                        ds.propertyName || ds.property || ds.propertyname || "",
+                    unit: ds.unit || ds.unitnumber || ds.unit_number || "",
+                    monthly_rent:
+                        ds.monthlyRent || ds.monthlyrent || ds.monthly_rent || "",
+                    start_date: ds.leaseStart || ds.leasestart || ds.lease_start || "",
+                    end_date: ds.leaseEnd || ds.leaseend || ds.lease_end || "",
+                    lease_term_months:
+                        ds.leaseTermMonths ||
+                        ds.leasetermmonths ||
+                        ds.lease_term_months ||
+                        "",
+                    late_fee_percentage:
+                        ds.lateFeePercentage ||
+                        ds.latefeepercentage ||
+                        ds.late_fee_percentage ||
+                        "",
+                    lease_id: ds.leaseId || ds.lease_id || ds.leaseid || "",
+                };
+            }
+
+            if (!leaseData && ds && (ds.leaseId || ds.lease_id || ds.leaseid)) {
+                leaseData = {
+                    lease_id: ds.leaseId || ds.lease_id || ds.leaseid || "",
+                    email: ds.email || "",
+                    phone: ds.phone || "",
+                };
+                leaseData._loading = true;
+            }
+        } catch (e) {
+            /* noop */
+        }
+
+        try {
+            if (
+                leaseData &&
+                (!leaseData.lease_term_months ||
+                    !leaseData.late_fee_percentage ||
+                    !leaseData.email ||
+                    !leaseData.phone)
+            ) {
+                const lid = leaseData.lease_id || leaseData.leaseId || "";
+                if (lid) {
+                    leaseData._loading = true;
+                }
+            }
+        } catch (e) {
+            /* noop */
+        }
+
+        if (!leaseData) {
+            if (tooltipId === "editLeaseTooltip") {
+                const tenantInfo = document.getElementById("editChargeTenantInfo");
+                const text = tenantInfo ? tenantInfo.textContent || "" : "";
+                const parts = text.split(" - ").map((s) => s.trim());
+                const tenant = parts[0] || "";
+                const unit = parts[1] || "";
+                leaseData = leasesData.find(
+                    (l) =>
+                        String(l.tenant).toLowerCase() === String(tenant).toLowerCase() &&
+                        String(l.unit).toLowerCase() === String(unit).toLowerCase()
+                );
+            }
+
+            if (!leaseData && tooltipId === "recurringLeaseTooltip") {
+                const recurringTooltip = document.getElementById(
+                    "recurringLeaseTooltip"
+                );
+                const recurringModal = recurringTooltip
+                    ? recurringTooltip.closest(".modal-content")
+                    : null;
+                if (recurringModal) {
+                    const tenantCtx = recurringModal.querySelector(
+                        ".tenant-context strong"
+                    );
+                    if (tenantCtx) {
+                        const parts = (tenantCtx.textContent || "")
+                            .split(" - ")
+                            .map((s) => s.trim());
+                        const tenant = parts[0] || "";
+                        const unit = parts[1] || "";
+                        leaseData = leasesData.find(
+                            (l) =>
+                                String(l.tenant).toLowerCase() ===
+                                String(tenant).toLowerCase() &&
+                                String(l.unit).toLowerCase() === String(unit).toLowerCase()
+                        );
+                    }
+                }
+            }
+        }
+
+        const floatEl = document.createElement("div");
+        floatEl.className = "lease-tooltip floating-lease-tooltip";
+        floatEl.setAttribute("data-for", tooltipId);
+        floatEl.style.position = "fixed";
+        floatEl.style.display = "block";
+        floatEl.style.opacity = "0";
+        renderLeaseTooltip(floatEl, leaseData || null);
+
+        try {
+            floatEl.style.zIndex = "1000001";
+            floatEl.style.background = floatEl.style.background || "#ffffff";
+            floatEl.style.pointerEvents = "auto";
+            floatEl.setAttribute("role", "dialog");
+            floatEl.setAttribute("aria-hidden", "false");
+            floatEl.tabIndex = -1;
+        } catch (e) {
+            /* noop */
+        }
+        document.body.appendChild(floatEl);
+        try {
+            floatEl.style.display = "block";
+            floatEl.style.visibility = "visible";
+            floatEl.style.transform = "translateZ(0)";
+        } catch (e) { }
+
+        let btn = null;
+        try {
+            btn = container.parentElement
+                ? container.parentElement.querySelector(".view-lease-btn")
+                : null;
+            if (!btn) btn = document.querySelector(`button[onclick*="${tooltipId}"]`);
+
+            if (!btn) {
+                const map = {
+                    editLeaseTooltip: "editViewLeaseBtn",
+                    recurringLeaseTooltip: "recurringViewLeaseBtn",
+                };
+                const maybeId = map[tooltipId];
+                if (maybeId) btn = document.getElementById(maybeId);
+            }
+        } catch (e) {
+            btn = null;
+        }
+
+        try {
+            const rect = btn
+                ? btn.getBoundingClientRect()
+                : container.getBoundingClientRect
+                    ? container.getBoundingClientRect()
+                    : { left: 0, right: 0, top: 0, bottom: 0 };
+
+            const fw = Math.min(380, Math.max(220, floatEl.offsetWidth || 260));
+            floatEl.style.maxWidth = fw + "px";
+
+            let left = rect.right - fw;
+            if (left < 8) left = rect.left;
+            if (left + fw > window.innerWidth - 8)
+                left = Math.max(8, window.innerWidth - fw - 8);
+
+            let top = rect.bottom + 8;
+            if (top + floatEl.offsetHeight > window.innerHeight - 8) {
+                top = rect.top - floatEl.offsetHeight - 8;
+            }
+            floatEl.style.left = left + "px";
+            floatEl.style.top = top + "px";
+            floatEl.style.opacity = "1";
+
+            setTimeout(() => {
+                try {
+                    floatEl.style.left = left + "px";
+                    floatEl.style.top = top + "px";
+                    floatEl.style.zIndex = "1000001";
+                } catch (e) {
+                    /* noop */
+                }
+            }, 20);
+
+            try {
+                const cs = window.getComputedStyle(floatEl);
+            } catch (e) {
+                /* noop */
+            }
+        } catch (e) {
+            floatEl.style.left = "50%";
+            floatEl.style.top = "50%";
+            console.warn(
+                "[toggleModalLeaseTooltip] positioning failed, falling back to center",
+                e
+            );
+        }
+
+        const outsideHandler = function (ev) {
+            if (
+                !ev.target.closest(".floating-lease-tooltip") &&
+                !ev.target.closest(".view-lease-btn")
+            ) {
+                floatEl.remove();
+                document.removeEventListener("click", outsideHandler);
+                window.removeEventListener("resize", outsideHandler);
+            }
+        };
+        document.addEventListener("click", outsideHandler);
+        window.addEventListener("resize", outsideHandler);
+
+        try {
+            if (leaseData && leaseData._loading && leaseData.lease_id) {
+                const fetched = await fetchLeaseById(leaseData.lease_id);
+                if (fetched) {
+                    leaseData._loading = false;
+                    leaseData.tenant =
+                        leaseData.tenant || fetched.tenant || fetched.name || "";
+                    leaseData.email =
+                        leaseData.email || fetched.email || fetched.contact_email || "";
+                    leaseData.phone =
+                        leaseData.phone || fetched.phone || fetched.phone_number || "";
+                    leaseData.lease_term_months =
+                        leaseData.lease_term_months ||
+                        fetched.lease_term_months ||
+                        fetched.term_months ||
+                        "";
+                    leaseData.late_fee_percentage =
+                        leaseData.late_fee_percentage ||
+                        fetched.late_fee_percentage ||
+                        fetched.late_fee ||
+                        fetched.late_fee_percent ||
+                        "";
+                    leaseData.property_name =
+                        leaseData.property_name ||
+                        fetched.property_name ||
+                        fetched.property ||
+                        "";
+                    leaseData.unit =
+                        leaseData.unit || fetched.unit || fetched.unit_number || "";
+                    leaseData.monthly_rent =
+                        leaseData.monthly_rent ||
+                        fetched.monthly_rent ||
+                        fetched.rent ||
+                        fetched.base_rent ||
+                        "";
+                    leaseData.start_date =
+                        leaseData.start_date ||
+                        fetched.lease_start_date ||
+                        fetched.start_date ||
+                        "";
+                    leaseData.end_date =
+                        leaseData.end_date ||
+                        fetched.lease_end_date ||
+                        fetched.end_date ||
+                        "";
+
+                    renderLeaseTooltip(floatEl, leaseData);
+                }
+            }
+        } catch (e) {
+            /* noop */
+        }
+    } catch (e) {
+        console.error("toggleModalLeaseTooltip error", e);
     }
 };
 
@@ -1123,7 +1664,7 @@ function showRecurringEditChoice(id, charge, lease) {
                             <div class="choice-icon recurring">
                                 <i class="fas fa-rotate"></i>
                             </div>
-                            <h4>Edit Recurring Template</h4>
+                            <h4>Edit Recurring Charge</h4>
                             <p>Update the recurring charge settings that will apply to all future charges.</p>
                         </div>
                     </div>
@@ -1207,6 +1748,31 @@ async function openStandardEditModal(charge, lease) {
 
     createModalsAndDialogs();
     openModal("editChargeModal");
+
+    setTimeout(() => {
+        const tooltip = document.getElementById("editLeaseTooltip");
+        if (tooltip) {
+            try {
+                tooltip.dataset.propertyName =
+                    lease.property_name || lease.property || "";
+                tooltip.dataset.leaseId = lease.lease_id || lease.id || "";
+                tooltip.dataset.unit = lease.unit || lease.unit_number || "";
+                tooltip.dataset.monthlyRent = lease.monthly_rent || lease.rent || "";
+                tooltip.dataset.leaseStart =
+                    lease.lease_start_date || lease.start_date || "";
+                tooltip.dataset.leaseEnd = lease.lease_end_date || lease.end_date || "";
+                tooltip.dataset.leaseTermMonths =
+                    lease.lease_term_months || lease.term_months || "";
+                tooltip.dataset.lateFeePercentage =
+                    lease.late_fee_percentage ||
+                    lease.late_fee ||
+                    lease.late_fee_percent ||
+                    "";
+            } catch (e) {
+                /* noop */
+            }
+        }
+    }, 50);
 }
 
 async function openRecurringEditModal(charge, lease) {
@@ -1227,8 +1793,14 @@ async function openRecurringEditModal(charge, lease) {
                     <span class="close" onclick="closeModal('editRecurringModal')">&times;</span>
                 </div>
                 <div class="modal-body">
-                    <div class="tenant-context">
+                    <div class="tenant-context" style="display:flex; gap:8px; align-items:center; position:relative;">
                         <strong>${lease.tenant} - ${lease.unit}</strong>
+                        <button type="button" id="recurringViewLeaseBtn" class="view-lease-btn" onclick="toggleModalLeaseTooltip('recurringLeaseTooltip')" title="View Lease Details" style="margin-left:8px;">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <div class="lease-tooltip" id="recurringLeaseTooltip" style="display:none; position:absolute; z-index:9999; margin-top:36px;">
+                            <!-- Lease preview for recurring modal -->
+                        </div>
                     </div>
                     
                     <form id="editRecurringForm" onsubmit="handleEditRecurringSubmission(event)">
@@ -1278,7 +1850,7 @@ async function openRecurringEditModal(charge, lease) {
                         <div class="modal-actions">
                             <button type="button" class="btn-secondary" onclick="closeModal('editRecurringModal')">Cancel</button>
                             <button type="submit" class="btn-primary">
-                                <i class="fas fa-save"></i> Update Recurring Template
+                                <i class="fas fa-save"></i> Update Recurring Charge
                             </button>
                         </div>
                     </form>
@@ -1288,6 +1860,31 @@ async function openRecurringEditModal(charge, lease) {
     `;
 
     document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+    setTimeout(() => {
+        const tooltip = document.getElementById("recurringLeaseTooltip");
+        if (tooltip) {
+            try {
+                tooltip.dataset.propertyName =
+                    lease.property_name || lease.property || "";
+                tooltip.dataset.leaseId = lease.lease_id || lease.id || "";
+                tooltip.dataset.unit = lease.unit || lease.unit_number || "";
+                tooltip.dataset.monthlyRent = lease.monthly_rent || lease.rent || "";
+                tooltip.dataset.leaseStart =
+                    lease.lease_start_date || lease.start_date || "";
+                tooltip.dataset.leaseEnd = lease.lease_end_date || lease.end_date || "";
+                tooltip.dataset.leaseTermMonths =
+                    lease.lease_term_months || lease.term_months || "";
+                tooltip.dataset.lateFeePercentage =
+                    lease.late_fee_percentage ||
+                    lease.late_fee ||
+                    lease.late_fee_percent ||
+                    "";
+            } catch (e) {
+                /* noop */
+            }
+        }
+    }, 50);
 
     const templateId = charge.template_id;
     if (templateId) {
@@ -1329,7 +1926,7 @@ async function openRecurringEditModal(charge, lease) {
                     activeEl.checked = tmpl.is_active == 1 || tmpl.is_active === true;
             }
         } catch (e) {
-            console.error("Failed to fetch recurring template:", e);
+            console.error("Failed to fetch recurring charge:", e);
         }
     }
 }
@@ -1379,17 +1976,17 @@ window.handleEditRecurringSubmission = async function (event) {
         if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
             throw new Error(
-                err.message || `Failed to update recurring template (${resp.status})`
+                err.message || `Failed to update recurring charge (${resp.status})`
             );
         }
 
-        showAlert("Recurring template updated successfully!", "success");
+        showAlert("Recurring charge updated successfully!", "success");
         closeModal("editRecurringModal");
 
         fetchCharges();
     } catch (e) {
         console.error(e);
-        showAlert(e.message || "Failed to update recurring template", "error");
+        showAlert(e.message || "Failed to update recurring charge", "error");
     } finally {
         submitBtn && submitBtn.removeAttribute("disabled");
         submitBtn && submitBtn.classList.remove("loading");
@@ -1945,7 +2542,7 @@ function renderChargesTable() {
                         <div class="card-detail-row">
                             <span class="card-detail-label">Type</span>
                             <span class="card-detail-value">
-                    <span class="badge ${(charge.type || "")
+                                <span class="type-text ${(charge.type || "")
                         .toString()
                         .toLowerCase()
                         .replace(/\s+/g, "-")}">${capitalizeFirst(
@@ -2481,9 +3078,15 @@ function createModalsAndDialogs() {
                     <span class="close" onclick="closeModal('editChargeModal')">&times;</span>
                 </div>
                 <div class="modal-body">
-                    <div class="tenant-context">
-                        <strong id="editChargeTenantInfo"></strong>
-                    </div>
+                                    <div class="tenant-context" style="display:flex; gap:8px; align-items:center; position:relative;">
+                                        <strong id="editChargeTenantInfo"></strong>
+                                        <button type="button" id="editViewLeaseBtn" class="view-lease-btn" onclick="toggleModalLeaseTooltip('editLeaseTooltip')" title="View Lease Details" style="margin-left:8px;">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        <div class="lease-tooltip" id="editLeaseTooltip" style="display:none; position: absolute; z-index: 9999; margin-top: 36px;">
+                                            <!-- Lease preview for edit modal -->
+                                        </div>
+                                    </div>
                     <form id="editChargeForm" onsubmit="handleEditChargeSubmission(event)">
                         <input type="hidden" id="editChargeId" name="chargeId">
                         
@@ -2919,6 +3522,70 @@ function injectAdvancedChargesModalStyles() {
             resize: vertical;
             font-family: inherit;
         }
+        /* Lease tooltip styles */
+        .view-lease-btn {
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #374151;
+        }
+        .view-lease-btn:hover { background: #f8fafc; }
+
+        .lease-tooltip {
+            position: absolute;
+            top: 44px;
+            right: 0;
+            min-width: 220px;
+            max-width: 380px;
+            background: #ffffff;
+            border: 1px solid rgba(226,232,240,0.9);
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(2,6,23,0.12);
+            padding: 10px 12px;
+            z-index: 999999;
+            font-size: 13px;
+            color: #0f172a;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow: auto;
+            max-height: 260px;
+        }
+        /* small caret/arrow */
+        .lease-tooltip::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            right: 14px;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            transform: rotate(45deg);
+            border-left: 1px solid rgba(226,232,240,0.9);
+            border-top: 1px solid rgba(226,232,240,0.9);
+            box-shadow: -2px -2px 6px rgba(2,6,23,0.04);
+        }
+        .lease-tooltip .lt-row { display:flex; justify-content:space-between; gap:8px; padding:6px 0; }
+        .lease-tooltip .lt-label { color:#64748b; font-weight:600; }
+        .lease-tooltip .lt-value { color:#0f172a; font-weight:700; }
+
+    .advanced-field-group > div { display:flex; align-items:center; }
+    .advanced-field-group select.advanced-field-select { min-width: 0; max-width: 100%; }
+    .advanced-field-group select.advanced-field-select option { white-space: nowrap; }
+    .advanced-charge-fields .advanced-field-group { min-width: 120px; }
+    .advanced-field-group .view-lease-btn { flex: 0 0 36px; }
+
+    .advanced-charge-fields { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+    .lease-field-group { grid-column: span 2; min-width: 320px; }
+
+    .charge-type-field { min-width: 140px; }
+    .amount-field { min-width: 120px; }
 
         /* Charges List */
         .advanced-charges-list {
@@ -3213,14 +3880,22 @@ function setupAdvancedChargesModalFunctions(
                     </select>
                 </div>
 
-                <div class="advanced-field-group">
+                <div class="advanced-field-group lease-field-group">
                     <label class="advanced-field-label required">Lease</label>
-                    <select class="advanced-field-select" id="advancedLease_${chargeCounter}" name="advancedLease_${chargeCounter}" required>
-                        <option value="">Select lease...</option>
-                    </select>
+                    <div style="display:flex; gap:8px; align-items:center; position:relative;">
+                        <select class="advanced-field-select" id="advancedLease_${chargeCounter}" name="advancedLease_${chargeCounter}" required style="flex:1;">
+                            <option value="">Select lease...</option>
+                        </select>
+                        <button type="button" id="viewLeaseBtn_${chargeCounter}" class="view-lease-btn" onclick="toggleLeaseTooltip(${chargeCounter})" title="View Lease Details">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <div class="lease-tooltip" id="leaseTooltip_${chargeCounter}" style="display:none;">
+                            <!-- Lease preview inserted here -->
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="advanced-field-group">
+                <div class="advanced-field-group charge-type-field">
                     <label class="advanced-field-label required">Charge Type</label>
                     <select class="advanced-field-select" name="advancedChargeType_${chargeCounter}" required onchange="updateAdvancedSummary()">
                         <option value="">Select charge type...</option>
@@ -3231,7 +3906,7 @@ function setupAdvancedChargesModalFunctions(
                     </select>
                 </div>
                 
-                <div class="advanced-field-group">
+                <div class="advanced-field-group amount-field">
                     <label class="advanced-field-label required">Amount</label>
                     <input type="number" class="advanced-field-input" name="advancedAmount_${chargeCounter}" step="0.01" min="0" 
                            placeholder="0.00" required oninput="updateAdvancedSummary()">
@@ -3396,6 +4071,34 @@ function setupAdvancedChargesModalFunctions(
             }
         });
         chargeCounter = chargeItems.length;
+    }
+
+    if (!window.__leaseTooltipListenerAttached) {
+        document.addEventListener("click", function (e) {
+            const btn = e.target.closest && e.target.closest(".view-lease-btn");
+            if (!btn) return;
+
+            let tooltipId = null;
+            const parent = btn.closest(".tenant-context");
+            if (parent) {
+                const tt = parent.querySelector(".lease-tooltip");
+                if (tt && tt.id) tooltipId = tt.id;
+            }
+
+            if (!tooltipId) {
+                if (btn.id === "editViewLeaseBtn") tooltipId = "editLeaseTooltip";
+                else if (btn.id === "recurringViewLeaseBtn")
+                    tooltipId = "recurringLeaseTooltip";
+            }
+            if (tooltipId) {
+                try {
+                    toggleModalLeaseTooltip(tooltipId);
+                } catch (err) {
+                    console.error("tooltip trigger failed", err);
+                }
+            }
+        });
+        window.__leaseTooltipListenerAttached = true;
     }
 
     window.toggleAdvancedRecurringOptions = function (id) {
@@ -4422,7 +5125,6 @@ window.sortTable = sortTable;
 document.addEventListener("DOMContentLoaded", function () {
     injectEnhancedButtonStyles();
     injectPaymentModalStyles();
-
     createModalsAndDialogs();
 
     syncDataArrays();

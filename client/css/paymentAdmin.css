@@ -1073,11 +1073,6 @@ body:has(.sidebar.collapsed) .main-content,
   box-shadow: 0 4px 12px rgba(147, 51, 234, 0.25);
 }
 
-/* Charge status specific classes (used by paymentAdmin.js) */
-/* Charge-specific `.status-indicator.charge-*` classes removed.
-   Status badge colors are now driven by `CHARGE_STATUS_MAPPINGS` and
-   applied inline by JavaScript to avoid CSS precedence issues. */
-
 .payment-method {
   background: #f3f4f6;
   padding: 4px 8px;
@@ -1304,6 +1299,28 @@ body:has(.sidebar.collapsed) .main-content,
   padding: 4px 8px;
   font-size: 10px;
   border-radius: 8px;
+}
+
+.mobile-card .type-text {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.mobile-card .type-text.rent { background: #dbeafe; color: #1e40af; }
+.mobile-card .type-text.utility { background: #fef3c7; color: #92400e; }
+.mobile-card .type-text.maintenance { background: #dcfce7; color: #065f46; }
+.mobile-card .type-text.penalty { background: #fee2e2; color: #991b1b; }
+.mobile-card .type-text.others { background: #e5e7eb; color: #374151; }
+
+.card-detail-row .card-detail-value .type-text {
+  margin-left: 8px;
+  text-align: right;
 }
 
 .mobile-card .status-indicator {
