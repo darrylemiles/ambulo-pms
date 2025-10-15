@@ -120,6 +120,14 @@ const SUBJECT_LINES = [
 ];
 
 
+const PAYMENT_METHODS = [
+    { value: 'Cash', label: 'Cash' },
+    { value: 'Bank Transfer', label: 'Bank Transfer' },
+    { value: 'Check', label: 'Check' },
+    { value: 'Other', label: 'Other (GCash / Maya)' }
+];
+
+
 const STATUS_MAPPINGS = {
     [TICKET_STATUSES.PENDING]: {
         label: 'Pending',
@@ -243,6 +251,7 @@ if (typeof module !== 'undefined' && module.exports) {
         DATE_FORMATS,
         MESSAGES,
         SUBJECT_LINES,
+        PAYMENT_METHODS,
         STATUS_MAPPINGS,
         CHARGE_STATUSES,
         CHARGE_STATUS_MAPPINGS,
@@ -263,6 +272,7 @@ if (typeof module !== 'undefined' && module.exports) {
         DATE_FORMATS,
         MESSAGES,
         SUBJECT_LINES,
+    PAYMENT_METHODS,
         STATUS_MAPPINGS,
         CHARGE_STATUSES,
         CHARGE_STATUS_MAPPINGS,
