@@ -187,7 +187,7 @@ const getAllCharges = async (queryParams = {}) => {
             END AS canonical_status
         FROM charges c
         LEFT JOIN (
-            SELECT charge_id, IFNULL(SUM(amount_paid), 0) AS total_paid
+            SELECT charge_id, IFNULL(SUM(amount), 0) AS total_paid
             FROM payments
             GROUP BY charge_id
         ) pay_sum ON pay_sum.charge_id = c.charge_id
