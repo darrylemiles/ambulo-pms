@@ -152,7 +152,31 @@ async function fetchRentedSpaces() {
             address: lease.address,
             monthlyRent: parseFloat(lease.monthly_rent) || 0,
             selected: false,
-            dueDate: calculateNextDueDate(lease.lease_start_date),
+
+            dueDate:
+                lease.next_due_date || calculateNextDueDate(lease.lease_start_date),
+
+            lease_start_date:
+                lease.lease_start_date || lease.start_date || lease.lease_start || null,
+
+            gracePeriodDays:
+                parseInt(lease.grace_period_days || lease.gracePeriodDays || 0, 10) ||
+                0,
+
+            security_deposit_months:
+                parseInt(
+                    lease.security_deposit_months || lease.securityDepositMonths || 0,
+                    10
+                ) || 0,
+            advance_payment_months:
+                parseInt(
+                    lease.advance_payment_months || lease.advancePaymentMonths || 0,
+                    10
+                ) || 0,
+            quarterly_tax_percentage:
+                parseFloat(
+                    lease.quarterly_tax_percentage || lease.quarterlyTaxPercentage || 0
+                ) || 0,
         }));
     } catch (error) {
         console.error("Error fetching rented spaces:", error);
@@ -212,10 +236,14 @@ function populateMonthYearFilters() {
         "November",
         "December",
     ];
+
+    monthSelect.innerHTML = "";
     months.forEach((m, idx) => {
         const opt = document.createElement("option");
         opt.value = String(idx + 1).padStart(2, "0");
         opt.textContent = m;
+
+        opt.dataset.monthIndex = String(idx + 1);
         monthSelect.appendChild(opt);
     });
 
@@ -236,10 +264,12 @@ function populateMonthYearFilters() {
     yearSelect.value = defaultYear;
 
     monthSelect.addEventListener("change", () => {
-        if (selectedSpace) selectSpace(selectedSpace.id);
+        updateMonthAvailability();
+        if (selectedSpace) refreshSelectedSpaceData();
     });
     yearSelect.addEventListener("change", () => {
-        if (selectedSpace) selectSpace(selectedSpace.id);
+        updateMonthAvailability();
+        if (selectedSpace) refreshSelectedSpaceData();
     });
 
     if (resetBtn)
@@ -252,6 +282,54 @@ function getActiveFilter() {
     return { month, year };
 }
 
+/**
+ * Disable month options in the month select that are earlier than the selectedSpace.lease_start_date
+ * Visually disables them by setting disabled attribute and adding a 'disabled-month' class
+ */
+function updateMonthAvailability() {
+    const monthSelect = document.getElementById("filter-month");
+    const yearSelect = document.getElementById("filter-year");
+    if (!monthSelect || !yearSelect) return;
+
+    Array.from(monthSelect.options).forEach((opt) => {
+        opt.disabled = false;
+        opt.classList.remove("disabled-month");
+    });
+
+    if (!selectedSpace || !selectedSpace.lease_start_date) return;
+
+    const leaseStart = new Date(selectedSpace.lease_start_date);
+    if (isNaN(leaseStart.getTime())) return;
+
+    const selectedYear =
+        parseInt(yearSelect.value, 10) || leaseStart.getFullYear();
+
+    if (selectedYear < leaseStart.getFullYear()) {
+        Array.from(monthSelect.options).forEach((opt) => {
+            opt.disabled = true;
+            opt.classList.add("disabled-month");
+        });
+        return;
+    }
+
+    if (selectedYear === leaseStart.getFullYear()) {
+        const startMonth = leaseStart.getMonth() + 1;
+        Array.from(monthSelect.options).forEach((opt) => {
+            const m = parseInt(opt.value, 10);
+            if (m < startMonth) {
+                opt.disabled = true;
+                opt.classList.add("disabled-month");
+            }
+        });
+
+        const curMonth = parseInt(monthSelect.value, 10);
+        if (curMonth && curMonth < startMonth) {
+            monthSelect.value = String(startMonth).padStart(2, "0");
+        }
+        return;
+    }
+}
+
 function resetBreakdownFilter() {
     const monthSel = document.getElementById("filter-month");
     const yearSel = document.getElementById("filter-year");
@@ -262,6 +340,24 @@ function resetBreakdownFilter() {
     if (yearSel) yearSel.value = defaultYear;
 
     if (selectedSpace) selectSpace(selectedSpace.id);
+}
+
+/**
+ * Refresh data (charges, totals, breakdown) for the currently selected space
+ * using the current month/year filter without resetting the filter controls.
+ */
+async function refreshSelectedSpaceData() {
+    if (!selectedSpace) return;
+    try {
+        const activeFilter = getActiveFilter();
+        const charges = await fetchPendingCharges(selectedSpace.id, activeFilter);
+        selectedSpace.pendingCharges = charges;
+    } catch (e) {
+        selectedSpace.pendingCharges = [];
+    }
+
+    await loadPaymentTotal();
+    await loadPaymentBreakdown();
 }
 
 function setupEventListeners() {
@@ -306,8 +402,18 @@ function loadRentedSpaces() {
             const daysUntilDue = Math.ceil(
                 (new Date(space.dueDate) - new Date()) / (1000 * 60 * 60 * 24)
             );
-            const urgencyClass =
-                daysUntilDue <= 3 ? "overdue" : daysUntilDue <= 7 ? "pending" : "paid";
+            const grace = parseInt(space.gracePeriodDays || 0, 10) || 0;
+
+            let urgencyClass = "paid";
+            if (daysUntilDue < -grace) {
+                urgencyClass = "overdue";
+            } else if (daysUntilDue <= 3) {
+                urgencyClass = "pending";
+            } else if (daysUntilDue <= 7) {
+                urgencyClass = "pending";
+            } else {
+                urgencyClass = "paid";
+            }
 
             const statusText = String(space.status || "").toLowerCase();
             let statusClass = "paid";
@@ -431,6 +537,31 @@ async function selectSpace(spaceId) {
     });
 
     selectedSpace = rentedSpaces.find((space) => space.id === spaceId);
+
+    const monthSel = document.getElementById("filter-month");
+    const yearSel = document.getElementById("filter-year");
+    if (monthSel && yearSel) {
+        const now = new Date();
+        monthSel.value = String(now.getMonth() + 1).padStart(2, "0");
+        yearSel.value = String(now.getFullYear());
+
+        updateMonthAvailability();
+
+        if (selectedSpace && selectedSpace.lease_start_date) {
+            const ls = new Date(selectedSpace.lease_start_date);
+            if (!isNaN(ls.getTime())) {
+                const selMonth = parseInt(monthSel.value, 10);
+                const selYear = parseInt(yearSel.value, 10);
+                if (
+                    selYear < ls.getFullYear() ||
+                    (selYear === ls.getFullYear() && selMonth < ls.getMonth() + 1)
+                ) {
+                    monthSel.value = String(ls.getMonth() + 1).padStart(2, "0");
+                    yearSel.value = String(ls.getFullYear());
+                }
+            }
+        }
+    }
 
     loadRentedSpaces();
     setTimeout(async () => {
@@ -557,19 +688,42 @@ function loadPaymentBreakdown() {
             ? selectedSpace.pendingCharges
             : [];
 
+    const sdMonths =
+        parseInt(selectedSpace.security_deposit_months || 1, 10) || 1;
+    const advanceMonths =
+        parseInt(selectedSpace.advance_payment_months || 0, 10) || 0;
+    const quarterlyPct =
+        parseFloat(selectedSpace.quarterly_tax_percentage || 0) || 0;
+
     const occasionalCosts = [
         {
             label: "Security Deposit",
-            amount: selectedSpace.monthlyRent,
+            amount: selectedSpace.monthlyRent * sdMonths,
             due: "One-time (if applicable)",
+            explanation: `Security Deposit = ₱${formatCurrency(
+                selectedSpace.monthlyRent
+            )} × ${sdMonths} month(s) = ₱${formatCurrency(
+                selectedSpace.monthlyRent * sdMonths
+            )}`,
         },
         {
             label: "Advance Rent",
-            amount: selectedSpace.monthlyRent,
+            amount: selectedSpace.monthlyRent * advanceMonths,
             due: "One-time (if applicable)",
+            explanation: `Advance Rent = ₱${formatCurrency(
+                selectedSpace.monthlyRent
+            )} × ${advanceMonths} month(s) = ₱${formatCurrency(
+                selectedSpace.monthlyRent * advanceMonths
+            )}`,
         },
-        { label: "Association Dues", amount: 1200, due: "Quarterly" },
-        { label: "Insurance Premium", amount: 2400, due: "Annual" },
+
+        {
+            label: "Quarterly Tax",
+            amount: null,
+            due: `${quarterlyPct}%`,
+            isPercentage: true,
+            explanation: `Applied as ${quarterlyPct}% of the assessed quarterly amount`,
+        },
     ];
 
     const totalFixed =
@@ -582,107 +736,149 @@ function loadPaymentBreakdown() {
     const filterYear = activeFilter.year;
 
     if (container) {
-        container.innerHTML = `
-                    <div class="breakdown-grid">
-                        <div class="breakdown-section">
-                            <h3 class="breakdown-title">
-                                <i class="fas fa-exclamation-circle"></i>
-                                Pending Charges
-                            </h3>
-                            ${charges.length > 0
-                ? charges
-                    .map(
-                        (ch) => `
-                                <div class="breakdown-item">
-                                    <div>
-                                        <div class="breakdown-label">${ch.charge_type ||
-                            ch.description ||
-                            "Charge"
-                            }</div>
-                                        <small style="color: #6b7280;">Due: ${ch.due_date || ch.charge_date || ""
-                            }</small>
-                                    </div>
-                                    <span class="breakdown-amount">₱${formatCurrency(
-                                parseFloat(ch.amount) || 0
-                            )}</span>
-                                </div>
-                            `
-                    )
-                    .join("")
-                : fixedCosts
-                    .map(
-                        (cost) => `
-                                <div class="breakdown-item">
-                                    <span class="breakdown-label">${cost.label
-                            }</span>
-                                    <span class="breakdown-amount">₱${formatCurrency(
-                                cost.amount
-                            )}</span>
-                                </div>
-                            `
-                    )
-                    .join("")
-            }
-                            <div class="breakdown-item" style="border-top: 2px solid #667eea; padding-top: 0.75rem;">
-                                <span class="breakdown-label">Total Pending</span>
-                                <span class="breakdown-amount">₱${formatCurrency(
-                charges.length > 0 &&
-                    (filterMonth || filterYear)
-                    ? charges
-                        .filter((c) => {
-                            const d =
-                                c.due_date || c.charge_date || "";
-                            if (!d) return false;
-                            const dt = new Date(d);
-                            if (isNaN(dt.getTime())) return false;
-                            const m = String(
-                                dt.getMonth() + 1
-                            ).padStart(2, "0");
-                            const y = String(dt.getFullYear());
-                            if (filterMonth && filterYear)
-                                return (
-                                    m === filterMonth &&
-                                    y === filterYear
-                                );
-                            if (filterMonth)
-                                return m === filterMonth;
-                            if (filterYear)
-                                return y === filterYear;
-                            return true;
-                        })
-                        .reduce(
-                            (s, c) =>
-                                s + (parseFloat(c.amount) || 0),
-                            0
-                        )
-                    : totalFixed
-            )}</span>
-                            </div>
-                        </div>
+        let displayedCharges = charges;
+        if (charges.length > 0 && (filterMonth || filterYear)) {
+            displayedCharges = charges.filter((c) => {
+                const d = c.due_date || c.charge_date || c.dueDate || "";
+                if (!d) return false;
+                const dt = new Date(d);
+                if (isNaN(dt.getTime())) return false;
+                const m = String(dt.getMonth() + 1).padStart(2, "0");
+                const y = String(dt.getFullYear());
+                if (filterMonth && filterYear)
+                    return m === filterMonth && y === filterYear;
+                if (filterMonth) return m === filterMonth;
+                if (filterYear) return y === filterYear;
+                return true;
+            });
+        }
 
-                        <div class="breakdown-section">
-                            <h3 class="breakdown-title">
-                                <i class="fas fa-clock-rotate-left"></i>
-                                Occasional Payments
-                            </h3>
-                            ${occasionalCosts
+        const hasFilter = !!(filterMonth || filterYear);
+        let pendingListHtml = "";
+        if (displayedCharges.length > 0) {
+            pendingListHtml = displayedCharges
                 .map(
-                    (cost) => `
-                                <div class="breakdown-item">
-                                    <div>
-                                        <div class="breakdown-label">${cost.label
+                    (ch) => `
+                    <div class="breakdown-item">
+                        <div>
+                            <div class="breakdown-label" style="font-size:18px; font-weight:800;">${ch.charge_type || ch.description || "Charge"
                         }</div>
-                                        <small style="color: #6b7280; font-style: italic;">${cost.due
-                        }</small>
-                                    </div>
-                                    <span class="breakdown-amount">₱${cost.amount.toLocaleString()}</span>
-                                </div>
-                            `
+                            ${ch.description
+                            ? `<div class="breakdown-desc" style="color:#6b7280; margin:6px 0; font-size:13px;">${escapeHtml(
+                                ch.description
+                            )}</div>`
+                            : ""
+                        }
+                            ${renderDuePill(
+                            ch.due_date || ch.charge_date || ch.dueDate || "",
+                            selectedSpace && selectedSpace.gracePeriodDays
+                                ? selectedSpace.gracePeriodDays
+                                : 0
+                        )}
+                        </div>
+                        <span class="breakdown-amount">₱${formatCurrency(
+                            parseFloat(ch.amount) || 0
+                        )}</span>
+                    </div>
+                `
                 )
-                .join("")}
+                .join("");
+        } else {
+            if (hasFilter) {
+                pendingListHtml = `
+                    <div class="breakdown-empty">
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fas fa-file-invoice"></i></div>
+                            <div>No pending charges found for the selected period</div>
                         </div>
                     </div>
                 `;
+            } else {
+                pendingListHtml = fixedCosts
+                    .map(
+                        (cost) => `
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">${cost.label}</span>
+                            <span class="breakdown-amount">₱${formatCurrency(
+                            cost.amount
+                        )}</span>
+                        </div>
+                    `
+                    )
+                    .join("");
+            }
+        }
+
+        let totalPendingAmount = 0;
+        if (hasFilter) {
+            totalPendingAmount = displayedCharges.reduce(
+                (s, c) => s + (parseFloat(c.amount) || 0),
+                0
+            );
+        } else if (charges.length > 0) {
+            totalPendingAmount = charges.reduce(
+                (s, c) => s + (parseFloat(c.amount) || 0),
+                0
+            );
+        } else {
+            totalPendingAmount = totalFixed;
+        }
+
+        container.innerHTML = `
+            <div class="breakdown-grid">
+                <div class="breakdown-section">
+                    <h3 class="breakdown-title">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Pending Charges
+                    </h3>
+                    ${pendingListHtml}
+                    <div class="breakdown-item" style="border-top: 2px solid #667eea; padding-top: 0.75rem;">
+                        <span class="breakdown-label">Total Pending</span>
+                        <span class="breakdown-amount">₱${formatCurrency(
+            totalPendingAmount
+        )}</span>
+                    </div>
+                </div>
+
+                <div class="breakdown-section">
+                    <h3 class="breakdown-title">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        Occasional Payments
+                    </h3>
+                    ${occasionalCosts
+                .map((cost) => {
+                    const amountHtml = cost.isPercentage
+                        ? `${cost.due}`
+                        : cost.amount == null
+                            ? "-"
+                            : `₱${formatCurrency(cost.amount)}`;
+
+                    const dueHtml = cost.due
+                        ? `<small style="color: #6b7280; font-style: italic;">${escapeHtml(
+                            cost.due
+                        )}</small>`
+                        : "";
+                    const explainHtml = cost.explanation
+                        ? `<div class="breakdown-explain" style="color:#6b7280;margin-top:4px;font-size:12px;font-style:italic;">${escapeHtml(
+                            cost.explanation
+                        )}</div>`
+                        : "";
+
+                    return `
+                        <div class="breakdown-item">
+                            <div>
+                                <div class="breakdown-label">${cost.label}</div>
+                                ${dueHtml}
+                                ${explainHtml}
+                            </div>
+                            <span class="breakdown-amount">${amountHtml}</span>
+                        </div>
+                    `;
+                })
+                .join("")}
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -915,6 +1111,51 @@ function formatCurrency(amount) {
     }
 }
 
+/**
+ * Render a due-date pill with formatted date and urgency indicator.
+ * dueDateStr: raw date string (ISO or other). graceDays: integer.
+ */
+function renderDuePill(dueDateStr, graceDays = 0) {
+    if (!dueDateStr) return "<small style='color:#6b7280;'>No due date</small>";
+    const d = new Date(dueDateStr);
+    if (isNaN(d.getTime())) {
+        return `<small style='color:#6b7280;'>${dueDateStr}</small>`;
+    }
+
+    const today = new Date();
+    const todayMid = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+    ).getTime();
+    const dueMid = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const diffTime = dueMid - todayMid;
+    const daysUntilDue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const grace = parseInt(graceDays || 0, 10) || 0;
+
+    let state = "normal";
+    if (daysUntilDue < -grace) state = "overdue";
+    else if (daysUntilDue <= 3) state = "due-soon";
+
+    const formatted = formatDate(dueDateStr);
+
+    const baseStyle =
+        "display:inline-flex;align-items:center;gap:0.5rem;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px;";
+    if (state === "overdue") {
+        const overdueDays = Math.max(Math.abs(daysUntilDue) - grace, 1);
+        return `<span class='due-pill overdue' style='${baseStyle}background:#ef4444;color:#fff;'><i class='fas fa-exclamation-triangle' style='font-size:0.9rem;'></i> ${formatted} · ${overdueDays}d overdue</span>`;
+    }
+    if (state === "due-soon") {
+        if (daysUntilDue <= 0) {
+            return `<span class='due-pill due-soon' style='${baseStyle}background:#f59e0b;color:#111827;'><i class='fas fa-hourglass-half' style='font-size:0.9rem;'></i> ${formatted} · due${grace > 0 ? ` (grace ${grace}d)` : ""
+                }</span>`;
+        }
+        return `<span class='due-pill due-soon' style='${baseStyle}background:#f59e0b;color:#111827;'><i class='fas fa-hourglass-half' style='font-size:0.9rem;'></i> ${formatted} · in ${daysUntilDue}d</span>`;
+    }
+
+    return `<span class='due-pill normal' style='${baseStyle}background:#64748b;color:#fff;'><i class='fas fa-calendar-days' style='font-size:0.85rem;'></i> ${formatted}</span>`;
+}
+
 function generateReference() {
     const prefix = Math.random() > 0.5 ? "GC" : "BDO";
     const number = Math.floor(Math.random() * 900000000) + 100000000;
@@ -1029,6 +1270,16 @@ function formatDate(dateString) {
     }
 }
 
+function escapeHtml(text) {
+    if (text === null || text === undefined) return "";
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 function getStatusIcon(status) {
     const icons = {
         paid: "✅",
@@ -1074,3 +1325,4 @@ window.selectSpace = selectSpace;
 window.openPaymentModal = openPaymentModal;
 window.closePaymentModal = closePaymentModal;
 window.handleFileUpload = handleFileUpload;
+window.escapeHtml = escapeHtml;

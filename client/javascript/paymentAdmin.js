@@ -161,6 +161,12 @@ async function fetchCharges() {
                 isRecurring: !!row.is_recurring,
                 template_id: row.template_id || null,
                 leaseId: row.lease_id || row.leaseId || null,
+                // normalize grace period if provided on the charge or lease row
+                gracePeriodDays:
+                    parseInt(
+                        row.grace_period_days || row.gracePeriodDays || row.grace || 0,
+                        10
+                    ) || 0,
             };
 
             let lease = null;
@@ -186,6 +192,12 @@ async function fetchCharges() {
                     phone: row.phone_number || "",
                     paymentHistory: [],
                     charges: [mappedCharge],
+                    // carry lease-level grace period if present
+                    grace_period_days:
+                        parseInt(
+                            row.lease_grace_period_days || row.grace_period_days || row.gracePeriodDays || 0,
+                            10
+                        ) || 0,
                 };
                 leasesData.push(placeholderLease);
             }
@@ -279,6 +291,12 @@ function syncDataArrays() {
                     tenant: lease.tenant,
                     email: lease.email,
                     unit: lease.unit,
+                    // carry lease-level grace period into charge context
+                    gracePeriodDays:
+                        parseInt(
+                            lease.grace_period_days || lease.gracePeriodDays || 0,
+                            10
+                        ) || 0,
                 });
             }
         });
@@ -344,16 +362,20 @@ function getChargeStatus(charge) {
     if (charge.status === "due-soon") return "due-soon";
     if (charge.status === "pending") return "pending";
 
+    // consider grace period if provided on charge or parent lease
     const daysUntilDue = getDaysUntilDue(charge.dueDate);
+    const grace =
+        parseInt(charge.gracePeriodDays || charge.grace_period_days || 0, 10) || 0;
 
-    if (daysUntilDue < 0) return "overdue";
+    // overdue only if current date is past due_date + grace
+    if (daysUntilDue < -grace) return "overdue";
     if (daysUntilDue <= 3) return "due-soon";
     return "pending";
 }
 
 function getChargeStatusByDate(dueDate) {
     const daysUntilDue = getDaysUntilDue(dueDate);
-
+    // no lease context provided here; fall back to default behavior (no grace)
     if (daysUntilDue < 0) return "overdue";
     if (daysUntilDue <= 3) return "due-soon";
     return "pending";

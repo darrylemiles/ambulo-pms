@@ -154,17 +154,6 @@ body {
   overflow: hidden;
 }
 
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--gradient-primary);
-  border-radius: 20px 20px 0 0;
-}
-
 .card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-xl);
@@ -210,20 +199,6 @@ body {
   box-shadow: var(--shadow-xs);
 }
 
-.space-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(
-    180deg,
-    var(--primary-color),
-    var(--secondary-color)
-  );
-}
-
 .space-card::after {
   content: "";
   position: absolute;
@@ -255,10 +230,6 @@ body {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-}
-
-.space-card.selected::before {
-  opacity: 1;
 }
 
 .space-header {
@@ -339,17 +310,6 @@ body {
   overflow: hidden;
 }
 
-.breakdown-section::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--gradient-primary);
-  border-radius: 0 16px 16px 0;
-}
-
 .breakdown-title {
   font-size: 18px;
   font-weight: 700;
@@ -386,8 +346,91 @@ body {
 }
 
 .breakdown-amount {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.2rem;
   color: var(--text-primary);
+}
+
+/* Date Filter Styling */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--background-light);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+}
+
+.filter-row select {
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: white;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 140px;
+}
+
+.filter-row select:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.filter-row select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.filter-row select option:disabled {
+  color: var(--text-muted);
+  background: var(--background-light);
+}
+
+.filter-row .btn-filter {
+  padding: 0.625rem 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: white;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-row .btn-filter:hover {
+  background: var(--background-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.filter-row .btn-filter.secondary {
+  background: var(--background-light);
+  color: var(--text-secondary);
+}
+
+.filter-row .btn-filter.secondary:hover {
+  background: white;
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .total-section {
@@ -435,31 +478,13 @@ body {
     0 8px 24px rgba(59, 130, 246, 0.1);
 }
 
+/* Payment History */
+
 .pay-now-btn:hover {
   background: linear-gradient(135deg, var(--primary-dark), #0369a1);
   transform: translateY(-3px);
   box-shadow: 0 6px 18px rgba(14, 165, 233, 0.25),
     0 12px 32px rgba(14, 165, 233, 0.15);
-}
-
-.pay-now-btn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.6s;
-}
-
-.pay-now-btn:hover::before {
-  left: 100%;
 }
 
 /* Payment History */
@@ -486,12 +511,8 @@ td {
 }
 
 th {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color),
-    var(--primary-dark)
-  );
-  color: white;
+  background: var(--background-light);
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
@@ -646,20 +667,6 @@ tbody tr:hover {
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
-}
-
-.payment-method::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(
-    180deg,
-    var(--primary-color),
-    var(--secondary-color)
-  );
 }
 
 .payment-method:hover {
