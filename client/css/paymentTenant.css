@@ -633,6 +633,302 @@ tbody tr:hover {
   color: var(--text-primary);
 }
 
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+#payment-method {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#payment-method:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.charge-selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.charge-list {
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: #ffffff;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.15);
+}
+
+.charge-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.2s ease;
+}
+
+.charge-option:last-child {
+  border-bottom: none;
+}
+
+.charge-option:hover {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.charge-option input[type="checkbox"] {
+  margin-top: 0.35rem;
+  cursor: pointer;
+}
+
+.charge-details {
+  flex: 1;
+}
+
+.charge-details .charge-type {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.charge-details .charge-description {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-bottom: 0.25rem;
+}
+
+.charge-details .charge-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.charge-amount {
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.charge-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: var(--background-light);
+  border: 1px solid var(--border-light);
+  border-radius: 0 0 12px 12px;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.btn-select-all {
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-primary);
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-select-all:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.btn-select-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.amount-input-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+#payment-amount {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#payment-amount:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.btn-pay-full {
+  border: none;
+  background: linear-gradient(135deg, #0c5fe4, #1033a8);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-pay-full:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(12, 95, 228, 0.2);
+}
+
+.btn-pay-full:disabled {
+  background: var(--border-color);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.input-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.method-instructions {
+  background: var(--background-light);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 120px;
+}
+
+.instruction-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.instruction-placeholder i {
+  color: var(--primary-color);
+}
+
+.instruction-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.instruction-grid.two-cols {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.instruction-card {
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.instruction-card h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.instruction-card h4 i {
+  color: var(--primary-color);
+}
+
+.instruction-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.instruction-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.instruction-meta span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.instruction-meta span strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.qr-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.qr-card .qr-placeholder {
+  flex: 0 0 140px;
+  width: 140px;
+  height: 140px;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.qr-card .qr-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.qr-caption {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .close-btn {
   background: none;
   border: none;

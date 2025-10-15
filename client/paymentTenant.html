@@ -105,65 +105,50 @@
             <div class="alert success" id="modal-success-alert"></div>
             <div class="alert error" id="modal-error-alert"></div>
 
-            <div class="payment-methods">
-                <div class="payment-method">
-                    <h3 class="method-title">
-                        <i class="fas fa-mobile-screen"></i>
-                        GCash Payment
-                    </h3>
-                    <div class="qr-code-modal">
-                        <div class="qr-placeholder">
-                            <div><i class="fas fa-qrcode" style="font-size: 24px; margin-bottom: 8px;"></i></div>
-                            <div>Sample QR Code</div>
-                            <div style="font-size: 12px; opacity: 0.8;">Scan with GCash App</div>
+            <div class="payment-form" id="payment-form">
+                <div class="form-group">
+                    <label for="payment-method">Payment Method</label>
+                    <select id="payment-method" aria-label="Select payment method">
+                        <option value="">Select a payment method</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="charge-selection-header">
+                        <h3 class="method-title">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            Charges to Pay
+                        </h3>
+                        <button type="button" id="toggle-select-all" class="btn-select-all">Select All</button>
+                    </div>
+                    <div class="charge-list" id="payment-charge-list">
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fas fa-file-circle-question"></i></div>
+                            <div>No charges available to select.</div>
                         </div>
                     </div>
-                    <div class="bank-details">
-                        <div class="bank-detail-item">
-                            <span class="bank-label">GCash Number:</span>
-                            <span class="bank-value">
-                                +63-917-123-4567
-                                <button class="copy-btn" onclick="copyToClipboard('+639171234567')">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </span>
-                        </div>
-                        <div class="bank-detail-item">
-                            <span class="bank-label">Account Name:</span>
-                            <span class="bank-value">Maria Santos</span>
-                        </div>
+                    <div class="charge-summary" id="charge-summary">
+                        <span id="selected-charge-count">0 charges selected</span>
+                        <span id="selected-charge-total">₱0.00</span>
                     </div>
                 </div>
 
-                <!-- <div class="payment-method">
-                    <h3 class="method-title">
-                        <i class="fas fa-university"></i>
-                        Bank Transfer
-                    </h3>
-                    <div class="bank-details">
-                        <div class="bank-detail-item">
-                            <span class="bank-label">Bank:</span>
-                            <span class="bank-value">BDO Unibank</span>
-                        </div>
-                        <div class="bank-detail-item">
-                            <span class="bank-label">Account Number:</span>
-                            <span class="bank-value">
-                                1234-5678-9012-3456
-                                <button class="copy-btn" onclick="copyToClipboard('1234567890123456')">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </span>
-                        </div>
-                        <div class="bank-detail-item">
-                            <span class="bank-label">Account Name:</span>
-                            <span class="bank-value">Maria Santos</span>
-                        </div>
-                        <div class="bank-detail-item">
-                            <span class="bank-label">Amount:</span>
-                            <span class="bank-value" id="modal-amount">₱0.00</span>
-                        </div>
+                <div class="form-group">
+                    <label for="payment-amount">Amount to Pay</label>
+                    <div class="amount-input-row">
+                        <input type="number" id="payment-amount" min="0" step="0.01" placeholder="0.00"
+                            aria-describedby="payment-amount-helper">
+                        <button type="button" id="pay-full-btn" class="btn-pay-full" disabled>Pay Full Amount</button>
                     </div>
-                </div> -->
+                    <small id="payment-amount-helper" class="input-hint">Enter an amount equal to or less than the total of the selected charges.</small>
+                </div>
+
+                <div class="form-group method-instructions" id="payment-method-instructions" aria-live="polite">
+                    <div class="instruction-placeholder">
+                        <i class="fas fa-info-circle"></i>
+                        Select a payment method to view the payment details.
+                    </div>
+                </div>
             </div>
 
             <div class="upload-section">
@@ -204,6 +189,7 @@
         </div>
     </div>
 
+    <script src="/constants/constants.js"></script>
     <script type="module" src="/javascript/paymentTenant.js"></script>
     <script>
         var user = null;
