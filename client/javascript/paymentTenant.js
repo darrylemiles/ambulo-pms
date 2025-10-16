@@ -3,7 +3,8 @@ let rentedSpaces = [];
 let paymentHistory = [];
 
 let selectedSpace = null;
-let uploadedFile = null;
+const MAX_PAYMENT_PROOF_FILES = 5;
+let uploadedFiles = [];
 
 const FALLBACK_PAYMENT_METHODS = [
     { value: "Cash", label: "Cash" },
@@ -750,6 +751,14 @@ function loadPaymentBreakdown() {
         const hasFilter = !!(filterMonth || filterYear);
         let pendingListHtml = "";
         if (displayedCharges.length > 0) {
+            // Fetch pending payments for these charges and cache in a map for quick lookup
+            // Note: this is async; we prefetch and then re-render once loaded.
+            (async () => {
+                const pendingMap = await fetchPendingPaymentsForCharges(displayedCharges);
+                window.__pendingPaymentsMap = pendingMap;
+                // Re-render to include indicators
+                loadPaymentBreakdown();
+            })();
             pendingListHtml = displayedCharges
                 .map(
                     (ch) => `
@@ -769,6 +778,7 @@ function loadPaymentBreakdown() {
                                 ? selectedSpace.gracePeriodDays
                                 : 0
                         )}
+                            ${renderChargePaymentIndicator(ch)}
                         </div>
                         <span class="breakdown-amount">₱${formatCurrency(
                             parseFloat(ch.amount) || 0
@@ -926,6 +936,71 @@ function loadPaymentHistory() {
         .join("");
 }
 
+async function fetchPendingPaymentsForCharges(charges) {
+    try {
+        const ids = (charges || [])
+            .map((c) => c.charge_id || c.chargeId || c.id)
+            .filter((v) => v != null)
+            .map(String);
+        if (!ids.length) return {};
+
+        const token = getJwtToken();
+        const query = new URLSearchParams({ charge_ids: ids.join(","), status: "Pending" }).toString();
+        const resp = await fetch(`${API_BASE_URL}/payments/search/by-charge?${query}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!resp.ok) return {};
+        const data = await resp.json();
+        const map = {};
+        (data.payments || []).forEach((p) => {
+            const key = String(p.charge_id);
+            if (!map[key]) map[key] = [];
+            map[key].push(p);
+        });
+        return map;
+    } catch (e) {
+        console.warn("fetchPendingPaymentsForCharges error", e);
+        return {};
+    }
+}
+
+function renderChargePaymentIndicator(charge) {
+    try {
+        if (!charge) return "";
+        const key = String(charge.charge_id || charge.chargeId || charge.id || "");
+        if (!key) return "";
+        const pendingMap = window.__pendingPaymentsMap || {};
+        const group = pendingMap[key];
+        if (!group || !group.length) return "";
+        const pendingAmount = Number(group.reduce((s, p) => s + (Number(p.amount_paid || p.amount || 0)), 0));
+        const formattedAmount = pendingAmount
+            ? `₱${formatCurrency(pendingAmount)}`
+            : "Pending payment submitted";
+        return `
+            <div class="charge-payment-status payment-pending" style="margin-top:6px;">
+                <i class="fas fa-hourglass-half"></i>
+                <span>${formattedAmount} (Pending)</span>
+            </div>
+        `;
+    } catch (err) {
+        console.warn("renderChargePaymentIndicator error", err);
+        return "";
+    }
+}
+
+function getPendingAmountForCharge(charge) {
+    try {
+        const key = String(charge?.charge_id || charge?.chargeId || charge?.id || "");
+        if (!key) return 0;
+        const map = window.__pendingPaymentsMap || {};
+        const list = map[key] || [];
+        const total = list.reduce((s, p) => s + (Number(p.amount_paid || p.amount || 0)), 0);
+        return Number(total) || 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
 function showNoSpaceAlert() {
     const alert = document.getElementById("no-space-alert");
     if (alert && !selectedSpace) {
@@ -969,11 +1044,10 @@ function closePaymentModal() {
 }
 
 function resetModalForm() {
-    uploadedFile = null;
+    uploadedFiles = [];
     paymentModalCharges = [];
     selectedChargeIds = new Set();
 
-    const filePreview = document.getElementById("file-preview");
     const fileInput = document.getElementById("payment-proof");
     const submitBtn = document.getElementById("submit-payment-btn");
     const alerts = document.querySelectorAll(".alert");
@@ -1010,69 +1084,144 @@ function resetModalForm() {
     }
     renderPaymentInstructions("");
 
-    if (filePreview) filePreview.classList.remove("active");
     if (fileInput) fileInput.value = "";
     if (submitBtn) submitBtn.disabled = true;
+
+    renderUploadedFilesPreview();
 
     alerts.forEach((alert) => alert.classList.remove("active"));
 }
 
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    const filePreview = document.getElementById("file-preview");
-    const fileName = document.getElementById("file-name");
+function updateFileLimitHint() {
+    const hint = document.getElementById("file-limit-hint");
+    if (!hint) return;
+    hint.textContent = `${uploadedFiles.length} of ${MAX_PAYMENT_PROOF_FILES} images selected (PNG, JPG, JPEG).`;
+    hint.style.color = uploadedFiles.length >= MAX_PAYMENT_PROOF_FILES ? "#dc2626" : "#047857";
+}
+
+function renderUploadedFilesPreview() {
+    const preview = document.getElementById("file-preview");
+    const list = document.getElementById("file-preview-list");
+    const empty = document.getElementById("file-preview-empty");
     const submitBtn = document.getElementById("submit-payment-btn");
 
-    if (file) {
-        if (!file.type.startsWith("image/")) {
-            showModalAlert("error", "Please upload an image file only.");
-            event.target.value = "";
+    if (!preview || !list || !empty) {
+        updateFileLimitHint();
+        return;
+    }
+
+    if (!uploadedFiles.length) {
+        preview.classList.remove("active");
+        list.innerHTML = "";
+        empty.style.display = "flex";
+    } else {
+        preview.classList.add("active");
+        empty.style.display = "none";
+        list.innerHTML = uploadedFiles
+            .map((file, index) => {
+                const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                return `
+                    <div class="preview-item">
+                        <i class="fas fa-file-image"></i>
+                        <div class="preview-meta">
+                            <strong>${escapeHtml(file.name)}</strong>
+                            <small>${sizeMb} MB</small>
+                        </div>
+                        <button type="button" class="preview-remove" onclick="removeUploadedImage(${index})" aria-label="Remove ${escapeHtml(file.name)}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            })
+            .join("");
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = uploadedFiles.length === 0;
+    }
+
+    updateFileLimitHint();
+}
+
+function handleFileUpload(event) {
+    const input = event && event.target ? event.target : null;
+    const files = input ? Array.from(input.files || []) : [];
+
+    if (!files.length) {
+        if (input) input.value = "";
+        return;
+    }
+
+    let addedCount = 0;
+    let errorMessage = "";
+
+    files.forEach((file) => {
+        if (!/^image\/(png|jpe?g)$/i.test(file.type)) {
+            if (!errorMessage) {
+                errorMessage = `${file.name} must be a PNG, JPG, or JPEG image.`;
+            }
             return;
         }
 
         if (file.size > 5 * 1024 * 1024) {
-            showModalAlert("error", "File size must be less than 5MB.");
-            event.target.value = "";
+            if (!errorMessage) {
+                errorMessage = `${file.name} exceeds the 5MB file size limit.`;
+            }
             return;
         }
 
-        uploadedFile = file;
-        if (fileName) {
-            fileName.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(
-                1
-            )}MB)`;
-        }
-        if (filePreview) {
-            filePreview.classList.add("active");
-        }
-        if (submitBtn) {
-            submitBtn.disabled = false;
+        if (uploadedFiles.length >= MAX_PAYMENT_PROOF_FILES) {
+            if (!errorMessage) {
+                errorMessage = `You can upload up to ${MAX_PAYMENT_PROOF_FILES} images. Remove an existing proof to add another.`;
+            }
+            return;
         }
 
+        const duplicate = uploadedFiles.some(
+            (existing) =>
+                existing.name === file.name &&
+                existing.size === file.size &&
+                existing.lastModified === file.lastModified
+        );
+
+        if (duplicate) {
+            if (!errorMessage) {
+                errorMessage = `${file.name} has already been added.`;
+            }
+            return;
+        }
+
+        uploadedFiles.push(file);
+        addedCount += 1;
+    });
+
+    if (input) input.value = "";
+
+    if (errorMessage && addedCount > 0) {
+        showModalAlert(
+            "error",
+            `${errorMessage} Added ${addedCount} image${addedCount > 1 ? "s" : ""} successfully.`
+        );
+    } else if (errorMessage) {
+        showModalAlert("error", errorMessage);
+    } else if (addedCount > 0) {
         showModalAlert(
             "success",
-            "File uploaded successfully! You can now submit your payment confirmation."
+            `Added ${addedCount} image${addedCount > 1 ? "s" : ""}. You can remove or add more before submitting.`
         );
     }
+
+    renderUploadedFilesPreview();
 }
 
-function removeFile() {
-    uploadedFile = null;
-    const filePreview = document.getElementById("file-preview");
-    const fileInput = document.getElementById("payment-proof");
-    const submitBtn = document.getElementById("submit-payment-btn");
-
-    if (filePreview) filePreview.classList.remove("active");
-    if (fileInput) fileInput.value = "";
-    if (submitBtn) submitBtn.disabled = true;
-
-    showModalAlert(
-        "error",
-        "File removed. Please upload a new payment confirmation."
-    );
+function removeUploadedImage(index) {
+    if (index < 0 || index >= uploadedFiles.length) return;
+    uploadedFiles.splice(index, 1);
+    renderUploadedFilesPreview();
+    showModalAlert("success", "Image removed. You can upload another before submitting.");
 }
 
-function submitPayment() {
+async function submitPayment() {
     const submitBtn = document.getElementById("submit-payment-btn");
 
     if (!selectedSpace) {
@@ -1081,6 +1230,12 @@ function submitPayment() {
     }
 
     if (selectedChargeIds.size === 0) {
+        showModalAlert("error", "Please select at least one charge to pay.");
+        return;
+    }
+
+    const selectedCharges = getSelectedCharges();
+    if (!selectedCharges.length) {
         showModalAlert("error", "Please select at least one charge to pay.");
         return;
     }
@@ -1108,16 +1263,83 @@ function submitPayment() {
         return;
     }
 
-    if (!uploadedFile) {
-        showModalAlert("error", "Please upload payment confirmation screenshot.");
+    if (!uploadedFiles.length) {
+        showModalAlert(
+            "error",
+            "Please upload at least one image (PNG, JPG, JPEG) as payment proof."
+        );
         return;
     }
 
-    submitBtn.innerHTML = '<div class="loading"></div> Processing...';
-    submitBtn.disabled = true;
+    const primaryCharge = selectedCharges[0];
+    const chargeIdForApi =
+        primaryCharge?.charge_id ||
+        primaryCharge?.chargeId ||
+        primaryCharge?.id ||
+        primaryCharge?.id_charge ||
+        null;
 
-    setTimeout(() => {
-        const selectedCharges = getSelectedCharges();
+    if (!chargeIdForApi) {
+        showModalAlert(
+            "error",
+            "We couldn't determine which charge to attach this payment to. Please try again or contact support."
+        );
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="loading"></div> Processing...';
+
+    const token = getJwtToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const formData = new FormData();
+    formData.append("chargeId", chargeIdForApi);
+    formData.append("paymentDate", new Date().toISOString().split("T")[0]);
+    formData.append("amountPaid", amountValue.toFixed(2));
+    formData.append("paymentMethod", paymentMethodSelect.value);
+    formData.append("user_id", getCurrentUserId());
+
+    const additionalCharges = selectedCharges.slice(1);
+    const noteSegments = [
+        `Submitted via tenant portal covering ${selectedCharges.length} charge${selectedCharges.length === 1 ? "" : "s"}.`,
+    ];
+    if (additionalCharges.length) {
+        const refs = additionalCharges
+            .map((charge) =>
+                charge.charge_id ||
+                charge.chargeId ||
+                charge.id ||
+                resolveChargeIdentifier(charge)
+            )
+            .join(", ");
+        noteSegments.push(`Additional charge references: ${refs}`);
+    }
+    formData.append("notes", noteSegments.join(" "));
+
+    uploadedFiles.forEach((file) => {
+        formData.append("proofs", file);
+    });
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/payments/create-payment`, {
+            method: "POST",
+            headers,
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            throw new Error(errorBody.message || "Failed to submit payment confirmation.");
+        }
+
+        const result = await response.json().catch(() => ({}));
+
+        showModalAlert(
+            "success",
+            result.message || "Payment confirmation submitted! We'll review it shortly."
+        );
+
         const chargeSummary = selectedCharges
             .map((charge) =>
                 charge.charge_type ||
@@ -1126,44 +1348,53 @@ function submitPayment() {
                 resolveChargeIdentifier(charge)
             )
             .join(", ");
-        const paymentDescription = selectedCharges.length
-            ? `Payment for ${selectedCharges.length} charge${selectedCharges.length === 1 ? "" : "s"}: ${chargeSummary}`
-            : `Payment confirmation - ${new Date().toLocaleString("en-US", {
-                  month: "long",
-                  year: "numeric",
-              })}`;
 
-        const newPayment = {
-            id: Date.now(),
+        paymentHistory.unshift({
+            id: result.payment_id || Date.now(),
             date: new Date().toISOString().split("T")[0],
             space: selectedSpace.title,
-            description: paymentDescription,
+            description: selectedCharges.length
+                ? `Payment for ${selectedCharges.length} charge${selectedCharges.length === 1 ? "" : "s"}: ${chargeSummary}`
+                : `Payment confirmation - ${new Date().toLocaleString("en-US", {
+                      month: "long",
+                      year: "numeric",
+                  })}`,
             amount: Number(amountValue.toFixed(2)),
-            reference: generateReference(),
+            reference: result.payment_id || generateReference(),
             status: "pending",
             method: paymentMethodSelect.value,
             charge_ids: selectedCharges.map((charge) =>
                 resolveChargeIdentifier(charge)
             ),
-        };
-
-        paymentHistory.unshift(newPayment);
+        });
         loadPaymentHistory();
 
-        showModalAlert(
-            "success",
-            `Payment confirmation submitted successfully for ${selectedCharges.length} charge${selectedCharges.length === 1 ? "" : "s"}.`
-        );
+        uploadedFiles = [];
+        renderUploadedFilesPreview();
 
-        submitBtn.innerHTML =
-            '<i class="fas fa-check"></i> Submitted Successfully!';
+        try {
+            await refreshSelectedSpaceData();
+        } catch (refreshError) {
+            console.warn("Failed to refresh lease data after payment submission", refreshError);
+        }
+
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Submitted Successfully!';
 
         setTimeout(() => {
             submitBtn.innerHTML =
                 '<i class="fas fa-paper-plane"></i> Submit Payment Confirmation';
             closePaymentModal();
         }, 2500);
-    }, 1500);
+    } catch (error) {
+        console.error("submitPayment error:", error);
+        showModalAlert(
+            "error",
+            error.message || "Failed to submit payment confirmation. Please try again."
+        );
+        submitBtn.disabled = false;
+        submitBtn.innerHTML =
+            '<i class="fas fa-paper-plane"></i> Submit Payment Confirmation';
+    }
 }
 
 function calculateTotalAmount() {
@@ -1288,6 +1519,14 @@ function preparePaymentModal(defaultAmount) {
         : [];
     selectedChargeIds = new Set();
 
+    // Pre-fetch pending payments for these charges and refresh modal once loaded
+    (async () => {
+        const pendingMap = await fetchPendingPaymentsForCharges(paymentModalCharges);
+        window.__pendingPaymentsMap = pendingMap;
+        renderPaymentChargeList();
+        updatePaymentSummary();
+    })();
+
     const chargeList = document.getElementById("payment-charge-list");
     const amountInput = document.getElementById("payment-amount");
     const payFullBtn = document.getElementById("pay-full-btn");
@@ -1392,6 +1631,13 @@ function renderPaymentChargeList() {
                 null;
             const displayChargeId = rawDisplayId ? String(rawDisplayId) : "Not provided";
 
+            // build pending payment indicator via server-fetched map (status=Pending)
+            let paymentIndicator = "";
+            const pendingAmt = getPendingAmountForCharge(charge);
+            if (pendingAmt > 0) {
+                paymentIndicator = `<div class="charge-payment-status payment-pending"><i class="fas fa-hourglass-half"></i> Submitted ₱${formatCurrency(pendingAmt)} (Pending)</div>`;
+            }
+
             return `
                 <label class="charge-option">
                     <input type="checkbox" class="charge-checkbox" data-charge-id="${escapeHtml(
@@ -1404,6 +1650,7 @@ function renderPaymentChargeList() {
                             <span>${dueDateLabel}</span>
                             <span>Charge ID: ${escapeHtml(displayChargeId)}</span>
                         </div>
+                        ${paymentIndicator}
                     </div>
                     <div class="charge-amount">₱${formatCurrency(amount)}</div>
                 </label>
@@ -1450,6 +1697,15 @@ function updatePaymentSummary() {
         if (selectedCount === 0) {
             amountInput.value = "";
         }
+        // Cap the amount to the allowed maximum (charges minus pending)
+        const allowedMax = totalSelected;
+        if (allowedMax >= 0) {
+            const current = parseFloat(amountInput.value || 0) || 0;
+            if (current > allowedMax) {
+                amountInput.value = String(allowedMax.toFixed(2));
+            }
+            amountInput.max = String(allowedMax.toFixed(2));
+        }
     }
 }
 
@@ -1458,7 +1714,10 @@ function calculateSelectedChargesTotal() {
     paymentModalCharges.forEach((charge, index) => {
         const chargeId = resolveChargeIdentifier(charge, index);
         if (selectedChargeIds.has(chargeId)) {
-            total += parseFloat(charge.amount) || 0;
+            const raw = parseFloat(charge.amount) || 0;
+            const pendingAmt = getPendingAmountForCharge(charge);
+            const net = Math.max(0, raw - (pendingAmt || 0));
+            total += net;
         }
     });
     return total;
@@ -1775,4 +2034,6 @@ window.selectSpace = selectSpace;
 window.openPaymentModal = openPaymentModal;
 window.closePaymentModal = closePaymentModal;
 window.handleFileUpload = handleFileUpload;
+window.removeUploadedImage = removeUploadedImage;
+window.submitPayment = submitPayment;
 window.escapeHtml = escapeHtml;

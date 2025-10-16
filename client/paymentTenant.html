@@ -158,27 +158,27 @@
                 </h3>
                 <p class="upload-instructions">
                     After completing your payment, take a screenshot of the confirmation screen showing the reference
-                    number.
-                    Upload the image below to submit your payment proof to the administrator.
+                    number. You may upload up to <strong>5 images</strong> (PNG, JPG, or JPEG) below as proof before
+                    submitting your confirmation.
                 </p>
 
+                <small class="file-limit-hint" id="file-limit-hint">0 of 5 images selected (PNG, JPG, JPEG).</small>
+
                 <div class="file-input-container">
-                    <input type="file" id="payment-proof" class="file-input" accept="image/*"
+                    <input type="file" id="payment-proof" class="file-input" accept=".png,.jpg,.jpeg" multiple
                         onchange="handleFileUpload(event)">
                     <label for="payment-proof" class="file-input-label">
                         <i class="fas fa-cloud-arrow-up"></i>
-                        Choose Screenshot
+                        Choose Images
                     </label>
                 </div>
 
                 <div class="file-preview" id="file-preview">
-                    <div class="preview-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span id="file-name"></span>
-                        <button class="copy-btn" onclick="removeFile()" style="margin-left: auto; color: #ef4444;">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                    <div class="preview-empty" id="file-preview-empty">
+                        <i class="fas fa-image"></i>
+                        <span>No files selected yet. You can upload up to 5 images.</span>
                     </div>
+                    <div class="preview-list" id="file-preview-list"></div>
                 </div>
             </div>
 

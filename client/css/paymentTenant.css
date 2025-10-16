@@ -1110,9 +1110,31 @@ tbody tr:hover {
   display: none;
 }
 
+.file-limit-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: #047857;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 .file-preview.active {
   display: block;
   animation: fadeIn 0.3s ease;
+}
+
+.preview-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #047857;
+  font-weight: 500;
+}
+
+.preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 @keyframes fadeIn {
@@ -1132,6 +1154,43 @@ tbody tr:hover {
   gap: 0.5rem;
   color: #065f46;
   font-weight: 500;
+}
+
+.preview-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-weight: 500;
+}
+
+.preview-meta strong {
+  font-size: 0.95rem;
+}
+
+.preview-meta small {
+  font-size: 0.8rem;
+  color: #047857;
+  opacity: 0.85;
+}
+
+.preview-remove {
+  margin-left: auto;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.preview-remove:hover {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.4);
 }
 
 .submit-payment-btn {
@@ -1475,6 +1534,36 @@ tbody tr:hover {
     padding: 0.75rem 1.5rem;
     font-size: 14px;
   }
+}
+
+/* Charge payment indicator styles */
+.charge-payment-status {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.charge-payment-status i {
+  font-size: 0.9rem;
+}
+
+.payment-pending {
+  border-color: rgba(245, 158, 11, 0.15);
+  color: var(--warning-color);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.payment-confirmed {
+  border-color: rgba(16, 185, 129, 0.15);
+  color: var(--success-color);
+  background: rgba(16, 185, 129, 0.06);
 }
 
 /* Print styles */
