@@ -43,6 +43,7 @@ const FILE_UPLOAD = {
         'image/png',
         'image/gif',
         'image/webp',
+        'image/heic',
         'video/mp4',
         'video/webm',
         'video/ogg',
