@@ -383,9 +383,14 @@ function getChargeStatusByDate(dueDate) {
 }
 
 function getPaidAmountForCharge(chargeId) {
+    
+    const ch = charges.find((c) => c.id === chargeId) || filteredCharges.find((c) => c.id === chargeId);
+    if (ch && (typeof ch.total_paid !== 'undefined')) {
+        return Number(ch.total_paid) || 0;
+    }
     return payments
         .filter((payment) => payment.chargeId === chargeId)
-        .reduce((total, payment) => total + payment.amount, 0);
+        .reduce((total, payment) => total + (Number(payment.amount) || 0), 0);
 }
 
 function getStatusIcon(status) {
@@ -2407,8 +2412,12 @@ function renderChargesTable() {
 
     tbody.innerHTML = filteredCharges
         .map((charge, index) => {
-            const paidAmount = getPaidAmountForCharge(charge.id);
-            const totalAmount = charge.amount;
+            
+            const paidAmount = (typeof charge.total_paid !== 'undefined' && charge.total_paid !== null)
+                ? Number(charge.total_paid) || 0
+                : getPaidAmountForCharge(charge.id);
+            const totalAmount = Number(charge.amount) || 0;
+            const remainingAmount = Math.max(totalAmount - (Number(paidAmount) || 0), 0);
             const paymentProgress =
                 totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
             const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
@@ -2453,12 +2462,10 @@ function renderChargesTable() {
                     : ""
                 }
                 </td>
-                <td class="td-total">${formatCurrency(totalAmount)}</td>
+                <td class="td-total" title="Original amount: ${formatCurrency(totalAmount)}">${formatCurrency(remainingAmount)}</td>
                 <td class="td-paid">
                     <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                        <span style="font-weight: 700;">${formatCurrency(
-                    paidAmount
-                )}</span>
+                        <span style="font-weight: 700;">${formatCurrency(paidAmount)}</span>
                         ${paidAmount > 0
                     ? `
                             <div class="payment-progress">
@@ -2521,8 +2528,11 @@ function renderChargesTable() {
 
         mobileCards.innerHTML = filteredCharges
             .map((charge, index) => {
-                const paidAmount = getPaidAmountForCharge(charge.id);
-                const totalAmount = charge.amount;
+                const paidAmount = (typeof charge.total_paid !== 'undefined' && charge.total_paid !== null)
+                    ? Number(charge.total_paid) || 0
+                    : getPaidAmountForCharge(charge.id);
+                const totalAmount = Number(charge.amount) || 0;
+                const remainingAmount = Math.max(totalAmount - (Number(paidAmount) || 0), 0);
                 const paymentProgress =
                     totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
                 const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
@@ -2557,9 +2567,7 @@ function renderChargesTable() {
                     )}</div>
                     </div>
                     
-                    <div class="card-amount charge">${formatCurrency(
-                        totalAmount
-                    )}</div>
+                    <div class="card-amount charge" title="Original amount: ${formatCurrency(totalAmount)}">${formatCurrency(remainingAmount)}</div>
                     
                     <div class="card-details">
                         <div class="card-detail-row">
@@ -2675,7 +2683,9 @@ function renderPaymentsTable() {
                 </div>
             </td>
             <td class="payment-date">${formatDate(payment.paymentDate)}</td>
-            <td class="payment-description">${payment.description}</td>
+            <td class="payment-description">${escapeHtml(
+                payment.charge_description || payment.description || `Charge #${payment.charge_id || 'N/A'}`
+            )}</td>
             <td class="payment-amount">${formatCurrency(payment.amount)}</td>
             <td>
                 <span class="payment-method">${capitalizeFirst(
@@ -2740,8 +2750,10 @@ function renderPaymentsTable() {
                     </div>
                     <div class="card-detail-row">
                         <span class="card-detail-label">Description</span>
-                        <span class="card-detail-value">${payment.description
-                    }</span>
+                        <span class="card-detail-value">${escapeHtml(
+                            payment.charge_description || payment.description || `Charge #${payment.charge_id || 'N/A'}`
+                        )}
+                    </span>
                     </div>
                     <div class="card-detail-row">
                         <span class="card-detail-label">Method</span>
@@ -5093,6 +5105,23 @@ function injectPaymentModalStyles() {
     document.head.appendChild(styleSheet);
 }
 
+function injectPaymentButtonStyles() {
+    if (document.getElementById('payment-button-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'payment-button-styles';
+    s.textContent = `
+        .btn-narrow {
+            padding: 6px 8px !important;
+            min-width: 34px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .pending-payments-table .btn-narrow { margin-right: 6px; }
+    `;
+    document.head.appendChild(s);
+}
+
 function switchTab(tabName) {
     const tabButtons = document.querySelectorAll(".tab-button");
     tabButtons.forEach((button) => {
@@ -5115,6 +5144,30 @@ function switchTab(tabName) {
     }
 
     localStorage.setItem("activePaymentTab", tabName);
+
+    
+    if (tabName === 'payments') {
+        
+        const btns = document.querySelectorAll('.view-toggle-btn');
+        btns.forEach(b => b.classList.toggle('active', b.dataset.view === (currentPaymentView || 'pending')));
+        const allView = document.getElementById('all-payments-view');
+        const pendingView = document.getElementById('pending-payments-view');
+        if (allView && pendingView) {
+            if (currentPaymentView === 'all') {
+                allView.classList.add('active');
+                pendingView.classList.remove('active');
+            } else {
+                allView.classList.remove('active');
+                pendingView.classList.add('active');
+            }
+        }
+        
+        const pendingTabs = document.querySelectorAll('.pending-tab-btn');
+        pendingTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.status === (currentPendingStatus || 'Pending')));
+        
+        loadPendingPayments(currentPendingStatus || 'Pending');
+        updatePendingStatusCounts();
+    }
 }
 
 function initializeActiveTab() {
@@ -5128,22 +5181,24 @@ let currentPendingStatus = 'Pending';
 let pendingPayments = [];
 let filteredPendingPayments = [];
 
-async function fetchPendingPayments() {
+
+async function fetchPaymentsByStatus(status = 'Pending') {
     try {
         const token = localStorage.getItem('token') || '';
-        const response = await fetch(`${API_BASE_URL}/payments/search/by-charge?status=Pending`, {
+        const qs = new URLSearchParams({ status: String(status) });
+        const response = await fetch(`${API_BASE_URL}/payments?${qs.toString()}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        
+
         if (!response.ok) {
-            console.warn('Failed to fetch pending payments');
+            console.warn(`Failed to fetch payments for status: ${status}`);
             return [];
         }
-        
+
         const data = await response.json();
-        return data.payments || [];
+        return (data && data.payments) || [];
     } catch (error) {
-        console.error('Error fetching pending payments:', error);
+        console.error('Error fetching payments by status:', error);
         return [];
     }
 }
@@ -5166,14 +5221,16 @@ function switchPaymentView(view) {
     } else {
         allView.classList.remove('active');
         pendingView.classList.add('active');
-        loadPendingPayments();
+        loadPendingPayments(currentPendingStatus);
     }
 }
 
-async function loadPendingPayments() {
-    pendingPayments = await fetchPendingPayments();
+async function loadPendingPayments(status = 'Pending') {
+    currentPendingStatus = status;
+    pendingPayments = await fetchPaymentsByStatus(status);
     filteredPendingPayments = [...pendingPayments];
-    filterPendingByStatus(currentPendingStatus);
+    filterPendingPayments();
+    updatePendingStatusCounts();
 }
 
 function filterPendingByStatus(status) {
@@ -5183,14 +5240,9 @@ function filterPendingByStatus(status) {
     tabs.forEach(tab => {
         tab.classList.toggle('active', tab.dataset.status === status);
     });
+
     
-    filteredPendingPayments = pendingPayments.filter(p => {
-        const pStatus = String(p.status || '').trim();
-        return pStatus === status;
-    });
-    
-    renderPendingPaymentsTable();
-    updatePendingStatusCounts();
+    loadPendingPayments(status);
 }
 
 function filterPendingPayments() {
@@ -5198,7 +5250,7 @@ function filterPendingPayments() {
     const dateFilter = document.getElementById('pending-date')?.value || '';
     
     filteredPendingPayments = pendingPayments.filter(p => {
-        const matchesStatus = String(p.status || '').trim() === currentPendingStatus;
+        const matchesStatus = String(p.status || '').trim().toLowerCase() === String(currentPendingStatus || '').trim().toLowerCase();
         const matchesSearch = !searchTerm || 
             (p.tenant_name && p.tenant_name.toLowerCase().includes(searchTerm)) ||
             (p.payment_id && String(p.payment_id).toLowerCase().includes(searchTerm));
@@ -5218,22 +5270,33 @@ function filterPendingPayments() {
 function resetPendingFilters() {
     document.getElementById('pending-search').value = '';
     document.getElementById('pending-date').value = '';
-    filteredPendingPayments = pendingPayments.filter(p => String(p.status || '').trim() === currentPendingStatus);
-    renderPendingPaymentsTable();
+    filteredPendingPayments = [...pendingPayments];
+    filterPendingPayments();
 }
 
-function updatePendingStatusCounts() {
-    const pendingCount = pendingPayments.filter(p => String(p.status || '').trim() === 'Pending').length;
-    const approvedCount = pendingPayments.filter(p => String(p.status || '').trim() === 'Confirmed').length;
-    const rejectedCount = pendingPayments.filter(p => String(p.status || '').trim() === 'Rejected').length;
+async function updatePendingStatusCounts() {
     
-    const pendingBadge = document.getElementById('pending-count-badge');
-    const approvedBadge = document.getElementById('approved-count-badge');
-    const rejectedBadge = document.getElementById('rejected-count-badge');
-    
-    if (pendingBadge) pendingBadge.textContent = pendingCount;
-    if (approvedBadge) approvedBadge.textContent = approvedCount;
-    if (rejectedBadge) rejectedBadge.textContent = rejectedCount;
+    try {
+        const [pend, conf, rej] = await Promise.all([
+            fetchPaymentsByStatus('Pending'),
+            fetchPaymentsByStatus('Confirmed'),
+            fetchPaymentsByStatus('Rejected'),
+        ]);
+
+        const pendingCount = pend.length;
+        const approvedCount = conf.length;
+        const rejectedCount = rej.length;
+
+        const pendingBadge = document.getElementById('pending-count-badge');
+        const approvedBadge = document.getElementById('approved-count-badge');
+        const rejectedBadge = document.getElementById('rejected-count-badge');
+
+        if (pendingBadge) pendingBadge.textContent = pendingCount;
+        if (approvedBadge) approvedBadge.textContent = approvedCount;
+        if (rejectedBadge) rejectedBadge.textContent = rejectedCount;
+    } catch (e) {
+        console.warn('Failed to update status counts', e);
+    }
 }
 
 function renderPendingPaymentsTable() {
@@ -5262,31 +5325,88 @@ function renderPendingPaymentsTable() {
         const method = payment.payment_method || 'N/A';
         const submitted = payment.created_at ? formatDate(payment.created_at) : 'N/A';
         const tenant = payment.tenant_name || 'Unknown';
-        const chargeDesc = payment.charge_description || `Charge #${payment.charge_id || 'N/A'}`;
+    const chargeDesc = payment.charge_description || `Charge #${payment.charge_id || 'N/A'}`;
+    const chargeType = payment.charge_type || payment.chargeType || (payment.charge ? payment.charge.type : '') || '';
+    const dueDate = payment.due_date || payment.dueDate || (payment.charge ? payment.charge.dueDate : '') || '';
         const proofCount = Array.isArray(payment.proofs) ? payment.proofs.length : 0;
         const status = payment.status || 'Pending';
         const processedBy = payment.processed_by_name || payment.processed_by || '-';
         const processedAt = payment.processed_at ? formatDate(payment.processed_at) : '-';
+        const fullId = String(payment.payment_id || '');
+        const shortId = fullId ? `${fullId.substring(0, 8)}...` : '-';
+        const proofLinks = (Array.isArray(payment.proofs) ? payment.proofs : [])
+            .map((p, i) => {
+                const url = typeof p === 'string' ? p : (p.proof_url || '');
+                if (!url) return '';
+                return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Proof ${i + 1}</a>`;
+            })
+            .filter(Boolean)
+            .join(' | ');
+        const proofsCell = proofCount > 0 ? proofLinks : '<span class="proof-count">0 files</span>';
         
         return `
             <tr>
                 <td class="td-number">${index + 1}</td>
-                <td><code>${escapeHtml(payment.payment_id).substring(0, 8)}...</code></td>
+                <td>
+                    <code class="copyable" title="Click to copy" onclick="window.copyPaymentId('${escapeHtml(fullId)}')">${escapeHtml(shortId)}</code>
+                    <button class="btn btn-link" title="Show full ID" onclick="window.showFullPaymentId('${escapeHtml(fullId)}')"><i class="fas fa-eye"></i></button>
+                </td>
                 <td class="td-tenant">${escapeHtml(tenant)}</td>
                 <td>${escapeHtml(chargeDesc)}</td>
+                <td>${escapeHtml(chargeType)}</td>
+                <td>${dueDate ? formatDate(dueDate) : '-'}</td>
                 <td class="td-total"><strong>${formatCurrency(amount)}</strong></td>
                 <td>${escapeHtml(method)}</td>
                 <td>${submitted}</td>
-                <td><span class="proof-count">${proofCount} file${proofCount !== 1 ? 's' : ''}</span></td>
-                <td class="td-tenant">${escapeHtml(processedBy)}</td>
-                <td>${processedAt}</td>
+                <td>${proofsCell}</td>
+                <td class="td-tenant col-processed-by">${escapeHtml(processedBy)}</td>
+                <td class="col-processed-at">${processedAt}</td>
+                <td>
+                    ${status === 'Pending' ? `
+                    <div class="action-buttons">
+                        <button class="btn btn-success btn-narrow" onclick="window.approvePayment('${escapeHtml(fullId)}')"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-danger btn-narrow" onclick="window.rejectPayment('${escapeHtml(fullId)}')"><i class="fas fa-times"></i></button>
+                    </div>
+                    ` : '-'}
+                </td>
             </tr>
         `;
     }).join('');
+
+    
+    const processedByCols = document.querySelectorAll('.col-processed-by');
+    const processedAtCols = document.querySelectorAll('.col-processed-at');
+    const isPendingView = (currentPendingStatus || 'Pending') === 'Pending' && document.getElementById('pending-payments-view')?.classList.contains('active');
+    processedByCols.forEach(el => el.style.display = isPendingView ? 'none' : 'table-cell');
+    processedAtCols.forEach(el => el.style.display = isPendingView ? 'none' : 'table-cell');
 }
 
+
+window.copyPaymentId = function (id) {
+    try {
+        if (!id) return;
+        navigator.clipboard.writeText(id).then(() => {
+            showAlert('Payment ID copied to clipboard', 'info');
+        }).catch(() => {
+            
+            const ta = document.createElement('textarea');
+            ta.value = id;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showAlert('Payment ID copied to clipboard', 'info');
+        });
+    } catch (e) { }
+};
+
+window.showFullPaymentId = function (id) {
+    if (!id) return;
+    alert(`Payment ID:\n${id}`);
+};
+
 async function approvePayment(paymentId) {
-    if (!confirm('Are you sure you want to approve this payment?')) return;
+    if (!confirm('Confirm this payment?')) return;
     
     try {
         const token = localStorage.getItem('token') || '';
@@ -5302,16 +5422,23 @@ async function approvePayment(paymentId) {
         });
         
         if (!response.ok) {
-            throw new Error('Failed to approve payment');
+            
+            let text = '';
+            try {
+                text = await response.text();
+            } catch (e) {
+                text = response.statusText || String(response.status);
+            }
+            throw new Error('Failed to confirm payment: ' + text);
         }
         
-        showAlert('Payment approved successfully', 'success');
-        await loadPendingPayments();
+        showAlert('Payment confirmed successfully', 'success');
+        await loadPendingPayments(currentPendingStatus);
         await fetchCharges(); 
         updateStatistics();
     } catch (error) {
-        console.error('Error approving payment:', error);
-        showAlert('Failed to approve payment', 'error');
+        console.error('Error confirming payment:', error);
+        showAlert('Failed to confirm payment', 'error');
     }
 }
 
@@ -5337,8 +5464,8 @@ async function rejectPayment(paymentId) {
             throw new Error('Failed to reject payment');
         }
         
-        showAlert('Payment rejected', 'success');
-        await loadPendingPayments();
+    showAlert('Payment rejected', 'success');
+    await loadPendingPayments(currentPendingStatus);
     } catch (error) {
         console.error('Error rejecting payment:', error);
         showAlert('Failed to reject payment', 'error');
@@ -5383,6 +5510,7 @@ window.sortTable = sortTable;
 document.addEventListener("DOMContentLoaded", function () {
     injectEnhancedButtonStyles();
     injectPaymentModalStyles();
+    injectPaymentButtonStyles();
     createModalsAndDialogs();
 
     syncDataArrays();
@@ -5398,4 +5526,12 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeEventListeners();
 
     initializeActiveTab();
+
+    
+    const activeTab = localStorage.getItem("activePaymentTab") || "charges";
+    if (activeTab === 'payments') {
+        
+        loadPendingPayments('Pending');
+        updatePendingStatusCounts();
+    }
 });

@@ -209,7 +209,7 @@
                         <div class="view-toggle-container">
                             <button class="view-toggle-btn active" data-view="pending" onclick="switchPaymentView('pending')">
                                 <i class="fas fa-hourglass-half"></i>
-                                <span>Pending Payments</span>
+                                <span>Process Payments</span>
                             </button>
                             <button class="view-toggle-btn" data-view="all" onclick="switchPaymentView('all')">
                                 <i class="fas fa-list"></i>
@@ -342,13 +342,16 @@
                                                 <th class="th-number">#</th>
                                                 <th>Payment ID</th>
                                                 <th>Tenant</th>
-                                                <th>Charge</th>
-                                                <th>Amount</th>
+                                                    <th>Description</th>
+                                                    <th>Charge Type</th>
+                                                    <th>Due Date</th>
+                                                    <th>Amount</th>
                                                 <th>Method</th>
                                                 <th>Submitted</th>
                                                 <th>Proofs</th>
-                                                <th>Processed By</th>
-                                                <th>Processed At</th>
+                                                    <th class="col-processed-by">Processed By</th>
+                                                    <th class="col-processed-at">Processed At</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="pending-payments-tbody">
