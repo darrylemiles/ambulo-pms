@@ -28,12 +28,13 @@ router.get("/:id", getPaymentById);
 router.get("/search/by-charge", protect, searchPayments);
 router.patch(
     "/:id",
+    protect,
     createUploadMiddleware({
         fields: [{ name: "proofs", maxCount: 5 }],
         fieldFolders: { proofs: "payment_proofs" },
     }),
     updatePaymentById
 );
-router.delete("/:id", deletePaymentById);
+router.delete("/:id", protect, deletePaymentById);
 
 export default router;

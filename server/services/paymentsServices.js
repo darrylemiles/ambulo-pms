@@ -3,11 +3,16 @@ import { v4 as uuidv4 } from "uuid";
 
 const pool = await conn();
 
-const computeAndSetChargeStatus = async (connHandle, chargeId, performedBy = null) => {
+const computeAndSetChargeStatus = async (
+    connHandle,
+    chargeId,
+    performedBy = null
+) => {
     if (!chargeId) return;
 
+    
     const [sumRows] = await connHandle.execute(
-        `SELECT COALESCE(SUM(amount), 0) AS total_paid FROM payments WHERE charge_id = ? AND status != 'Pending'`,
+        `SELECT COALESCE(SUM(amount), 0) AS total_paid FROM payments WHERE charge_id = ? AND (status = 'Confirmed' OR status = 'Completed')`,
         [chargeId]
     );
     const totalPaid = sumRows && sumRows.length ? Number(sumRows[0].total_paid) : 0;
@@ -16,19 +21,18 @@ const computeAndSetChargeStatus = async (connHandle, chargeId, performedBy = nul
         `SELECT amount FROM charges WHERE charge_id = ? LIMIT 1`,
         [chargeId]
     );
-    if (!chargeRows || !chargeRows.length) return; 
+    if (!chargeRows || !chargeRows.length) return;
 
     const chargeAmount = Number(chargeRows[0].amount || 0);
-    let newStatus = 'Unpaid';
+    let newStatus = "Unpaid";
     if (totalPaid <= 0) {
-        newStatus = 'Unpaid';
+        newStatus = "Unpaid";
     } else if (chargeAmount > 0 && totalPaid >= chargeAmount) {
-        newStatus = 'Paid';
+        newStatus = "Paid";
     } else {
-        newStatus = 'Partially Paid';
+        newStatus = "Partially Paid";
     }
 
-    
     const [prevRows] = await connHandle.execute(
         `SELECT status, IFNULL(total_paid, 0) AS total_paid FROM charges WHERE charge_id = ? LIMIT 1`,
         [chargeId]
@@ -36,26 +40,41 @@ const computeAndSetChargeStatus = async (connHandle, chargeId, performedBy = nul
     const prevStatus = prevRows && prevRows.length ? prevRows[0].status : null;
     const prevTotalPaid = prevRows && prevRows.length ? Number(prevRows[0].total_paid || 0) : 0;
 
-    
-    await connHandle.execute(`UPDATE charges SET status = ?, total_paid = ? WHERE charge_id = ?`, [newStatus, totalPaid, chargeId]);
+    await connHandle.execute(
+        `UPDATE charges SET status = ?, total_paid = ? WHERE charge_id = ?`,
+        [newStatus, totalPaid, chargeId]
+    );
 
-    
     if (prevStatus !== newStatus || prevTotalPaid !== totalPaid) {
         try {
             await connHandle.execute(
                 `INSERT INTO charge_status_audit (charge_id, old_status, new_status, old_total_paid, new_total_paid, performed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [chargeId, prevStatus, newStatus, prevTotalPaid, totalPaid, performedBy || null, new Date()]
+                [
+                    chargeId,
+                    prevStatus,
+                    newStatus,
+                    prevTotalPaid,
+                    totalPaid,
+                    performedBy || null,
+                    new Date(),
+                ]
             );
         } catch (err) {
-            
-            console.error('Failed to write charge_status_audit:', err);
+            console.error("Failed to write charge_status_audit:", err);
         }
     }
 };
 
 const createPayment = async (paymentData = {}, performedBy = null) => {
-    const { chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs, user_id } =
-        paymentData || {};
+    const {
+        chargeId,
+        paymentDate,
+        amountPaid,
+        paymentMethod,
+        notes,
+        proofs,
+        user_id,
+    } = paymentData || {};
 
     const paymentId = uuidv4();
     const createdAt = new Date();
@@ -64,11 +83,16 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
     try {
         await connHandle.beginTransaction();
 
-        // Map incoming fields to payments table schema
-        const status = (paymentData.status && String(paymentData.status)) || 'Pending';
+        const rawStatus =
+            (paymentData.status && String(paymentData.status)) || "Pending";
+        
+        const status =
+            rawStatus && rawStatus.toLowerCase() === "confirmed"
+                ? "Confirmed"
+                : rawStatus;
         const userId = user_id || performedBy || null;
-        const confirmedBy = status === 'Confirmed' ? (performedBy || null) : null;
-        const confirmedAt = status === 'Confirmed' ? createdAt : null;
+    const confirmedBy = status === "Confirmed" ? user_id || null : null;
+    const confirmedAt = status === "Confirmed" ? createdAt : null;
 
         const insertPayment = `
             INSERT INTO payments (payment_id, charge_id, user_id, amount, payment_method, status, notes, confirmed_by, confirmed_at, created_at)
@@ -101,21 +125,33 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
             }
         }
 
-        
         try {
-                await connHandle.execute(`INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`, [
-                paymentId,
-                'create',
-                JSON.stringify({ chargeId, amount: amountPaid, paymentMethod, notes, proofs, status }),
-                performedBy || null,
-                createdAt,
-            ]);
+            await connHandle.execute(
+                `INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`,
+                [
+                    paymentId,
+                    "create",
+                    JSON.stringify({
+                        chargeId,
+                        amount: amountPaid,
+                        paymentMethod,
+                        notes,
+                        proofs,
+                        status,
+                        confirmed_by: confirmedBy,
+                        confirmed_at: confirmedAt,
+                    }),
+                    performedBy || null,
+                    createdAt,
+                ]
+            );
         } catch (err) {
-            console.error('Failed to write payment_audit (create):', err);
+            console.error("Failed to write payment_audit (create):", err);
         }
 
-    await computeAndSetChargeStatus(connHandle, chargeId);
-    await connHandle.commit();
+        
+        await computeAndSetChargeStatus(connHandle, chargeId, performedBy);
+        await connHandle.commit();
         return {
             message: "Payment created successfully",
             payment_id: paymentId,
@@ -129,23 +165,70 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
     }
 };
 
-const getAllPayments = async () => {
+const getAllPayments = async (filters = {}) => {
     try {
-        const query = `
-            SELECT DISTINCT
-                p.property_name,
-                CONCAT(u.first_name, ' ', u.last_name) AS full_name,
-                c.status AS charge_status,
-                COALESCE(pay.amount_paid, 0.00) AS amount_paid,
-                pay.payment_id
-            FROM properties p
-            INNER JOIN leases l ON p.property_id = l.property_id
-            INNER JOIN users u ON l.user_id = u.user_id
-            INNER JOIN charges c ON l.lease_id = c.lease_id
-            LEFT JOIN payments pay ON c.charge_id = pay.charge_id
-            ORDER BY p.property_name, full_name
+    const { status } = filters || {};
+
+        let query = `
+            SELECT 
+                pay.payment_id,
+                pay.charge_id,
+                pay.status,
+                pay.payment_method,
+                pay.amount AS amount_paid,
+                pay.created_at,
+                pay.confirmed_by AS processed_by,
+                pay.confirmed_at AS processed_at,
+                CONCAT(cb.first_name, ' ', cb.last_name) AS processed_by_name,
+                CONCAT(u.first_name, ' ', u.last_name) AS tenant_name,
+                c.description AS charge_description,
+                c.charge_type AS charge_type,
+                c.due_date AS due_date,
+                p.property_name
+            FROM payments pay
+            LEFT JOIN charges c ON pay.charge_id = c.charge_id
+            LEFT JOIN leases l ON c.lease_id = l.lease_id
+            LEFT JOIN users u ON l.user_id = u.user_id
+            LEFT JOIN users cb ON pay.confirmed_by = cb.user_id
+            LEFT JOIN properties p ON l.property_id = p.property_id
         `;
-        const [rows] = await pool.execute(query);
+
+        const params = [];
+
+        let queryStatus = status;
+        
+        if (String(status).toLowerCase() === "confirmed") {
+            query += ` WHERE pay.status IN (?, ?)`;
+            params.push("Confirmed", "Completed");
+        } else if (queryStatus) {
+            query += ` WHERE pay.status = ?`;
+            params.push(String(queryStatus));
+        }
+        query += ` ORDER BY pay.created_at DESC`;
+
+        const [rows] = await pool.execute(query, params);
+
+        
+        (rows || []).forEach((r) => {
+            if (r.status === "Completed") r.status = "Confirmed";
+        });
+
+        if (!rows || !rows.length) return rows || [];
+        const ids = rows.map((r) => r.payment_id);
+        const placeholders = ids.map(() => "?").join(",");
+        const [proofRows] = await pool.execute(
+            `SELECT payment_id, proof_url FROM payment_proof WHERE payment_id IN (${placeholders}) ORDER BY uploaded_at`,
+            ids
+        );
+        const proofsMap = new Map();
+        (proofRows || []).forEach((pr) => {
+            if (!proofsMap.has(pr.payment_id)) proofsMap.set(pr.payment_id, []);
+            proofsMap.get(pr.payment_id).push({ proof_url: pr.proof_url });
+        });
+        rows.forEach((r) => {
+            r.proofs = proofsMap.get(r.payment_id) || [];
+        });
+
         return rows;
     } catch (error) {
         console.error("Error in getAllPayments:", error);
@@ -159,8 +242,8 @@ const getPaymentById = async (id) => {
             SELECT 
                 pay.payment_id,
                 pay.charge_id,
-                DATE_FORMAT(pay.payment_date, '%Y-%m-%d') AS payment_date,
-                pay.amount_paid,
+                DATE_FORMAT(pay.created_at, '%Y-%m-%d') AS payment_date,
+                pay.amount AS amount_paid,
                 pay.payment_method,
                 pay.notes,
                 CONCAT(u.first_name, ' ', u.last_name) AS full_name,
@@ -192,37 +275,88 @@ const getPaymentById = async (id) => {
 };
 
 const updatePaymentById = async (id, payment = {}, performedBy = null) => {
-    const { chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs, status } =
-        payment || {};
+    const {
+        chargeId,
+        paymentDate,
+        amountPaid,
+        paymentMethod,
+        notes,
+        proofs,
+        status,
+    } = payment || {};
     const connHandle = await pool.getConnection();
     try {
         await connHandle.beginTransaction();
 
-        // Get current status to check if it's changing to Confirmed
         const [currentRows] = await connHandle.execute(
             `SELECT status FROM payments WHERE payment_id = ? LIMIT 1`,
             [id]
         );
-        const currentStatus = currentRows && currentRows.length ? currentRows[0].status : null;
+        const currentStatus =
+            currentRows && currentRows.length ? currentRows[0].status : null;
 
         const newStatus = status || currentStatus;
-        const confirmedBy = (newStatus === 'Confirmed' && currentStatus !== 'Confirmed') ? performedBy : null;
-        const confirmedAt = (newStatus === 'Confirmed' && currentStatus !== 'Confirmed') ? new Date() : null;
+
+        function mapToDbStatus(intent) {
+            if (!intent && currentStatus) return currentStatus;
+            const s = String(intent || "")
+                .trim()
+                .toLowerCase();
+            if (!s) return currentStatus || "Pending";
+            
+            if (s.includes("confirm") || s.includes("complete") || s === "confirmed" || s === "completed") return "Confirmed";
+            if (s.includes("reject") || s === "rejected") return "Rejected";
+            if (s.includes("pending") || s === "pending") return "Pending";
+
+            return currentStatus || "Pending";
+        }
+
+        const dbStatus = mapToDbStatus(newStatus);
+
+    const newStatusNorm = String(newStatus || "").toLowerCase();
+    const callerIntendsConfirm = newStatusNorm.includes("confirm") || newStatusNorm.includes("complete") || newStatusNorm === "confirmed" || newStatusNorm === "completed";
+    const callerIntendsReject = newStatusNorm.includes("reject") || newStatusNorm === "rejected";
+    const currentStatusNorm = String(currentStatus || "").toLowerCase();
+    const alreadyConfirmed = currentStatusNorm === "confirmed" || currentStatusNorm === "completed";
+    const alreadyRejected = currentStatusNorm === "rejected";
+
+    
+    
+    const processedByUserId = ( (callerIntendsConfirm && !alreadyConfirmed) || (callerIntendsReject && !alreadyRejected) ) ? payment.user_id || null : null;
+    const processedAt = ( (callerIntendsConfirm && !alreadyConfirmed) || (callerIntendsReject && !alreadyRejected) ) ? new Date() : null;
+
+        
+        const [existingPaymentRows] = await connHandle.execute(
+            `SELECT payment_id, charge_id, amount, status, confirmed_by, confirmed_at, notes, payment_method FROM payments WHERE payment_id = ? LIMIT 1`,
+            [id]
+        );
+        const existingPayment = existingPaymentRows && existingPaymentRows.length ? existingPaymentRows[0] : null;
 
         const updateQuery = `
             UPDATE payments
-            SET charge_id = ?, payment_date = ?, amount_paid = ?, payment_method = ?, notes = ?, status = ?, confirmed_by = COALESCE(confirmed_by, ?), confirmed_at = COALESCE(confirmed_at, ?)
+            SET
+                charge_id = COALESCE(?, charge_id),
+                created_at = COALESCE(?, created_at),
+                amount = COALESCE(?, amount),
+                payment_method = COALESCE(?, payment_method),
+                notes = COALESCE(?, notes),
+                status = ?,
+                confirmed_by = COALESCE(confirmed_by, ?),
+                confirmed_at = COALESCE(confirmed_at, ?)
             WHERE payment_id = ?
         `;
+
         await connHandle.execute(updateQuery, [
             chargeId || null,
             paymentDate || null,
-            amountPaid || 0,
+            typeof amountPaid !== "undefined" && amountPaid !== null
+                ? amountPaid
+                : null,
             paymentMethod || null,
             notes || null,
-            newStatus,
-            confirmedBy,
-            confirmedAt,
+            dbStatus,
+            processedByUserId,
+            processedAt,
             id,
         ]);
 
@@ -238,22 +372,90 @@ const updatePaymentById = async (id, payment = {}, performedBy = null) => {
             }
         }
 
+        try {
             
-            try {
-                await connHandle.execute(`INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`, [
+            const payload = {
+                old: existingPayment || null,
+                changes: {
+                    chargeId: chargeId || (existingPayment && existingPayment.charge_id) || null,
+                    paymentDate: paymentDate || null,
+                    amountPaid: typeof amountPaid !== "undefined" && amountPaid !== null ? amountPaid : (existingPayment && existingPayment.amount) || null,
+                    paymentMethod: paymentMethod || (existingPayment && existingPayment.payment_method) || null,
+                    notes: notes || (existingPayment && existingPayment.notes) || null,
+                    status: newStatus,
+                },
+            };
+
+            await connHandle.execute(
+                `INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`,
+                [
                     id,
-                    'update',
-                    JSON.stringify({ chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs, status: newStatus }),
+                    "update",
+                    JSON.stringify(payload),
                     performedBy || null,
                     new Date(),
-                ]);
-            } catch (err) {
-                console.error('Failed to write payment_audit (update):', err);
+                ]
+            );
+        } catch (err) {
+            console.error("Failed to write payment_audit (update):", err);
+        }
+
+    if (callerIntendsConfirm && currentStatus !== "Confirmed" && chargeId) {
+            let amtToApply = amountPaid;
+            if (amtToApply === undefined || amtToApply === null) {
+                const [amtRows] = await connHandle.execute(
+                    `SELECT amount FROM payments WHERE payment_id = ? LIMIT 1`,
+                    [id]
+                );
+                amtToApply =
+                    amtRows && amtRows.length ? Number(amtRows[0].amount || 0) : 0;
             }
 
-            await computeAndSetChargeStatus(connHandle, chargeId, performedBy);
-            await connHandle.commit();
-            return { message: "Payment updated successfully" };
+            const [cRows] = await connHandle.execute(
+                `SELECT amount, total_paid, status FROM charges WHERE charge_id = ? LIMIT 1`,
+                [chargeId]
+            );
+            if (cRows && cRows.length) {
+                const currAmount = Number(cRows[0].amount || 0);
+                const currPaid = Number(cRows[0].total_paid || 0);
+                const newPaid = currPaid + Number(amtToApply || 0);
+                let newChargeStatus = "Unpaid";
+                if (newPaid <= 0) newChargeStatus = "Unpaid";
+                else if (newPaid >= currAmount) newChargeStatus = "Paid";
+                else newChargeStatus = "Partially Paid";
+
+                await connHandle.execute(
+                    `UPDATE charges SET total_paid = ?, status = ? WHERE charge_id = ?`,
+                    [newPaid, newChargeStatus, chargeId]
+                );
+
+                try {
+                    await connHandle.execute(
+                        `INSERT INTO charge_status_audit (charge_id, old_status, new_status, old_total_paid, new_total_paid, performed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                            chargeId,
+                            cRows[0].status || null,
+                            newChargeStatus,
+                            currPaid,
+                            newPaid,
+                            processedByUserId || performedBy || null,
+                            new Date(),
+                        ]
+                    );
+                } catch (e) {
+                    console.error("Failed to write charge_status_audit on confirm:", e);
+                }
+            }
+        }
+
+        
+        await computeAndSetChargeStatus(
+            connHandle,
+            chargeId,
+            processedByUserId || performedBy
+        );
+        await connHandle.commit();
+        return { message: "Payment updated successfully" };
     } catch (error) {
         await connHandle.rollback();
         console.error("Error in updatePaymentById:", error);
@@ -270,28 +472,32 @@ const deletePaymentById = async (id, performedBy = null) => {
 
         
         const [paymentRows] = await connHandle.execute(
-            `SELECT charge_id FROM payments WHERE payment_id = ? LIMIT 1`,
+            `SELECT * FROM payments WHERE payment_id = ? LIMIT 1`,
             [id]
         );
-        const chargeId = paymentRows && paymentRows.length ? paymentRows[0].charge_id : null;
+        const existingPayment = paymentRows && paymentRows.length ? paymentRows[0] : null;
+        const chargeId = existingPayment ? existingPayment.charge_id : null;
 
-        await connHandle.execute(`DELETE FROM payment_proof WHERE payment_id = ?`, [id]);
+        await connHandle.execute(`DELETE FROM payment_proof WHERE payment_id = ?`, [
+            id,
+        ]);
         await connHandle.execute(`DELETE FROM payments WHERE payment_id = ?`, [id]);
 
-    
-    await computeAndSetChargeStatus(connHandle, chargeId, performedBy);
+        await computeAndSetChargeStatus(connHandle, chargeId, performedBy);
 
-        
         try {
-            await connHandle.execute(`INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`, [
-                id,
-                'delete',
-                JSON.stringify({ deleted_payment_id: id, chargeId }),
-                performedBy || null,
-                new Date(),
-            ]);
+            await connHandle.execute(
+                `INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`,
+                [
+                    id,
+                    "delete",
+                    JSON.stringify({ old: existingPayment || null }),
+                    performedBy || null,
+                    new Date(),
+                ]
+            );
         } catch (err) {
-            console.error('Failed to write payment_audit (delete):', err);
+            console.error("Failed to write payment_audit (delete):", err);
         }
 
         await connHandle.commit();
@@ -311,16 +517,26 @@ export default {
     updatePaymentById,
     getPaymentById,
     deletePaymentById,
-    async searchPaymentsByChargeIds({ chargeIds = [], status = null, userId = null } = {}) {
+    async searchPaymentsByChargeIds({
+        chargeIds = [],
+        status = null,
+        userId = null,
+    } = {}) {
         if (!Array.isArray(chargeIds) || !chargeIds.length) return [];
-        const placeholders = chargeIds.map(() => '?').join(',');
+        const placeholders = chargeIds.map(() => "?").join(",");
         const params = [...chargeIds];
         let sql = `SELECT payment_id, charge_id, amount as amount_paid, status, payment_method, created_at
                    FROM payments
                    WHERE charge_id IN (${placeholders})`;
         if (status) {
-            sql += ` AND status = ?`;
-            params.push(status);
+            
+            if (String(status).toLowerCase() === 'confirmed') {
+                sql += ` AND status = ?`;
+                params.push('Confirmed');
+            } else {
+                sql += ` AND status = ?`;
+                params.push(status);
+            }
         }
         if (userId) {
             sql += ` AND user_id = ?`;
