@@ -140,29 +140,29 @@ const getAllCharges = async (queryParams = {}) => {
 
         if (status) {
             const s = String(status).toUpperCase();
+
+            const paidExpr = `IFNULL(c.total_paid, IFNULL(pay_sum.total_paid,0))`;
             if (s === "WAIVED") {
                 where.push(`c.status = 'Waived'`);
             } else if (s === "PAID") {
-                where.push(`IFNULL(pay_sum.total_paid,0) >= c.amount`);
+                where.push(`${paidExpr} >= c.amount`);
             } else if (s === "PARTIALLY_PAID" || s === "PARTIAL") {
-                where.push(
-                    `IFNULL(pay_sum.total_paid,0) > 0 AND IFNULL(pay_sum.total_paid,0) < c.amount`
-                );
+                where.push(`${paidExpr} > 0 AND ${paidExpr} < c.amount`);
             } else if (s === "UNPAID") {
                 where.push(
-                    `IFNULL(pay_sum.total_paid,0) = 0 AND (c.status IS NULL OR c.status != 'Waived')`
+                    `${paidExpr} = 0 AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else if (s === "OVERDUE") {
                 where.push(
-                    `DATE(c.due_date) < CURDATE() AND IFNULL(pay_sum.total_paid,0) < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                    `DATE(c.due_date) < CURDATE() AND ${paidExpr} < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else if (s === "DUE-SOON" || s === "DUE_SOON") {
                 where.push(
-                    `DATE(c.due_date) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND IFNULL(pay_sum.total_paid,0) < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                    `DATE(c.due_date) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND ${paidExpr} < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else if (s === "PENDING") {
                 where.push(
-                    `DATE(c.due_date) > DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND IFNULL(pay_sum.total_paid,0) < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                    `DATE(c.due_date) > DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND ${paidExpr} < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else {
                 where.push(`LOWER(c.status) = ?`);
@@ -178,17 +178,18 @@ const getAllCharges = async (queryParams = {}) => {
             l.lease_id,
             CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
             p.property_name,
-            IFNULL(pay_sum.total_paid, 0) AS total_paid,
+            IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) AS total_paid,
             CASE
                 WHEN c.status = 'Waived' THEN 'WAIVED'
-                WHEN IFNULL(pay_sum.total_paid, 0) >= c.amount THEN 'PAID'
-                WHEN IFNULL(pay_sum.total_paid, 0) > 0 THEN 'PARTIALLY_PAID'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) >= c.amount THEN 'PAID'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) > 0 THEN 'PARTIALLY_PAID'
                 ELSE 'UNPAID'
             END AS canonical_status
         FROM charges c
         LEFT JOIN (
             SELECT charge_id, IFNULL(SUM(amount), 0) AS total_paid
             FROM payments
+            WHERE status = 'Confirmed' OR status = 'Completed'
             GROUP BY charge_id
         ) pay_sum ON pay_sum.charge_id = c.charge_id
         LEFT JOIN leases l ON c.lease_id = l.lease_id
