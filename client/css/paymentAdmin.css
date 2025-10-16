@@ -207,12 +207,9 @@ body:has(.sidebar.collapsed) .main-content,
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(
-    90deg,
-    var(--primary-color),
-    var(--secondary-color)
-  );
+  /* decorative accent removed */
+  height: 0;
+  background: transparent;
   transition: height 0.3s ease;
 }
 
@@ -537,6 +534,14 @@ body:has(.sidebar.collapsed) .main-content,
 
 .section-header.payments {
   background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.tab-button[data-tab="payments"].active {
+  background: linear-gradient(135deg, #10b981, #059669, #047857);
+}
+
+.tab-button[data-tab="payments"]:hover {
+  color: #10b981;
 }
 
 .section-title {
@@ -2320,4 +2325,453 @@ body:has(.sidebar.collapsed) .main-content,
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   animation: slideInRight 0.3s ease;
   max-width: calc(100vw - 40px);
+}
+
+/* Payment View Toggle Styles */
+.view-toggle-container {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.view-toggle-btn {
+  flex: 1;
+  max-width: 200px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.view-toggle-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(14, 165, 233, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.view-toggle-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+}
+
+.view-toggle-btn:hover::before {
+  opacity: 1;
+}
+
+.view-toggle-btn.active {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+}
+
+.view-toggle-btn.active::before {
+  opacity: 0;
+}
+
+.view-toggle-btn i {
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.view-toggle-btn.active i {
+  transform: scale(1.1);
+}
+
+/* Payment View Content */
+.payment-view-content {
+  display: none;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.payment-view-content.active {
+  display: block;
+}
+
+/* Pending Payments Status Tabs */
+.pending-status-tabs {
+  display: flex;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.6), rgba(241, 245, 249, 0.4));
+  padding: 6px;
+  border-radius: 16px;
+  gap: 6px;
+  margin: 0 24px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-light);
+}
+
+.pending-tab-btn {
+  flex: 1;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
+.pending-tab-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+}
+
+/* Pending Tab - Yellow/Orange */
+.pending-tab-btn[data-status="Pending"]:hover {
+  color: #f59e0b;
+}
+
+.pending-tab-btn[data-status="Pending"]::before {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(217, 119, 6, 0.04));
+}
+
+.pending-tab-btn[data-status="Pending"]:hover::before {
+  opacity: 1;
+}
+
+.pending-tab-btn[data-status="Pending"].active {
+  background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+}
+
+/* Approved Tab - Green */
+.pending-tab-btn[data-status="Confirmed"]:hover {
+  color: #10b981;
+}
+
+.pending-tab-btn[data-status="Confirmed"]::before {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.04));
+}
+
+.pending-tab-btn[data-status="Confirmed"]:hover::before {
+  opacity: 1;
+}
+
+.pending-tab-btn[data-status="Confirmed"].active {
+  background: linear-gradient(135deg, #10b981, #059669, #047857);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+}
+
+/* Rejected Tab - Red */
+.pending-tab-btn[data-status="Rejected"]:hover {
+  color: #ef4444;
+}
+
+.pending-tab-btn[data-status="Rejected"]::before {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(220, 38, 38, 0.04));
+}
+
+.pending-tab-btn[data-status="Rejected"]:hover::before {
+  opacity: 1;
+}
+
+.pending-tab-btn[data-status="Rejected"].active {
+  background: linear-gradient(135deg, #ef4444, #dc2626, #b91c1c);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+}
+
+.pending-tab-btn.active::before {
+  opacity: 0;
+}
+
+/* Tab Badges */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.pending-tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Pending Payments Table */
+.pending-payments-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  min-width: 1200px;
+}
+
+.pending-payments-table th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  background: #f8fafc;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.pending-payments-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  font-size: 13px;
+}
+
+.pending-payments-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.pending-payments-table tbody tr:hover {
+  background: #f8fafc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Status Badges for Pending Payments */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.status-badge.pending {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.2);
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+}
+
+.status-badge.approved {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.2);
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.15);
+}
+
+.status-badge.rejected {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.2);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
+}
+
+/* Action Buttons for Pending Payments */
+.btn-action {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+}
+
+.btn-action.approve {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.btn-action.approve:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.btn-action.reject {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.btn-action.reject:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+}
+
+.btn-action.view {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.25);
+}
+
+.btn-action.view:hover {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(6, 182, 212, 0.35);
+}
+
+.btn-action:active {
+  transform: translateY(0);
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Proof Count Indicator */
+.proof-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+/* Mobile Responsiveness for New Elements */
+@media (max-width: 768px) {
+  .view-toggle-container {
+    padding: 0 8px 16px;
+    gap: 8px;
+  }
+  
+  .view-toggle-btn {
+    max-width: none;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .pending-status-tabs {
+    margin: 0 8px 16px;
+    padding: 4px;
+    gap: 4px;
+  }
+  
+  .pending-tab-btn {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .pending-tab-btn span:not(.tab-badge) {
+    display: none;
+  }
+  
+  .tab-badge {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+  }
+  
+  /* Hide table, show mobile cards for pending payments */
+  .pending-payments-table {
+    display: none;
+  }
+  
+  #pending-payments-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 8px 20px;
+  }
+  
+  #pending-payments-mobile .mobile-card {
+    border-left-color: #f59e0b;
+  }
+  
+  #pending-payments-mobile .mobile-card .card-actions .btn-action {
+    flex: 1;
+    min-width: 60px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .view-toggle-container {
+    flex-direction: column;
+    padding: 0 4px 12px;
+    gap: 6px;
+  }
+  
+  .view-toggle-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .pending-status-tabs {
+    margin: 0 4px 12px;
+  }
+  
+  .pending-tab-btn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+  
+  #pending-payments-mobile {
+    padding: 0 4px 16px;
+    gap: 10px;
+  }
 }

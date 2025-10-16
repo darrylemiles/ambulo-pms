@@ -22,33 +22,6 @@ let payments = [];
 
 let currentSort = { key: null, dir: "asc" };
 
-const API_BASE_URL = "/api/v1";
-
-async function setDynamicInfo() {
-    const company = await fetchCompanyDetails();
-    if (!company) return;
-
-    const favicon = document.querySelector('link[rel="icon"]');
-    if (favicon && company.icon_logo_url) {
-        favicon.href = company.icon_logo_url;
-    }
-
-    document.title = company.company_name
-        ? `Manage Payment - ${company.company_name}`
-        : "Manage Payment";
-}
-
-function onReady(fn) {
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", fn, { once: true });
-    } else {
-        fn();
-    }
-}
-
-onReady(() => {
-    setDynamicInfo();
-});
 
 const CHARGE_TYPES_LIST = (window.AppConstants &&
     window.AppConstants.CHARGE_TYPES) ||
@@ -93,6 +66,34 @@ const CHARGE_STATUS_MAPPINGS_CONST = (window.AppConstants &&
         textColor: "#ffffff",
     },
 };
+
+const API_BASE_URL = "/api/v1";
+
+async function setDynamicInfo() {
+    const company = await fetchCompanyDetails();
+    if (!company) return;
+
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon && company.icon_logo_url) {
+        favicon.href = company.icon_logo_url;
+    }
+
+    document.title = company.company_name
+        ? `Manage Payment - ${company.company_name}`
+        : "Manage Payment";
+}
+
+function onReady(fn) {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else {
+        fn();
+    }
+}
+
+onReady(() => {
+    setDynamicInfo();
+});
 
 async function fetchCharges() {
     try {
@@ -161,7 +162,7 @@ async function fetchCharges() {
                 isRecurring: !!row.is_recurring,
                 template_id: row.template_id || null,
                 leaseId: row.lease_id || row.leaseId || null,
-                // normalize grace period if provided on the charge or lease row
+                
                 gracePeriodDays:
                     parseInt(
                         row.grace_period_days || row.gracePeriodDays || row.grace || 0,
@@ -192,7 +193,7 @@ async function fetchCharges() {
                     phone: row.phone_number || "",
                     paymentHistory: [],
                     charges: [mappedCharge],
-                    // carry lease-level grace period if present
+                    
                     grace_period_days:
                         parseInt(
                             row.lease_grace_period_days || row.grace_period_days || row.gracePeriodDays || 0,
@@ -291,7 +292,7 @@ function syncDataArrays() {
                     tenant: lease.tenant,
                     email: lease.email,
                     unit: lease.unit,
-                    // carry lease-level grace period into charge context
+                    
                     gracePeriodDays:
                         parseInt(
                             lease.grace_period_days || lease.gracePeriodDays || 0,
@@ -362,12 +363,12 @@ function getChargeStatus(charge) {
     if (charge.status === "due-soon") return "due-soon";
     if (charge.status === "pending") return "pending";
 
-    // consider grace period if provided on charge or parent lease
+    
     const daysUntilDue = getDaysUntilDue(charge.dueDate);
     const grace =
         parseInt(charge.gracePeriodDays || charge.grace_period_days || 0, 10) || 0;
 
-    // overdue only if current date is past due_date + grace
+    
     if (daysUntilDue < -grace) return "overdue";
     if (daysUntilDue <= 3) return "due-soon";
     return "pending";
@@ -375,7 +376,7 @@ function getChargeStatus(charge) {
 
 function getChargeStatusByDate(dueDate) {
     const daysUntilDue = getDaysUntilDue(dueDate);
-    // no lease context provided here; fall back to default behavior (no grace)
+    
     if (daysUntilDue < 0) return "overdue";
     if (daysUntilDue <= 3) return "due-soon";
     return "pending";
@@ -5121,8 +5122,243 @@ function initializeActiveTab() {
     switchTab(savedTab);
 }
 
+
+let currentPaymentView = 'pending';
+let currentPendingStatus = 'Pending';
+let pendingPayments = [];
+let filteredPendingPayments = [];
+
+async function fetchPendingPayments() {
+    try {
+        const token = localStorage.getItem('token') || '';
+        const response = await fetch(`${API_BASE_URL}/payments/search/by-charge?status=Pending`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        
+        if (!response.ok) {
+            console.warn('Failed to fetch pending payments');
+            return [];
+        }
+        
+        const data = await response.json();
+        return data.payments || [];
+    } catch (error) {
+        console.error('Error fetching pending payments:', error);
+        return [];
+    }
+}
+
+function switchPaymentView(view) {
+    currentPaymentView = view;
+    
+    const buttons = document.querySelectorAll('.view-toggle-btn');
+    buttons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+    });
+    
+    const allView = document.getElementById('all-payments-view');
+    const pendingView = document.getElementById('pending-payments-view');
+    
+    if (view === 'all') {
+        allView.classList.add('active');
+        pendingView.classList.remove('active');
+        renderPaymentsTable();
+    } else {
+        allView.classList.remove('active');
+        pendingView.classList.add('active');
+        loadPendingPayments();
+    }
+}
+
+async function loadPendingPayments() {
+    pendingPayments = await fetchPendingPayments();
+    filteredPendingPayments = [...pendingPayments];
+    filterPendingByStatus(currentPendingStatus);
+}
+
+function filterPendingByStatus(status) {
+    currentPendingStatus = status;
+    
+    const tabs = document.querySelectorAll('.pending-tab-btn');
+    tabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.status === status);
+    });
+    
+    filteredPendingPayments = pendingPayments.filter(p => {
+        const pStatus = String(p.status || '').trim();
+        return pStatus === status;
+    });
+    
+    renderPendingPaymentsTable();
+    updatePendingStatusCounts();
+}
+
+function filterPendingPayments() {
+    const searchTerm = (document.getElementById('pending-search')?.value || '').toLowerCase();
+    const dateFilter = document.getElementById('pending-date')?.value || '';
+    
+    filteredPendingPayments = pendingPayments.filter(p => {
+        const matchesStatus = String(p.status || '').trim() === currentPendingStatus;
+        const matchesSearch = !searchTerm || 
+            (p.tenant_name && p.tenant_name.toLowerCase().includes(searchTerm)) ||
+            (p.payment_id && String(p.payment_id).toLowerCase().includes(searchTerm));
+        
+        let matchesDate = true;
+        if (dateFilter && p.created_at) {
+            const paymentMonth = new Date(p.created_at).toISOString().slice(0, 7);
+            matchesDate = paymentMonth === dateFilter;
+        }
+        
+        return matchesStatus && matchesSearch && matchesDate;
+    });
+    
+    renderPendingPaymentsTable();
+}
+
+function resetPendingFilters() {
+    document.getElementById('pending-search').value = '';
+    document.getElementById('pending-date').value = '';
+    filteredPendingPayments = pendingPayments.filter(p => String(p.status || '').trim() === currentPendingStatus);
+    renderPendingPaymentsTable();
+}
+
+function updatePendingStatusCounts() {
+    const pendingCount = pendingPayments.filter(p => String(p.status || '').trim() === 'Pending').length;
+    const approvedCount = pendingPayments.filter(p => String(p.status || '').trim() === 'Confirmed').length;
+    const rejectedCount = pendingPayments.filter(p => String(p.status || '').trim() === 'Rejected').length;
+    
+    const pendingBadge = document.getElementById('pending-count-badge');
+    const approvedBadge = document.getElementById('approved-count-badge');
+    const rejectedBadge = document.getElementById('rejected-count-badge');
+    
+    if (pendingBadge) pendingBadge.textContent = pendingCount;
+    if (approvedBadge) approvedBadge.textContent = approvedCount;
+    if (rejectedBadge) rejectedBadge.textContent = rejectedCount;
+}
+
+function renderPendingPaymentsTable() {
+    const tbody = document.getElementById('pending-payments-tbody');
+    const mobileContainer = document.getElementById('pending-payments-mobile');
+    
+    if (!tbody) return;
+    
+    if (filteredPendingPayments.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-row">
+                <td colspan="10">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No ${currentPendingStatus.toLowerCase()} payments found</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        if (mobileContainer) mobileContainer.innerHTML = '';
+        return;
+    }
+    
+    tbody.innerHTML = filteredPendingPayments.map((payment, index) => {
+        const amount = payment.amount_paid || payment.amount || 0;
+        const method = payment.payment_method || 'N/A';
+        const submitted = payment.created_at ? formatDate(payment.created_at) : 'N/A';
+        const tenant = payment.tenant_name || 'Unknown';
+        const chargeDesc = payment.charge_description || `Charge #${payment.charge_id || 'N/A'}`;
+        const proofCount = Array.isArray(payment.proofs) ? payment.proofs.length : 0;
+        const status = payment.status || 'Pending';
+        const processedBy = payment.processed_by_name || payment.processed_by || '-';
+        const processedAt = payment.processed_at ? formatDate(payment.processed_at) : '-';
+        
+        return `
+            <tr>
+                <td class="td-number">${index + 1}</td>
+                <td><code>${escapeHtml(payment.payment_id).substring(0, 8)}...</code></td>
+                <td class="td-tenant">${escapeHtml(tenant)}</td>
+                <td>${escapeHtml(chargeDesc)}</td>
+                <td class="td-total"><strong>${formatCurrency(amount)}</strong></td>
+                <td>${escapeHtml(method)}</td>
+                <td>${submitted}</td>
+                <td><span class="proof-count">${proofCount} file${proofCount !== 1 ? 's' : ''}</span></td>
+                <td class="td-tenant">${escapeHtml(processedBy)}</td>
+                <td>${processedAt}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function approvePayment(paymentId) {
+    if (!confirm('Are you sure you want to approve this payment?')) return;
+    
+    try {
+        const token = localStorage.getItem('token') || '';
+        const response = await fetch(`${API_BASE_URL}/payments/${paymentId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+                status: 'Confirmed',
+            }),
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to approve payment');
+        }
+        
+        showAlert('Payment approved successfully', 'success');
+        await loadPendingPayments();
+        await fetchCharges(); 
+        updateStatistics();
+    } catch (error) {
+        console.error('Error approving payment:', error);
+        showAlert('Failed to approve payment', 'error');
+    }
+}
+
+async function rejectPayment(paymentId) {
+    const reason = prompt('Please provide a reason for rejection (optional):');
+    if (reason === null) return; 
+    
+    try {
+        const token = localStorage.getItem('token') || '';
+        const response = await fetch(`${API_BASE_URL}/payments/${paymentId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+                status: 'Rejected',
+                notes: reason ? `Rejected: ${reason}` : 'Rejected by admin',
+            }),
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to reject payment');
+        }
+        
+        showAlert('Payment rejected', 'success');
+        await loadPendingPayments();
+    } catch (error) {
+        console.error('Error rejecting payment:', error);
+        showAlert('Failed to reject payment', 'error');
+    }
+}
+
+async function viewPendingPaymentDetails(paymentId) {
+    
+    viewPaymentDetails(paymentId);
+}
+
 window.showSection = showSection;
 window.switchTab = switchTab;
+window.switchPaymentView = switchPaymentView;
+window.filterPendingByStatus = filterPendingByStatus;
+window.filterPendingPayments = filterPendingPayments;
+window.resetPendingFilters = resetPendingFilters;
+window.approvePayment = approvePayment;
+window.rejectPayment = rejectPayment;
+window.viewPendingPaymentDetails = viewPendingPaymentDetails;
 window.addNewCharge = addNewCharge;
 window.editCharge = editCharge;
 window.removeCharge = removeCharge;
