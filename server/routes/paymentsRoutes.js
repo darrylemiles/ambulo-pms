@@ -7,6 +7,7 @@ import {
     getPaymentById,
     updatePaymentById,
     deletePaymentById,
+    searchPayments,
 } from "../controllers/paymentsControllers.js";
 
 import createUploadMiddleware from "../middlewares/multer/uploadMiddleware.js";
@@ -15,6 +16,7 @@ const router = express.Router();
 
 router.post(
     "/create-payment",
+    protect,
     createUploadMiddleware({
         fields: [{ name: "proofs", maxCount: 5 }],
         fieldFolders: { proofs: "payment_proofs" },
@@ -23,6 +25,7 @@ router.post(
 );
 router.get("/", getAllPayments);
 router.get("/:id", getPaymentById);
+router.get("/search/by-charge", protect, searchPayments);
 router.patch(
     "/:id",
     createUploadMiddleware({

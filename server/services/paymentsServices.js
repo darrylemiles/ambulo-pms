@@ -7,7 +7,7 @@ const computeAndSetChargeStatus = async (connHandle, chargeId, performedBy = nul
     if (!chargeId) return;
 
     const [sumRows] = await connHandle.execute(
-        `SELECT COALESCE(SUM(amount_paid), 0) AS total_paid FROM payments WHERE charge_id = ?`,
+        `SELECT COALESCE(SUM(amount), 0) AS total_paid FROM payments WHERE charge_id = ? AND status != 'Pending'`,
         [chargeId]
     );
     const totalPaid = sumRows && sumRows.length ? Number(sumRows[0].total_paid) : 0;
@@ -54,7 +54,7 @@ const computeAndSetChargeStatus = async (connHandle, chargeId, performedBy = nul
 };
 
 const createPayment = async (paymentData = {}, performedBy = null) => {
-    const { chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs } =
+    const { chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs, user_id } =
         paymentData || {};
 
     const paymentId = uuidv4();
@@ -64,17 +64,27 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
     try {
         await connHandle.beginTransaction();
 
+        // Map incoming fields to payments table schema
+        const status = (paymentData.status && String(paymentData.status)) || 'Pending';
+        const userId = user_id || performedBy || null;
+        const confirmedBy = status === 'Confirmed' ? (performedBy || null) : null;
+        const confirmedAt = status === 'Confirmed' ? createdAt : null;
+
         const insertPayment = `
-            INSERT INTO payments (payment_id, charge_id, payment_date, amount_paid, payment_method, notes)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO payments (payment_id, charge_id, user_id, amount, payment_method, status, notes, confirmed_by, confirmed_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         await connHandle.execute(insertPayment, [
             paymentId,
             chargeId || null,
-            paymentDate || null,
+            userId,
             amountPaid || 0,
             paymentMethod || null,
+            status,
             notes || null,
+            confirmedBy,
+            confirmedAt,
+            createdAt,
         ]);
 
         if (proofs && Array.isArray(proofs) && proofs.length) {
@@ -93,10 +103,10 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
 
         
         try {
-            await connHandle.execute(`INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`, [
+                await connHandle.execute(`INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`, [
                 paymentId,
                 'create',
-                JSON.stringify({ chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs }),
+                JSON.stringify({ chargeId, amount: amountPaid, paymentMethod, notes, proofs, status }),
                 performedBy || null,
                 createdAt,
             ]);
@@ -182,15 +192,26 @@ const getPaymentById = async (id) => {
 };
 
 const updatePaymentById = async (id, payment = {}, performedBy = null) => {
-    const { chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs } =
+    const { chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs, status } =
         payment || {};
     const connHandle = await pool.getConnection();
     try {
         await connHandle.beginTransaction();
 
+        // Get current status to check if it's changing to Confirmed
+        const [currentRows] = await connHandle.execute(
+            `SELECT status FROM payments WHERE payment_id = ? LIMIT 1`,
+            [id]
+        );
+        const currentStatus = currentRows && currentRows.length ? currentRows[0].status : null;
+
+        const newStatus = status || currentStatus;
+        const confirmedBy = (newStatus === 'Confirmed' && currentStatus !== 'Confirmed') ? performedBy : null;
+        const confirmedAt = (newStatus === 'Confirmed' && currentStatus !== 'Confirmed') ? new Date() : null;
+
         const updateQuery = `
             UPDATE payments
-            SET charge_id = ?, payment_date = ?, amount_paid = ?, payment_method = ?, notes = ?
+            SET charge_id = ?, payment_date = ?, amount_paid = ?, payment_method = ?, notes = ?, status = ?, confirmed_by = COALESCE(confirmed_by, ?), confirmed_at = COALESCE(confirmed_at, ?)
             WHERE payment_id = ?
         `;
         await connHandle.execute(updateQuery, [
@@ -199,6 +220,9 @@ const updatePaymentById = async (id, payment = {}, performedBy = null) => {
             amountPaid || 0,
             paymentMethod || null,
             notes || null,
+            newStatus,
+            confirmedBy,
+            confirmedAt,
             id,
         ]);
 
@@ -219,7 +243,7 @@ const updatePaymentById = async (id, payment = {}, performedBy = null) => {
                 await connHandle.execute(`INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`, [
                     id,
                     'update',
-                    JSON.stringify({ chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs }),
+                    JSON.stringify({ chargeId, paymentDate, amountPaid, paymentMethod, notes, proofs, status: newStatus }),
                     performedBy || null,
                     new Date(),
                 ]);
@@ -287,4 +311,23 @@ export default {
     updatePaymentById,
     getPaymentById,
     deletePaymentById,
+    async searchPaymentsByChargeIds({ chargeIds = [], status = null, userId = null } = {}) {
+        if (!Array.isArray(chargeIds) || !chargeIds.length) return [];
+        const placeholders = chargeIds.map(() => '?').join(',');
+        const params = [...chargeIds];
+        let sql = `SELECT payment_id, charge_id, amount as amount_paid, status, payment_method, created_at
+                   FROM payments
+                   WHERE charge_id IN (${placeholders})`;
+        if (status) {
+            sql += ` AND status = ?`;
+            params.push(status);
+        }
+        if (userId) {
+            sql += ` AND user_id = ?`;
+            params.push(userId);
+        }
+        sql += ` ORDER BY created_at DESC`;
+        const [rows] = await pool.execute(sql, params);
+        return rows || [];
+    },
 };

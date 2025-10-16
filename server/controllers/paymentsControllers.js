@@ -24,6 +24,7 @@ const createPayment = expressAsync(async (req, res) => {
         amountPaid: raw.amountPaid || raw.amount_paid || raw.amount || null,
         paymentMethod: raw.paymentMethod || raw.payment_method || null,
         notes: raw.notes || null,
+        user_id: raw.user_id || null,
     };
 
     const proofs = extractProofUrls(req);
@@ -64,6 +65,7 @@ const updatePaymentById = expressAsync(async (req, res) => {
         amountPaid: raw.amountPaid || raw.amount_paid || raw.amount || null,
         paymentMethod: raw.paymentMethod || raw.payment_method || null,
         notes: raw.notes || null,
+        status: raw.status || null,
     };
 
     const proofs = extractProofUrls(req);
@@ -88,10 +90,29 @@ const deletePaymentById = expressAsync(async (req, res) => {
     res.status(200).json(result);
 });
 
+// Search payments by charge_ids and optional status; scopes to current user if available
+const searchPayments = expressAsync(async (req, res) => {
+    const { charge_ids, status } = req.query || {};
+    const chargeIds = typeof charge_ids === 'string'
+        ? charge_ids.split(',').map((s) => s.trim()).filter(Boolean)
+        : Array.isArray(charge_ids)
+            ? charge_ids
+            : [];
+
+    if (!chargeIds.length) {
+        return res.status(400).json({ message: 'charge_ids is required' });
+    }
+
+    const userId = req.user?.user_id || null;
+    const rows = await paymentsServices.searchPaymentsByChargeIds({ chargeIds, status, userId });
+    res.status(200).json({ payments: rows });
+});
+
 export {
     createPayment,
     getAllPayments,
     getPaymentById,
     updatePaymentById,
     deletePaymentById,
+    searchPayments,
 };
