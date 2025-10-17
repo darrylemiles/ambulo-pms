@@ -4,11 +4,6 @@ import usersTable from "./usersTable.js";
 import tenantEmergencyContactsTable from "./tenantEmergencyContactsTable.js";
 import tenantIdsTable from "./tenantIdsTable.js";
 
-// tickets
-import ticketsTable from "./ticketsTable.js";
-import ticketAttachmentsTable from "./ticketAttachmentsTable.js";
-import ticketRatingsTable from "./ticketRatingsTable.js";
-
 //properties
 import addressesTable from "./addressesTable.js";
 import propertiesTable from "./propertiesTable.js";
@@ -19,6 +14,11 @@ import leaseContractsTable from "./leaseContractsTable.js";
 import leasesTable from "./leasesTable.js";
 import leaseDefaultTable from "./leaseDefaultTable.js";
 import leaseTerminationTable from "./leaseTerminationTable.js";
+
+// tickets
+import ticketsTable from "./ticketsTable.js";
+import ticketAttachmentsTable from "./ticketAttachmentsTable.js";
+import ticketRatingsTable from "./ticketRatingsTable.js";
 
 //cms
 import companyInfoTable from "./companyInfoTable.js";
@@ -43,21 +43,21 @@ const tables = async (dbConnection) => {
     tenantEmergencyContactsTable,
     tenantIdsTable,
 
-    // tickets
-    ticketsTable,
-    ticketAttachmentsTable,
-    ticketRatingsTable,
-
     // properties
     addressesTable,
     propertiesTable,
     propertiesPicturesTable,
 
-    //lease-related
+    // lease-related
     leaseContractsTable,
     leasesTable,
     leaseDefaultTable,
     leaseTerminationTable,
+
+    // tickets
+    ticketsTable,
+    ticketAttachmentsTable,
+    ticketRatingsTable,
 
     //cms
     companyInfoTable,
@@ -73,7 +73,7 @@ const tables = async (dbConnection) => {
     paymentProofTable,
     chargesAuditTable,
     paymentsAuditTable,
-    
+
   ];
 
   for (const query of queries) {
