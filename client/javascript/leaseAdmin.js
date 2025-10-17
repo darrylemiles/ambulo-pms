@@ -26,59 +26,69 @@ function setStatsBar({ total, active, pending, terminated }) {
     const el = document.querySelector('.stat-value[data-stat="' + stat + '"]');
     if (el) el.textContent = val;
   };
-  set('total', total);
-  set('active', active);
-  set('pending', pending);
-  set('terminated', terminated);
-  if (arguments[0].expiring !== undefined) set('expiring', arguments[0].expiring);
-  if (arguments[0].vacant !== undefined) set('vacant', arguments[0].vacant);
-  if (arguments[0].avgduration !== undefined) set('avgduration', arguments[0].avgduration);
+  set("total", total);
+  set("active", active);
+  set("pending", pending);
+  set("terminated", terminated);
+  if (arguments[0].expiring !== undefined)
+    set("expiring", arguments[0].expiring);
+  if (arguments[0].vacant !== undefined) set("vacant", arguments[0].vacant);
+  if (arguments[0].avgduration !== undefined)
+    set("avgduration", arguments[0].avgduration);
 }
 
 async function updateStatsBar() {
   try {
-    let leases = getSessionCache('leases');
+    let leases = getSessionCache("leases");
     if (!leases) {
-      const leaseRes = await fetch('/api/v1/leases');
-      if (!leaseRes.ok) throw new Error('Failed to fetch leases');
+      const leaseRes = await fetch("/api/v1/leases");
+      if (!leaseRes.ok) throw new Error("Failed to fetch leases");
       const leaseData = await leaseRes.json();
       leases = leaseData.leases || [];
-      setSessionCache('leases', leases);
+      setSessionCache("leases", leases);
     }
 
-    let properties = getSessionCache('properties');
+    let properties = getSessionCache("properties");
     if (!properties) {
-      const propRes = await fetch('/api/v1/properties?status=Available&limit=1000');
+      const propRes = await fetch(
+        "/api/v1/properties?status=Available&limit=1000"
+      );
       if (propRes.ok) {
         const propData = await propRes.json();
         properties = propData.properties || [];
-        setSessionCache('properties', properties);
+        setSessionCache("properties", properties);
       } else {
         properties = [];
       }
     }
 
-    let vacant = '-';
+    let vacant = "-";
     try {
       const leasedPropertyIds = leases
-        .filter(lease => ["ACTIVE", "PENDING"].includes((lease.lease_status || '').toUpperCase()))
-        .map(lease => lease.property_id);
+        .filter((lease) =>
+          ["ACTIVE", "PENDING"].includes(
+            (lease.lease_status || "").toUpperCase()
+          )
+        )
+        .map((lease) => lease.property_id);
       const trulyVacant = properties.filter(
-        prop => !leasedPropertyIds.includes(prop.property_id)
+        (prop) => !leasedPropertyIds.includes(prop.property_id)
       );
       vacant = trulyVacant.length;
-    } catch {}
+    } catch { }
 
     let total = leases.length;
-    let active = 0, pending = 0, terminated = 0;
+    let active = 0,
+      pending = 0,
+      terminated = 0;
     let expiring = 0;
     let totalDuration = 0;
     const now = new Date();
-    leases.forEach(lease => {
-      const status = (lease.lease_status || '').toLowerCase();
-      if (status === 'active') active++;
-      else if (status === 'pending') pending++;
-      else if (status === 'terminated') terminated++;
+    leases.forEach((lease) => {
+      const status = (lease.lease_status || "").toLowerCase();
+      if (status === "active") active++;
+      else if (status === "pending") pending++;
+      else if (status === "terminated") terminated++;
 
       if (lease.lease_end_date) {
         const endDate = new Date(lease.lease_end_date);
@@ -86,21 +96,39 @@ async function updateStatsBar() {
         if (diffDays > 0 && diffDays <= 30) expiring++;
         if (lease.lease_start_date) {
           const startDate = new Date(lease.lease_start_date);
-          const durationMonths = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24 * 30));
+          const durationMonths = Math.round(
+            (endDate - startDate) / (1000 * 60 * 60 * 24 * 30)
+          );
           totalDuration += durationMonths;
         }
       }
     });
-    let avgduration = total > 0 ? Math.round(totalDuration / total) : '-';
+    let avgduration = total > 0 ? Math.round(totalDuration / total) : "-";
 
-    setStatsBar({ total, active, pending, terminated, expiring, vacant, avgduration });
+    setStatsBar({
+      total,
+      active,
+      pending,
+      terminated,
+      expiring,
+      vacant,
+      avgduration,
+    });
   } catch (err) {
-    setStatsBar({ total: '-', active: '-', pending: '-', terminated: '-', expiring: '-', vacant: '-', avgduration: '-' });
-    console.error('Stats bar error:', err);
+    setStatsBar({
+      total: "-",
+      active: "-",
+      pending: "-",
+      terminated: "-",
+      expiring: "-",
+      vacant: "-",
+      avgduration: "-",
+    });
+    console.error("Stats bar error:", err);
   }
 }
 
-document.addEventListener('DOMContentLoaded', updateStatsBar);
+document.addEventListener("DOMContentLoaded", updateStatsBar);
 
 //#region Populate Fields
 
@@ -109,14 +137,14 @@ async function populateTenantDropdown() {
   tenantSelect.innerHTML = '<option value="">Select a tenant</option>';
 
   try {
-    let tenants = getSessionCache('tenants');
+    let tenants = getSessionCache("tenants");
     if (!tenants) {
       const res = await fetch("/api/v1/users?role=TENANT");
       const data = await res.json();
       tenants = data.users || [];
-      setSessionCache('tenants', tenants);
+      setSessionCache("tenants", tenants);
     }
-    tenants.forEach(user => {
+    tenants.forEach((user) => {
       const option = document.createElement("option");
       option.value = user.user_id;
       option.textContent = `${user.first_name} ${user.last_name} (${user.email})`;
@@ -132,34 +160,37 @@ async function populatePropertyDropdown() {
   propertySelect.innerHTML = '<option value="">Select a property</option>';
 
   try {
-    let properties = getSessionCache('properties');
+    let properties = getSessionCache("properties");
     if (!properties) {
       const res = await fetch("/api/v1/properties?status=Available&limit=1000");
       const data = await res.json();
       properties = data.properties || [];
-      setSessionCache('properties', properties);
+      setSessionCache("properties", properties);
     }
 
-    let leases = getSessionCache('leases');
+    let leases = getSessionCache("leases");
     if (!leases) {
       const leaseRes = await fetch("/api/v1/leases");
       const leaseData = await leaseRes.json();
       leases = leaseData.leases || [];
-      setSessionCache('leases', leases);
+      setSessionCache("leases", leases);
     }
 
     const leasedPropertyIds = leases
-      .filter(lease => ["ACTIVE", "PENDING"].includes((lease.lease_status || '').toUpperCase()))
-      .map(lease => lease.property_id);
+      .filter((lease) =>
+        ["ACTIVE", "PENDING"].includes((lease.lease_status || "").toUpperCase())
+      )
+      .map((lease) => lease.property_id);
 
     properties = properties.filter(
-      prop => !leasedPropertyIds.includes(prop.property_id)
+      (prop) => !leasedPropertyIds.includes(prop.property_id)
     );
 
-    properties.forEach(prop => {
+    properties.forEach((prop) => {
       const option = document.createElement("option");
       option.value = prop.property_id;
-      option.textContent = `${prop.property_name} - ${prop.city || prop.building_name || ""}`;
+      option.textContent = `${prop.property_name} - ${prop.city || prop.building_name || ""
+        }`;
       propertySelect.appendChild(option);
     });
   } catch (error) {
@@ -174,7 +205,9 @@ async function populateFinancialDefaults() {
     const defaults = data.defaults || {};
 
     const getVal = (key, fallback = "") => {
-      return defaults[key] && defaults[key].value !== undefined ? defaults[key].value : fallback;
+      return defaults[key] && defaults[key].value !== undefined
+        ? defaults[key].value
+        : fallback;
     };
 
     const setDefault = (id, value) => {
@@ -189,101 +222,123 @@ async function populateFinancialDefaults() {
     setDefault("lateFee", getVal("late_fee_percentage", ""));
     setDefault("gracePeriod", getVal("grace_period_days", ""));
 
-    setDefault("autoTerminationMonths", getVal("auto_termination_after_months", ""));
-    setDefault("terminationTriggerDays", getVal("termination_trigger_days", ""));
+    setDefault(
+      "autoTerminationMonths",
+      getVal("auto_termination_after_months", "")
+    );
+    setDefault(
+      "terminationTriggerDays",
+      getVal("termination_trigger_days", "")
+    );
     setDefault("noticeCancelDays", getVal("notice_before_cancel_days", ""));
     setDefault("noticeRenewalDays", getVal("notice_before_renewal_days", ""));
-    setDefault("rentIncreaseRenewal", getVal("rent_increase_on_renewal_percentage", ""));
-    document.getElementById("isSecurityRefundable").checked = getVal("is_security_deposit_refundable", "0") === "1";
-    document.getElementById("advanceForfeited").checked = getVal("advance_payment_forfeited_on_cancel", "0") === "1";
+    setDefault(
+      "rentIncreaseRenewal",
+      getVal("rent_increase_on_renewal_percentage", "")
+    );
+    document.getElementById("isSecurityRefundable").checked =
+      getVal("is_security_deposit_refundable", "0") === "1";
+    document.getElementById("advanceForfeited").checked =
+      getVal("advance_payment_forfeited_on_cancel", "0") === "1";
   } catch (error) {
     console.error("Failed to load lease defaults:", error);
   }
 }
 
-document.getElementById("keepDefaultsFinancial").addEventListener("change", function () {
+document
+  .getElementById("keepDefaultsFinancial")
+  .addEventListener("change", function () {
     const disabled = this.checked;
     const fields = [
-        "paymentFrequency",
-        "quarterlyTax",
-        "securityDeposit",
-        "advancePayment",
-        "lateFee",
-        "gracePeriod"
+      "paymentFrequency",
+      "quarterlyTax",
+      "securityDeposit",
+      "advancePayment",
+      "lateFee",
+      "gracePeriod",
     ];
-    fields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.disabled = disabled;
-            if (disabled) {
-                el.classList.add("field-disabled");
-            } else {
-                el.classList.remove("field-disabled");
-            }
+    fields.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.disabled = disabled;
+        if (disabled) {
+          el.classList.add("field-disabled");
+        } else {
+          el.classList.remove("field-disabled");
         }
+      }
     });
-});
+  });
 
 function setFinancialFieldsDisabled() {
-    const disabled = document.getElementById("keepDefaultsFinancial").checked;
-    ["paymentFrequency","quarterlyTax","securityDeposit","advancePayment","lateFee","gracePeriod"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.disabled = disabled;
-            if (disabled) {
-                el.classList.add("field-disabled");
-            } else {
-                el.classList.remove("field-disabled");
-            }
-        }
-    });
+  const disabled = document.getElementById("keepDefaultsFinancial").checked;
+  [
+    "paymentFrequency",
+    "quarterlyTax",
+    "securityDeposit",
+    "advancePayment",
+    "lateFee",
+    "gracePeriod",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = disabled;
+      if (disabled) {
+        el.classList.add("field-disabled");
+      } else {
+        el.classList.remove("field-disabled");
+      }
+    }
+  });
 }
 
-document.getElementById("keepDefaultsRules").addEventListener("change", function () {
+document
+  .getElementById("keepDefaultsRules")
+  .addEventListener("change", function () {
     const disabled = this.checked;
     const fields = [
-        "isSecurityRefundable",
-        "advanceForfeited",
-        "autoTerminationMonths",
-        "terminationTriggerDays",
-        "noticeCancelDays",
-        "noticeRenewalDays",
-        "rentIncreaseRenewal"
+      "isSecurityRefundable",
+      "advanceForfeited",
+      "autoTerminationMonths",
+      "terminationTriggerDays",
+      "noticeCancelDays",
+      "noticeRenewalDays",
+      "rentIncreaseRenewal",
     ];
-    fields.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.disabled = disabled;
-            if (disabled) {
-                el.classList.add("field-disabled");
-            } else {
-                el.classList.remove("field-disabled");
-            }
+    fields.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.disabled = disabled;
+        if (disabled) {
+          el.classList.add("field-disabled");
+        } else {
+          el.classList.remove("field-disabled");
         }
+      }
     });
-});
+  });
 
 function setRulesFieldsDisabled() {
-    const disabled = document.getElementById("keepDefaultsRules").checked;
-    [
-        "isSecurityRefundable",
-        "advanceForfeited",
-        "autoTerminationMonths",
-        "terminationTriggerDays",
-        "noticeCancelDays",
-        "noticeRenewalDays",
-        "rentIncreaseRenewal"
-    ].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.disabled = disabled;
-            if (disabled) {
-                el.classList.add("field-disabled");
-            } else {
-                el.classList.remove("field-disabled");
-            }
-        }
-    });
+  const disabled = document.getElementById("keepDefaultsRules").checked;
+  [
+    "isSecurityRefundable",
+    "advanceForfeited",
+    "autoTerminationMonths",
+    "terminationTriggerDays",
+    "noticeCancelDays",
+    "noticeRenewalDays",
+    "rentIncreaseRenewal",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = disabled;
+      if (disabled) {
+        el.classList.add("field-disabled");
+      } else {
+        el.classList.remove("field-disabled");
+      }
+    }
+  });
 }
 document.addEventListener("DOMContentLoaded", setRulesFieldsDisabled);
 document.addEventListener("DOMContentLoaded", setFinancialFieldsDisabled);
@@ -309,12 +364,14 @@ function showCreateView() {
 }
 
 function showAccordionSection(sectionId) {
-  document.querySelectorAll('#leaseFormAccordion .accordion-collapse').forEach(el => {
-    el.classList.remove('show');
-  });
+  document
+    .querySelectorAll("#leaseFormAccordion .accordion-collapse")
+    .forEach((el) => {
+      el.classList.remove("show");
+    });
 
   const section = document.getElementById(sectionId);
-  if (section) section.classList.add('show');
+  if (section) section.classList.add("show");
 }
 
 function showEditView(leaseId) {
@@ -328,15 +385,15 @@ function showEditView(leaseId) {
   document.getElementById("formView").classList.remove("hidden");
   document.getElementById("detailView").classList.add("hidden");
   document.getElementById("formTitle").textContent = "Edit Lease";
-  // leaseManager.editMode = true;
-  // leaseManager.currentLease = lease;
-  // loadForm(lease);
+
   clearErrors();
   showTab("details");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("fileInput").addEventListener("change", handleFileSelection);
+  document
+    .getElementById("fileInput")
+    .addEventListener("change", handleFileSelection);
   showListView();
 });
 
@@ -388,19 +445,69 @@ function validateForm() {
   }
 
   const numericFields = [
-    { id: "quarterlyTax", min: 0, max: 100, message: "Quarterly tax must be between 0 and 100%" },
-    { id: "securityDeposit", min: 0, max: 36, message: "Security deposit must be 0 or more months" },
-    { id: "advancePayment", min: 0, max: 36, message: "Advance payment must be 0 or more months" },
-    { id: "lateFee", min: 0, max: 100, message: "Late fee must be between 0 and 100%" },
-    { id: "gracePeriod", min: 0, max: 60, message: "Grace period must be 0 or more days" },
-    { id: "autoTerminationMonths", min: 0, max: 36, message: "Auto-termination must be 0 or more months" },
-    { id: "terminationTriggerDays", min: 0, max: 365, message: "Termination trigger must be 0 or more days" },
-    { id: "noticeCancelDays", min: 0, max: 365, message: "Cancel notice must be 0 or more days" },
-    { id: "noticeRenewalDays", min: 0, max: 365, message: "Renewal notice must be 0 or more days" },
-    { id: "rentIncreaseRenewal", min: 0, max: 100, message: "Rent increase must be between 0 and 100%" },
+    {
+      id: "quarterlyTax",
+      min: 0,
+      max: 100,
+      message: "Quarterly tax must be between 0 and 100%",
+    },
+    {
+      id: "securityDeposit",
+      min: 0,
+      max: 36,
+      message: "Security deposit must be 0 or more months",
+    },
+    {
+      id: "advancePayment",
+      min: 0,
+      max: 36,
+      message: "Advance payment must be 0 or more months",
+    },
+    {
+      id: "lateFee",
+      min: 0,
+      max: 100,
+      message: "Late fee must be between 0 and 100%",
+    },
+    {
+      id: "gracePeriod",
+      min: 0,
+      max: 60,
+      message: "Grace period must be 0 or more days",
+    },
+    {
+      id: "autoTerminationMonths",
+      min: 0,
+      max: 36,
+      message: "Auto-termination must be 0 or more months",
+    },
+    {
+      id: "terminationTriggerDays",
+      min: 0,
+      max: 365,
+      message: "Termination trigger must be 0 or more days",
+    },
+    {
+      id: "noticeCancelDays",
+      min: 0,
+      max: 365,
+      message: "Cancel notice must be 0 or more days",
+    },
+    {
+      id: "noticeRenewalDays",
+      min: 0,
+      max: 365,
+      message: "Renewal notice must be 0 or more days",
+    },
+    {
+      id: "rentIncreaseRenewal",
+      min: 0,
+      max: 100,
+      message: "Rent increase must be between 0 and 100%",
+    },
   ];
 
-  numericFields.forEach(field => {
+  numericFields.forEach((field) => {
     const el = document.getElementById(field.id);
     if (el && el.value) {
       const val = parseFloat(el.value);
@@ -410,12 +517,6 @@ function validateForm() {
       }
     }
   });
-
-  // File validation (optional, only if file is required)
-  // if (uploadedFiles.length === 0) {
-  //   showError("fileInput", "Please upload a contract document");
-  //   isValid = false;
-  // }
 
   return isValid;
 }
@@ -454,8 +555,10 @@ async function fetchLeaseById(leaseId) {
 
 async function fetchLeases(filters = {}) {
   const params = [];
-  if (filters.status) params.push(`status=${encodeURIComponent(filters.status)}`);
-  if (filters.search) params.push(`search=${encodeURIComponent(filters.search)}`);
+  if (filters.status)
+    params.push(`status=${encodeURIComponent(filters.status)}`);
+  if (filters.search)
+    params.push(`search=${encodeURIComponent(filters.search)}`);
   if (filters.date) params.push(`date=${encodeURIComponent(filters.date)}`);
   if (filters.page) params.push(`page=${filters.page}`);
   const url = `${API_BASE_URL}${params.length ? "?" + params.join("&") : ""}`;
@@ -492,64 +595,55 @@ async function loadLeaseTable() {
       const row = document.createElement("tr");
       row.innerHTML = `
           <td>
-            <strong style="color: #1f2937; font-weight: 700;">${
-              idx + 1 + (filters.page - 1) * 10
-            }</strong>
+            <strong style="color: #1f2937; font-weight: 700;">${idx + 1 + (filters.page - 1) * 10
+        }</strong>
           </td>
           <td>
-            <div style="font-weight: 600; color: #111827;">${
-              lease.tenant_name || ""
-            }</div>
-            <div style="font-size: 12px; color: #6b7280;">User ID: ${
-              lease.user_id || ""
-            }</div>
+            <div style="font-weight: 600; color: #111827;">${lease.tenant_name || ""
+        }</div>
+            <div style="font-size: 12px; color: #6b7280;">User ID: ${lease.user_id || ""
+        }</div>
           </td>
           <td>
-            <div style="font-weight: 500; color: #111827;">${
-              lease.property_name || ""
-            }</div>
-            <div style="font-size: 12px; color: #6b7280;">Property ID: ${
-              lease.property_id || ""
-            }</div>
+            <div style="font-weight: 500; color: #111827;">${lease.property_name || ""
+        }</div>
+            <div style="font-size: 12px; color: #6b7280;">Property ID: ${lease.property_id || ""
+        }</div>
           </td>
           <td>
             <div style="font-size: 13px; font-weight: 500;">${formatDate(
-              lease.lease_start_date
-            )}</div>
+          lease.lease_start_date
+        )}</div>
             <div style="font-size: 12px; color: #6b7280;">to ${formatDate(
-              lease.lease_end_date
-            )}</div>
+          lease.lease_end_date
+        )}</div>
             <div style="font-size: 11px; color: #9ca3af;">${getDuration(
-              lease.lease_start_date,
-              lease.lease_end_date
-            )}</div>
+          lease.lease_start_date,
+          lease.lease_end_date
+        )}</div>
           </td>
           <td>
             <span class="status-badge status-${(
-              lease.lease_status || ""
-            ).toLowerCase()}">${lease.lease_status || ""}</span>
+          lease.lease_status || ""
+        ).toLowerCase()}">${lease.lease_status || ""}</span>
           </td>
           <td>
             <div style="font-weight: 700; color: #059669; font-size: 16px;">₱${(
-              lease.monthly_rent || 0
-            ).toLocaleString()}</div>
-            <div style="font-size: 12px; color: #6b7280;">${
-              lease.payment_frequency || ""
-            }</div>
+          lease.monthly_rent || 0
+        ).toLocaleString()}</div>
+            <div style="font-size: 12px; color: #6b7280;">${lease.payment_frequency || ""
+        }</div>
           </td>
           <td>
             <div style="font-weight: 500;">${getNextDueDate(lease)}</div>
           </td>
           <td>
-            <button class="action-btn action-view" onclick="showDetailView('${
-              lease.lease_id
-            }')" title="View Details"><i class="fa-solid fa-eye"></i></button>
-            <button class="action-btn action-edit" onclick="showEditView('${
-              lease.lease_id
-            }')" title="Edit Lease"><i class="fa-solid fa-pen"></i></button>
-            <button class="action-btn action-delete" onclick="showDeleteModal('${
-              lease.lease_id
-            }')" title="Delete Lease"><i class="fa-solid fa-trash"></i></button>
+            <button class="action-btn action-view" onclick="showDetailView('${lease.lease_id
+        }')" title="View Details"><i class="fa-solid fa-eye"></i></button>
+            <button class="action-btn action-edit" onclick="showEditView('${lease.lease_id
+        }')" title="Edit Lease"><i class="fa-solid fa-pen"></i></button>
+            <button class="action-btn action-delete" onclick="showDeleteModal('${lease.lease_id
+        }')" title="Delete Lease"><i class="fa-solid fa-trash"></i></button>
           </td>
         `;
       tableBody.appendChild(row);
@@ -582,7 +676,9 @@ function getDuration(startDate, endDate) {
 }
 
 function getNextDueDate(lease) {
-  const [startY, startM, startD] = lease.lease_start_date.split("T")[0].split("-");
+  const [startY, startM, startD] = lease.lease_start_date
+    .split("T")[0]
+    .split("-");
   const dueDay = Number(startD);
 
   const today = new Date();
@@ -595,7 +691,9 @@ function getNextDueDate(lease) {
     dueYear += 1;
   }
 
-  let nextDueStr = `${dueYear}-${String(dueMonth).padStart(2, "0")}-${String(dueDay).padStart(2, "0")}`;
+  let nextDueStr = `${dueYear}-${String(dueMonth).padStart(2, "0")}-${String(
+    dueDay
+  ).padStart(2, "0")}`;
 
   const [endY, endM, endD] = lease.lease_end_date.split("T")[0].split("-");
   const nextDueUTC = Date.UTC(dueYear, dueMonth - 1, dueDay);
@@ -681,23 +779,68 @@ async function saveLease() {
     const formData = new FormData();
     formData.append("user_id", document.getElementById("tenantId").value);
     formData.append("property_id", document.getElementById("propertyId").value);
-    formData.append("lease_start_date", document.getElementById("startDate").value);
+    formData.append(
+      "lease_start_date",
+      document.getElementById("startDate").value
+    );
     formData.append("lease_end_date", document.getElementById("endDate").value);
     formData.append("lease_status", document.getElementById("status").value);
-    formData.append("monthly_rent", document.getElementById("monthlyRent").value);
-    formData.append("payment_frequency", document.getElementById("paymentFrequency").value);
-    formData.append("quarterly_tax_percentage", document.getElementById("quarterlyTax").value);
-    formData.append("security_deposit_months", document.getElementById("securityDeposit").value);
-    formData.append("advance_payment_months", document.getElementById("advancePayment").value);
-    formData.append("late_fee_percentage", document.getElementById("lateFee").value);
-    formData.append("grace_period_days", document.getElementById("gracePeriod").value);
-    formData.append("is_security_deposit_refundable", document.getElementById("isSecurityRefundable").checked ? "1" : "0");
-    formData.append("advance_payment_forfeited_on_cancel", document.getElementById("advanceForfeited").checked ? "1" : "0");
-    formData.append("auto_termination_after_months", document.getElementById("autoTerminationMonths").value);
-    formData.append("termination_trigger_days", document.getElementById("terminationTriggerDays").value);
-    formData.append("notice_before_cancel_days", document.getElementById("noticeCancelDays").value);
-    formData.append("notice_before_renewal_days", document.getElementById("noticeRenewalDays").value);
-    formData.append("rent_increase_on_renewal", document.getElementById("rentIncreaseRenewal").value);
+    formData.append(
+      "monthly_rent",
+      document.getElementById("monthlyRent").value
+    );
+    formData.append(
+      "payment_frequency",
+      document.getElementById("paymentFrequency").value
+    );
+    formData.append(
+      "quarterly_tax_percentage",
+      document.getElementById("quarterlyTax").value
+    );
+    formData.append(
+      "security_deposit_months",
+      document.getElementById("securityDeposit").value
+    );
+    formData.append(
+      "advance_payment_months",
+      document.getElementById("advancePayment").value
+    );
+    formData.append(
+      "late_fee_percentage",
+      document.getElementById("lateFee").value
+    );
+    formData.append(
+      "grace_period_days",
+      document.getElementById("gracePeriod").value
+    );
+    formData.append(
+      "is_security_deposit_refundable",
+      document.getElementById("isSecurityRefundable").checked ? "1" : "0"
+    );
+    formData.append(
+      "advance_payment_forfeited_on_cancel",
+      document.getElementById("advanceForfeited").checked ? "1" : "0"
+    );
+    formData.append(
+      "auto_termination_after_months",
+      document.getElementById("autoTerminationMonths").value
+    );
+    formData.append(
+      "termination_trigger_days",
+      document.getElementById("terminationTriggerDays").value
+    );
+    formData.append(
+      "notice_before_cancel_days",
+      document.getElementById("noticeCancelDays").value
+    );
+    formData.append(
+      "notice_before_renewal_days",
+      document.getElementById("noticeRenewalDays").value
+    );
+    formData.append(
+      "rent_increase_on_renewal",
+      document.getElementById("rentIncreaseRenewal").value
+    );
     formData.append("notes", document.getElementById("notes").value);
 
     if (uploadedFiles.length > 0) {
@@ -741,14 +884,6 @@ function showCancelModal() {
   const modal = document.getElementById("cancelModal");
   const message = document.getElementById("cancelModalMessage");
 
-  // if (leaseManager.editMode) {
-  //   message.textContent =
-  //     "Are you sure you want to cancel editing this lease? Any unsaved changes will be lost.";
-  // } else {
-  //   message.textContent =
-  //     "Are you sure you want to cancel creating this lease? Any entered data will be lost.";
-  // }
-
   modal.classList.add("show");
 }
 
@@ -764,7 +899,6 @@ function confirmCancel() {
 }
 
 function checkForUnsavedChanges() {
-  // Check if any form fields have been modified
   const formFields = [
     "tenantId",
     "propertyId",
@@ -800,11 +934,6 @@ function checkForUnsavedChanges() {
 function resetFormState() {
   clearForm();
   clearErrors();
-
-  // leaseManager.editMode = false;
-  // leaseManager.currentLease = null;
-  // leaseManager.uploadedFiles = [];
-
 }
 
 async function showDetailView(leaseId) {
@@ -826,10 +955,14 @@ async function showDetailView(leaseId) {
 
 function loadDetailView(lease) {
   try {
-  document.getElementById("detailTitle").textContent = `Lease ${lease.lease_id}`;
-  document.getElementById("detailSubtitle").textContent = `${lease.tenant_name} • ${lease.property_name}`;
+    document.getElementById(
+      "detailTitle"
+    ).textContent = `Lease ${lease.lease_id}`;
+    document.getElementById(
+      "detailSubtitle"
+    ).textContent = `${lease.tenant_name} • ${lease.property_name}`;
 
-  document.getElementById("basicInfo").innerHTML = `
+    document.getElementById("basicInfo").innerHTML = `
     <div class="info-item">
       <div class="info-label">Lease ID</div>
       <div class="info-value">${lease.lease_id}</div>
@@ -837,7 +970,8 @@ function loadDetailView(lease) {
     <div class="info-item">
       <div class="info-label">Status</div>
       <div class="info-value">
-        <span class="status-badge status-${lease.lease_status.toLowerCase()}">${lease.lease_status}</span>
+        <span class="status-badge status-${lease.lease_status.toLowerCase()}">${lease.lease_status
+      }</span>
       </div>
     </div>
     <div class="info-item">
@@ -858,12 +992,14 @@ function loadDetailView(lease) {
     </div>
     <div class="info-item">
       <div class="info-label">Duration</div>
-      <div class="info-value">${getDuration(lease.lease_start_date, lease.lease_end_date)}</div>
+      <div class="info-value">${getDuration(
+        lease.lease_start_date,
+        lease.lease_end_date
+      )}</div>
     </div>
   `;
 
-  // Financial Info
-  document.getElementById("financialInfo").innerHTML = `
+    document.getElementById("financialInfo").innerHTML = `
     <div class="info-item">
       <div class="info-label">Monthly Rent</div>
       <div class="info-value" style="font-size: 20px; font-weight: 700; color: #059669;">
@@ -896,19 +1032,21 @@ function loadDetailView(lease) {
     </div>
   `;
 
-  // Rules Info
-  document.getElementById("rulesInfo").innerHTML = `
+    document.getElementById("rulesInfo").innerHTML = `
     <div class="info-item">
       <div class="info-label">Security Refundable</div>
-      <div class="info-value">${lease.is_security_deposit_refundable ? "Yes" : "No"}</div>
+      <div class="info-value">${lease.is_security_deposit_refundable ? "Yes" : "No"
+      }</div>
     </div>
     <div class="info-item">
       <div class="info-label">Advance Forfeited</div>
-      <div class="info-value">${lease.advance_payment_forfeited_on_cancel ? "Yes" : "No"}</div>
+      <div class="info-value">${lease.advance_payment_forfeited_on_cancel ? "Yes" : "No"
+      }</div>
     </div>
     <div class="info-item">
       <div class="info-label">Auto-Termination</div>
-      <div class="info-value">${lease.auto_termination_after_months} month(s)</div>
+      <div class="info-value">${lease.auto_termination_after_months
+      } month(s)</div>
     </div>
     <div class="info-item">
       <div class="info-label">Termination Trigger</div>
@@ -928,20 +1066,22 @@ function loadDetailView(lease) {
     </div>
   `;
 
-  // Update payment info in sidebar
-  document.getElementById("nextDueDate").textContent = getNextDueDate(lease).replace(/<[^>]*>/g, "");
-  document.getElementById("amountDue").textContent = `₱${Number(lease.monthly_rent).toLocaleString()}`;
+    document.getElementById("nextDueDate").textContent = getNextDueDate(
+      lease
+    ).replace(/<[^>]*>/g, "");
+    document.getElementById("amountDue").textContent = `₱${Number(
+      lease.monthly_rent
+    ).toLocaleString()}`;
 
-  // Show/hide notes card
-  const notesCard = document.getElementById("notesCard");
-  const leaseNotes = document.getElementById("leaseNotes");
+    const notesCard = document.getElementById("notesCard");
+    const leaseNotes = document.getElementById("leaseNotes");
 
-  if (lease.notes && lease.notes.trim()) {
-    leaseNotes.textContent = lease.notes;
-    notesCard.style.display = "block";
-  } else {
-    notesCard.style.display = "none";
-  }
+    if (lease.notes && lease.notes.trim()) {
+      leaseNotes.textContent = lease.notes;
+      notesCard.style.display = "block";
+    } else {
+      notesCard.style.display = "none";
+    }
   } catch (error) {
     console.error("Error loading detail view:", error);
     showToast("Error loading lease details", "error");
@@ -993,7 +1133,7 @@ function handleFileSelection(event) {
       event.target.value = "";
       return;
     }
-    uploadedFiles = [file]; 
+    uploadedFiles = [file];
   } else {
     uploadedFiles = [];
   }
@@ -1007,7 +1147,8 @@ function updateUploadedFilesList() {
   container.innerHTML = "";
 
   if (!uploadedFiles.length) {
-    container.innerHTML = '<div style="color:#6b7280;font-size:13px;">No files uploaded.</div>';
+    container.innerHTML =
+      '<div style="color:#6b7280;font-size:13px;">No files uploaded.</div>';
     return;
   }
 
@@ -1020,7 +1161,8 @@ function updateUploadedFilesList() {
       preview = `<i class="fa-solid fa-file-pdf" style="font-size:32px;color:#e53e3e;margin-right:10px;"></i>`;
     } else if (
       file.type === "application/msword" ||
-      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      file.type ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
       preview = `<i class="fa-solid fa-file-word" style="font-size:32px;color:#2563eb;margin-right:10px;"></i>`;
     } else {
@@ -1032,7 +1174,9 @@ function updateUploadedFilesList() {
         ${preview}
         <div style="flex:1;">
           <div style="font-weight:500;">${file.name}</div>
-          <div style="font-size:12px;color:#6b7280;">${formatFileSize(file.size)}</div>
+          <div style="font-size:12px;color:#6b7280;">${formatFileSize(
+      file.size
+    )}</div>
         </div>
         <button class="action-btn" style="color:#ef4444;" onclick="removeFile(${idx})" title="Remove">
           <i class="fa-solid fa-trash"></i>
@@ -1121,18 +1265,19 @@ function getSessionCache(key, maxAgeMs = 300000) {
     if (!item) return null;
     const { data, ts } = JSON.parse(item);
     if (Date.now() - ts > maxAgeMs) return null;
-    console.log(`[CACHE] Using cached data for key: ${key}`);
+
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function setSessionCache(key, data) {
   try {
     sessionStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
-  } catch {}
+  } catch { }
 }
 
-// Initialize the application
 showListView();
 
 window.showCreateView = showCreateView;

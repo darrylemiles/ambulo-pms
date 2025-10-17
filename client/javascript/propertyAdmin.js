@@ -28,8 +28,7 @@ window.currentStatusFilter = "all";
 const API_BASE_URL = "/api/v1/properties";
 
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM loaded, initializing...");
-  populateAddressFilterDropdown(); 
+  populateAddressFilterDropdown();
   loadProperties(1, pageSize);
   setupEventListeners();
   setDynamicInfo();
@@ -70,7 +69,6 @@ async function setDynamicInfo() {
     ? `Properties - ${company.company_name}`
     : "Properties";
 }
-
 
 async function loadProperties(page = 1, limit = pageSize) {
   try {
@@ -133,7 +131,6 @@ async function loadProperties(page = 1, limit = pageSize) {
 }
 
 function transformPropertyData(backendProperty) {
-
   return {
     id: backendProperty.property_id,
     property_name: backendProperty.property_name || "Unnamed Property",
@@ -158,7 +155,7 @@ function transformPropertyData(backendProperty) {
     created_at: backendProperty.created_at,
     updated_at: backendProperty.updated_at,
   };
-} 
+}
 
 function renderPagination() {
   const paginationContainerId = "paginationContainer";
@@ -202,7 +199,8 @@ function renderPagination() {
     </li>`;
   } else {
     html += `<li class="page-item">
-      <a class="page-link" href="#" onclick="goToPage(${currentPage - 1});return false;">Previous</a>
+      <a class="page-link" href="#" onclick="goToPage(${currentPage - 1
+      });return false;">Previous</a>
     </li>`;
   }
 
@@ -212,7 +210,8 @@ function renderPagination() {
   if (currentPage > totalPages - 2) start = Math.max(1, totalPages - 4);
 
   for (let i = start; i <= end; i++) {
-    html += `<li class="page-item${i === parseInt(currentPage) ? " active" : ""}">
+    html += `<li class="page-item${i === parseInt(currentPage) ? " active" : ""
+      }">
       <a class="page-link" href="#" onclick="goToPage(${i});return false;">${i}</a>
     </li>`;
   }
@@ -223,7 +222,8 @@ function renderPagination() {
     </li>`;
   } else {
     html += `<li class="page-item">
-      <a class="page-link" href="#" onclick="goToPage(${currentPage + 1});return false;">Next</a>
+      <a class="page-link" href="#" onclick="goToPage(${currentPage + 1
+      });return false;">Next</a>
     </li>`;
   }
 
@@ -238,7 +238,7 @@ function mapPropertyStatus(backendStatus) {
     Occupied: "occupied",
     Maintenance: "maintenance",
     "Under Maintenance": "maintenance",
-    Reserved: "reserved"
+    Reserved: "reserved",
   };
   return statusMap[backendStatus] || "available";
 }
@@ -248,7 +248,7 @@ function mapStatusToBackend(frontendStatus) {
     available: "Available",
     occupied: "Occupied",
     maintenance: "Maintenance",
-    reserved: "Reserved"
+    reserved: "Reserved",
   };
   return statusMap[frontendStatus] || "Available";
 }
@@ -259,8 +259,6 @@ function setupEventListeners() {
     .addEventListener("input", function (e) {
       searchProperties(e.target.value);
     });
-
-
 }
 
 function getAddressFilterValue() {
@@ -359,27 +357,23 @@ function renderProperties() {
             <div class="property-card h-100" data-id="${property.id}">
                 <!-- Property Image Section -->
                 <div class="property-image-container">
-                    <div class="property-image ${
-                      getPropertyImageSrc(property) ? "" : "no-image"
-                    }">
-                        ${
-                          getPropertyImageSrc(property)
-                            ? `<img src="${getPropertyImageSrc(
-                                property
-                              )}" alt="${
-                                property.property_name
-                              }" class="img-fluid">`
-                            : `
+                    <div class="property-image ${getPropertyImageSrc(property) ? "" : "no-image"
+        }">
+                        ${getPropertyImageSrc(property)
+          ? `<img src="${getPropertyImageSrc(
+            property
+          )}" alt="${property.property_name
+          }" class="img-fluid">`
+          : `
                                 <div class="no-image-placeholder">
                                     <i class="fas fa-image fa-2x text-muted mb-2"></i>
                                     <small class="text-muted">No Image Available</small>
                                 </div>
                             `
-                        }
+        }
                         <div class="image-overlay">
-                            <button class="btn-image-action" onclick="openEditPropertyForm('${
-                              property.id
-                            }')" title="Edit Property">
+                            <button class="btn-image-action" onclick="openEditPropertyForm('${property.id
+        }')" title="Edit Property">
                                 <i class="fas fa-edit"></i>
                             </button>
                         </div>
@@ -387,12 +381,11 @@ function renderProperties() {
                     <div class="status-badge-container">
                         <span class="status-badge status-${property.status}">
                             <i class="fas ${getStatusIcon(
-                              property.status
-                            )} me-1"></i>
-                            ${
-                              property.status.charAt(0).toUpperCase() +
-                              property.status.slice(1)
-                            }
+          property.status
+        )} me-1"></i>
+                            ${property.status.charAt(0).toUpperCase() +
+        property.status.slice(1)
+        }
                         </span>
                     </div>
                 </div>
@@ -401,9 +394,8 @@ function renderProperties() {
                 <div class="property-card-body">
                     <!-- Header Section -->
                     <div class="property-header-section">
-                        <h5 class="property-title">${
-                          property.property_name
-                        }</h5>
+                        <h5 class="property-title">${property.property_name
+        }</h5>
                         <p class="property-location">
                             <i class="fas fa-map-marker-alt text-muted me-1"></i>
                             ${property.location}
@@ -423,9 +415,8 @@ function renderProperties() {
                                 <i class="fas fa-ruler-combined"></i>
                             </div>
                             <div class="detail-content">
-                                <div class="detail-value">${
-                                  property.floor_area_sqm
-                                }</div>
+                                <div class="detail-value">${property.floor_area_sqm
+        }</div>
                                 <div class="detail-label">m² Area</div>
                             </div>
                         </div>
@@ -435,9 +426,8 @@ function renderProperties() {
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                             <div class="detail-content">
-                                <div class="detail-value">${
-                                  property.minimum_lease_term_months
-                                } MONTHS</div>
+                                <div class="detail-value">${property.minimum_lease_term_months
+        } MONTHS</div>
                                 <div class="detail-label">Minimum Lease Time</div>
                             </div>
                         </div>
@@ -447,9 +437,8 @@ function renderProperties() {
                                 <i class="fas fa-shield-alt"></i>
                             </div>
                             <div class="detail-content">
-                                <div class="detail-value">${
-                                  property.security_deposit_months
-                                } MONTHS</div>
+                                <div class="detail-value">${property.security_deposit_months
+        } MONTHS</div>
                                 <div class="detail-label">Security Deposit</div>
                             </div>
                         </div>
@@ -459,9 +448,8 @@ function renderProperties() {
                                 <i class="fa-sharp fa-solid fa-money-bill-wave"></i>
                             </div>
                             <div class="detail-content">
-                                <div class="detail-value">${
-                                  property.advance_months
-                                } MONTHS </div>
+                                <div class="detail-value">${property.advance_months
+        } MONTHS </div>
                                 <div class="detail-label">Advance Payment</div>
                             </div>
                         </div>
@@ -469,21 +457,18 @@ function renderProperties() {
                     
                     <!-- Actions Section -->
                     <div class="property-actions">
-                        <button class="btn btn-outline-primary btn-sm flex-fill" onclick="showPropertyDetails('${
-                          property.id
-                        }')">
+                        <button class="btn btn-outline-primary btn-sm flex-fill" onclick="showPropertyDetails('${property.id
+        }')">
                             <i class="fas fa-eye me-1"></i>
                             View Details
                         </button>
-                        <button class="btn btn-primary btn-sm flex-fill" onclick="openEditPropertyForm('${
-                          property.id
-                        }')">
+                        <button class="btn btn-primary btn-sm flex-fill" onclick="openEditPropertyForm('${property.id
+        }')">
                             <i class="fas fa-edit me-1"></i>
                             Edit
                         </button>
-                        <button class="btn btn-outline-danger btn-sm" onclick="removeProperty('${
-                          property.id
-                        }')" title="Remove Property">
+                        <button class="btn btn-outline-danger btn-sm" onclick="removeProperty('${property.id
+        }')" title="Remove Property">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -537,7 +522,7 @@ function showErrorState() {
             `;
 }
 
-function hideLoadingState() {}
+function hideLoadingState() { }
 
 function openAddModal() {
   hideEditPropertyForm();
@@ -757,7 +742,7 @@ function hideEditPropertyForm(skipConfirmation = false) {
     if (
       !confirm("Are you sure you want to cancel? All changes will be lost.")
     ) {
-      return; 
+      return;
     }
   }
 
@@ -1004,11 +989,11 @@ function loadExistingShowcaseImages(property) {
       });
 
       const imageData = {
-        id: Date.now() + index, 
+        id: Date.now() + index,
         file: mockFile,
         description: picture.image_desc || "",
         isExisting: true,
-        existingId: picture.id, 
+        existingId: picture.id,
         dataUrl: picture.image_url,
       };
 
@@ -1025,7 +1010,6 @@ function renderEditShowcasePreview() {
   const addMoreSection = document.getElementById("editShowcaseAddMore");
   const currentCount = document.getElementById("editCurrentImageCount");
 
-  // Update count
   if (currentCount) {
     currentCount.textContent = editShowcaseImages.length;
   }
@@ -1044,17 +1028,14 @@ function renderEditShowcasePreview() {
 
   previewGrid.className = `showcase-preview-grid count-${editShowcaseImages.length}`;
 
-  // Render images
   previewGrid.innerHTML = editShowcaseImages
     .map(
       (imageData, index) => `
-        <div class="showcase-image-card ${
-          imageData.isNew ? "new" : ""
+        <div class="showcase-image-card ${imageData.isNew ? "new" : ""
         }" data-image-id="${imageData.id}">
             <div class="showcase-image-number">${index + 1}</div>
-            <img src="${
-              imageData.dataUrl
-            }" class="showcase-image-preview" alt="Showcase image ${index + 1}">
+            <img src="${imageData.dataUrl
+        }" class="showcase-image-preview" alt="Showcase image ${index + 1}">
             <div class="showcase-image-info">
                 <textarea 
                     class="showcase-image-description" 
@@ -1062,9 +1043,8 @@ function renderEditShowcasePreview() {
                     data-image-id="${imageData.id}"
                 >${imageData.description}</textarea>
                 <div class="showcase-image-actions">
-                    <button type="button" class="showcase-remove-btn" onclick="removeEditShowcaseImage('${
-                      imageData.id
-                    }')">
+                    <button type="button" class="showcase-remove-btn" onclick="removeEditShowcaseImage('${imageData.id
+        }')">
                         <i class="fas fa-trash"></i> Remove
                     </button>
                 </div>
@@ -1100,7 +1080,6 @@ function removeEditShowcaseImage(imageId) {
     const validId = parseInt(imageToRemove.existingId);
     if (!isNaN(validId) && validId > 0) {
       deletedShowcaseImages.push(validId);
-      console.log("Added image to deletion list:", validId);
     } else {
       console.warn("Invalid existing image ID:", imageToRemove.existingId);
     }
@@ -1147,7 +1126,6 @@ function setupEditInlineForm() {
 
 function populateEditForm(propertyId) {
   deletedShowcaseImages = [];
-  
 
   const property = properties.find((p) => p.id === propertyId);
   if (!property) {
@@ -1245,7 +1223,7 @@ function setupEditInlineImageUpload() {
   }
 
   let uploadedFile = null;
-  let shouldRemoveExistingImage = false; 
+  let shouldRemoveExistingImage = false;
 
   uploadPrompt.addEventListener("click", () => {
     fileInput.click();
@@ -1544,8 +1522,8 @@ async function loadEditInlineAddresses() {
               return `<div>
                 <span style="font-weight:600;">${escape(line1 || "")}</span><br>
                 <span style="font-size:0.92em;color:#64748b;">${escape(
-                  line2 || ""
-                )}</span>
+                line2 || ""
+              )}</span>
               </div>`;
             },
             item: function (data, escape) {
@@ -1553,8 +1531,8 @@ async function loadEditInlineAddresses() {
               return `<div>
                 <span style="font-weight:600;">${escape(line1 || "")}</span>
                 <span style="font-size:0.92em;color:#64748b;">${escape(
-                  line2 || ""
-                )}</span>
+                line2 || ""
+              )}</span>
               </div>`;
             },
           },
@@ -1992,8 +1970,8 @@ async function loadInlineAddresses() {
               return `<div>
                 <span style="font-weight:600;">${escape(line1 || "")}</span><br>
                 <span style="font-size:0.92em;color:#64748b;">${escape(
-                  line2 || ""
-                )}</span>
+                line2 || ""
+              )}</span>
               </div>`;
             },
             item: function (data, escape) {
@@ -2001,8 +1979,8 @@ async function loadInlineAddresses() {
               return `<div>
                 <span style="font-weight:600;">${escape(line1 || "")}</span>
                 <span style="font-size:0.92em;color:#64748b;">${escape(
-                  line2 || ""
-                )}</span>
+                line2 || ""
+              )}</span>
               </div>`;
             },
           },
@@ -2130,7 +2108,6 @@ async function handleInlineFormSubmit(event) {
       }
 
       result = JSON.parse(responseText);
-      console.log("Property created successfully:", result);
     } catch (jsonError) {
       console.error("Failed to parse success response:", jsonError);
       throw new Error("Server returned invalid response format");
@@ -2190,7 +2167,6 @@ function resetInlineFormSilently() {
 
   const descEditor = document.getElementById("addDescriptionEditor");
   if (descEditor) descEditor.innerHTML = "";
-
 }
 
 function setupInlineForm() {
@@ -2348,7 +2324,7 @@ function validateField(fieldConfig) {
 
   if (!field || !errorElement) {
     console.warn(`Field or error element not found: ${fieldConfig.id}`);
-    return true; 
+    return true;
   }
 
   const value = field.value.trim();
@@ -2539,7 +2515,7 @@ function resetEditInlineForm() {
   if (imagePreview) imagePreview.style.display = "none";
 
   editShowcaseImages = [];
-  deletedShowcaseImages = []; 
+  deletedShowcaseImages = [];
   renderEditShowcasePreview();
 
   clearEditInlineAddressForm();
@@ -2604,9 +2580,8 @@ function showPropertyDetails(propertyId) {
       onclick: "navigateToPropertiesListDirectly()",
     },
     {
-      text: `<i class="fas fa-eye me-2"></i>${
-        property ? property.property_name : "Property Details"
-      }`,
+      text: `<i class="fas fa-eye me-2"></i>${property ? property.property_name : "Property Details"
+        }`,
       active: true,
     },
   ]);
@@ -2656,110 +2631,104 @@ async function removeProperty(propertyId) {
   }
 }
 
-  function populatePropertyDetails(property) {
-      console.log("Details property property_pictures:", property.property_pictures);
-    const titleElement = document.getElementById("detailsTitle");
-    if (titleElement) {
-      titleElement.textContent = property.property_name || "Property Details";
-    }
-
-    const allImages = [];
-    if (property.display_image) {
-      allImages.push({
-        url: property.display_image,
-        description: "Main Display Image",
-      });
-    }
-    if (property.property_pictures && property.property_pictures.length > 0) {
-      property.property_pictures.forEach((picture, index) => {
-        allImages.push({
-          url: picture.image_url,
-          description: picture.image_desc || `Showcase Image ${index + 1}`,
-        });
-      });
-    }
-    if (allImages.length === 0) {
-      allImages.push({
-        url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        description: "No Image Available",
-      });
-    }
-
-
-    let currentIndex = 0;
-
-    const mainImg = document.getElementById("carouselMainImage");
-    const desc = document.getElementById("carouselImageDescription");
-    const prevBtn = document.getElementById("carouselPrevBtn");
-    const nextBtn = document.getElementById("carouselNextBtn");
-    const thumbs = document.getElementById("carouselThumbnails");
-    const zoomBtn = document.getElementById("zoomImageBtn");
-
-    function updateCarousel(idx) {
-      currentIndex = idx;
-      mainImg.src = allImages[idx].url;
-      mainImg.alt = allImages[idx].description;
-      desc.textContent = allImages[idx].description || "";
-      thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
-        thumb.classList.toggle("active", i === idx);
-      });
-      prevBtn.style.display = allImages.length > 1 ? "" : "none";
-      nextBtn.style.display = allImages.length > 1 ? "" : "none";
-      zoomBtn.style.display = "block";
-    }
-
-    thumbs.innerHTML = allImages
-      .map(
-        (img, i) =>
-          `<img src="${img.url}" alt="Thumb ${i + 1}" class="carousel-thumbnail${
-            i === 0 ? " active" : ""
-          }" data-idx="${i}">`
-      )
-      .join("");
-    thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
-      thumb.onclick = () => updateCarousel(i);
-    });
-
-    // Arrows
-    prevBtn.onclick = () =>
-      updateCarousel((currentIndex - 1 + allImages.length) % allImages.length);
-    nextBtn.onclick = () => updateCarousel((currentIndex + 1) % allImages.length);
-
-    // Zoom
-    zoomBtn.onclick = () => openZoomModal(allImages[currentIndex].url);
-
-    // Initial load
-    updateCarousel(0);
-
-    document.getElementById("detailPropertyName").textContent =
-      property.property_name || "N/A";
-    document.getElementById("detailFloorArea").textContent =
-      property.floor_area_sqm ? `${property.floor_area_sqm} m²` : "N/A";
-    document.getElementById("detailLocation").textContent =
-      property.location || "N/A";
-    document.getElementById("detailDescription").innerHTML =
-      property.description || "<em>No description available</em>";
-    document.getElementById("detailStatus").textContent =
-      property.status.charAt(0).toUpperCase() + property.status.slice(1);
-    document.getElementById("detailStatus").className =
-      "details-value status " + property.status;
-
-    document.getElementById(
-      "detailPrice"
-    ).textContent = `₱${property.base_rent.toLocaleString()}`;
-    document.getElementById(
-      "detailLeaseTerm"
-    ).textContent = `${property.minimum_lease_term_months} months`;
-    document.getElementById(
-      "detailSecurityDeposit"
-    ).textContent = `${property.security_deposit_months} months`;
-    document.getElementById(
-      "detailAdvanceMonths"
-    ).textContent = `${property.advance_months} months`;
-    document.getElementById("detailLastUpdated").textContent = formatDate(
-      property.updated_at
-    );
+function populatePropertyDetails(property) {
+  const titleElement = document.getElementById("detailsTitle");
+  if (titleElement) {
+    titleElement.textContent = property.property_name || "Property Details";
   }
+
+  const allImages = [];
+  if (property.display_image) {
+    allImages.push({
+      url: property.display_image,
+      description: "Main Display Image",
+    });
+  }
+  if (property.property_pictures && property.property_pictures.length > 0) {
+    property.property_pictures.forEach((picture, index) => {
+      allImages.push({
+        url: picture.image_url,
+        description: picture.image_desc || `Showcase Image ${index + 1}`,
+      });
+    });
+  }
+  if (allImages.length === 0) {
+    allImages.push({
+      url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+      description: "No Image Available",
+    });
+  }
+
+  let currentIndex = 0;
+
+  const mainImg = document.getElementById("carouselMainImage");
+  const desc = document.getElementById("carouselImageDescription");
+  const prevBtn = document.getElementById("carouselPrevBtn");
+  const nextBtn = document.getElementById("carouselNextBtn");
+  const thumbs = document.getElementById("carouselThumbnails");
+  const zoomBtn = document.getElementById("zoomImageBtn");
+
+  function updateCarousel(idx) {
+    currentIndex = idx;
+    mainImg.src = allImages[idx].url;
+    mainImg.alt = allImages[idx].description;
+    desc.textContent = allImages[idx].description || "";
+    thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
+      thumb.classList.toggle("active", i === idx);
+    });
+    prevBtn.style.display = allImages.length > 1 ? "" : "none";
+    nextBtn.style.display = allImages.length > 1 ? "" : "none";
+    zoomBtn.style.display = "block";
+  }
+
+  thumbs.innerHTML = allImages
+    .map(
+      (img, i) =>
+        `<img src="${img.url}" alt="Thumb ${i + 1}" class="carousel-thumbnail${i === 0 ? " active" : ""
+        }" data-idx="${i}">`
+    )
+    .join("");
+  thumbs.querySelectorAll(".carousel-thumbnail").forEach((thumb, i) => {
+    thumb.onclick = () => updateCarousel(i);
+  });
+
+  prevBtn.onclick = () =>
+    updateCarousel((currentIndex - 1 + allImages.length) % allImages.length);
+  nextBtn.onclick = () => updateCarousel((currentIndex + 1) % allImages.length);
+
+  zoomBtn.onclick = () => openZoomModal(allImages[currentIndex].url);
+
+  updateCarousel(0);
+
+  document.getElementById("detailPropertyName").textContent =
+    property.property_name || "N/A";
+  document.getElementById("detailFloorArea").textContent =
+    property.floor_area_sqm ? `${property.floor_area_sqm} m²` : "N/A";
+  document.getElementById("detailLocation").textContent =
+    property.location || "N/A";
+  document.getElementById("detailDescription").innerHTML =
+    property.description || "<em>No description available</em>";
+  document.getElementById("detailStatus").textContent =
+    property.status.charAt(0).toUpperCase() + property.status.slice(1);
+  document.getElementById("detailStatus").className =
+    "details-value status " + property.status;
+
+  document.getElementById(
+    "detailPrice"
+  ).textContent = `₱${property.base_rent.toLocaleString()}`;
+  document.getElementById(
+    "detailLeaseTerm"
+  ).textContent = `${property.minimum_lease_term_months} months`;
+  document.getElementById(
+    "detailSecurityDeposit"
+  ).textContent = `${property.security_deposit_months} months`;
+  document.getElementById(
+    "detailAdvanceMonths"
+  ).textContent = `${property.advance_months} months`;
+  document.getElementById("detailLastUpdated").textContent = formatDate(
+    property.updated_at
+  );
+}
 
 function openZoomModal(imgSrc) {
   const modal = document.getElementById("zoomImageModal");
@@ -2799,7 +2768,7 @@ window.goToPage = function (page) {
   const totalPages = Math.ceil(totalProperties / pageSize);
   if (page < 1) page = 1;
   if (page > totalPages) page = totalPages;
-  if (page === currentPage) return; 
+  if (page === currentPage) return;
   currentPage = page;
   loadProperties(page, pageSize);
   const grid = document.getElementById("propertiesGrid");

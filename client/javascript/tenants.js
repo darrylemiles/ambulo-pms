@@ -1,6 +1,6 @@
 import formatDate from "../utils/formatDate.js";
 import formatStatus from "../utils/formatStatus.js";
-import fetchCompanyDetails from "../api/loadCompanyInfo.js"
+import fetchCompanyDetails from "../api/loadCompanyInfo.js";
 
 let tenants = [];
 let allTenants = [];
@@ -14,12 +14,9 @@ let currentSort = "";
 let selectedDocumentFiles = [];
 const USER_ROLES = window.AppConstants.USER_ROLES;
 
-// API Configuration
 const API_BASE_URL = "/api/v1";
 
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM loaded, checking elements...");
-
   const requiredElements = [
     "gridView",
     "listView",
@@ -32,7 +29,6 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
   requiredElements.forEach((id) => {
     const element = document.getElementById(id);
-    console.log(`Element ${id}:`, element ? "Found" : "Missing");
   });
 
   const statusBtn = document.getElementById("statusFilterBtn");
@@ -56,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
           statusLabel.textContent = this.textContent;
           statusDropdown.style.display = "none";
           statusBtn.classList.remove("active");
-          // Set filter and trigger search
+
           filterTenants();
         });
       });
@@ -179,7 +175,6 @@ async function loadTenants(page = 1, filters = {}) {
     }
 
     const result = await response.json();
-    console.log("API Response:", result);
 
     if (result.users) {
       tenants = result.users;
@@ -231,26 +226,23 @@ function renderGridView() {
   const cardsHTML = tenants
     .map((tenant) => {
       const suffix = tenant.suffix ? ` ${tenant.suffix}` : "";
-      const fullName = `${tenant.first_name || ""} ${
-        tenant.last_name || ""
-      }${suffix}`.trim();
+      const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""
+        }${suffix}`.trim();
       const isSelected = selectedTenants.has(tenant.user_id);
 
       const avatarHTML = generateAvatarHTML(tenant);
 
       return `
-        <div class="tenant-card ${isSelected ? "selected" : ""}" data-tenant="${
-        tenant.user_id
-      }" tabindex="0" title="Select tenant">
+        <div class="tenant-card ${isSelected ? "selected" : ""}" data-tenant="${tenant.user_id
+        }" tabindex="0" title="Select tenant">
           <div class="tenant-card-header">
             <div class="tenant-info">
               <div class="tenant-avatar">
                 ${avatarHTML}
               </div>
               <div class="tenant-details">
-                <h4 title="${fullName || "No Name"}">${
-        fullName || "No Name"
-      }</h4>
+                <h4 title="${fullName || "No Name"}">${fullName || "No Name"
+        }</h4>
                 <div class="tenant-business">
                   ${tenant.business_name || "N/A"}
                 </div>
@@ -260,32 +252,28 @@ function renderGridView() {
           <div class="tenant-card-body">
             <div class="tenant-meta-item">
               <span class="label">Phone:</span>
-              <span class="value">${
-                tenant.phone_number || "Not provided"
-              }</span>
+              <span class="value">${tenant.phone_number || "Not provided"
+        }</span>
             </div>
             <div class="tenant-meta-item">
               <span class="label">Email:</span>
-              <span class="value email-value" title="${
-                tenant.email || "No Email"
-              }">${tenant.email || "No Email"}</span>
+              <span class="value email-value" title="${tenant.email || "No Email"
+        }">${tenant.email || "No Email"}</span>
             </div>
           </div>
           <div class="tenant-meta">
             <span class="status-badge status-${(
-              tenant.status || "active"
-            ).toLowerCase()}">
+          tenant.status || "active"
+        ).toLowerCase()}">
               ${formatStatus(tenant.status) || "Active"}
             </span>
             <div class="tenant-actions">
-              <button class="action-btn" title="View Details" onclick="event.stopPropagation();viewTenantDetails('${
-                tenant.user_id
-              }')">
+              <button class="action-btn" title="View Details" onclick="event.stopPropagation();viewTenantDetails('${tenant.user_id
+        }')">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="action-btn" title="Edit" onclick="event.stopPropagation();openTenantDetailsInEditMode('${
-                tenant.user_id
-              }')">
+              <button class="action-btn" title="Edit" onclick="event.stopPropagation();openTenantDetailsInEditMode('${tenant.user_id
+        }')">
               <i class="fas fa-edit"></i>
               </button>
             </div>
@@ -315,19 +303,16 @@ function renderListView() {
   const rowsHTML = tenants
     .map((tenant) => {
       const suffix = tenant.suffix ? ` ${tenant.suffix}` : "";
-      const fullName = `${tenant.first_name || ""} ${
-        tenant.last_name || ""
-      }${suffix}`.trim();
+      const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""
+        }${suffix}`.trim();
       const isSelected = selectedTenants.has(tenant.user_id);
       const avatarHTML = generateAvatarHTML(tenant, "small");
       return `
-        <div class="tenant-list-item ${
-          isSelected ? "selected" : ""
+        <div class="tenant-list-item ${isSelected ? "selected" : ""
         }" data-tenant="${tenant.user_id}">
           <div class="list-col list-col-checkbox">
-            <input type="checkbox" class="list-checkbox" ${
-              isSelected ? "checked" : ""
-            }>
+            <input type="checkbox" class="list-checkbox" ${isSelected ? "checked" : ""
+        }>
           </div>
           <div class="list-col list-col-name">
             <div class="tenant-info">
@@ -342,40 +327,34 @@ function renderListView() {
               </div>
             </div>
           </div>
-          <div class="list-col list-col-email">${
-            tenant.email || "No Email"
-          }</div>
-          <div class="list-col list-col-phone">${
-            tenant.phone_number || "Not provided"
-          }</div>
+          <div class="list-col list-col-email">${tenant.email || "No Email"
+        }</div>
+          <div class="list-col list-col-phone">${tenant.phone_number || "Not provided"
+        }</div>
           <div class="list-col list-col-status">
             <span class="status-badge status-${(
-              tenant.status || "active"
-            ).toLowerCase()}">
-              ${
-                formatStatus
-                  ? formatStatus(tenant.status)
-                  : tenant.status || "Active"
-              }
+          tenant.status || "active"
+        ).toLowerCase()}">
+              ${formatStatus
+          ? formatStatus(tenant.status)
+          : tenant.status || "Active"
+        }
             </span>
           </div>
           <div class="list-col list-col-created">
             ${formatDate ? formatDate(tenant.created_at) : tenant.created_at}
           </div>
           <div class="list-col list-col-actions">
-            <button class="action-btn" onclick="viewTenantDetails('${
-              tenant.user_id
-            }')" title="View Details">
+            <button class="action-btn" onclick="viewTenantDetails('${tenant.user_id
+        }')" title="View Details">
               <i class="fas fa-eye"></i>
             </button>
-            <button class="action-btn" onclick="openTenantDetailsInEditMode('${
-              tenant.user_id
-            }')" title="Edit">
+            <button class="action-btn" onclick="openTenantDetailsInEditMode('${tenant.user_id
+        }')" title="Edit">
             <i class="fas fa-edit"></i>
             </button>
-            <button class="action-btn" onclick="deleteTenant('${
-              tenant.user_id
-            }')" title="Delete">
+            <button class="action-btn" onclick="deleteTenant('${tenant.user_id
+        }')" title="Delete">
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -781,8 +760,7 @@ function renderPagination() {
   let paginationHTML = "";
 
   paginationHTML += `
-    <button class="pagination-btn" ${
-      currentPage === 1 ? "disabled" : ""
+    <button class="pagination-btn" ${currentPage === 1 ? "disabled" : ""
     } onclick="goToPage(${currentPage - 1})">
       ← Previous
     </button>
@@ -795,8 +773,7 @@ function renderPagination() {
       (i >= currentPage - 2 && i <= currentPage + 2)
     ) {
       paginationHTML += `
-        <button class="pagination-btn ${
-          i === currentPage ? "active" : ""
+        <button class="pagination-btn ${i === currentPage ? "active" : ""
         }" onclick="goToPage(${i})">
           ${i}
         </button>
@@ -807,8 +784,7 @@ function renderPagination() {
   }
 
   paginationHTML += `
-    <button class="pagination-btn" ${
-      currentPage === totalPages ? "disabled" : ""
+    <button class="pagination-btn" ${currentPage === totalPages ? "disabled" : ""
     } onclick="goToPage(${currentPage + 1})">
       Next →
     </button>
@@ -831,7 +807,6 @@ function goToPage(page) {
 
 function deleteTenant(tenantId) {
   if (confirm("Are you sure you want to delete this tenant?")) {
-    console.log("Delete tenant:", tenantId);
   }
 }
 
@@ -1008,10 +983,9 @@ function confirmAccount() {
     }
 
     alert("Tenant account created successfully!");
-    console.log("New tenant data:", accountData);
 
     closeCreateAccountModal();
-    loadTenants(); 
+    loadTenants();
   }
 }
 
@@ -1073,9 +1047,8 @@ function getPlaceholderAvatar(name, size = 48) {
 
 function generateAvatarHTML(tenant, size = "normal") {
   const initials = getInitials(tenant.first_name, tenant.last_name);
-  const fullName = `${tenant.first_name || ""} ${
-    tenant.last_name || ""
-  }`.trim();
+  const fullName = `${tenant.first_name || ""} ${tenant.last_name || ""
+    }`.trim();
   const imageSize = size === "small" ? 32 : 48;
 
   let avatarSrc = tenant.avatar;
@@ -1584,9 +1557,7 @@ function autoSaveFormData() {
   }
   try {
     sessionStorage.setItem("tenantFormData", JSON.stringify(data));
-  } catch (e) {
-    console.log("Could not save form data");
-  }
+  } catch (e) { }
 }
 
 function loadSavedFormData() {
@@ -1601,17 +1572,13 @@ function loadSavedFormData() {
         }
       });
     }
-  } catch (e) {
-    console.log("Could not load saved form data");
-  }
+  } catch (e) { }
 }
 
 function clearSavedFormData() {
   try {
     sessionStorage.removeItem("tenantFormData");
-  } catch (e) {
-    console.log("Could not clear saved form data");
-  }
+  } catch (e) { }
 }
 
 function showTenantSnackbar(message, type = "success") {
@@ -1624,16 +1591,14 @@ function showTenantSnackbar(message, type = "success") {
     position: fixed;
     top: 24px;
     right: 24px;
-    background: linear-gradient(135deg, ${
-      type === "success"
-        ? "#10b981 0%, #059669 100%"
-        : "#ef4444 0%, #dc2626 100%"
+    background: linear-gradient(135deg, ${type === "success"
+      ? "#10b981 0%, #059669 100%"
+      : "#ef4444 0%, #dc2626 100%"
     });
     color: white;
     padding: 15px 24px;
     border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(${
-      type === "success" ? "16,185,129" : "239,68,68"
+    box-shadow: 0 4px 16px rgba(${type === "success" ? "16,185,129" : "239,68,68"
     },0.18);
     z-index: 1000000;
     font-family: 'Poppins', sans-serif;
@@ -1644,8 +1609,7 @@ function showTenantSnackbar(message, type = "success") {
     animation: tenantSnackbarIn 0.3s ease;
   `;
   snackbar.innerHTML = `
-    <i class="fas ${
-      type === "success" ? "fa-check-circle" : "fa-exclamation-circle"
+    <i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"
     } me-2"></i>${message}
   `;
 
@@ -1846,8 +1810,8 @@ function renderTenantIdFiles(files, editable = false) {
         files.push({
           id_url,
           name: file.name,
-          _file: file, 
-          _isNew: true, 
+          _file: file,
+          _isNew: true,
         });
       });
       renderTenantIdFiles(files, true);
@@ -1862,7 +1826,7 @@ function renderEditAvatarPreview(avatarUrl, firstName, lastName) {
   const preview = document.getElementById("editAvatarPreview");
   if (!preview) return;
 
-  preview.innerHTML = ""; 
+  preview.innerHTML = "";
 
   if (avatarUrl && avatarUrl.trim() !== "") {
     const img = document.createElement("img");
@@ -2062,7 +2026,6 @@ function deleteTenantFromDetails() {
   }
 }
 
-
 function closeTenantDetailsInlineForm() {
   const formContainer = document.getElementById("tenantDetailsInlineForm");
   if (formContainer) formContainer.style.display = "none";
@@ -2215,11 +2178,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const visibleFields = Array.from(
       editForm.querySelectorAll("input, select")
-    ).filter(
-      (el) =>
-        el.offsetParent !== null &&
-        !el.disabled 
-    );
+    ).filter((el) => el.offsetParent !== null && !el.disabled);
 
     visibleFields.forEach((field) => {
       switch (field.name) {
@@ -2266,7 +2225,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (saveBtn) saveBtn.disabled = !allValid;
     return allValid;
   }
-  
+
   if (editForm.firstName)
     editForm.firstName.addEventListener("input", function () {
       validateName(editForm.firstName);
