@@ -309,16 +309,24 @@ function resetBreakdownFilter() {
     if (selectedSpace) selectSpace(selectedSpace.id);
 }
 
-/**
- * Refresh data (charges, totals, breakdown) for the currently selected space
- * using the current month/year filter without resetting the filter controls.
- */
 async function refreshSelectedSpaceData() {
     if (!selectedSpace) return;
     try {
         const activeFilter = getActiveFilter();
         const charges = await fetchPendingCharges(selectedSpace.id, activeFilter);
-        selectedSpace.pendingCharges = charges;
+
+        const normalized = (Array.isArray(charges) ? charges : []).map((c) => {
+            const total = Number(c.amount) || 0;
+            const paid = Number(c.total_paid || 0) || 0;
+            const remaining = Math.max(0, total - paid);
+            return { ...c, remaining_amount: remaining };
+        }).filter((c) => {
+            const status = String(c.canonical_status || c.status || '').toUpperCase();
+            const isWaived = status === 'WAIVED';
+            const isPaid = status === 'PAID' || (Number(c.total_paid || 0) >= Number(c.amount || 0));
+            return !isWaived && !isPaid && (Number(c.remaining_amount) > 0);
+        });
+        selectedSpace.pendingCharges = normalized;
     } catch (e) {
         selectedSpace.pendingCharges = [];
     }
@@ -561,7 +569,22 @@ async function selectSpace(spaceId) {
                     selectedSpace.id,
                     activeFilter
                 );
-                selectedSpace.pendingCharges = charges;
+
+                const normalized = (Array.isArray(charges) ? charges : []).map((c) => {
+                    const total = Number(c.amount) || 0;
+                    const paid = Number(c.total_paid || 0) || 0;
+                    const remaining = Math.max(0, total - paid);
+                    return {
+                        ...c,
+                        remaining_amount: remaining,
+                    };
+                }).filter((c) => {
+                    const status = String(c.canonical_status || c.status || '').toUpperCase();
+                    const isWaived = status === 'WAIVED';
+                    const isPaid = status === 'PAID' || (Number(c.total_paid || 0) >= Number(c.amount || 0));
+                    return !isWaived && !isPaid && (Number(c.remaining_amount) > 0);
+                });
+                selectedSpace.pendingCharges = normalized;
             } catch (e) {
                 selectedSpace.pendingCharges = [];
             }
@@ -597,52 +620,82 @@ function loadPaymentTotal() {
 
     const totalFixed =
         charges.length > 0
-            ? charges.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0)
-            : [
-                { label: "Monthly Rent", amount: selectedSpace.monthlyRent },
-                {
-                    label: "Electricity",
-                    amount: Math.floor(Math.random() * 1000) + 2000,
-                },
-                { label: "Water", amount: Math.floor(Math.random() * 300) + 600 },
-                { label: "Maintenance Fee", amount: 500 },
-            ].reduce((s, c) => s + c.amount, 0);
-    const currentMonth = new Date().toLocaleString("en-US", {
-        month: "long",
-        year: "numeric",
-    });
+            ? charges
+                .filter((c) => {
+                    const rem = (typeof c.remaining_amount === 'number')
+                        ? Number(c.remaining_amount) || 0
+                        : Math.max(0, (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0));
+                    const status = String(c.canonical_status || c.status || '').toUpperCase();
+                    return rem > 0 && status !== 'WAIVED' && status !== 'PAID';
+                })
+                .reduce((s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0), 0)
+            : 0;
 
+
+    const now = new Date();
     const activeFilter = getActiveFilter();
-    let displayedTotal = totalFixed;
-    if (charges.length > 0 && (activeFilter.month || activeFilter.year)) {
-        displayedTotal = charges
-            .filter((c) => {
-                const d = c.due_date || c.charge_date || "";
-                if (!d) return false;
-                const dt = new Date(d);
-                if (isNaN(dt.getTime())) return false;
-                const m = String(dt.getMonth() + 1).padStart(2, "0");
-                const y = String(dt.getFullYear());
-                if (activeFilter.month && activeFilter.year)
-                    return m === activeFilter.month && y === activeFilter.year;
-                if (activeFilter.month) return m === activeFilter.month;
-                if (activeFilter.year) return y === activeFilter.year;
-                return true;
-            })
-            .reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+    let periodLabel;
+    if (activeFilter.month || activeFilter.year) {
+        const y = activeFilter.year ? parseInt(activeFilter.year, 10) : now.getFullYear();
+        const mIndex = activeFilter.month ? (parseInt(activeFilter.month, 10) - 1) : now.getMonth();
+        const ref = new Date(y, Math.max(0, Math.min(11, mIndex)), 1);
+        periodLabel = ref.toLocaleString("en-US", { month: "long", year: "numeric" });
+    } else {
+        periodLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
     }
+
+    let displayedTotal = totalFixed;
+    let chargesForTotal = charges;
+    if (charges.length > 0 && (activeFilter.month || activeFilter.year)) {
+        chargesForTotal = charges.filter((c) => {
+            const d = c.due_date || c.charge_date || "";
+            if (!d) return false;
+            const dt = new Date(d);
+            if (isNaN(dt.getTime())) return false;
+            const m = String(dt.getMonth() + 1).padStart(2, "0");
+            const y = String(dt.getFullYear());
+            if (activeFilter.month && activeFilter.year)
+                return m === activeFilter.month && y === activeFilter.year;
+            if (activeFilter.month) return m === activeFilter.month;
+            if (activeFilter.year) return y === activeFilter.year;
+            return true;
+        });
+        chargesForTotal = chargesForTotal.filter((c) => {
+            const rem = (typeof c.remaining_amount === 'number')
+                ? Number(c.remaining_amount) || 0
+                : Math.max(0, (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0));
+            const status = String(c.canonical_status || c.status || '').toUpperCase();
+            return rem > 0 && status !== 'WAIVED' && status !== 'PAID';
+        });
+        displayedTotal = chargesForTotal.reduce((s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0), 0);
+    }
+
+
+    const lateFeeTotal = (chargesForTotal || []).reduce((s, c) => s + (parseFloat(c.late_fee_amount) || 0), 0);
+    const baseTotal = (chargesForTotal || []).reduce((s, c) => {
+        const base = (typeof c.original_amount === 'number' && c.original_amount !== null)
+            ? Number(c.original_amount) || 0
+            : (parseFloat(c.amount) || 0) - (parseFloat(c.late_fee_amount) || 0);
+        return s + base;
+    }, 0);
 
     if (container) {
         container.innerHTML = `
                     <div class="total-section">
                         <div class="total-label">
                             <i class="fas fa-calendar-days"></i>
-                            ${currentMonth} - Total Due
+                            ${periodLabel} - Total Due
                         </div>
-                        <div class="total-amount">₱${formatCurrency(
-            displayedTotal
-        )}</div>
-                        <button class="pay-now-btn" onclick="openPaymentModal(${displayedTotal})">
+                        <div class="total-amount">
+                            ₱${formatCurrency(displayedTotal)}
+                            ${lateFeeTotal > 0 ? `
+                                <div style="margin-top:6px; font-size:12px; color:#ef4444; display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-info-circle" title="Remaining total includes any applied late fees."></i>
+                                    <span title="Remaining total includes any applied late fees.">Includes late fees</span>
+                                </div>
+                            `: ''}
+                        </div>
+                        <button class="pay-now-btn" ${displayedTotal > 0 ? '' : 'disabled'} onclick="openPaymentModal(${displayedTotal})">
                             <i class="fas fa-credit-card"></i> Pay Now
                         </button>
                     </div>
@@ -742,6 +795,17 @@ function loadPaymentBreakdown() {
             });
         }
 
+
+        displayedCharges = (displayedCharges || []).filter((c) => {
+            const status = String(c.canonical_status || c.status || '').toUpperCase();
+            const isWaived = status === 'WAIVED';
+            const isPaid = status === 'PAID' || (Number(c.total_paid || 0) >= Number(c.amount || 0));
+            const remaining = (typeof c.remaining_amount === 'number')
+                ? Number(c.remaining_amount) || 0
+                : Math.max(0, (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0));
+            return !isWaived && !isPaid && remaining > 0;
+        });
+
         if (selectedSpace) {
             selectedSpace.displayedCharges = Array.isArray(displayedCharges)
                 ? [...displayedCharges]
@@ -751,40 +815,63 @@ function loadPaymentBreakdown() {
         const hasFilter = !!(filterMonth || filterYear);
         let pendingListHtml = "";
         if (displayedCharges.length > 0) {
-            // Fetch pending payments for these charges and cache in a map for quick lookup
-            // Note: this is async; we prefetch and then re-render once loaded.
-            (async () => {
-                const pendingMap = await fetchPendingPaymentsForCharges(displayedCharges);
-                window.__pendingPaymentsMap = pendingMap;
-                // Re-render to include indicators
-                loadPaymentBreakdown();
-            })();
+
+
+            const idsKey = JSON.stringify(
+                displayedCharges
+                    .map((c) => String(c.charge_id || c.chargeId || c.id || ""))
+                    .filter(Boolean)
+                    .sort()
+            );
+            if (window.__pendingPaymentsKey !== idsKey) {
+                window.__pendingPaymentsKey = idsKey;
+                (async () => {
+                    const pendingMap = await fetchPendingPaymentsForCharges(displayedCharges);
+                    window.__pendingPaymentsMap = pendingMap;
+
+                    loadPaymentBreakdown();
+                })();
+            }
             pendingListHtml = displayedCharges
                 .map(
-                    (ch) => `
+                    (ch) => {
+                        const totalAmt = parseFloat(ch.amount) || 0;
+                        const lateFeeAmt = parseFloat(ch.late_fee_amount) || 0;
+                        const baseAmt = (typeof ch.original_amount === 'number' && ch.original_amount !== null)
+                            ? Number(ch.original_amount) || 0
+                            : (totalAmt - lateFeeAmt);
+                        const remaining = (typeof ch.remaining_amount === 'number') ? Number(ch.remaining_amount) || 0 : Math.max(0, totalAmt - (Number(ch.total_paid || 0) || 0));
+                        const titleTxt = lateFeeAmt > 0
+                            ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(totalAmt)}`
+                            : `Amount: ₱${formatCurrency(totalAmt)}`;
+                        const feeHint = lateFeeAmt > 0
+                            ? `<div class="late-fee-hint" style="font-size:11px;color:#ef4444;margin-top:4px;"><i class=\"fas fa-info-circle\"></i> Late fee applied</div>`
+                            : '';
+                        return `
                     <div class="breakdown-item">
                         <div>
                             <div class="breakdown-label" style="font-size:18px; font-weight:800;">${ch.charge_type || ch.description || "Charge"
-                        }</div>
+                            }</div>
                             ${ch.description
-                            ? `<div class="breakdown-desc" style="color:#6b7280; margin:6px 0; font-size:13px;">${escapeHtml(
-                                ch.description
-                            )}</div>`
-                            : ""
-                        }
+                                ? `<div class="breakdown-desc" style="color:#6b7280; margin:6px 0; font-size:13px;">${escapeHtml(
+                                    ch.description
+                                )}</div>`
+                                : ""
+                            }
                             ${renderDuePill(
-                            ch.due_date || ch.charge_date || ch.dueDate || "",
-                            selectedSpace && selectedSpace.gracePeriodDays
-                                ? selectedSpace.gracePeriodDays
-                                : 0
-                        )}
+                                ch.due_date || ch.charge_date || ch.dueDate || "",
+                                selectedSpace && selectedSpace.gracePeriodDays
+                                    ? selectedSpace.gracePeriodDays
+                                    : 0
+                            )}
                             ${renderChargePaymentIndicator(ch)}
+                            ${feeHint}
                         </div>
-                        <span class="breakdown-amount">₱${formatCurrency(
-                            parseFloat(ch.amount) || 0
-                        )}</span>
+                        <span class="breakdown-amount" title="${titleTxt}">₱${formatCurrency(
+                                remaining
+                            )}</span>
                     </div>
-                `
+                `}
                 )
                 .join("");
         } else {
@@ -816,12 +903,12 @@ function loadPaymentBreakdown() {
         let totalPendingAmount = 0;
         if (hasFilter) {
             totalPendingAmount = displayedCharges.reduce(
-                (s, c) => s + (parseFloat(c.amount) || 0),
+                (s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0),
                 0
             );
         } else if (charges.length > 0) {
             totalPendingAmount = charges.reduce(
-                (s, c) => s + (parseFloat(c.amount) || 0),
+                (s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0),
                 0
             );
         } else {
@@ -1356,9 +1443,9 @@ async function submitPayment() {
             description: selectedCharges.length
                 ? `Payment for ${selectedCharges.length} charge${selectedCharges.length === 1 ? "" : "s"}: ${chargeSummary}`
                 : `Payment confirmation - ${new Date().toLocaleString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                  })}`,
+                    month: "long",
+                    year: "numeric",
+                })}`,
             amount: Number(amountValue.toFixed(2)),
             reference: result.payment_id || generateReference(),
             status: "pending",
@@ -1519,7 +1606,7 @@ function preparePaymentModal(defaultAmount) {
         : [];
     selectedChargeIds = new Set();
 
-    // Pre-fetch pending payments for these charges and refresh modal once loaded
+
     (async () => {
         const pendingMap = await fetchPendingPaymentsForCharges(paymentModalCharges);
         window.__pendingPaymentsMap = pendingMap;
@@ -1616,6 +1703,12 @@ function renderPaymentChargeList() {
         .map((charge, index) => {
             const chargeId = resolveChargeIdentifier(charge, index);
             const amount = parseFloat(charge.amount) || 0;
+            const lateFeeAmt = parseFloat(charge.late_fee_amount) || 0;
+            const baseAmt = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
+                ? Number(charge.original_amount) || 0
+                : (amount - lateFeeAmt);
+            const confirmedPaid = Number(charge.total_paid || 0) || 0;
+            const precomputedRemaining = (typeof charge.remaining_amount === 'number') ? Number(charge.remaining_amount) || 0 : Math.max(0, amount - confirmedPaid);
             const chargeType = charge.charge_type || charge.type || charge.title || "Charge";
             const description = charge.description ? escapeHtml(charge.description) : "";
             const dueDateRaw = charge.due_date || charge.charge_date || charge.dueDate || charge.created_at || "";
@@ -1631,18 +1724,19 @@ function renderPaymentChargeList() {
                 null;
             const displayChargeId = rawDisplayId ? String(rawDisplayId) : "Not provided";
 
-            // build pending payment indicator via server-fetched map (status=Pending)
+
             let paymentIndicator = "";
             const pendingAmt = getPendingAmountForCharge(charge);
             if (pendingAmt > 0) {
                 paymentIndicator = `<div class="charge-payment-status payment-pending"><i class="fas fa-hourglass-half"></i> Submitted ₱${formatCurrency(pendingAmt)} (Pending)</div>`;
             }
+            const remainingAfterPending = Math.max(0, precomputedRemaining - (pendingAmt || 0));
 
             return `
                 <label class="charge-option">
                     <input type="checkbox" class="charge-checkbox" data-charge-id="${escapeHtml(
-                        chargeId
-                    )}" ${selectedChargeIds.has(chargeId) ? "checked" : ""}>
+                chargeId
+            )}" ${selectedChargeIds.has(chargeId) ? "checked" : ""}>
                     <div class="charge-details">
                         <div class="charge-type">${escapeHtml(chargeType)}</div>
                         ${description ? `<div class="charge-description">${description}</div>` : ""}
@@ -1651,8 +1745,9 @@ function renderPaymentChargeList() {
                             <span>Charge ID: ${escapeHtml(displayChargeId)}</span>
                         </div>
                         ${paymentIndicator}
+                        ${lateFeeAmt > 0 ? `<div class="late-fee-hint" style="font-size:11px;color:#ef4444;margin-top:4px;"><i class=\"fas fa-info-circle\" title=\"Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)}\"></i> Late fee applied</div>` : ""}
                     </div>
-                    <div class="charge-amount">₱${formatCurrency(amount)}</div>
+                    <div class="charge-amount" title="${lateFeeAmt > 0 ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)} | Remaining: ₱${formatCurrency(remainingAfterPending)}` : `Remaining: ₱${formatCurrency(remainingAfterPending)} of ₱${formatCurrency(amount)}`}">₱${formatCurrency(remainingAfterPending)}</div>
                 </label>
             `;
         })
@@ -1697,7 +1792,7 @@ function updatePaymentSummary() {
         if (selectedCount === 0) {
             amountInput.value = "";
         }
-        // Cap the amount to the allowed maximum (charges minus pending)
+
         const allowedMax = totalSelected;
         if (allowedMax >= 0) {
             const current = parseFloat(amountInput.value || 0) || 0;
@@ -1714,7 +1809,7 @@ function calculateSelectedChargesTotal() {
     paymentModalCharges.forEach((charge, index) => {
         const chargeId = resolveChargeIdentifier(charge, index);
         if (selectedChargeIds.has(chargeId)) {
-            const raw = parseFloat(charge.amount) || 0;
+            const raw = (typeof charge.remaining_amount === 'number' ? Number(charge.remaining_amount) || 0 : (parseFloat(charge.amount) || 0) - (Number(charge.total_paid || 0) || 0));
             const pendingAmt = getPendingAmountForCharge(charge);
             const net = Math.max(0, raw - (pendingAmt || 0));
             total += net;
