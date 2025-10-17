@@ -160,9 +160,9 @@ function formatValue(value, dataType) {
     }
 }
 
-// Switch between tabs
+
 function switchTab(tabName) {
-    // Remove active class from all tabs
+    
     document
         .querySelectorAll(".tab-button")
         .forEach((btn) => btn.classList.remove("active"));
@@ -409,7 +409,7 @@ document.addEventListener("click", function (e) {
     }
 });
 
-// Close modals with Escape key
+
 document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
         closeModal();

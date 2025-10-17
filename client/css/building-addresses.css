@@ -1,3 +1,67 @@
+:root {
+  --primary-color: #6366f1;
+  --primary-light: #8b5cf6;
+  --primary-dark: #4f46e5;
+  --secondary-color: #06b6d4;
+  --accent-color: #f59e0b;
+  --success-color: #10b981;
+  --success-light: #34d399;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --border-color: rgba(226, 232, 240, 0.8);
+  --border-light: rgba(226, 232, 240, 0.4);
+  --background-white: #ffffff;
+  --background-gray: #f8fafc;
+  --background-light: #f1f5f9;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--primary-light)
+  );
+  --gradient-success: linear-gradient(
+    135deg,
+    var(--success-color),
+    var(--success-light)
+  );
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  font-size: 1rem; 
+  line-height: 1.4;
+}
+
+h1 {
+  font-size: 1.25rem; 
+}
+h2 {
+  font-size: 1.125rem; 
+}
+h3 {
+  font-size: 1rem; 
+}
+h4 {
+  font-size: 0.875rem; 
+}
+h5 {
+  font-size: 0.8125rem; 
+}
+h6 {
+  font-size: 0.75rem; 
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -5,56 +69,51 @@
 }
 
 body {
-  font-family: "Poppins", sans-serif;
-  background: #9dbebe;
+  font-family: Poppins, sans-serif;
+  background: var(--background-gray);
+  color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-        /* Main Content - Maximized layout */
-        .main-content {
-            flex: 1;
-            padding: 12px 16px; /* Reduced padding */
-            overflow-y: auto;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 60px 16px 16px 260px; /* Reduced margins */
-            width: calc(100vw - 260px); /* Maximized width */
-            min-height: calc(100vh - 60px); /* Maximized height */
-        }
+.main-content {
+  flex: 1;
+  padding: 12px 16px;
+  overflow-y: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 60px 16px 16px 260px;
+  width: calc(100vw - 260px);
+  min-height: calc(100vh - 60px);
+}
 
-        /* When sidebar is collapsed */
-        body:has(.sidebar.collapsed) .main-content,
-        .sidebar.collapsed ~ .main-content {
-            margin-left: 70px; /* Reduced collapsed margin */
-            width: calc(100vw - 70px);
-        }
-
+body:has(.sidebar.collapsed) .main-content,
+.sidebar.collapsed ~ .main-content {
+  margin-left: 70px;
+  width: calc(100vw - 70px);
+}
 
 .container {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 0 20px;
 }
 
-/* Main White Card Wrapper */
 .main-card-wrapper {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(15px);
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  width: calc(100% - 60px); /* Adjusted width calculation */
-  max-width: calc(100vw - 320px); /* Max width when sidebar is expanded */
-  margin: -20px auto 24px auto; /* Changed to auto margins for centering */
-  padding: 48px 40px;
+  width: calc(100% - 60px);
+  max-width: calc(100vw - 320px);
+  margin: 30px auto 24px auto;
+  padding: 20px 0px;
   position: relative;
   overflow: hidden;
 }
 
-/* When sidebar is collapsed */
 body:has(.sidebar.collapsed) .main-card-wrapper,
 .sidebar.collapsed ~ .main-content .main-card-wrapper {
-  max-width: calc(100vw - 130px); /* Adjusted for collapsed sidebar */
+  max-width: calc(100vw - 130px);
 }
 
 .main-card-wrapper::before {
@@ -72,7 +131,6 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   pointer-events: none;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1024px) {
   .main-card-wrapper {
     margin: 82px auto 24px auto;
@@ -108,7 +166,8 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   color: #1e293b;
   text-decoration: none;
   font-weight: 600;
-  margin: 30px 0;
+  font-size: 0.9rem;
+  margin: 10px 0;
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.95);
   padding: 12px 20px;
@@ -127,18 +186,18 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
 
 .header {
   text-align: center;
-  margin-bottom: 50px;
-}
-
-.title {
-  font-size: clamp(32px, 5vw, 48px);
-  font-weight: 700;
-  color: #2c3e50;
   margin-bottom: 20px;
 }
 
+.title {
+  font-size: clamp(32px, 5vw, 30px);
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
 .description {
-  font-size: clamp(16px, 2.5vw, 18px);
+  font-size: clamp(16px, 2.5vw, 15px);
   color: #5a6c7d;
   line-height: 1.6;
   max-width: 800px;
@@ -187,7 +246,7 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   background: transparent;
   color: #64748b;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -272,7 +331,7 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
 }
 
 .card-title {
-  font-size: 28px;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #1e293b;
   display: flex;
@@ -307,15 +366,15 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   margin-bottom: 10px;
   font-weight: 600;
   color: #374151;
-  font-size: 15px;
+  font-size: 1rem;
 }
 
 .form-input {
   width: 100%;
-  padding: 16px 20px;
+  padding: 10px 18px;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 1rem;
   font-family: "Poppins", sans-serif;
   transition: all 0.3s ease;
   background: #f8fafc;
@@ -450,7 +509,7 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 0.9rem;
   font-family: "Poppins", sans-serif;
   position: relative;
   overflow: hidden;
@@ -827,15 +886,14 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   display: flex;
   justify-content: between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .building-title {
-  font-size: 20px;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #1e293b;
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
   gap: 10px;

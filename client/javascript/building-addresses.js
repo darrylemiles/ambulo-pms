@@ -35,7 +35,7 @@ async function fetchAddresses() {
 
     contactData.buildings = addresses.map((addr) => ({
       id: `building-${addr.address_id}`,
-      address_id: addr.address_id, 
+      address_id: addr.address_id,
       building_name: addr.building_name || "",
       street: addr.street || "",
       barangay: addr.barangay || "",
@@ -57,8 +57,6 @@ async function fetchAddresses() {
   }
 }
 document.addEventListener("DOMContentLoaded", function () {
-  setupAutoSave();
-  setupKeyboardShortcuts();
   fetchAddresses();
 
   document
@@ -97,7 +95,6 @@ function renderBuildings() {
 
     let actionButtons = "";
     if (building.isNew) {
-      // Only show Save button for new card
       actionButtons = `
         <button class="btn btn-success btn-small" style="margin-right: 8px;" onclick="saveBuilding('${building.id}')">
           <i class="fas fa-save"></i> Save
@@ -121,46 +118,39 @@ function renderBuildings() {
     }
 
     const buildingHTML = `
-      <div class="building-card ${collapsed}" id="${cardId}" data-building-id="${
-      building.id
-    }" style="margin-bottom: 18px;">
+      <div class="building-card ${collapsed}" id="${cardId}" data-building-id="${building.id
+      }" style="margin-bottom: 18px;">
         <div class="building-header" style="display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center;">
-            <button class="btn btn-danger btn-small" style="margin-right: 12px;" onclick="removeBuilding('${
-              building.id
-            }')">
+            <button class="btn btn-danger btn-small" style="margin-right: 12px;" onclick="removeBuilding('${building.id
+      }')">
               <i class="fas fa-trash"></i>
             </button>
             <div class="building-title" style="display: flex; align-items: center;">
               <i class="fas fa-building" style="color: #3b82f6; margin-right: 8px;"></i>
               <span>${building.building_name || "New Address"}</span>
-              <span class="status-badge ${
-                building.status
-              }" style="margin-left: 12px;">
-                ${
-                  building.status.charAt(0).toUpperCase() +
-                  building.status.slice(1)
-                }
+              <span class="status-badge ${building.status
+      }" style="margin-left: 12px;">
+                ${building.status.charAt(0).toUpperCase() +
+      building.status.slice(1)
+      }
               </span>
             </div>
           </div>
           <div>
-            <button class="btn btn-light btn-small" onclick="toggleBuildingDetails('${
-              building.id
-            }')">
+            <button class="btn btn-light btn-small" onclick="toggleBuildingDetails('${building.id
+      }')">
               <i class="fas ${toggleIcon}"></i>
             </button>
           </div>
         </div>
-        <div class="building-details" id="${detailsId}" style="padding-top: 10px; ${
-      building.collapsed ? "display:none;" : ""
-    }">
+        <div class="building-details" id="${detailsId}" style="padding-top: 10px; ${building.collapsed ? "display:none;" : ""
+      }">
           <div class="form-row" style="display: flex; gap: 2%;">
             <div class="form-group" style="flex: 2;">
               <label class="form-label">Building Name</label>
-              <input type="text" class="form-input" value="${
-                building.building_name
-              }" 
+              <input type="text" class="form-input" value="${building.building_name
+      }" 
                 ${isEditable}
                 maxlength="100">
             </div>
@@ -174,9 +164,8 @@ function renderBuildings() {
           <div class="form-row" style="display: flex; gap: 2%;">
             <div class="form-group" style="flex: 1;">
               <label class="form-label">Barangay</label>
-              <input type="text" class="form-input" value="${
-                building.barangay
-              }" 
+              <input type="text" class="form-input" value="${building.barangay
+      }" 
                 ${isEditable}
                 maxlength="100">
             </div>
@@ -188,9 +177,8 @@ function renderBuildings() {
             </div>
             <div class="form-group" style="flex: 1;">
               <label class="form-label">Province</label>
-              <input type="text" class="form-input" value="${
-                building.province
-              }" 
+              <input type="text" class="form-input" value="${building.province
+      }" 
                 ${isEditable}
                 maxlength="100">
             </div>
@@ -198,9 +186,8 @@ function renderBuildings() {
           <div class="form-row" style="display: flex; gap: 2%;">
             <div class="form-group" style="flex: 1;">
               <label class="form-label">Postal Code</label>
-              <input type="text" class="form-input" value="${
-                building.postal_code
-              }" 
+              <input type="text" class="form-input" value="${building.postal_code
+      }" 
                 ${isEditable}
                 maxlength="20" pattern="^[0-9\-]+$">
             </div>
@@ -214,17 +201,15 @@ function renderBuildings() {
           <div class="form-row" style="display: flex; gap: 2%;">
             <div class="form-group" style="flex: 1;">
               <label class="form-label">Latitude</label>
-              <input type="number" class="form-input" value="${
-                building.latitude
-              }" 
+              <input type="number" class="form-input" value="${building.latitude
+      }" 
                 ${isEditable}
                 step="0.000001" min="-90" max="90">
             </div>
             <div class="form-group" style="flex: 1;">
               <label class="form-label">Longitude</label>
-              <input type="number" class="form-input" value="${
-                building.longitude
-              }" 
+              <input type="number" class="form-input" value="${building.longitude
+      }" 
                 ${isEditable}
                 step="0.000001" min="-180" max="180">
             </div>
@@ -320,12 +305,6 @@ async function saveBuilding(buildingId) {
       delete building.isNew;
       showNotification("Address created!", "success");
     } else {
-      console.log(
-        "PATCH address_id:",
-        building.address_id,
-        typeof building.address_id
-      );
-
       if (!building.address_id || isNaN(Number(building.address_id))) {
         showNotification("Invalid address_id. Cannot update.", "error");
         return;
@@ -419,8 +398,6 @@ async function removeBuilding(buildingId) {
         );
         showNotification("Unsaved address removed.", "success");
       } else {
-        console.log("DELETE address_id:", building.address_id, typeof building.address_id);
-
         if (!building.address_id || isNaN(Number(building.address_id))) {
           showNotification("Invalid address_id. Cannot delete.", "error");
           return;
@@ -468,22 +445,18 @@ function previewBuildings() {
                     <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
                         <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 15px;">
                             <div>
-                                <h4 style="color: #1e293b; margin: 0 0 5px 0;">${
-                                  building.name
-                                }</h4>
-                                <span style="background: #eff6ff; color: #3b82f6; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 600;">${
-                                  building.type
-                                }</span>
+                                <h4 style="color: #1e293b; margin: 0 0 5px 0;">${building.name
+      }</h4>
+                                <span style="background: #eff6ff; color: #3b82f6; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 600;">${building.type
+      }</span>
                             </div>
-                            <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; color: white; background: ${
-                              building.status === "active"
-                                ? "#10b981"
-                                : "#6b7280"
-                            };">
-                                ${
-                                  building.status.charAt(0).toUpperCase() +
-                                  building.status.slice(1)
-                                }
+                            <span style="padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; color: white; background: ${building.status === "active"
+        ? "#10b981"
+        : "#6b7280"
+      };">
+                                ${building.status.charAt(0).toUpperCase() +
+      building.status.slice(1)
+      }
                             </span>
                         </div>
                         <div style="margin-bottom: 15px;">
@@ -492,14 +465,13 @@ function previewBuildings() {
                                 ${building.address}
                             </div>
                         </div>
-                        ${
-                          building.contacts.length > 0
-                            ? `
+                        ${building.contacts.length > 0
+        ? `
                             <div>
                                 <h5 style="color: #374151; margin: 0 0 10px 0; font-size: 14px;">Contact Persons:</h5>
                                 ${building.contacts
-                                  .map(
-                                    (contact) => `
+          .map(
+            (contact) => `
                                     <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
                                         <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">${contact.name}</div>
                                         <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">${contact.position}</div>
@@ -509,136 +481,18 @@ function previewBuildings() {
                                         </div>
                                     </div>
                                 `
-                                  )
-                                  .join("")}
+          )
+          .join("")}
                             </div>
                         `
-                            : '<p style="color: #9ca3af; font-style: italic; font-size: 14px;">No contact persons added</p>'
-                        }
+        : '<p style="color: #9ca3af; font-style: italic; font-size: 14px;">No contact persons added</p>'
+      }
                     </div>
                 `;
   });
 
   previewHTML += "</div>";
   showModal("Building Addresses & Contacts Preview", previewHTML);
-}
-
-function setupDragAndDrop() {
-  const logoPreview = document.getElementById("logo-preview");
-
-  ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-    logoPreview.addEventListener(eventName, preventDefaults, false);
-  });
-
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  ["dragenter", "dragover"].forEach((eventName) => {
-    logoPreview.addEventListener(
-      eventName,
-      () => logoPreview.classList.add("drag-over"),
-      false
-    );
-  });
-
-  ["dragleave", "drop"].forEach((eventName) => {
-    logoPreview.addEventListener(
-      eventName,
-      () => logoPreview.classList.remove("drag-over"),
-      false
-    );
-  });
-
-  logoPreview.addEventListener("drop", handleDrop, false);
-
-  function handleDrop(e) {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-
-    if (files.length > 0) {
-      const file = files[0];
-      const fakeEvent = { target: { files: [file] } };
-      handleLogoUpload(fakeEvent);
-    }
-  }
-}
-
-// // Service toggle functionality
-// function toggleService(toggleElement, serviceId) {
-//   toggleElement.classList.toggle("active");
-//   contactData.services[serviceId].active =
-//     toggleElement.classList.contains("active");
-
-//   const status = toggleElement.classList.contains("active")
-//     ? "enabled"
-//     : "disabled";
-//   showNotification(`Service ${status} successfully!`, "success");
-//   markUnsavedChanges();
-// }
-
-function saveAll() {
-  if (!validateContactForm()) return;
-
-  saveBuildingAddresses();
-
-  setTimeout(() => {
-    showNotification("All changes saved successfully!", "success");
-  }, 500);
-}
-
-function showFieldError(fieldId, errorId, message) {
-  const field = document.getElementById(fieldId);
-  const errorElement = document.getElementById(errorId);
-
-  field.classList.add("error");
-  errorElement.textContent = message;
-}
-
-function clearFieldError(fieldId, errorId) {
-  const field = document.getElementById(fieldId);
-  const errorElement = document.getElementById(errorId);
-
-  field.classList.remove("error");
-  errorElement.textContent = "";
-}
-
-function testContactForm() {
-  showNotification("Sending test email...", "info");
-
-  setTimeout(() => {
-    const testData = {
-      name: "Test User",
-      email: "test@example.com",
-      message:
-        "This is a test message to verify the contact form functionality.",
-      timestamp: new Date().toLocaleString(),
-    };
-
-    console.log("Test email data:", testData);
-    showNotification("Test email sent successfully!", "success");
-  }, 2000);
-}
-
-function exportData() {
-  const exportData = {
-    ...contactData,
-    exportDate: new Date().toISOString(),
-    version: "1.0",
-  };
-
-  const dataStr = JSON.stringify(exportData, null, 2);
-  const dataBlob = new Blob([dataStr], { type: "application/json" });
-
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(dataBlob);
-  link.download = `ambulo-properties-contact-data-${
-    new Date().toISOString().split("T")[0]
-  }.json`;
-  link.click();
-
-  showNotification("Data exported successfully!", "success");
 }
 
 function showModal(title, content) {
@@ -682,78 +536,7 @@ function showNotification(message, type = "info") {
   }, 4000);
 }
 
-function setupAutoSave() {
-  const inputs = document.querySelectorAll("input, textarea, select");
-  inputs.forEach((input) => {
-    input.addEventListener("input", function () {
-      markUnsavedChanges();
-      clearTimeout(autoSaveTimeout);
-      autoSaveTimeout = setTimeout(() => {
-        autoSave();
-      }, 2000);
-    });
-  });
-}
-
-function autoSave() {
-  console.log("Auto-saving content...");
-
-  const indicator = document.getElementById("auto-save-indicator");
-  indicator.classList.add("show");
-
-  setTimeout(() => {
-    indicator.classList.remove("show");
-  }, 2000);
-
-  clearUnsavedChanges();
-}
-
-function markUnsavedChanges() {
-  hasUnsavedChanges = true;
-}
-
-function clearUnsavedChanges() {
-  hasUnsavedChanges = false;
-}
-
-function goBack() {
-  if (hasUnsavedChanges) {
-    if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-      showNotification("Returning to dashboard...", "info");
-      setTimeout(() => {
-        window.history.back();
-      }, 1000);
-    }
-  } else {
-    showNotification("Returning to dashboard...", "info");
-    setTimeout(() => {
-      window.history.back();
-    }, 1000);
-  }
-}
-
-function setupKeyboardShortcuts() {
-  document.addEventListener("keydown", function (e) {
-    if (e.ctrlKey && e.key === "s") {
-      e.preventDefault();
-      saveAll();
-    }
-
-    if (e.key === "Escape") {
-      closeModal();
-    }
-
-    if (e.ctrlKey && e.key >= "1" && e.key <= "2") {
-      e.preventDefault();
-      const tabs = ["contact", "buildings"];
-      switchTab(tabs[parseInt(e.key) - 1]);
-    }
-  });
-}
-
 document.addEventListener("DOMContentLoaded", function () {
-  setupAutoSave();
-  setupKeyboardShortcuts();
   renderBuildings();
 
   document
@@ -774,13 +557,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
   showNotification("Contact Management System loaded successfully!", "success");
-});
-
-window.addEventListener("beforeunload", function (e) {
-  if (hasUnsavedChanges) {
-    e.preventDefault();
-    e.returnValue = "";
-  }
 });
 
 function copyToClipboard(text) {
@@ -823,42 +599,36 @@ function populateAddressForm(address) {
 function validateBuildingFields(building) {
   const errors = {};
 
-  // Building Name: required, max 100 chars
   if (!building.building_name || building.building_name.trim().length === 0) {
     errors.building_name = "Building name is required.";
   } else if (building.building_name.length > 100) {
     errors.building_name = "Max 100 characters.";
   }
 
-  // Street: required, max 255 chars
   if (!building.street || building.street.trim().length === 0) {
     errors.street = "Street is required.";
   } else if (building.street.length > 255) {
     errors.street = "Max 255 characters.";
   }
 
-  // Barangay: required, max 100 chars
   if (!building.barangay || building.barangay.trim().length === 0) {
     errors.barangay = "Barangay is required.";
   } else if (building.barangay.length > 100) {
     errors.barangay = "Max 100 characters.";
   }
 
-  // City: required, max 100 chars
   if (!building.city || building.city.trim().length === 0) {
     errors.city = "City is required.";
   } else if (building.city.length > 100) {
     errors.city = "Max 100 characters.";
   }
 
-  // Province: required, max 100 chars
   if (!building.province || building.province.trim().length === 0) {
     errors.province = "Province is required.";
   } else if (building.province.length > 100) {
     errors.province = "Max 100 characters.";
   }
 
-  // Postal Code: required, max 20 chars, numbers and dash only
   if (!building.postal_code || building.postal_code.trim().length === 0) {
     errors.postal_code = "Postal code is required.";
   } else if (building.postal_code.length > 20) {
@@ -904,7 +674,6 @@ window.removeBuilding = removeBuilding;
 window.editBuilding = editBuilding;
 window.cancelEditBuilding = cancelEditBuilding;
 window.saveBuilding = saveBuilding;
-window.saveAll = saveAll;
 window.previewBuildings = previewBuildings;
 window.goBack = goBack;
 window.showAddressModal = showAddressModal;

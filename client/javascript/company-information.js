@@ -3,7 +3,7 @@ import fetchAboutUsDetails from "../api/loadAboutUs.js";
 
 let companyId = null;
 
-// API Configuration
+
 const API_BASE_URL = "/api/v1/company-details";
 const ABOUT_API_URL = "/api/v1/about-us";
 
@@ -85,7 +85,6 @@ document.addEventListener("DOMContentLoaded", function () {
   setupLogoHandling();
   setupAltLogoHandling();
   setupRealtimeValidation();
-  console.log("CMS initialized successfully");
 });
 
 function setupEventListeners() {
@@ -163,7 +162,7 @@ function setupAltLogoHandling() {
   const altLogoInput = document.getElementById("alt-logo-input");
   const altLogoPreview = document.getElementById("alt-logo-preview");
 
-  // File input change event
+  
   altLogoInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
@@ -622,7 +621,7 @@ function validateCompanyInfoForm() {
     .getElementById("alt-logo-preview")
     .querySelector("img");
 
-  // Address fields
+  
   const streetAddress = document
     .getElementById("company-street-address")
     .value.trim();
@@ -682,7 +681,7 @@ function setupRealtimeValidation() {
         warningSpan.style.display = "none";
       }
     });
-    // Initial validation
+    
     if (!input.value.trim()) {
       warningSpan.textContent = field.warning;
       warningSpan.style.display = "inline";
@@ -1027,7 +1026,7 @@ function generateAboutImageUploads() {
   }
 }
 
-// Remove image handler
+
 window.removeAboutImage = function (i) {
   const fileInput = document.getElementById(`aboutImage${i}`);
   const img = document.getElementById(`aboutImage${i}Current`);
@@ -1124,18 +1123,6 @@ function previewWebsite() {
   showPreview("Complete Website Preview", fullPreviewContent);
 }
 
-// function goBack() {
-//   if (hasUnsavedChanges) {
-//     if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-//       showNotification("Returning to dashboard...", "info");
-//       // In a real app, this would navigate back
-//     }
-//   } else {
-//     showNotification("Returning to dashboard...", "info");
-//     // In a real app, this would navigate back
-//   }
-// }
-
 function showPreview(title, content) {
   document.querySelector("#preview-modal .modal-title").textContent = title;
   document.getElementById("preview-content").innerHTML = content;
@@ -1183,21 +1170,21 @@ function showNotification(message, type = "info") {
   }, 4000);
 }
 
-// Keyboard shortcuts
+
 document.addEventListener("keydown", function (e) {
-  // Ctrl+S or Cmd+S to save
+  
   if ((e.ctrlKey || e.metaKey) && e.key === "s") {
     e.preventDefault();
     saveAllContent();
   }
 
-  // Ctrl+P or Cmd+P to preview
+  
   if ((e.ctrlKey || e.metaKey) && e.key === "p") {
     e.preventDefault();
     previewWebsite();
   }
 
-  // Escape to close modals
+  
   if (e.key === "Escape") {
     closeServiceModal();
     closeAdvantageModal();
