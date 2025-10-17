@@ -141,10 +141,24 @@ async function fetchCharges() {
                 id: row.charge_id || row.id,
                 type: row.charge_type || row.type,
                 description: row.description || "",
+                
                 amount:
                     typeof row.amount === "number"
                         ? row.amount
                         : parseFloat(row.amount) || 0,
+                
+                original_amount:
+                    typeof row.original_amount === "number"
+                        ? row.original_amount
+                        : (row.original_amount != null
+                            ? parseFloat(row.original_amount) || 0
+                            : null),
+                late_fee_amount:
+                    typeof row.late_fee_amount === "number"
+                        ? row.late_fee_amount
+                        : (row.late_fee_amount != null
+                            ? parseFloat(row.late_fee_amount) || 0
+                            : 0),
 
                 total_paid:
                     typeof row.total_paid === "number"
@@ -180,6 +194,20 @@ async function fetchCharges() {
 
             if (lease) {
                 lease.charges = lease.charges || [];
+                
+                if (
+                    (lease.late_fee_percentage === undefined || lease.late_fee_percentage === null) &&
+                    (row.lease_late_fee_percentage !== undefined || row.late_fee_percentage !== undefined || row.lateFeePercentage !== undefined)
+                ) {
+                    lease.late_fee_percentage =
+                        (typeof row.lease_late_fee_percentage === "number" && row.lease_late_fee_percentage >= 0)
+                            ? row.lease_late_fee_percentage
+                            : (typeof row.late_fee_percentage === "number" && row.late_fee_percentage >= 0)
+                                ? row.late_fee_percentage
+                                : (typeof row.lateFeePercentage === "number" && row.lateFeePercentage >= 0)
+                                    ? row.lateFeePercentage
+                                    : 0;
+                }
                 const exists = lease.charges.some((c) => c.id === mappedCharge.id);
                 if (!exists) lease.charges.push(mappedCharge);
             } else {
@@ -199,6 +227,15 @@ async function fetchCharges() {
                             row.lease_grace_period_days || row.grace_period_days || row.gracePeriodDays || 0,
                             10
                         ) || 0,
+                    
+                    late_fee_percentage:
+                        (typeof row.lease_late_fee_percentage === "number" && row.lease_late_fee_percentage >= 0)
+                            ? row.lease_late_fee_percentage
+                            : (typeof row.late_fee_percentage === "number" && row.late_fee_percentage >= 0)
+                                ? row.late_fee_percentage
+                                : (typeof row.lateFeePercentage === "number" && row.lateFeePercentage >= 0)
+                                    ? row.lateFeePercentage
+                                    : 0,
                 };
                 leasesData.push(placeholderLease);
             }
@@ -357,6 +394,44 @@ function getDaysUntilDue(dueDate) {
     return diffDays;
 }
 
+
+
+
+
+
+
+
+function computeEffectiveAmountWithLateFee(charge) {
+    if (!charge) return 0;
+    const base = Number(charge.amount) || 0;
+    const paid = (typeof charge.total_paid !== 'undefined' && charge.total_paid !== null)
+        ? Number(charge.total_paid) || 0
+        : getPaidAmountForCharge(charge.id);
+    
+    if (paid >= base) return base;
+
+    const grace = parseInt(charge.gracePeriodDays || charge.grace_period_days || 0, 10) || 0;
+    const due = charge.dueDate ? new Date(charge.dueDate) : null;
+    if (!due || isNaN(due.getTime())) return base;
+
+    const today = new Date();
+    const daysOver = Math.floor((today - due) / (1000 * 60 * 60 * 24));
+    if (daysOver <= grace) return base;
+
+    
+    let leaseData = null;
+    if (charge.leaseId) {
+        leaseData = leasesData.find((l) => String(l.lease_id || l.id) === String(charge.leaseId));
+    }
+    const pct = leaseData && typeof leaseData.late_fee_percentage === 'number'
+        ? leaseData.late_fee_percentage
+        : 0;
+    if (!pct || pct <= 0) return base;
+
+    const fee = base * (pct / 100);
+    return base + fee;
+}
+
 function getChargeStatus(charge) {
     if (charge.status === "paid") return "paid";
     if (charge.status === "overdue") return "overdue";
@@ -510,6 +585,7 @@ function applyCurrentSort() {
                 bv = (b.description || "").toLowerCase();
                 break;
             case "amount":
+                
                 av = Number(a.amount) || 0;
                 bv = Number(b.amount) || 0;
                 break;
@@ -2270,9 +2346,16 @@ function viewChargeDetails(chargeId) {
     );
     document.getElementById("viewChargeDescription").textContent =
         charge.description;
-    document.getElementById("viewChargeAmount").textContent = formatCurrency(
-        charge.amount
-    );
+    
+    const totalAmt = Number(charge.amount) || 0;
+    const baseAmt = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
+        ? Number(charge.original_amount) || 0
+        : totalAmt;
+    const lateFeeAmt = (typeof charge.late_fee_amount === 'number') ? Number(charge.late_fee_amount) || 0 : 0;
+    const amountEl = document.getElementById("viewChargeAmount");
+    if (amountEl) {
+        amountEl.innerHTML = `${formatCurrency(totalAmt)}${lateFeeAmt>0 ? `<div style="font-size:12px; color:#64748b; margin-top:4px;">Base: ${formatCurrency(baseAmt)} + Late fee: ${formatCurrency(lateFeeAmt)}</div>`: ""}`;
+    }
     document.getElementById("viewChargeDueDate").textContent = formatDate(
         charge.dueDate
     );
@@ -2416,7 +2499,12 @@ function renderChargesTable() {
             const paidAmount = (typeof charge.total_paid !== 'undefined' && charge.total_paid !== null)
                 ? Number(charge.total_paid) || 0
                 : getPaidAmountForCharge(charge.id);
+            
             const totalAmount = Number(charge.amount) || 0;
+            const baseAmount = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
+                ? Number(charge.original_amount) || 0
+                : totalAmount; 
+            const lateFeeAmount = (typeof charge.late_fee_amount === 'number') ? Number(charge.late_fee_amount) || 0 : 0;
             const remainingAmount = Math.max(totalAmount - (Number(paidAmount) || 0), 0);
             const paymentProgress =
                 totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
@@ -2462,7 +2550,12 @@ function renderChargesTable() {
                     : ""
                 }
                 </td>
-                <td class="td-total" title="Original amount: ${formatCurrency(totalAmount)}">${formatCurrency(remainingAmount)}</td>
+                <td class="td-total" title="${formatCurrency(baseAmount)}${lateFeeAmount>0?` + ${formatCurrency(lateFeeAmount)} late fee = ${formatCurrency(totalAmount)}`:""}">
+                    ${formatCurrency(remainingAmount)}
+                    ${lateFeeAmount>0 ? `<div class="late-fee-hint" style="font-size:0.7rem; color:#ef4444; margin-top:2px; text-align:right;">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i> Late fee applied
+                    </div>`: ""}
+                </td>
                 <td class="td-paid">
                     <div style="display: flex; flex-direction: column; align-items: flex-end;">
                         <span style="font-weight: 700;">${formatCurrency(paidAmount)}</span>
@@ -2532,6 +2625,10 @@ function renderChargesTable() {
                     ? Number(charge.total_paid) || 0
                     : getPaidAmountForCharge(charge.id);
                 const totalAmount = Number(charge.amount) || 0;
+                const baseAmount = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
+                    ? Number(charge.original_amount) || 0
+                    : totalAmount;
+                const lateFeeAmount = (typeof charge.late_fee_amount === 'number') ? Number(charge.late_fee_amount) || 0 : 0;
                 const remainingAmount = Math.max(totalAmount - (Number(paidAmount) || 0), 0);
                 const paymentProgress =
                     totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
@@ -2567,7 +2664,12 @@ function renderChargesTable() {
                     )}</div>
                     </div>
                     
-                    <div class="card-amount charge" title="Original amount: ${formatCurrency(totalAmount)}">${formatCurrency(remainingAmount)}</div>
+                    <div class="card-amount charge" title="${formatCurrency(baseAmount)}${lateFeeAmount>0?` + ${formatCurrency(lateFeeAmount)} late fee = ${formatCurrency(totalAmount)}`:""}">
+                        ${formatCurrency(remainingAmount)}
+                        ${lateFeeAmount>0 ? `<div class="late-fee-hint" style="font-size:11px; color:#ef4444; margin-top:4px;">
+                            <i class=\"fas fa-info-circle\" aria-hidden=\"true\"></i> Late fee applied
+                        </div>`: ""}
+                    </div>
                     
                     <div class="card-details">
                         <div class="card-detail-row">
