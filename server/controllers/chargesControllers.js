@@ -51,7 +51,7 @@ const getChargeByUserId = expressAsync(async (req, res) => {
 
 const getChargeByLeaseId = expressAsync(async (req, res) => {
     try {
-        const result = await chargesServices.getChargeByLeaseId(req.params.leaseId);
+        const result = await chargesServices.getChargeByLeaseId(req.params.leaseId, req.query);
         res.json(result);
     } catch (error) {
         console.error("Error fetching lease charges:", error);

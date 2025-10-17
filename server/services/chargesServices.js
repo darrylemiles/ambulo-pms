@@ -138,31 +138,39 @@ const getAllCharges = async (queryParams = {}) => {
             values.push(dueTo);
         }
 
+        
+        const paidExpr = `IFNULL(c.total_paid, IFNULL(pay_sum.total_paid,0))`;
+        const effAmountExpr = `(
+            c.amount + CASE
+                WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                    THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                ELSE 0
+            END
+        )`;
+
         if (status) {
             const s = String(status).toUpperCase();
-
-            const paidExpr = `IFNULL(c.total_paid, IFNULL(pay_sum.total_paid,0))`;
             if (s === "WAIVED") {
                 where.push(`c.status = 'Waived'`);
             } else if (s === "PAID") {
-                where.push(`${paidExpr} >= c.amount`);
+                where.push(`${paidExpr} >= ${effAmountExpr}`);
             } else if (s === "PARTIALLY_PAID" || s === "PARTIAL") {
-                where.push(`${paidExpr} > 0 AND ${paidExpr} < c.amount`);
+                where.push(`${paidExpr} > 0 AND ${paidExpr} < ${effAmountExpr}`);
             } else if (s === "UNPAID") {
                 where.push(
                     `${paidExpr} = 0 AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else if (s === "OVERDUE") {
                 where.push(
-                    `DATE(c.due_date) < CURDATE() AND ${paidExpr} < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                    `DATE(c.due_date) < CURDATE() AND ${paidExpr} < ${effAmountExpr} AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else if (s === "DUE-SOON" || s === "DUE_SOON") {
                 where.push(
-                    `DATE(c.due_date) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND ${paidExpr} < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                    `DATE(c.due_date) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND ${paidExpr} < ${effAmountExpr} AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else if (s === "PENDING") {
                 where.push(
-                    `DATE(c.due_date) > DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND ${paidExpr} < c.amount AND (c.status IS NULL OR c.status != 'Waived')`
+                    `DATE(c.due_date) > DATE_ADD(CURDATE(), INTERVAL 3 DAY) AND ${paidExpr} < ${effAmountExpr} AND (c.status IS NULL OR c.status != 'Waived')`
                 );
             } else {
                 where.push(`LOWER(c.status) = ?`);
@@ -176,13 +184,18 @@ const getAllCharges = async (queryParams = {}) => {
         SELECT
             c.*, 
             l.lease_id,
+            l.grace_period_days,
+            l.late_fee_percentage,
             CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
             p.property_name,
             IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) AS total_paid,
+            ${effAmountExpr} AS amount,
+            (${effAmountExpr} - c.amount) AS late_fee_amount,
+            c.amount AS original_amount,
             CASE
                 WHEN c.status = 'Waived' THEN 'WAIVED'
-                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) >= c.amount THEN 'PAID'
-                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) > 0 THEN 'PARTIALLY_PAID'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) >= ${effAmountExpr} THEN 'PAID'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) > 0 THEN 'PARTIALLY-PAID'
                 ELSE 'UNPAID'
             END AS canonical_status
         FROM charges c
@@ -305,9 +318,53 @@ const getChargeById = async (id) => {
 const getChargeByUserId = async (userId) => {
     try {
         const query = `
-        SELECT c.* FROM charges c
+        SELECT
+            c.*,
+            l.lease_id,
+            l.grace_period_days,
+            l.late_fee_percentage,
+            CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
+            p.property_name,
+            IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) AS total_paid,
+            (
+                c.amount + CASE
+                    WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                        THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                    ELSE 0
+                END
+            ) AS amount,
+            (
+                (c.amount + CASE
+                    WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                        THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                    ELSE 0
+                END) - c.amount
+            ) AS late_fee_amount,
+            c.amount AS original_amount,
+            CASE
+                WHEN c.status = 'Waived' THEN 'WAIVED'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) >= (
+                    c.amount + CASE
+                        WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                            THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                        ELSE 0
+                    END
+                ) THEN 'PAID'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) > 0 THEN 'PARTIALLY-PAID'
+                ELSE 'UNPAID'
+            END AS canonical_status
+        FROM charges c
+        LEFT JOIN (
+            SELECT charge_id, IFNULL(SUM(amount), 0) AS total_paid
+            FROM payments
+            WHERE status = 'Confirmed' OR status = 'Completed'
+            GROUP BY charge_id
+        ) pay_sum ON pay_sum.charge_id = c.charge_id
         JOIN leases l ON c.lease_id = l.lease_id
+        JOIN users u ON l.user_id = u.user_id
+        LEFT JOIN properties p ON l.property_id = p.property_id
         WHERE l.user_id = ?
+        ORDER BY c.charge_date DESC, c.due_date DESC
         `;
 
         const [rows] = await pool.query(query, [userId]);
@@ -318,12 +375,82 @@ const getChargeByUserId = async (userId) => {
     }
 };
 
-const getChargeByLeaseId = async (leaseId) => {
+const getChargeByLeaseId = async (leaseId, queryParams = {}) => {
     try {
-        const [rows] = await pool.query(
-            "SELECT * FROM charges WHERE lease_id = ?",
-            [leaseId]
-        );
+        const where = [];
+        const values = [];
+
+        const dueDate = queryParams.due_date || null;
+        const dueFrom = queryParams.due_date_from || null;
+        const dueTo = queryParams.due_date_to || null;
+
+        if (dueDate) {
+            where.push(`DATE(c.due_date) = ?`);
+            values.push(dueDate);
+        } else if (dueFrom && dueTo) {
+            where.push(`DATE(c.due_date) BETWEEN ? AND ?`);
+            values.push(dueFrom, dueTo);
+        } else if (dueFrom) {
+            where.push(`DATE(c.due_date) >= ?`);
+            values.push(dueFrom);
+        } else if (dueTo) {
+            where.push(`DATE(c.due_date) <= ?`);
+            values.push(dueTo);
+        }
+
+        const extraWhere = where.length ? ` AND ${where.join(" AND ")}` : "";
+
+        const query = `
+        SELECT
+            c.*,
+            l.lease_id,
+            l.grace_period_days,
+            l.late_fee_percentage,
+            CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
+            p.property_name,
+            IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) AS total_paid,
+            (
+                c.amount + CASE
+                    WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                        THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                    ELSE 0
+                END
+            ) AS amount,
+            (
+                (c.amount + CASE
+                    WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                        THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                    ELSE 0
+                END) - c.amount
+            ) AS late_fee_amount,
+            c.amount AS original_amount,
+            CASE
+                WHEN c.status = 'Waived' THEN 'WAIVED'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) >= (
+                    c.amount + CASE
+                        WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                            THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                        ELSE 0
+                    END
+                ) THEN 'PAID'
+                WHEN IFNULL(c.total_paid, IFNULL(pay_sum.total_paid, 0)) > 0 THEN 'PARTIALLY-PAID'
+                ELSE 'UNPAID'
+            END AS canonical_status
+        FROM charges c
+        LEFT JOIN (
+            SELECT charge_id, IFNULL(SUM(amount), 0) AS total_paid
+            FROM payments
+            WHERE status = 'Confirmed' OR status = 'Completed'
+            GROUP BY charge_id
+        ) pay_sum ON pay_sum.charge_id = c.charge_id
+        JOIN leases l ON c.lease_id = l.lease_id
+        JOIN users u ON l.user_id = u.user_id
+        LEFT JOIN properties p ON l.property_id = p.property_id
+        WHERE l.lease_id = ?${extraWhere}
+        ORDER BY c.charge_date DESC, c.due_date DESC
+        `;
+
+        const [rows] = await pool.query(query, [leaseId, ...values]);
         return rows;
     } catch (error) {
         console.error(`Error fetching charges for lease id ${leaseId}:`, error);
