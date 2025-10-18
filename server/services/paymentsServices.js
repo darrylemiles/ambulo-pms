@@ -600,6 +600,29 @@ export default {
     updatePaymentById,
     getPaymentById,
     deletePaymentById,
+    async getPaymentsStats() {
+        try {
+            const [countRows] = await pool.execute(`SELECT COUNT(*) AS cnt FROM payments`);
+            const totalPayments = Number(countRows?.[0]?.cnt || 0);
+
+            const [sumRows] = await pool.execute(`
+                SELECT 
+                    IFNULL(SUM(CASE WHEN status = 'Confirmed' OR status = 'Completed' THEN amount ELSE 0 END), 0) AS total_collected,
+                    IFNULL(SUM(CASE WHEN DATE_FORMAT(created_at, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') AND (status = 'Confirmed' OR status = 'Completed') THEN amount ELSE 0 END), 0) AS collected_this_month
+                FROM payments
+            `);
+            const totalCollected = Number(sumRows?.[0]?.total_collected || 0);
+            const collectedThisMonth = Number(sumRows?.[0]?.collected_this_month || 0);
+
+            const [pendingRows] = await pool.execute(`SELECT COUNT(*) AS cnt FROM payments WHERE status = 'Pending'`);
+            const pendingCount = Number(pendingRows?.[0]?.cnt || 0);
+
+            return { totalPayments, totalCollected, collectedThisMonth, pendingCount };
+        } catch (error) {
+            console.error('Error computing payments stats:', error);
+            throw error;
+        }
+    },
     async searchPaymentsByChargeIds({
         chargeIds = [],
         status = null,

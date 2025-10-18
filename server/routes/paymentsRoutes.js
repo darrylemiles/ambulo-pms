@@ -9,6 +9,7 @@ import {
     updatePaymentById,
     deletePaymentById,
     searchPayments,
+    getPaymentsStats,
 } from "../controllers/paymentsControllers.js";
 
 import createUploadMiddleware from "../middlewares/multer/uploadMiddleware.js";
@@ -25,6 +26,7 @@ router.post(
     createPayment
 );
 router.get("/", getAllPayments);
+router.get("/stats", getPaymentsStats);
 router.get("/search/by-charge", protect, searchPayments);
 router.get("/users/:userId", protect, getPaymentsByUserId);
 router.get("/:id", getPaymentById);

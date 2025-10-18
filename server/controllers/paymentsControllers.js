@@ -183,6 +183,11 @@ const searchPayments = expressAsync(async (req, res) => {
     res.status(200).json({ payments: rows });
 });
 
+const getPaymentsStats = expressAsync(async (_req, res) => {
+    const stats = await paymentsServices.getPaymentsStats();
+    res.status(200).json(stats);
+});
+
 export {
     createPayment,
     getAllPayments,
@@ -191,4 +196,5 @@ export {
     updatePaymentById,
     deletePaymentById,
     searchPayments,
+    getPaymentsStats,
 };
