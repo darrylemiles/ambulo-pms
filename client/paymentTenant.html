@@ -107,13 +107,6 @@
 
             <div class="payment-form" id="payment-form">
                 <div class="form-group">
-                    <label for="payment-method">Payment Method</label>
-                    <select id="payment-method" aria-label="Select payment method">
-                        <option value="">Select a payment method</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
                     <div class="charge-selection-header">
                         <h3 class="method-title">
                             <i class="fas fa-file-invoice-dollar"></i>
@@ -134,13 +127,21 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="payment-method">Payment Method</label>
+                    <select id="payment-method" aria-label="Select payment method">
+                        <option value="">Select a payment method</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label for="payment-amount">Amount to Pay</label>
                     <div class="amount-input-row">
                         <input type="number" id="payment-amount" min="0" step="0.01" placeholder="0.00"
                             aria-describedby="payment-amount-helper">
                         <button type="button" id="pay-full-btn" class="btn-pay-full" disabled>Pay Full Amount</button>
                     </div>
-                    <small id="payment-amount-helper" class="input-hint">Enter an amount equal to or less than the total of the selected charges.</small>
+                    <small id="payment-amount-helper" class="input-hint">Enter an amount equal to or less than the total
+                        of the selected charges.</small>
                 </div>
 
                 <div class="form-group method-instructions" id="payment-method-instructions" aria-live="polite">

@@ -38,10 +38,95 @@ function getCurrentUserId() {
     if (!token) return null;
     try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        return payload.user_id;
+        return payload.user_id || payload.id || null;
     } catch (e) {
         console.error("Error decoding JWT:", e);
         return null;
+    }
+}
+
+function normalizePaymentStatus(status) {
+    const raw = String(status || "").trim();
+    const lower = raw.toLowerCase();
+    const pretty = raw
+        ? raw
+            .split(" ")
+            .filter(Boolean)
+            .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+            .join(" ")
+        : "Pending";
+
+    if (["confirmed", "completed", "paid"].includes(lower)) {
+        return { className: "paid", label: pretty || "Confirmed" };
+    }
+    if (["pending", "awaiting", "processing"].includes(lower)) {
+        return { className: "pending", label: pretty || "Pending" };
+    }
+    if (["rejected", "cancelled", "failed"].includes(lower)) {
+        return { className: "overdue", label: pretty || "Rejected" };
+    }
+    return { className: "pending", label: pretty || "Pending" };
+}
+
+function mapPaymentRecordToHistory(record = {}) {
+    const createdAtRaw = record.created_at || record.payment_date || new Date().toISOString();
+    const createdAt = new Date(createdAtRaw);
+    const safeDate = Number.isNaN(createdAt.getTime()) ? new Date() : createdAt;
+    const isoDate = safeDate.toISOString().split("T")[0];
+    const { className, label } = normalizePaymentStatus(record.status);
+
+    const amountValue = Number(record.amount_paid ?? record.amount ?? 0);
+    const propertyName = record.property_name || record.charge_description || record.charge_type || "Payment";
+    const description = record.charge_description || record.charge_type || "Payment";
+
+    return {
+        id: record.payment_id || record.id || `${Date.now()}`,
+        date: isoDate,
+        space: propertyName,
+        description,
+        amount: Number.isFinite(amountValue) ? amountValue : 0,
+        reference: record.payment_id || record.reference || record.reference_number || "-",
+        method: record.payment_method || "",
+        statusClass: className,
+        statusLabel: label,
+        rawStatus: record.status || label,
+    };
+}
+
+async function fetchPaymentHistory() {
+    const token = getJwtToken();
+    const userId = getCurrentUserId();
+
+    if (!token || !userId) {
+        paymentHistory = [];
+        loadPaymentHistory();
+        return;
+    }
+
+    try {
+        const resp = await fetch(
+            `${API_BASE_URL}/payments/users/${encodeURIComponent(userId)}`,
+            {
+            headers: { Authorization: `Bearer ${token}` },
+            }
+        );
+
+        if (resp.status === 401 || resp.status === 403) {
+            paymentHistory = [];
+            loadPaymentHistory();
+            return;
+        }
+
+        if (!resp.ok) {
+            throw new Error(`Failed to fetch payment history (${resp.status})`);
+        }
+
+        const data = await resp.json().catch(() => ({}));
+        const rows = Array.isArray(data.payments) ? data.payments : [];
+        paymentHistory = rows.map(mapPaymentRecordToHistory);
+        loadPaymentHistory();
+    } catch (error) {
+        console.error("fetchPaymentHistory error:", error);
     }
 }
 
@@ -175,6 +260,7 @@ async function initializePage() {
     await fetchRentedSpaces();
     loadRentedSpaces();
     loadPaymentHistory();
+    await fetchPaymentHistory();
     showNoSpaceAlert();
 
     populateMonthYearFilters();
@@ -401,6 +487,7 @@ function loadRentedSpaces() {
             );
             const grace = parseInt(space.gracePeriodDays || 0, 10) || 0;
 
+            
             let urgencyClass = "paid";
             if (daysUntilDue < -grace) {
                 urgencyClass = "overdue";
@@ -413,6 +500,7 @@ function loadRentedSpaces() {
             }
 
             const statusText = String(space.status || "").toLowerCase();
+            
             let statusClass = "paid";
             if (statusText.includes("pending") || statusText.includes("processing")) {
                 statusClass = "pending";
@@ -428,14 +516,15 @@ function loadRentedSpaces() {
                 statusText.includes("vacant")
             ) {
                 statusClass = "overdue";
-            } else if (
-                statusText.includes("paid") ||
-                statusText.includes("active") ||
-                statusText.includes("occupied")
-            ) {
+            } else if (statusText.includes("active") || statusText.includes("paid") || statusText.includes("occupied")) {
+                
                 statusClass = "paid";
+            } else {
+                
+                statusClass = urgencyClass;
             }
 
+            
             if (urgencyClass === "overdue") statusClass = "overdue";
 
             return `
@@ -680,21 +769,24 @@ function loadPaymentTotal() {
     }, 0);
 
     if (container) {
+        
+        const lateFeeHtml = lateFeeTotal > 0 ? `
+            <div class="late-fee-hint-compact" title="Base total: ₱${formatCurrency(baseTotal)} + Late fees: ₱${formatCurrency(lateFeeTotal)} = Final total: ₱${formatCurrency(displayedTotal)}" style="text-align:center;margin:16px auto 8px auto;max-width:300px;">
+                <i class="fas fa-info-circle"></i>
+                <span>Includes late fees (hover to see breakdown)</span>
+            </div>
+        ` : '';
+
         container.innerHTML = `
                     <div class="total-section">
                         <div class="total-label">
                             <i class="fas fa-calendar-days"></i>
                             ${periodLabel} - Total Due
                         </div>
-                        <div class="total-amount">
+                        <div class="total-amount" title="Total remaining including any late fees: ₱${formatCurrency(displayedTotal)}">
                             ₱${formatCurrency(displayedTotal)}
-                            ${lateFeeTotal > 0 ? `
-                                <div style="margin-top:6px; font-size:12px; color:#ef4444; display:flex; align-items:center; gap:6px;">
-                                    <i class="fas fa-info-circle" title="Remaining total includes any applied late fees."></i>
-                                    <span title="Remaining total includes any applied late fees.">Includes late fees</span>
-                                </div>
-                            `: ''}
                         </div>
+                        ${lateFeeHtml}
                         <button class="pay-now-btn" ${displayedTotal > 0 ? '' : 'disabled'} onclick="openPaymentModal(${displayedTotal})">
                             <i class="fas fa-credit-card"></i> Pay Now
                         </button>
@@ -845,7 +937,7 @@ function loadPaymentBreakdown() {
                             ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(totalAmt)}`
                             : `Amount: ₱${formatCurrency(totalAmt)}`;
                         const feeHint = lateFeeAmt > 0
-                            ? `<div class="late-fee-hint" style="font-size:11px;color:#ef4444;margin-top:4px;"><i class=\"fas fa-info-circle\"></i> Late fee applied</div>`
+                            ? ``
                             : '';
                         return `
                     <div class="breakdown-item">
@@ -858,14 +950,14 @@ function loadPaymentBreakdown() {
                                 )}</div>`
                                 : ""
                             }
-                            ${renderDuePill(
-                                ch.due_date || ch.charge_date || ch.dueDate || "",
-                                selectedSpace && selectedSpace.gracePeriodDays
-                                    ? selectedSpace.gracePeriodDays
-                                    : 0
-                            )}
-                            ${renderChargePaymentIndicator(ch)}
-                            ${feeHint}
+                                ${renderDuePill(
+                                    ch.due_date || ch.charge_date || ch.dueDate || "",
+                                    selectedSpace && selectedSpace.gracePeriodDays
+                                        ? selectedSpace.gracePeriodDays
+                                        : 0
+                                )}
+                                ${renderChargePaymentIndicator(ch)}
+                                ${lateFeeAmt > 0 ? `<div class="late-fee-small" title="Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(totalAmt)}"><i class='fas fa-info-circle'></i> Late fee applied</div>` : ''}
                         </div>
                         <span class="breakdown-amount" title="${titleTxt}">₱${formatCurrency(
                                 remaining
@@ -976,6 +1068,8 @@ function loadPaymentBreakdown() {
 function loadPaymentHistory() {
     const tbody = document.getElementById("payment-tbody");
 
+    if (!tbody) return;
+
     if (paymentHistory.length === 0) {
         tbody.innerHTML = `
                     <tr>
@@ -999,22 +1093,26 @@ function loadPaymentHistory() {
                 <tr>
                     <td>${formatDate(payment.date)}</td>
                     <td>
-                        <strong>${payment.space}</strong>
+                        <strong>${escapeHtml(payment.space)}</strong>
+                        ${payment.method
+                ? `<span class="history-method">${escapeHtml(payment.method)}</span>`
+                : ""}
                     </td>
-                    <td>${payment.description}</td>
-                    <td style="font-weight: 600; color: #059669;">₱${payment.amount.toLocaleString()}</td>
+                    <td>${escapeHtml(payment.description)}</td>
+                    <td class="history-amount">₱${formatCurrency(payment.amount)}</td>
                     <td>
                         <code style="background: rgba(102, 126, 234, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-family: 'Courier New', monospace;">
-                            ${payment.reference}
+                            ${escapeHtml(payment.reference)}
                         </code>
-                        <button class="copy-btn" onclick="copyToClipboard('${payment.reference
-                }')" style="margin-left: 0.5rem;">
+                        <button class="copy-btn" onclick="copyToClipboard('${escapeJsString(
+                payment.reference
+            )}')" style="margin-left: 0.5rem;">
                             <i class="fas fa-copy"></i>
                         </button>
                     </td>
                     <td>
-                        <span class="status ${payment.status}">
-                            ${getStatusIcon(payment.status)} ${payment.status}
+                        <span class="status ${payment.statusClass}">
+                            ${getStatusIcon(payment.statusClass)} ${escapeHtml(payment.statusLabel)}
                         </span>
                     </td>
                 </tr>
@@ -1086,6 +1184,27 @@ function getPendingAmountForCharge(charge) {
     } catch (e) {
         return 0;
     }
+}
+
+function getChargeApiId(charge) {
+    return (
+        charge?.charge_id ??
+        charge?.chargeId ??
+        charge?.id ??
+        charge?.id_charge ??
+        null
+    );
+}
+
+function getOutstandingBalanceForCharge(charge) {
+    if (!charge) return 0;
+    const rawRemaining =
+        charge.remaining_amount !== undefined && charge.remaining_amount !== null
+            ? Number(charge.remaining_amount) || 0
+            : (parseFloat(charge.amount) || 0) - (Number(charge.total_paid || 0) || 0);
+    const pendingAmt = getPendingAmountForCharge(charge);
+    const remaining = Number.isFinite(rawRemaining) ? rawRemaining : 0;
+    return Math.max(0, remaining - (pendingAmt || 0));
 }
 
 function showNoSpaceAlert() {
@@ -1358,18 +1477,76 @@ async function submitPayment() {
         return;
     }
 
-    const primaryCharge = selectedCharges[0];
-    const chargeIdForApi =
-        primaryCharge?.charge_id ||
-        primaryCharge?.chargeId ||
-        primaryCharge?.id ||
-        primaryCharge?.id_charge ||
-        null;
-
-    if (!chargeIdForApi) {
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) {
         showModalAlert(
             "error",
-            "We couldn't determine which charge to attach this payment to. Please try again or contact support."
+            "Unable to determine the current user. Please sign in again and retry."
+        );
+        return;
+    }
+
+    let remainingCents = Math.round(amountValue * 100);
+    const allocations = [];
+    selectedCharges.forEach((charge, index) => {
+        if (remainingCents <= 0) return;
+        const chargeIdForApi = getChargeApiId(charge);
+        if (!chargeIdForApi) return;
+
+        const outstandingCents = Math.max(
+            0,
+            Math.round(getOutstandingBalanceForCharge(charge) * 100)
+        );
+        if (outstandingCents <= 0) return;
+
+        const portionCents = Math.min(outstandingCents, remainingCents);
+        if (portionCents <= 0) return;
+
+        allocations.push({
+            charge,
+            chargeId: chargeIdForApi,
+            amountCents: portionCents,
+            amount: portionCents / 100,
+            outstandingCents,
+            label: charge.charge_type || charge.type || charge.title || `Charge ${index + 1}`,
+            displayId: String(
+                charge.charge_reference ||
+                charge.reference ||
+                charge.reference_code ||
+                chargeIdForApi ||
+                `charge-${index + 1}`
+            ),
+        });
+
+        remainingCents -= portionCents;
+    });
+
+    if (remainingCents > 0 && allocations.length > 0) {
+        const lastAllocation = allocations[allocations.length - 1];
+        const remainingCapacity = Math.max(
+            0,
+            lastAllocation.outstandingCents - lastAllocation.amountCents
+        );
+        if (remainingCapacity > 0) {
+            const extra = Math.min(remainingCents, remainingCapacity);
+            lastAllocation.amountCents += extra;
+            lastAllocation.amount = lastAllocation.amountCents / 100;
+            remainingCents -= extra;
+        }
+    }
+
+    if (!allocations.length) {
+        showModalAlert(
+            "error",
+            "We couldn't determine which charges to pay. Please refresh the page and try again."
+        );
+        return;
+    }
+
+    if (remainingCents > 0) {
+        showModalAlert(
+            "error",
+            "Unable to distribute the entered amount across the selected charges. Please adjust the amount and try again."
         );
         return;
     }
@@ -1379,82 +1556,71 @@ async function submitPayment() {
 
     const token = getJwtToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const paymentDate = new Date().toISOString().split("T")[0];
+    const allocationSummary = allocations
+        .map((alloc) => `${alloc.displayId}: ₱${formatCurrency(alloc.amount)}`)
+        .join("; ");
 
-    const formData = new FormData();
-    formData.append("chargeId", chargeIdForApi);
-    formData.append("paymentDate", new Date().toISOString().split("T")[0]);
-    formData.append("amountPaid", amountValue.toFixed(2));
-    formData.append("paymentMethod", paymentMethodSelect.value);
-    formData.append("user_id", getCurrentUserId());
-
-    const additionalCharges = selectedCharges.slice(1);
-    const noteSegments = [
-        `Submitted via tenant portal covering ${selectedCharges.length} charge${selectedCharges.length === 1 ? "" : "s"}.`,
-    ];
-    if (additionalCharges.length) {
-        const refs = additionalCharges
-            .map((charge) =>
-                charge.charge_id ||
-                charge.chargeId ||
-                charge.id ||
-                resolveChargeIdentifier(charge)
-            )
-            .join(", ");
-        noteSegments.push(`Additional charge references: ${refs}`);
-    }
-    formData.append("notes", noteSegments.join(" "));
-
-    uploadedFiles.forEach((file) => {
-        formData.append("proofs", file);
-    });
+    const createdPaymentIds = [];
+    let primaryPaymentId = null;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/payments/create-payment`, {
-            method: "POST",
-            headers,
-            body: formData,
-        });
+        for (let i = 0; i < allocations.length; i++) {
+            const allocation = allocations[i];
+            const formData = new FormData();
+            formData.append("chargeId", allocation.chargeId);
+            formData.append("paymentDate", paymentDate);
+            formData.append("amountPaid", allocation.amount.toFixed(2));
+            formData.append("paymentMethod", paymentMethodSelect.value);
+            formData.append("user_id", currentUserId);
 
-        if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({}));
-            throw new Error(errorBody.message || "Failed to submit payment confirmation.");
+            const noteSegments = [
+                "Submitted via tenant portal.",
+                `Allocation summary: ${allocationSummary}.`,
+                `This entry allocates ₱${formatCurrency(allocation.amount)} to ${allocation.label} (${allocation.displayId}).`,
+            ];
+            if (allocations.length > 1) {
+                noteSegments.push(`Batch ${i + 1} of ${allocations.length}.`);
+            }
+            if (i > 0 && primaryPaymentId) {
+                noteSegments.push(
+                    `Supporting proofs uploaded with payment ${primaryPaymentId}.`
+                );
+            }
+            formData.append("notes", noteSegments.join(" "));
+
+            if (i === 0) {
+                uploadedFiles.forEach((file) => {
+                    formData.append("proofs", file);
+                });
+            }
+
+            const response = await fetch(`${API_BASE_URL}/payments/create-payment`, {
+                method: "POST",
+                headers,
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => ({}));
+                throw new Error(errorBody.message || "Failed to submit payment confirmation.");
+            }
+
+            const result = await response.json().catch(() => ({}));
+            if (!primaryPaymentId && result.payment_id) {
+                primaryPaymentId = result.payment_id;
+            }
+            createdPaymentIds.push(result.payment_id || null);
         }
 
-        const result = await response.json().catch(() => ({}));
+        const successMessage =
+            allocations.length === 1
+                ? "Payment confirmation submitted! We'll review it shortly."
+                : `Payment confirmations submitted for ${allocations.length} charges! We'll review them shortly.`;
 
-        showModalAlert(
-            "success",
-            result.message || "Payment confirmation submitted! We'll review it shortly."
-        );
+        showModalAlert("success", successMessage);
 
-        const chargeSummary = selectedCharges
-            .map((charge) =>
-                charge.charge_type ||
-                charge.type ||
-                charge.description ||
-                resolveChargeIdentifier(charge)
-            )
-            .join(", ");
-
-        paymentHistory.unshift({
-            id: result.payment_id || Date.now(),
-            date: new Date().toISOString().split("T")[0],
-            space: selectedSpace.title,
-            description: selectedCharges.length
-                ? `Payment for ${selectedCharges.length} charge${selectedCharges.length === 1 ? "" : "s"}: ${chargeSummary}`
-                : `Payment confirmation - ${new Date().toLocaleString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                })}`,
-            amount: Number(amountValue.toFixed(2)),
-            reference: result.payment_id || generateReference(),
-            status: "pending",
-            method: paymentMethodSelect.value,
-            charge_ids: selectedCharges.map((charge) =>
-                resolveChargeIdentifier(charge)
-            ),
-        });
-        loadPaymentHistory();
+        await fetchPaymentHistory();
 
         uploadedFiles = [];
         renderUploadedFilesPreview();
@@ -1474,10 +1640,25 @@ async function submitPayment() {
         }, 2500);
     } catch (error) {
         console.error("submitPayment error:", error);
+        const partialMessage = createdPaymentIds.length
+            ? ` We recorded ${createdPaymentIds.length} payment${createdPaymentIds.length === 1 ? "" : "s"} before the error. We've refreshed the data, but please contact support if anything looks off.`
+            : "";
         showModalAlert(
             "error",
-            error.message || "Failed to submit payment confirmation. Please try again."
+            (error.message || "Failed to submit payment confirmation. Please try again.") +
+                partialMessage
         );
+        if (createdPaymentIds.length) {
+            try {
+                await fetchPaymentHistory();
+                await refreshSelectedSpaceData();
+            } catch (refreshError) {
+                console.warn(
+                    "Failed to refresh data after partial payment submission",
+                    refreshError
+                );
+            }
+        }
         submitBtn.disabled = false;
         submitBtn.innerHTML =
             '<i class="fas fa-paper-plane"></i> Submit Payment Confirmation';
@@ -1707,8 +1888,6 @@ function renderPaymentChargeList() {
             const baseAmt = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
                 ? Number(charge.original_amount) || 0
                 : (amount - lateFeeAmt);
-            const confirmedPaid = Number(charge.total_paid || 0) || 0;
-            const precomputedRemaining = (typeof charge.remaining_amount === 'number') ? Number(charge.remaining_amount) || 0 : Math.max(0, amount - confirmedPaid);
             const chargeType = charge.charge_type || charge.type || charge.title || "Charge";
             const description = charge.description ? escapeHtml(charge.description) : "";
             const dueDateRaw = charge.due_date || charge.charge_date || charge.dueDate || charge.created_at || "";
@@ -1725,15 +1904,18 @@ function renderPaymentChargeList() {
             const displayChargeId = rawDisplayId ? String(rawDisplayId) : "Not provided";
 
 
-            let paymentIndicator = "";
             const pendingAmt = getPendingAmountForCharge(charge);
+            let paymentIndicator = "";
             if (pendingAmt > 0) {
                 paymentIndicator = `<div class="charge-payment-status payment-pending"><i class="fas fa-hourglass-half"></i> Submitted ₱${formatCurrency(pendingAmt)} (Pending)</div>`;
             }
-            const remainingAfterPending = Math.max(0, precomputedRemaining - (pendingAmt || 0));
+            const remainingAfterPending = getOutstandingBalanceForCharge(charge);
+            const titleTooltip = lateFeeAmt > 0
+                ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)}`
+                : `Amount: ₱${formatCurrency(amount)}`;
 
             return `
-                <label class="charge-option">
+                <label class="charge-option" title="${escapeHtml(titleTooltip)}" aria-label="Charge ${escapeHtml(chargeType)}: ${escapeHtml(titleTooltip)}">
                     <input type="checkbox" class="charge-checkbox" data-charge-id="${escapeHtml(
                 chargeId
             )}" ${selectedChargeIds.has(chargeId) ? "checked" : ""}>
@@ -1745,9 +1927,9 @@ function renderPaymentChargeList() {
                             <span>Charge ID: ${escapeHtml(displayChargeId)}</span>
                         </div>
                         ${paymentIndicator}
-                        ${lateFeeAmt > 0 ? `<div class="late-fee-hint" style="font-size:11px;color:#ef4444;margin-top:4px;"><i class=\"fas fa-info-circle\" title=\"Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)}\"></i> Late fee applied</div>` : ""}
+                        
                     </div>
-                    <div class="charge-amount" title="${lateFeeAmt > 0 ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)} | Remaining: ₱${formatCurrency(remainingAfterPending)}` : `Remaining: ₱${formatCurrency(remainingAfterPending)} of ₱${formatCurrency(amount)}`}">₱${formatCurrency(remainingAfterPending)}</div>
+                    <div class="charge-amount" title="${lateFeeAmt > 0 ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)} | Remaining: ₱${formatCurrency(remainingAfterPending)}` : `Remaining: ₱${formatCurrency(remainingAfterPending)} of ₱${formatCurrency(amount)}`}" aria-label="${lateFeeAmt > 0 ? `Includes late fee of ₱${formatCurrency(lateFeeAmt)}.` : ''}">₱${formatCurrency(remainingAfterPending)}</div>
                 </label>
             `;
         })
@@ -1809,10 +1991,7 @@ function calculateSelectedChargesTotal() {
     paymentModalCharges.forEach((charge, index) => {
         const chargeId = resolveChargeIdentifier(charge, index);
         if (selectedChargeIds.has(chargeId)) {
-            const raw = (typeof charge.remaining_amount === 'number' ? Number(charge.remaining_amount) || 0 : (parseFloat(charge.amount) || 0) - (Number(charge.total_paid || 0) || 0));
-            const pendingAmt = getPendingAmountForCharge(charge);
-            const net = Math.max(0, raw - (pendingAmt || 0));
-            total += net;
+            total += getOutstandingBalanceForCharge(charge);
         }
     });
     return total;
@@ -2112,11 +2291,14 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 setInterval(() => {
-    const pendingPayments = paymentHistory.filter((p) => p.status === "pending");
+    const pendingPayments = paymentHistory.filter(
+        (p) => p.statusClass === "pending"
+    );
     if (pendingPayments.length > 0 && Math.random() > 0.95) {
         const randomPending =
             pendingPayments[Math.floor(Math.random() * pendingPayments.length)];
-        randomPending.status = "paid";
+        randomPending.statusClass = "paid";
+        randomPending.statusLabel = "Confirmed";
         loadPaymentHistory();
         showAlert(
             "success",
