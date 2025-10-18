@@ -25,6 +25,19 @@ let paymentsTotal = 0;
 async function fetchAllPayments(page = 1, limit = 10) {
     try {
         const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        
+        const methodEl = document.getElementById('payments-method');
+        const typeEl = document.getElementById('payments-type');
+        const dateEl = document.getElementById('payments-date');
+        const searchEl = document.getElementById('payments-search');
+        const method = methodEl ? methodEl.value : '';
+        const paymentType = typeEl ? typeEl.value : '';
+        const month = dateEl ? dateEl.value : '';
+        const search = searchEl ? searchEl.value : '';
+        if (method) params.set('payment_method', method);
+        if (paymentType) params.set('payment_type', paymentType);
+        if (month) params.set('month', month);
+        if (search) params.set('q', search);
         const res = await fetch(`/api/v1/payments?${params.toString()}`, { credentials: 'include' });
         if (!res.ok) throw new Error(`Failed to fetch payments: ${res.status}`);
         const json = await res.json();
@@ -36,6 +49,7 @@ async function fetchAllPayments(page = 1, limit = 10) {
             unit: p.property_name || '—',
             paymentDate: p.created_at,
             description: p.charge_description || '',
+            type: p.charge_type || '',
             amount: Number(p.amount_paid) || 0,
             paymentMethod: p.payment_method || '',
             reference: p.payment_id,
@@ -499,6 +513,32 @@ onReady(() => {
     
     setupChargesGroupingControl();
     fetchCharges();
+
+    
+    try {
+        const methodEl = document.getElementById('payments-method');
+        const typeEl = document.getElementById('payments-type');
+        if (window.AppConstants) {
+            if (methodEl) {
+                const methods = window.AppConstants.PAYMENT_METHODS || [];
+                methodEl.innerHTML = '<option value="">All Methods</option>' + methods.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+            }
+            if (typeEl) {
+                const types = window.AppConstants.CHARGE_TYPES || [];
+                typeEl.innerHTML = '<option value="">All Types</option>' + types.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
+            }
+        }
+
+        
+        const searchEl = document.getElementById('payments-search');
+        const dateEl = document.getElementById('payments-date');
+        if (searchEl) searchEl.addEventListener('input', () => fetchAllPayments(1, paymentsLimit));
+        if (methodEl) methodEl.addEventListener('change', () => fetchAllPayments(1, paymentsLimit));
+        if (typeEl) typeEl.addEventListener('change', () => fetchAllPayments(1, paymentsLimit));
+        if (dateEl) dateEl.addEventListener('change', () => fetchAllPayments(1, paymentsLimit));
+    } catch (e) {
+        console.warn('Failed to initialize Payment History filters', e);
+    }
 });
 
 function setupChargeFilters() {
@@ -2672,30 +2712,8 @@ function filterCharges() {
 }
 
 function filterPayments() {
-    const searchTerm =
-        document.getElementById("payments-search")?.value.toLowerCase() || "";
-    const methodFilter = document.getElementById("payments-method")?.value || "";
-    const typeFilter = document.getElementById("payments-type")?.value || "";
-    const dateFilter = document.getElementById("payments-date")?.value || "";
-
-    filteredPayments = payments.filter((payment) => {
-        const matchesSearch =
-            !searchTerm ||
-            payment.tenant.toLowerCase().includes(searchTerm) ||
-            payment.unit.toLowerCase().includes(searchTerm) ||
-            payment.description.toLowerCase().includes(searchTerm) ||
-            payment.reference.toLowerCase().includes(searchTerm);
-
-        const matchesMethod =
-            !methodFilter || payment.paymentMethod === methodFilter;
-        const matchesType = !typeFilter || payment.type === typeFilter;
-        const matchesDate =
-            !dateFilter || payment.paymentDate.startsWith(dateFilter);
-
-        return matchesSearch && matchesMethod && matchesType && matchesDate;
-    });
-
-    renderPaymentsTable();
+    
+    fetchAllPayments(1, paymentsLimit);
 }
 
 function resetChargesFilters() {
@@ -2726,8 +2744,7 @@ function resetPaymentsFilters() {
     if (typeEl) typeEl.value = "";
     if (dateEl) dateEl.value = "";
 
-    filteredPayments = [...payments];
-    renderPaymentsTable();
+    fetchAllPayments(1, paymentsLimit);
 }
 
 function filterByType(type) {
