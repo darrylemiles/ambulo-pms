@@ -10,7 +10,6 @@ const computeAndSetChargeStatus = async (
 ) => {
     if (!chargeId) return;
 
-    
     const [sumRows] = await connHandle.execute(
         `SELECT COALESCE(SUM(amount), 0) AS total_paid FROM payments WHERE charge_id = ? AND (status = 'Confirmed' OR status = 'Completed')`,
         [chargeId]
@@ -25,13 +24,9 @@ const computeAndSetChargeStatus = async (
 
     const chargeAmount = Number(chargeRows[0].amount || 0);
     let newStatus = "Unpaid";
-    if (totalPaid <= 0) {
-        newStatus = "Unpaid";
-    } else if (chargeAmount > 0 && totalPaid >= chargeAmount) {
-        newStatus = "Paid";
-    } else {
-        newStatus = "Partially Paid";
-    }
+    if (totalPaid <= 0) newStatus = "Unpaid";
+    else if (chargeAmount > 0 && totalPaid >= chargeAmount) newStatus = "Paid";
+    else newStatus = "Partially Paid";
 
     const [prevRows] = await connHandle.execute(
         `SELECT status, IFNULL(total_paid, 0) AS total_paid FROM charges WHERE charge_id = ? LIMIT 1`,
@@ -83,16 +78,11 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
     try {
         await connHandle.beginTransaction();
 
-        const rawStatus =
-            (paymentData.status && String(paymentData.status)) || "Pending";
-        
-        const status =
-            rawStatus && rawStatus.toLowerCase() === "confirmed"
-                ? "Confirmed"
-                : rawStatus;
+        const rawStatus = (paymentData.status && String(paymentData.status)) || "Pending";
+        const status = rawStatus && rawStatus.toLowerCase() === "confirmed" ? "Confirmed" : rawStatus;
         const userId = user_id || performedBy || null;
-    const confirmedBy = status === "Confirmed" ? user_id || null : null;
-    const confirmedAt = status === "Confirmed" ? createdAt : null;
+        const confirmedBy = status === "Confirmed" ? user_id || null : null;
+        const confirmedAt = status === "Confirmed" ? createdAt : null;
 
         const insertPayment = `
             INSERT INTO payments (payment_id, charge_id, user_id, amount, payment_method, status, notes, confirmed_by, confirmed_at, created_at)
@@ -112,16 +102,9 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
         ]);
 
         if (proofs && Array.isArray(proofs) && proofs.length) {
-            const insertProof = `
-                INSERT INTO payment_proof (payment_id, proof_url, uploaded_at)
-                VALUES (?, ?, ?)
-            `;
+            const insertProof = `INSERT INTO payment_proof (payment_id, proof_url, uploaded_at) VALUES (?, ?, ?)`;
             for (const url of proofs) {
-                await connHandle.execute(insertProof, [
-                    paymentId,
-                    String(url),
-                    createdAt,
-                ]);
+                await connHandle.execute(insertProof, [paymentId, String(url), createdAt]);
             }
         }
 
@@ -131,16 +114,7 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
                 [
                     paymentId,
                     "create",
-                    JSON.stringify({
-                        chargeId,
-                        amount: amountPaid,
-                        paymentMethod,
-                        notes,
-                        proofs,
-                        status,
-                        confirmed_by: confirmedBy,
-                        confirmed_at: confirmedAt,
-                    }),
+                    JSON.stringify({ chargeId, amount: amountPaid, paymentMethod, notes, proofs, status, confirmed_by: confirmedBy, confirmed_at: confirmedAt }),
                     performedBy || null,
                     createdAt,
                 ]
@@ -149,13 +123,9 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
             console.error("Failed to write payment_audit (create):", err);
         }
 
-        
         await computeAndSetChargeStatus(connHandle, chargeId, performedBy);
         await connHandle.commit();
-        return {
-            message: "Payment created successfully",
-            payment_id: paymentId,
-        };
+        return { message: "Payment created successfully", payment_id: paymentId };
     } catch (error) {
         await connHandle.rollback();
         console.error("Error in createPayment:", error);
@@ -167,15 +137,44 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
 
 const getAllPayments = async (filters = {}) => {
     try {
-    const { status } = filters || {};
+        const { status } = filters || {};
+        const pageNum = Math.max(1, parseInt(filters.page, 10) || 1);
+        const pageLimit = Math.max(1, Math.min(100, parseInt(filters.limit, 10) || 10));
+        const offset = (pageNum - 1) * pageLimit;
 
-    let query = `
+        const baseFrom = `
+            FROM payments pay
+            LEFT JOIN charges c ON pay.charge_id = c.charge_id
+            LEFT JOIN leases l ON c.lease_id = l.lease_id
+            LEFT JOIN users u ON l.user_id = u.user_id
+            LEFT JOIN users cb ON pay.confirmed_by = cb.user_id
+            LEFT JOIN properties p ON l.property_id = p.property_id
+        `;
+        const whereClauses = [];
+        const params = [];
+
+        if (status) {
+            const s = String(status).toLowerCase();
+            if (s === "confirmed") {
+                whereClauses.push("(pay.status = 'Confirmed' OR pay.status = 'Completed')");
+            } else {
+                whereClauses.push("pay.status = ?");
+                params.push(status);
+            }
+        }
+        const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+        const countSql = `SELECT COUNT(*) AS cnt ${baseFrom} ${whereSql}`;
+        const [countRows] = await pool.execute(countSql, params);
+        const total = countRows && countRows.length ? Number(countRows[0].cnt || 0) : 0;
+
+        const dataSql = `
             SELECT 
                 pay.payment_id,
                 pay.charge_id,
                 pay.status,
                 pay.payment_method,
-        pay.notes,
+                pay.notes,
                 pay.amount AS amount_paid,
                 pay.created_at,
                 pay.confirmed_by AS processed_by,
@@ -186,35 +185,18 @@ const getAllPayments = async (filters = {}) => {
                 c.charge_type AS charge_type,
                 c.due_date AS due_date,
                 p.property_name
-            FROM payments pay
-            LEFT JOIN charges c ON pay.charge_id = c.charge_id
-            LEFT JOIN leases l ON c.lease_id = l.lease_id
-            LEFT JOIN users u ON l.user_id = u.user_id
-            LEFT JOIN users cb ON pay.confirmed_by = cb.user_id
-            LEFT JOIN properties p ON l.property_id = p.property_id
+            ${baseFrom}
+            ${whereSql}
+            ORDER BY pay.created_at DESC
+            LIMIT ${pageLimit} OFFSET ${offset}
         `;
+        const [rows] = await pool.execute(dataSql, params);
 
-        const params = [];
+        (rows || []).forEach((r) => { if (r.status === "Completed") r.status = "Confirmed"; });
 
-        let queryStatus = status;
-        
-        if (String(status).toLowerCase() === "confirmed") {
-            query += ` WHERE pay.status IN (?, ?)`;
-            params.push("Confirmed", "Completed");
-        } else if (queryStatus) {
-            query += ` WHERE pay.status = ?`;
-            params.push(String(queryStatus));
+        if (!rows || !rows.length) {
+            return { rows: rows || [], total, page: pageNum, limit: pageLimit, totalPages: Math.ceil(total / pageLimit) };
         }
-        query += ` ORDER BY pay.created_at DESC`;
-
-        const [rows] = await pool.execute(query, params);
-
-        
-        (rows || []).forEach((r) => {
-            if (r.status === "Completed") r.status = "Confirmed";
-        });
-
-        if (!rows || !rows.length) return rows || [];
         const ids = rows.map((r) => r.payment_id);
         const placeholders = ids.map(() => "?").join(",");
         const [proofRows] = await pool.execute(
@@ -226,11 +208,9 @@ const getAllPayments = async (filters = {}) => {
             if (!proofsMap.has(pr.payment_id)) proofsMap.set(pr.payment_id, []);
             proofsMap.get(pr.payment_id).push({ proof_url: pr.proof_url });
         });
-        rows.forEach((r) => {
-            r.proofs = proofsMap.get(r.payment_id) || [];
-        });
+        rows.forEach((r) => { r.proofs = proofsMap.get(r.payment_id) || []; });
 
-        return rows;
+        return { rows, total, page: pageNum, limit: pageLimit, totalPages: Math.ceil(total / pageLimit) };
     } catch (error) {
         console.error("Error in getAllPayments:", error);
         throw error;
@@ -254,13 +234,13 @@ const getPaymentsByUserId = async (userId, { page = 1, limit = 10 } = {}) => {
         const [countRows] = await pool.execute(countQuery, [userId, userId]);
         const total = countRows && countRows.length ? Number(countRows[0].cnt || 0) : 0;
 
-    const query = `
+        const query = `
             SELECT 
                 pay.payment_id,
                 pay.charge_id,
                 pay.status,
                 pay.payment_method,
-        pay.notes,
+                pay.notes,
                 pay.amount AS amount_paid,
                 pay.created_at,
                 pay.confirmed_by AS processed_by,
@@ -281,14 +261,13 @@ const getPaymentsByUserId = async (userId, { page = 1, limit = 10 } = {}) => {
             ORDER BY pay.created_at DESC
             LIMIT ${pageLimit} OFFSET ${offset}
         `;
-
         const [rows] = await pool.execute(query, [userId, userId]);
 
-        (rows || []).forEach((r) => {
-            if (r.status === "Completed") r.status = "Confirmed";
-        });
+        (rows || []).forEach((r) => { if (r.status === "Completed") r.status = "Confirmed"; });
 
-        if (!rows || !rows.length) return { rows: rows || [], total, page: pageNum, limit: pageLimit, totalPages: Math.ceil(total / pageLimit) };
+        if (!rows || !rows.length) {
+            return { rows: rows || [], total, page: pageNum, limit: pageLimit, totalPages: Math.ceil(total / pageLimit) };
+        }
         const ids = rows.map((r) => r.payment_id);
         const placeholders = ids.map(() => "?").join(",");
         const [proofRows] = await pool.execute(
@@ -300,9 +279,7 @@ const getPaymentsByUserId = async (userId, { page = 1, limit = 10 } = {}) => {
             if (!proofsMap.has(pr.payment_id)) proofsMap.set(pr.payment_id, []);
             proofsMap.get(pr.payment_id).push({ proof_url: pr.proof_url });
         });
-        rows.forEach((r) => {
-            r.proofs = proofsMap.get(r.payment_id) || [];
-        });
+        rows.forEach((r) => { r.proofs = proofsMap.get(r.payment_id) || []; });
 
         return { rows, total, page: pageNum, limit: pageLimit, totalPages: Math.ceil(total / pageLimit) };
     } catch (error) {
