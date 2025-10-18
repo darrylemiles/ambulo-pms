@@ -19,6 +19,226 @@ let currentEditingCharge = null;
 
 let charges = [];
 let payments = [];
+let paymentsPage = 1;
+let paymentsLimit = 10;
+let paymentsTotal = 0;
+async function fetchAllPayments(page = 1, limit = 10) {
+    try {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        const res = await fetch(`/api/v1/payments?${params.toString()}`, { credentials: 'include' });
+        if (!res.ok) throw new Error(`Failed to fetch payments: ${res.status}`);
+        const json = await res.json();
+        const rows = json.payments || [];
+        payments = rows.map((p) => ({
+            id: p.payment_id,
+            charge_id: p.charge_id,
+            tenant: p.tenant_name || '—',
+            unit: p.property_name || '—',
+            paymentDate: p.created_at,
+            description: p.charge_description || '',
+            amount: Number(p.amount_paid) || 0,
+            paymentMethod: p.payment_method || '',
+            reference: p.payment_id,
+            notes: p.notes || p.payment_notes || p.remarks || '',
+            status: p.status || p.payment_status || p.state || '',
+            processedBy: p.processed_by_name || '',
+            proofs: p.proofs || [],
+        }));
+        paymentsPage = Number(json.page) || page;
+        paymentsLimit = Number(json.limit) || limit;
+        paymentsTotal = Number(json.total) || (rows.length);
+        filteredPayments = [...payments];
+        renderPaymentsTable();
+        renderPaymentsPagination();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+
+window._paymentsRefHidden = true;
+window.toggleReferenceVisibility = function () {
+    window._paymentsRefHidden = !window._paymentsRefHidden;
+    try {
+        renderPaymentsTable();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function renderPaymentsTable() {
+    const tbody = document.getElementById("payments-tbody");
+    const mobileCards = document.getElementById("payments-mobile");
+    if (!tbody) return;
+
+    if (!Array.isArray(filteredPayments)) filteredPayments = [];
+
+    if (filteredPayments.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="empty-state">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No payments found</h3>
+                        <p>No payment history available</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        if (mobileCards) {
+            mobileCards.innerHTML = `
+                <div class="empty-state" style="text-align: center; padding: 40px 20px;">
+                    <i class="fas fa-inbox" style="font-size: 2rem; color: #94a3b8; margin-bottom: 12px;"></i>
+                    <h3 style="color: #64748b; margin-bottom: 8px;">No payments found</h3>
+                    <p style="color: #94a3b8;">No payment history available</p>
+                </div>
+            `;
+        }
+        return;
+    }
+
+    const baseIndex = (paymentsPage - 1) * paymentsLimit;
+
+    const maskedRef = (ref) => {
+        if (!ref) return '';
+        
+        const s = String(ref);
+        if (s.length <= 4) return '••••';
+        return s.slice(0, 2) + '••••' + s.slice(-2);
+    };
+
+    const refHidden = !!window._paymentsRefHidden;
+
+    tbody.innerHTML = filteredPayments
+        .map((payment, idx) => `
+        <tr class="payment-row">
+            <td class="td-number">${baseIndex + idx + 1}</td>
+            <td>
+                <code class="reference-code ${refHidden ? 'masked' : ''}">${refHidden ? maskedRef(payment.reference) : escapeHtml(String(payment.reference || ''))}</code>
+            </td>
+            <td>
+                <div class="tenant-info">
+                    <strong>${payment.tenant}</strong>
+                </div>
+            </td>
+            <td>
+                <div class="unit-info">
+                    <strong>${payment.unit}</strong>
+                </div>
+            </td>
+            <td class="payment-description">${escapeHtml(
+                payment.charge_description || payment.description || `Charge #${payment.charge_id || 'N/A'}`
+            )}</td>
+            <td class="payment-amount">${formatCurrency(payment.amount)}</td>
+            <td>
+                <span class="payment-method">${capitalizeFirst(
+                    payment.paymentMethod
+                )}</span>
+            </td>
+            <td class="payment-notes">${escapeHtml(payment.notes || '')}</td>
+            <td class="payment-date">${formatDate(payment.paymentDate)}</td>
+            <td class="payment-status">${escapeHtml(payment.status || '')}</td>
+            <td class="payment-processed-by">${escapeHtml(payment.processedBy || '')}</td>
+            <td class="actions-cell">
+                <div class="action-buttons">
+                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="generateReceipt('${payment.id}')" class="btn btn-sm btn-success" title="View Receipt">
+                        <i class="fas fa-receipt"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `)
+        .join("");
+
+    if (mobileCards) {
+        mobileCards.innerHTML = filteredPayments
+            .map((payment, idx) => `
+            <div class="mobile-card payments">
+                <div class="card-header">
+                    <div class="card-title">${payment.tenant} - ${payment.unit}</div>
+                    <div class="card-number">${String(baseIndex + idx + 1).padStart(2, '0')}</div>
+                </div>
+                
+                <div class="card-amount payment">${formatCurrency(payment.amount)}</div>
+                
+                <div class="card-details">
+                    <div class="card-detail-row">
+                        <span class="card-detail-label">Reference</span>
+                        <span class="card-detail-value"><code class="reference-code ${refHidden ? 'masked' : ''}">${refHidden ? maskedRef(payment.reference) : escapeHtml(String(payment.reference || ''))}</code></span>
+                    </div>
+                    <div class="card-detail-row">
+                        <span class="card-detail-label">Notes</span>
+                        <span class="card-detail-value">${escapeHtml(payment.notes || '')}</span>
+                    </div>
+                    <div class="card-detail-row">
+                        <span class="card-detail-label">Description</span>
+                        <span class="card-detail-value">${escapeHtml(payment.description || `Charge #${payment.charge_id || 'N/A'}`)}</span>
+                    </div>
+                    <div class="card-detail-row">
+                        <span class="card-detail-label">Method</span>
+                        <span class="card-detail-value"><span class="payment-method">${capitalizeFirst(payment.paymentMethod)}</span></span>
+                    </div>
+                    <div class="card-detail-row">
+                        <span class="card-detail-label">Payment Date</span>
+                        <span class="card-detail-value">${formatDate(payment.paymentDate)}</span>
+                    </div>
+                    <div class="card-detail-row">
+                        <span class="card-detail-label">Status</span>
+                        <span class="card-detail-value">${escapeHtml(payment.status || '')}</span>
+                    </div>
+                    <div class="card-detail-row">
+                        <span class="card-detail-label">Processed By</span>
+                        <span class="card-detail-value">${escapeHtml(payment.processedBy || '')}</span>
+                    </div>
+                </div>
+                
+                <div class="card-actions">
+                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="generateReceipt('${payment.id}')" class="btn btn-sm btn-success" title="View Receipt">
+                        <i class="fas fa-receipt"></i>
+                    </button>
+                </div>
+            </div>
+        `)
+            .join("");
+    }
+}
+
+function renderPaymentsPagination() {
+    const container = document.getElementById('payments-pagination');
+    if (!container) return;
+    const totalPages = Math.max(1, Math.ceil(paymentsTotal / paymentsLimit));
+    const page = paymentsPage;
+    const makeBtn = (label, disabled, onClick, active) => `
+        <button class="page-btn ${active ? 'active' : ''}" ${disabled ? 'disabled' : ''} data-action="${onClick}">${label}</button>
+    `;
+    const parts = [];
+    parts.push(makeBtn('Prev', page <= 1, 'prev', false));
+    const maxButtons = 5;
+    const start = Math.max(1, page - 2);
+    const end = Math.min(totalPages, start + maxButtons - 1);
+    if (start > 1) parts.push(`<span class="ellipsis">...</span>`);
+    for (let p = start; p <= end; p++) parts.push(makeBtn(String(p), false, `page:${p}`, p === page));
+    if (end < totalPages) parts.push(`<span class="ellipsis">...</span>`);
+    parts.push(makeBtn('Next', page >= totalPages, 'next', false));
+    container.innerHTML = parts.join('');
+    container.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.getAttribute('data-action');
+            if (action === 'prev' && paymentsPage > 1) fetchAllPayments(paymentsPage - 1, paymentsLimit);
+            else if (action === 'next' && paymentsPage < totalPages) fetchAllPayments(paymentsPage + 1, paymentsLimit);
+            else if (action && action.startsWith('page:')) {
+                const p = parseInt(action.split(':')[1], 10);
+                if (!isNaN(p)) fetchAllPayments(p, paymentsLimit);
+            }
+        });
+    });
+}
 
 let currentSort = { key: null, dir: "asc" };
 
@@ -2939,150 +3159,6 @@ function renderChargesPagination() {
     container.appendChild(makeBtn('Next', page >= totalPages, () => { window.chargesPage = page + 1; fetchCharges(); }));
 }
 
-function renderPaymentsTable() {
-    const tbody = document.getElementById("payments-tbody");
-    const mobileCards = document.getElementById("payments-mobile");
-    if (!tbody) return;
-
-    if (filteredPayments.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="empty-state">
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <h3>No payments found</h3>
-                        <p>No payment history available</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tbody.innerHTML = filteredPayments
-        .map(
-            (payment) => `
-        <tr class="payment-row">
-            <td>
-                <div class="tenant-info">
-                    <strong>${payment.tenant}</strong>
-                </div>
-            </td>
-            <td>
-                <div class="unit-info">
-                    <strong>${payment.unit}</strong>
-                </div>
-            </td>
-            <td class="payment-date">${formatDate(payment.paymentDate)}</td>
-            <td class="payment-description">${escapeHtml(
-                payment.charge_description || payment.description || `Charge #${payment.charge_id || 'N/A'}`
-            )}</td>
-            <td class="payment-amount">${formatCurrency(payment.amount)}</td>
-            <td>
-                <span class="payment-method">${capitalizeFirst(
-                payment.paymentMethod
-            )}</span>
-            </td>
-            <td>
-                <code class="reference-code">${payment.reference}</code>
-            </td>
-            <td class="actions-cell">
-                <div class="action-buttons">
-                    <button onclick="viewPaymentDetails('${payment.id
-                }')" class="btn btn-sm btn-info" title="View Details">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button onclick="generateReceipt('${payment.id
-                }')" class="btn btn-sm btn-success" title="View Receipt">
-                        <i class="fas fa-receipt"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `
-        )
-        .join("");
-
-    if (mobileCards) {
-        if (filteredPayments.length === 0) {
-            mobileCards.innerHTML = `
-                <div class="empty-state" style="text-align: center; padding: 40px 20px;">
-                    <i class="fas fa-inbox" style="font-size: 2rem; color: #94a3b8; margin-bottom: 12px;"></i>
-                    <h3 style="color: #64748b; margin-bottom: 8px;">No payments found</h3>
-                    <p style="color: #94a3b8;">No payment history available</p>
-                </div>
-            `;
-            return;
-        }
-
-        mobileCards.innerHTML = filteredPayments
-            .map(
-                (payment, index) => `
-            <div class="mobile-card payments">
-                <div class="card-header">
-                    <div class="card-title">${payment.tenant} - ${payment.unit
-                    }</div>
-                    <div class="card-number">${String(index + 1).padStart(
-                        2,
-                        "0"
-                    )}</div>
-                </div>
-                
-                <div class="card-amount payment">${formatCurrency(
-                        payment.amount
-                    )}</div>
-                
-                <div class="card-details">
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Payment Date</span>
-                        <span class="card-detail-value">${formatDate(
-                        payment.paymentDate
-                    )}</span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Description</span>
-                        <span class="card-detail-value">${escapeHtml(
-                            payment.charge_description || payment.description || `Charge #${payment.charge_id || 'N/A'}`
-                        )}
-                    </span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Method</span>
-                        <span class="card-detail-value">
-                            <span class="payment-method">${capitalizeFirst(
-                        payment.paymentMethod
-                    )}</span>
-                        </span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Reference</span>
-                        <span class="card-detail-value">${payment.reference
-                    }</span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Processed By</span>
-                        <span class="card-detail-value">${payment.processedBy
-                    }</span>
-                    </div>
-                </div>
-                
-                <div class="card-actions">
-                    <button onclick="viewPaymentDetails('${payment.id
-                    }')" class="btn btn-sm btn-info" title="View Details">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button onclick="generateReceipt('${payment.id
-                    }')" class="btn btn-sm btn-success" title="View Receipt">
-                        <i class="fas fa-receipt"></i>
-                    </button>
-                </div>
-            </div>
-        `
-            )
-            .join("");
-    }
-}
-
 function generateReceipt(paymentId) {
     const payment = findPaymentById(paymentId);
     const lease = findLeaseByPaymentId(paymentId);
@@ -5409,6 +5485,8 @@ function injectPaymentButtonStyles() {
             justify-content: center !important;
         }
         .pending-payments-table .btn-narrow { margin-right: 6px; }
+        .reference-code.masked { letter-spacing: 1px; color: #64748b; }
+        .col-toggle { font-size: 12px; }
     `;
     document.head.appendChild(s);
 }
@@ -5458,6 +5536,9 @@ function switchTab(tabName) {
         
         loadPendingPayments(currentPendingStatus || 'Pending');
         updatePendingStatusCounts();
+        if (currentPaymentView === 'all') {
+            fetchAllPayments(paymentsPage, paymentsLimit);
+        }
     }
 }
 
@@ -5508,7 +5589,7 @@ function switchPaymentView(view) {
     if (view === 'all') {
         allView.classList.add('active');
         pendingView.classList.remove('active');
-        renderPaymentsTable();
+        fetchAllPayments(1, paymentsLimit);
     } else {
         allView.classList.remove('active');
         pendingView.classList.add('active');
@@ -5797,6 +5878,7 @@ window.confirmDeleteCharge = confirmDeleteCharge;
 window.viewPaymentDetails = viewPaymentDetails;
 window.generateReceipt = generateReceipt;
 window.sortTable = sortTable;
+window.toggleReferenceVisibility = window.toggleReferenceVisibility;
 
 document.addEventListener("DOMContentLoaded", function () {
     injectEnhancedButtonStyles();

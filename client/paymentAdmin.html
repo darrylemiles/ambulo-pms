@@ -275,16 +275,24 @@
                                 <div class="table-container">
                                     <table class="data-table payments-table">
                                         <thead>
-                                                        <tr>
-                                                        <th>Tenant</th>
-                                                        <th>Unit</th>
-                                                        <th>Payment Date</th>
-                                                        <th>Description</th>
-                                                        <th>Amount</th>
-                                                        <th>Method</th>
-                                                        <th>Reference</th>
-                                                        <th>Actions</th>
-                                                    </tr>
+                                            <tr>
+                                                <th class="th-number">#</th>
+                                                <th>Reference
+                                                    <button class="col-toggle" title="Show/Hide Reference" onclick="toggleReferenceVisibility()" style="margin-left:8px; background:none; border:none; cursor:pointer; color:#64748b">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </th>
+                                                <th>Tenant</th>
+                                                <th>Unit</th>
+                                                <th>Description</th>
+                                                <th>Amount</th>
+                                                <th>Method</th>
+                                                <th>Notes</th>
+                                                <th>Payment Date</th>
+                                                <th>Status</th>
+                                                <th>Processed By</th>
+                                                <th>Actions</th>
+                                            </tr>
                                         </thead>
                                         <tbody id="payments-tbody">
                                             <!-- Content will be populated by JavaScript -->
@@ -296,6 +304,7 @@
                                 <div class="mobile-cards" id="payments-mobile">
                                     <!-- Content will be populated by JavaScript -->
                                 </div>
+                                <div class="pagination-bar" id="payments-pagination"></div>
                             </div>
                         </div>
 
