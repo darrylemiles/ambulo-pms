@@ -47,7 +47,7 @@ const createPayment = expressAsync(async (req, res) => {
 });
 
 const getAllPayments = expressAsync(async (req, res) => {
-    const { status } = req.query || {};
+    const { status, payment_method, payment_type, month, q } = req.query || {};
     const page = Number.isFinite(parseInt(req.query.page, 10)) && parseInt(req.query.page, 10) > 0
         ? parseInt(req.query.page, 10)
         : 1;
@@ -55,7 +55,7 @@ const getAllPayments = expressAsync(async (req, res) => {
         ? parseInt(req.query.limit, 10)
         : 10;
     const limit = Math.min(100, limitRaw);
-    const result = await paymentsServices.getAllPayments({ status, page, limit });
+    const result = await paymentsServices.getAllPayments({ status, payment_method, payment_type, month, q, page, limit });
     res.status(200).json({
         payments: result.rows,
         page: result.page,

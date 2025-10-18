@@ -137,7 +137,7 @@ const createPayment = async (paymentData = {}, performedBy = null) => {
 
 const getAllPayments = async (filters = {}) => {
     try {
-        const { status } = filters || {};
+        const { status, payment_method, payment_type, month, q } = filters || {};
         const pageNum = Math.max(1, parseInt(filters.page, 10) || 1);
         const pageLimit = Math.max(1, Math.min(100, parseInt(filters.limit, 10) || 10));
         const offset = (pageNum - 1) * pageLimit;
@@ -150,8 +150,8 @@ const getAllPayments = async (filters = {}) => {
             LEFT JOIN users cb ON pay.confirmed_by = cb.user_id
             LEFT JOIN properties p ON l.property_id = p.property_id
         `;
-        const whereClauses = [];
-        const params = [];
+    const whereClauses = [];
+    const params = [];
 
         if (status) {
             const s = String(status).toLowerCase();
@@ -162,6 +162,36 @@ const getAllPayments = async (filters = {}) => {
                 params.push(status);
             }
         }
+        
+        if (payment_method) {
+            whereClauses.push(`LOWER(pay.payment_method) = LOWER(?)`);
+            params.push(payment_method);
+        }
+
+        
+        if (payment_type) {
+            whereClauses.push(`LOWER(c.charge_type) = LOWER(?)`);
+            params.push(payment_type);
+        }
+
+        
+        if (month) {
+            whereClauses.push(`DATE_FORMAT(pay.created_at, '%Y-%m') = ?`);
+            params.push(month);
+        }
+
+        
+        if (q) {
+            whereClauses.push(`(
+                CONCAT(u.first_name, ' ', u.last_name, ' ', IFNULL(u.suffix, '')) LIKE ? OR
+                p.property_name LIKE ? OR
+                c.description LIKE ? OR
+                pay.payment_id LIKE ?
+            )`);
+            const like = `%${q}%`;
+            params.push(like, like, like, like);
+        }
+
         const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
         const countSql = `SELECT COUNT(*) AS cnt ${baseFrom} ${whereSql}`;
@@ -180,7 +210,7 @@ const getAllPayments = async (filters = {}) => {
                 pay.confirmed_by AS processed_by,
                 pay.confirmed_at AS processed_at,
                 CONCAT(cb.first_name, ' ', cb.last_name) AS processed_by_name,
-                CONCAT(u.first_name, ' ', u.last_name) AS tenant_name,
+                CONCAT(u.first_name, ' ', u.last_name, ' ', u.suffix) AS tenant_name,
                 c.description AS charge_description,
                 c.charge_type AS charge_type,
                 c.due_date AS due_date,
