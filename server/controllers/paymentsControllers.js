@@ -16,7 +16,7 @@ const extractProofUrls = (req) => {
 
 const createPayment = expressAsync(async (req, res) => {
     const raw = req.body || {};
-    console.log("createPayment - raw body:", raw);
+
 
     const payment = {
         chargeId: raw.chargeId || raw.charge_id || null,
@@ -52,6 +52,23 @@ const getAllPayments = expressAsync(async (req, res) => {
     res.status(200).json({ payments: result });
 });
 
+const getPaymentsByUserId = expressAsync(async (req, res) => {
+    const authUserId = req.user?.user_id || null;
+    if (!authUserId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { userId } = req.params || {};
+    const targetUserId = userId || authUserId;
+
+    if (String(targetUserId) !== String(authUserId)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const result = await paymentsServices.getPaymentsByUserId(targetUserId);
+    res.status(200).json({ payments: result });
+});
+
 const getPaymentById = expressAsync(async (req, res) => {
     const { id } = req.params;
     const result = await paymentsServices.getPaymentById(id);
@@ -62,7 +79,7 @@ const getPaymentById = expressAsync(async (req, res) => {
 const updatePaymentById = expressAsync(async (req, res) => {
     const { id } = req.params;
     const raw = req.body || {};
-    console.log("updatePaymentById - raw body:", raw);
+
 
     const payment = {
         chargeId: raw.chargeId || raw.charge_id || null,
@@ -143,6 +160,7 @@ const searchPayments = expressAsync(async (req, res) => {
 export {
     createPayment,
     getAllPayments,
+    getPaymentsByUserId,
     getPaymentById,
     updatePaymentById,
     deletePaymentById,

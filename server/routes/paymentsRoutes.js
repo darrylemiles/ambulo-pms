@@ -4,6 +4,7 @@ import { protect } from "../middlewares/authMiddleware.js";
 import {
     createPayment,
     getAllPayments,
+    getPaymentsByUserId,
     getPaymentById,
     updatePaymentById,
     deletePaymentById,
@@ -24,8 +25,9 @@ router.post(
     createPayment
 );
 router.get("/", getAllPayments);
-router.get("/:id", getPaymentById);
 router.get("/search/by-charge", protect, searchPayments);
+router.get("/users/:userId", protect, getPaymentsByUserId);
+router.get("/:id", getPaymentById);
 router.patch(
     "/:id",
     protect,

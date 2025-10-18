@@ -236,6 +236,64 @@ const getAllPayments = async (filters = {}) => {
     }
 };
 
+const getPaymentsByUserId = async (userId) => {
+    if (!userId) return [];
+    try {
+        const query = `
+            SELECT 
+                pay.payment_id,
+                pay.charge_id,
+                pay.status,
+                pay.payment_method,
+                pay.amount AS amount_paid,
+                pay.created_at,
+                pay.confirmed_by AS processed_by,
+                pay.confirmed_at AS processed_at,
+                CONCAT(cb.first_name, ' ', cb.last_name) AS processed_by_name,
+                CONCAT(u.first_name, ' ', u.last_name) AS tenant_name,
+                c.description AS charge_description,
+                c.charge_type AS charge_type,
+                c.due_date AS due_date,
+                p.property_name
+            FROM payments pay
+            LEFT JOIN charges c ON pay.charge_id = c.charge_id
+            LEFT JOIN leases l ON c.lease_id = l.lease_id
+            LEFT JOIN users u ON l.user_id = u.user_id
+            LEFT JOIN users cb ON pay.confirmed_by = cb.user_id
+            LEFT JOIN properties p ON l.property_id = p.property_id
+            WHERE (pay.user_id = ? OR l.user_id = ?)
+            ORDER BY pay.created_at DESC
+        `;
+
+        const [rows] = await pool.execute(query, [userId, userId]);
+
+        (rows || []).forEach((r) => {
+            if (r.status === "Completed") r.status = "Confirmed";
+        });
+
+        if (!rows || !rows.length) return rows || [];
+        const ids = rows.map((r) => r.payment_id);
+        const placeholders = ids.map(() => "?").join(",");
+        const [proofRows] = await pool.execute(
+            `SELECT payment_id, proof_url FROM payment_proof WHERE payment_id IN (${placeholders}) ORDER BY uploaded_at`,
+            ids
+        );
+        const proofsMap = new Map();
+        (proofRows || []).forEach((pr) => {
+            if (!proofsMap.has(pr.payment_id)) proofsMap.set(pr.payment_id, []);
+            proofsMap.get(pr.payment_id).push({ proof_url: pr.proof_url });
+        });
+        rows.forEach((r) => {
+            r.proofs = proofsMap.get(r.payment_id) || [];
+        });
+
+        return rows;
+    } catch (error) {
+        console.error("Error in getPaymentsByUserId:", error);
+        throw error;
+    }
+};
+
 const getPaymentById = async (id) => {
     try {
         const query = `
@@ -514,6 +572,7 @@ const deletePaymentById = async (id, performedBy = null) => {
 export default {
     createPayment,
     getAllPayments,
+    getPaymentsByUserId,
     updatePaymentById,
     getPaymentById,
     deletePaymentById,
