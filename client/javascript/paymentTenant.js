@@ -1,3 +1,5 @@
+import fetchCompanyDetails from '/api/loadCompanyInfo.js';
+
 let rentedSpaces = [];
 
 let paymentHistory = [];
@@ -406,6 +408,29 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 
 async function initializePage() {
+    
+    try {
+        const company = await fetchCompanyDetails();
+        if (company) {
+            if (company.name) document.title = `${company.name} · Payment`;
+            
+            const fav = company.icon_logo_url || company.alt_logo_url || company.logo || null;
+            if (fav) {
+                let link = document.querySelector('link[rel="icon"]');
+                if (!link) {
+                    link = document.createElement('link');
+                    link.rel = 'icon';
+                    document.head.appendChild(link);
+                }
+                link.href = fav;
+            }
+            
+            window.__companyDetails = company;
+        }
+    } catch (err) {
+        console.warn('Could not load company details for favicon/title', err);
+    }
+
     await fetchRentedSpaces();
     loadRentedSpaces();
     loadPaymentHistory();
