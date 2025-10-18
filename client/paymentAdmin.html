@@ -136,6 +136,14 @@
                                     <input type="month" id="charges-date" onchange="filterCharges()">
                                 </div>
                                 <div class="filter-item">
+                                    <label>Group by</label>
+                                    <select id="charges-group-by" onchange="filterCharges()">
+                                        <option value="none">None</option>
+                                        <option value="tenant">Tenant</option>
+                                        <option value="status" selected>Status</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
                                     <button class="btn btn-secondary" onclick="resetChargesFilters()">
                                         <i class="fas fa-refresh"></i> Reset
                                     </button>
@@ -181,6 +189,9 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <!-- Pagination for All Charges -->
+                            <div class="pagination-bar" id="charges-pagination"></div>
 
                             <!-- Mobile Charges Cards -->
                             <div class="mobile-cards" id="charges-mobile">

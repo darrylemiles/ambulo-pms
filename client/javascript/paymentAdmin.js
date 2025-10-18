@@ -23,6 +23,10 @@ let payments = [];
 let currentSort = { key: null, dir: "asc" };
 
 
+let chargesGrouping = 'status'; 
+let chargesGroupCollapsed = {}; 
+
+
 const CHARGE_TYPES_LIST = (window.AppConstants &&
     window.AppConstants.CHARGE_TYPES) ||
     (typeof CHARGE_TYPES !== "undefined" && CHARGE_TYPES) || [
@@ -123,12 +127,28 @@ async function fetchCharges() {
             }
         }
 
+        
+        if (typeof window.chargesPage === 'undefined') window.chargesPage = 1;
+        if (typeof window.chargesLimit === 'undefined') window.chargesLimit = 10;
+        params.set('page', String(window.chargesPage));
+        params.set('limit', String(window.chargesLimit));
+
         const url =
             `${API_BASE_URL}/charges` +
             (params.toString() ? `?${params.toString()}` : "");
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch charges from server");
-        const serverCharges = await res.json();
+        const payload = await res.json();
+
+        
+        let serverCharges = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.data) ? payload.data : []);
+        
+        window.chargesTotal = Array.isArray(payload) ? (payload.length || 0) : (Number(payload?.total) || 0);
+        if (!Number.isFinite(window.chargesTotal)) window.chargesTotal = serverCharges.length;
+        if (payload && !Array.isArray(payload)) {
+            if (Number(payload.page)) window.chargesPage = Number(payload.page);
+            if (Number(payload.limit)) window.chargesLimit = Number(payload.limit);
+        }
 
         leasesData.length = 0;
         charges = [];
@@ -245,6 +265,9 @@ async function fetchCharges() {
 
         applyCurrentSort();
         renderChargesTable();
+        if (typeof renderChargesPagination === 'function') {
+            renderChargesPagination();
+        }
         renderPaymentsTable();
     } catch (error) {
         console.error("Error fetching charges from server:", error);
@@ -253,6 +276,8 @@ async function fetchCharges() {
 
 onReady(() => {
     setupChargeFilters();
+    
+    setupChargesGroupingControl();
     fetchCharges();
 });
 
@@ -266,7 +291,7 @@ function setupChargeFilters() {
                 (t) => `<option value="${t.value}">${t.label}</option>`
             ).join("");
         if (currentVal) typeEl.value = currentVal;
-        typeEl.addEventListener("change", () => fetchCharges());
+        typeEl.addEventListener("change", () => { window.chargesPage = 1; fetchCharges(); });
     }
 
     const searchEl = document.getElementById("charges-search");
@@ -274,7 +299,7 @@ function setupChargeFilters() {
         let timeout = null;
         searchEl.addEventListener("input", () => {
             clearTimeout(timeout);
-            timeout = setTimeout(() => fetchCharges(), 300);
+            timeout = setTimeout(() => { window.chargesPage = 1; fetchCharges(); }, 300);
         });
     }
 
@@ -310,11 +335,22 @@ function setupChargeFilters() {
         statusEl.innerHTML = entries
             .map((e) => `<option value="${e.value}">${e.label}</option>`)
             .join("");
-        statusEl.addEventListener("change", () => fetchCharges());
+        statusEl.addEventListener("change", () => { window.chargesPage = 1; fetchCharges(); });
     }
 
     const dateEl = document.getElementById("charges-date");
-    if (dateEl) dateEl.addEventListener("change", () => fetchCharges());
+    if (dateEl) dateEl.addEventListener("change", () => { window.chargesPage = 1; fetchCharges(); });
+
+    
+    const groupEl = document.getElementById('charges-group-by');
+    if (groupEl) {
+        groupEl.value = chargesGrouping;
+        groupEl.addEventListener('change', () => {
+            chargesGrouping = groupEl.value;
+            chargesGroupCollapsed = {};
+            renderChargesTable();
+        });
+    }
 }
 
 function syncDataArrays() {
@@ -514,22 +550,36 @@ function getStatusDisplay(charge) {
             extra = ` &middot; Due in ${daysUntilDue}d`;
         const bg = cfg.color || "#e5e7eb";
         const color = cfg.textColor || "#111827";
-        return `<span class="status-indicator" style="background: ${bg}; color: ${color};">${label}${extra}</span>`;
+        
+        const iconHtml = (function () {
+            switch (chargeStatus) {
+                case 'overdue':
+                    return '<i class="fas fa-circle" style="color:#ef4444;margin-right:6px;"></i>';
+                case 'paid':
+                    return '<i class="fas fa-circle" style="color:#10b981;margin-right:6px;"></i>';
+                case 'due-soon':
+                    return '<i class="fas fa-circle" style="color:#f59e0b;margin-right:6px;"></i>';
+                case 'pending':
+                default:
+                    return '<i class="fas fa-circle" style="color:#64748b;margin-right:6px;"></i>';
+            }
+        })();
+        return `<span class="status-indicator" style="background: ${bg}; color: ${color};">${iconHtml}${label}${extra}</span>`;
     }
 
     switch (chargeStatus) {
         case "overdue":
-            return `<span class="status-indicator overdue"><i class="fas fa-exclamation-triangle"></i> ${Math.abs(
+            return `<span class="status-indicator overdue"><i class="fas fa-circle" style="color:#ef4444;margin-right:6px;"></i>${Math.abs(
                 daysUntilDue
             )} days overdue</span>`;
         case "due-soon":
-            return `<span class="status-indicator due-soon"><i class="fas fa-clock"></i> Due in ${daysUntilDue} days</span>`;
+            return `<span class="status-indicator due-soon"><i class="fas fa-circle" style="color:#f59e0b;margin-right:6px;"></i>Due in ${daysUntilDue} days</span>`;
         case "paid":
-            return `<span class="status-indicator paid"><i class="fas fa-check-circle"></i> Paid</span>`;
+            return `<span class="status-indicator paid"><i class="fas fa-circle" style="color:#10b981;margin-right:6px;"></i>Paid</span>`;
         case "pending":
-            return `<span class="status-indicator pending"><i class="fas fa-clock"></i> Due in ${daysUntilDue} days</span>`;
+            return `<span class="status-indicator pending"><i class="fas fa-circle" style="color:#64748b;margin-right:6px;"></i>Due in ${daysUntilDue} days</span>`;
         default:
-            return `<span class="status-indicator pending"><i class="fas fa-clock"></i> Pending</span>`;
+            return `<span class="status-indicator pending"><i class="fas fa-circle" style="color:#64748b;margin-right:6px;"></i>Pending</span>`;
     }
 }
 
@@ -2433,12 +2483,15 @@ function resetChargesFilters() {
     const typeEl = document.getElementById("charges-type");
     const statusEl = document.getElementById("charges-status");
     const dateEl = document.getElementById("charges-date");
+    const groupEl = document.getElementById('charges-group-by');
 
     if (searchEl) searchEl.value = "";
     if (typeEl) typeEl.value = "";
     if (statusEl) statusEl.value = "";
     if (dateEl) dateEl.value = "";
+    if (groupEl) { groupEl.value = 'status'; chargesGrouping = 'status'; }
 
+    window.chargesPage = 1;
     fetchCharges();
 }
 
@@ -2473,6 +2526,15 @@ function filterByStatus(status) {
     }
 }
 
+function setupChargesGroupingControl() {
+    try {
+        
+        return;
+    } catch (e) {
+        console.warn('setupChargesGroupingControl error', e);
+    }
+}
+
 function renderChargesTable() {
     const tbody = document.getElementById("charges-tbody");
     const mobileCards = document.getElementById("charges-mobile");
@@ -2493,8 +2555,8 @@ function renderChargesTable() {
         return;
     }
 
-    tbody.innerHTML = filteredCharges
-        .map((charge, index) => {
+    
+    const renderRow = (charge, index) => {
             
             const paidAmount = (typeof charge.total_paid !== 'undefined' && charge.total_paid !== null)
                 ? Number(charge.total_paid) || 0
@@ -2604,8 +2666,102 @@ function renderChargesTable() {
                 </td>
             </tr>
         `;
-        })
-        .join("");
+    };
+
+    if (chargesGrouping === 'none') {
+        tbody.innerHTML = filteredCharges.map((c, i) => renderRow(c, i)).join("");
+    } else {
+        
+        const groups = new Map();
+
+        
+        const statusGroupKey = (c) => {
+            const mapped = (c.canonical_status || '').toString().toUpperCase();
+            if (mapped === 'PAID') return 'Paid';
+            if (mapped === 'PARTIALLY-PAID' || mapped === 'PARTIALLY_PAID') return 'Partially Paid';
+            if (mapped === 'WAIVED') return 'Waived';
+            
+            const st = getChargeStatus(c);
+            if (st === 'overdue') return 'Overdue';
+            if (st === 'due-soon') return 'Due Soon';
+            if (st === 'paid') return 'Paid';
+            return 'Unpaid';
+        };
+
+        for (const c of filteredCharges) {
+            const key = (chargesGrouping === 'tenant') ? (c.tenant || 'Unknown') : statusGroupKey(c);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(c);
+        }
+
+        
+        const order = {
+            'Overdue': 1,
+            'Unpaid': 2,
+            'Due Soon': 3,
+            'Partially Paid': 4,
+            'Paid': 5,
+            'Waived': 6,
+        };
+        const sortedGroupKeys = Array.from(groups.keys()).sort((a, b) => (order[a] || 999) - (order[b] || 999) || a.localeCompare(b));
+        
+        const baseIndex = ((Number(window.chargesPage || 1) - 1) * Number(window.chargesLimit || 10));
+        let index = 0;
+        let html = '';
+        sortedGroupKeys.forEach((key) => {
+            const items = groups.get(key) || [];
+            const collapsed = !!chargesGroupCollapsed[key];
+            const count = items.length;
+            const chev = collapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+            
+            const groupTotals = items.reduce((acc, c) => {
+                const totalAmount = Number(c.amount) || 0;
+                const paidAmount = (typeof c.total_paid !== 'undefined' && c.total_paid !== null)
+                    ? Number(c.total_paid) || 0
+                    : getPaidAmountForCharge(c.id);
+                const remaining = Math.max(totalAmount - paidAmount, 0);
+                acc.total += totalAmount;
+                acc.paid += paidAmount;
+                acc.remaining += remaining;
+                return acc;
+            }, { total: 0, paid: 0, remaining: 0 });
+            const subtotalHtml = `
+                <div class="group-subtotals">
+                    <span><strong>Total:</strong> ${formatCurrency(groupTotals.total)}</span>
+                    <span><strong>Paid:</strong> ${formatCurrency(groupTotals.paid)}</span>
+                    <span><strong>Remaining:</strong> ${formatCurrency(groupTotals.remaining)}</span>
+                </div>`;
+
+            html += `
+                <tr class="group-row ${collapsed ? 'collapsed' : ''}">
+                    <td colspan="10">
+                        <button class="group-toggle" data-group="${escapeHtml(key)}" aria-expanded="${!collapsed}">
+                            <i class="fas ${chev}"></i>
+                            <span class="group-title">${escapeHtml(key)}</span>
+                            <span class="group-meta">${count} charge${count>1?'s':''}</span>
+                        </button>
+                        ${subtotalHtml}
+                    </td>
+                </tr>
+            `;
+            if (!collapsed) {
+                items.forEach((c) => {
+                    html += renderRow(c, baseIndex + index);
+                    index++;
+                });
+            }
+        });
+        tbody.innerHTML = html;
+
+        
+        tbody.querySelectorAll('.group-toggle').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const g = btn.getAttribute('data-group');
+                chargesGroupCollapsed[g] = !chargesGroupCollapsed[g];
+                renderChargesTable();
+            });
+        });
+    }
 
     if (mobileCards) {
         if (filteredCharges.length === 0) {
@@ -2618,136 +2774,169 @@ function renderChargesTable() {
             `;
             return;
         }
-
-        mobileCards.innerHTML = filteredCharges
-            .map((charge, index) => {
-                const paidAmount = (typeof charge.total_paid !== 'undefined' && charge.total_paid !== null)
-                    ? Number(charge.total_paid) || 0
-                    : getPaidAmountForCharge(charge.id);
-                const totalAmount = Number(charge.amount) || 0;
-                const baseAmount = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
-                    ? Number(charge.original_amount) || 0
-                    : totalAmount;
-                const lateFeeAmount = (typeof charge.late_fee_amount === 'number') ? Number(charge.late_fee_amount) || 0 : 0;
-                const remainingAmount = Math.max(totalAmount - (Number(paidAmount) || 0), 0);
-                const paymentProgress =
-                    totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
-                const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
-                const isFullyPaid = paidAmount >= totalAmount;
-                const isRecurring =
-                    !!charge.isRecurring ||
-                    (typeof charge.description === "string" &&
-                        charge.description.toLowerCase().includes("monthly"));
-
-                let chargeStatus = getChargeStatus(charge);
-                if (isFullyPaid) chargeStatus = "paid";
-                else if (isPartiallyPaid) chargeStatus = "partial";
-
-                return `
+        
+        const renderMobileCard = (charge, displayIndex) => {
+            const paidAmount = (typeof charge.total_paid !== 'undefined' && charge.total_paid !== null)
+                ? Number(charge.total_paid) || 0
+                : getPaidAmountForCharge(charge.id);
+            const totalAmount = Number(charge.amount) || 0;
+            const baseAmount = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
+                ? Number(charge.original_amount) || 0
+                : totalAmount;
+            const lateFeeAmount = (typeof charge.late_fee_amount === 'number') ? Number(charge.late_fee_amount) || 0 : 0;
+            const remainingAmount = Math.max(totalAmount - (Number(paidAmount) || 0), 0);
+            const paymentProgress = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
+            const isPartiallyPaid = paidAmount > 0 && paidAmount < totalAmount;
+            const isFullyPaid = paidAmount >= totalAmount;
+            const isRecurring = !!charge.isRecurring || (typeof charge.description === 'string' && charge.description.toLowerCase().includes('monthly'));
+            let chargeStatus = getChargeStatus(charge);
+            if (isFullyPaid) chargeStatus = 'paid'; else if (isPartiallyPaid) chargeStatus = 'partial';
+            return `
                 <div class="mobile-card charges">
-                    ${isRecurring
-                        ? '<div class="recurring-indicator"><div class="recurring-tooltip">Recurring Payment</div></div>'
-                        : ""
-                    }
-                    
+                    ${isRecurring ? '<div class="recurring-indicator"><div class="recurring-tooltip">Recurring Payment</div></div>' : ''}
                     <div class="card-header">
-                        <div class="card-title">
-                            ${charge.tenant} - ${charge.unit}
-                            ${isRecurring
-                        ? '<span class="recurring-pill"><i class="fas fa-rotate"></i> Recurring</span>'
-                        : ""
-                    }
+                        <div class="card-title">${charge.tenant} - ${charge.unit}
+                            ${isRecurring ? '<span class="recurring-pill"><i class="fas fa-rotate"></i> Recurring</span>' : ''}
                         </div>
-                        <div class="card-number">${String(index + 1).padStart(
-                        2,
-                        "0"
-                    )}</div>
+                        <div class="card-number">${String(displayIndex + 1).padStart(2,'0')}</div>
                     </div>
-                    
-                    <div class="card-amount charge" title="${formatCurrency(baseAmount)}${lateFeeAmount>0?` + ${formatCurrency(lateFeeAmount)} late fee = ${formatCurrency(totalAmount)}`:""}">
+                    <div class="card-amount charge" title="${formatCurrency(baseAmount)}${lateFeeAmount>0?` + ${formatCurrency(lateFeeAmount)} late fee = ${formatCurrency(totalAmount)}`:''}">
                         ${formatCurrency(remainingAmount)}
-                        ${lateFeeAmount>0 ? `<div class="late-fee-hint" style="font-size:11px; color:#ef4444; margin-top:4px;">
-                            <i class=\"fas fa-info-circle\" aria-hidden=\"true\"></i> Late fee applied
-                        </div>`: ""}
+                        ${lateFeeAmount>0 ? `<div class="late-fee-hint" style="font-size:11px; color:#ef4444; margin-top:4px;"><i class=\"fas fa-info-circle\"></i> Late fee applied</div>`: ''}
                     </div>
-                    
                     <div class="card-details">
-                        <div class="card-detail-row">
-                            <span class="card-detail-label">Type</span>
-                            <span class="card-detail-value">
-                                <span class="type-text ${(charge.type || "")
-                        .toString()
-                        .toLowerCase()
-                        .replace(/\s+/g, "-")}">${capitalizeFirst(
-                            charge.type || ""
-                        )}</span>
+                        <div class="card-detail-row"><span class="card-detail-label">Type</span>
+                            <span class="card-detail-value"><span class="type-text ${(charge.type||'').toString().toLowerCase().replace(/\s+/g,'-')}">${capitalizeFirst(charge.type||'')}</span></span>
+                        </div>
+                        <div class="card-detail-row"><span class="card-detail-label">Description</span><span class="card-detail-value">${charge.description}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Paid Amount</span>
+                            <span class="card-detail-value">${formatCurrency(paidAmount)}
+                                ${paidAmount>0?`<div class=\"payment-progress\"><div class=\"progress-bar\"><div class=\"progress-fill\" style=\"width: ${paymentProgress}%\"></div></div><span class=\"progress-text\">${Math.round(paymentProgress)}%</span></div>`:''}
                             </span>
                         </div>
-                        <div class="card-detail-row">
-                            <span class="card-detail-label">Description</span>
-                            <span class="card-detail-value">${charge.description
-                    }</span>
-                        </div>
-                        <div class="card-detail-row">
-                            <span class="card-detail-label">Paid Amount</span>
-                            <span class="card-detail-value">
-                                ${formatCurrency(paidAmount)}
-                                ${paidAmount > 0
-                        ? `
-                                    <div class="payment-progress">
-                                        <div class="progress-bar">
-                                            <div class="progress-fill" style="width: ${paymentProgress}%"></div>
-                                        </div>
-                                        <span class="progress-text">${Math.round(
-                            paymentProgress
-                        )}%</span>
-                                    </div>
-                                `
-                        : ""
-                    }
-                            </span>
-                        </div>
-                        <div class="card-detail-row">
-                            <span class="card-detail-label">Status</span>
-                            <span class="card-detail-value">
-                                ${getStatusDisplay(charge)}
-                            </span>
-                        </div>
-                        <div class="card-detail-row">
-                            <span class="card-detail-label">Due Date</span>
-                            <span class="card-detail-value">${formatDate(
-                        charge.dueDate
-                    )}</span>
-                        </div>
+                        <div class="card-detail-row"><span class="card-detail-label">Status</span><span class="card-detail-value">${getStatusDisplay(charge)}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Due Date</span><span class="card-detail-value">${formatDate(charge.dueDate)}</span></div>
                     </div>
-                    
                     <div class="card-actions">
-                        <button onclick="viewChargeDetails(${charge.id
-                    })" class="btn btn-sm btn-info" title="View Details">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button onclick="editCharge(${charge.id
-                    })" class="btn btn-sm btn-warning" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        ${!isFullyPaid
-                        ? `
-                            <button onclick="recordPayment(${charge.id})" class="btn btn-sm btn-success" title="Record Payment">
-                                <i class="fas fa-credit-card"></i>
-                            </button>
-                        `
-                        : ""
-                    }
-                        <button onclick="removeCharge(${charge.id
-                    })" class="btn btn-sm btn-danger" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <button onclick="viewChargeDetails(${charge.id})" class="btn btn-sm btn-info" title="View Details"><i class="fas fa-eye"></i></button>
+                        <button onclick="editCharge(${charge.id})" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button>
+                        ${!isFullyPaid?`<button onclick=\"recordPayment(${charge.id})\" class=\"btn btn-sm btn-success\" title=\"Record Payment\"><i class=\"fas fa-credit-card\"></i></button>`:''}
+                        <button onclick="removeCharge(${charge.id})" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                     </div>
-                </div>
-            `;
-            })
-            .join("");
+                </div>`;
+        };
+
+        const baseIndex = ((Number(window.chargesPage || 1) - 1) * Number(window.chargesLimit || 10));
+
+        if (chargesGrouping === 'none') {
+            mobileCards.innerHTML = filteredCharges.map((c, i) => renderMobileCard(c, baseIndex + i)).join('');
+        } else {
+            
+            const groups = new Map();
+            const statusGroupKey = (c) => {
+                const mapped = (c.canonical_status || '').toString().toUpperCase();
+                if (mapped === 'PAID') return 'Paid';
+                if (mapped === 'PARTIALLY-PAID' || mapped === 'PARTIALLY_PAID') return 'Partially Paid';
+                if (mapped === 'WAIVED') return 'Waived';
+                const st = getChargeStatus(c);
+                if (st === 'overdue') return 'Overdue';
+                if (st === 'due-soon') return 'Due Soon';
+                if (st === 'paid') return 'Paid';
+                return 'Unpaid';
+            };
+            for (const c of filteredCharges) {
+                const key = (chargesGrouping === 'tenant') ? (c.tenant || 'Unknown') : statusGroupKey(c);
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(c);
+            }
+            const order = { 'Overdue': 1, 'Unpaid': 2, 'Due Soon': 3, 'Partially Paid': 4, 'Paid': 5, 'Waived': 6 };
+            const sortedGroupKeys = Array.from(groups.keys()).sort((a, b) => (order[a] || 999) - (order[b] || 999) || a.localeCompare(b));
+
+            let idx = 0;
+            let html = '';
+            sortedGroupKeys.forEach((key) => {
+                const items = groups.get(key) || [];
+                const collapsed = !!chargesGroupCollapsed[key];
+                const count = items.length;
+                const chev = collapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+                const totals = items.reduce((acc, c) => {
+                    const totalAmount = Number(c.amount) || 0;
+                    const paidAmount = (typeof c.total_paid !== 'undefined' && c.total_paid !== null) ? Number(c.total_paid) || 0 : getPaidAmountForCharge(c.id);
+                    acc.total += totalAmount; acc.paid += paidAmount; acc.remaining += Math.max(totalAmount - paidAmount, 0); return acc;
+                }, { total: 0, paid: 0, remaining: 0 });
+                html += `
+                    <div class="mobile-group">
+                        <button class="mobile-group-toggle" data-group="${escapeHtml(key)}" aria-expanded="${!collapsed}">
+                            <i class="fas ${chev}"></i>
+                            <span class="group-title">${escapeHtml(key)}</span>
+                            <span class="group-meta">${count} charge${count>1?'s':''}</span>
+                            <span class="group-subtotals"><strong>Total:</strong> ${formatCurrency(totals.total)} · <strong>Paid:</strong> ${formatCurrency(totals.paid)} · <strong>Remaining:</strong> ${formatCurrency(totals.remaining)}</span>
+                        </button>
+                        ${collapsed ? '' : `<div class="mobile-group-body">${items.map(c => renderMobileCard(c, baseIndex + (idx++))).join('')}</div>`}
+                    </div>
+                `;
+                if (collapsed) { idx += items.length; }
+            });
+            mobileCards.innerHTML = html;
+
+            
+            mobileCards.querySelectorAll('.mobile-group-toggle').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const g = btn.getAttribute('data-group');
+                    chargesGroupCollapsed[g] = !chargesGroupCollapsed[g];
+                    renderChargesTable();
+                });
+            });
+        }
     }
+}
+
+
+function renderChargesPagination() {
+    const container = document.getElementById('charges-pagination');
+    if (!container) return;
+    const total = Number(window.chargesTotal || 0);
+    const limit = Number(window.chargesLimit || 10);
+    const page = Number(window.chargesPage || 1);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    const makeBtn = (label, disabled, onClick, isActive=false) => {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn' + (isActive ? ' active' : '');
+        btn.textContent = label;
+        btn.disabled = !!disabled;
+        if (onClick) btn.addEventListener('click', onClick);
+        return btn;
+    };
+
+    container.innerHTML = '';
+    container.classList.add('pagination-bar');
+
+    
+    container.appendChild(makeBtn('Prev', page <= 1, () => { window.chargesPage = page - 1; fetchCharges(); }));
+
+    const numbersWrap = document.createElement('div');
+    numbersWrap.className = 'page-numbers';
+
+    const pushNumber = (p) => numbersWrap.appendChild(
+        makeBtn(String(p), false, () => { window.chargesPage = p; fetchCharges(); }, p === page)
+    );
+
+    if (totalPages <= 7) {
+        for (let p = 1; p <= totalPages; p++) pushNumber(p);
+    } else {
+        pushNumber(1);
+        if (page > 3) numbersWrap.appendChild(Object.assign(document.createElement('span'), {className: 'ellipsis', textContent: '…'}));
+        const start = Math.max(2, page - 1);
+        const end = Math.min(totalPages - 1, page + 1);
+        for (let p = start; p <= end; p++) pushNumber(p);
+        if (page < totalPages - 2) numbersWrap.appendChild(Object.assign(document.createElement('span'), {className: 'ellipsis', textContent: '…'}));
+        pushNumber(totalPages);
+    }
+    container.appendChild(numbersWrap);
+
+    
+    container.appendChild(makeBtn('Next', page >= totalPages, () => { window.chargesPage = page + 1; fetchCharges(); }));
 }
 
 function renderPaymentsTable() {
