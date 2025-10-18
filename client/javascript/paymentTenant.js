@@ -1,6 +1,10 @@
 let rentedSpaces = [];
 
 let paymentHistory = [];
+let paymentHistoryPage = 1;
+const paymentHistoryLimit = 10;
+let paymentHistoryTotalPages = 1;
+let isPaymentHistoryLoading = false;
 
 let selectedSpace = null;
 const MAX_PAYMENT_PROOF_FILES = 5;
@@ -93,40 +97,56 @@ function mapPaymentRecordToHistory(record = {}) {
     };
 }
 
-async function fetchPaymentHistory() {
+async function fetchPaymentHistory(page = 1) {
     const token = getJwtToken();
     const userId = getCurrentUserId();
 
     if (!token || !userId) {
+        isPaymentHistoryLoading = false;
         paymentHistory = [];
         loadPaymentHistory();
+        renderPaymentHistoryPagination();
         return;
     }
 
     try {
+        
+        isPaymentHistoryLoading = true;
+        renderPaymentHistoryPagination();
+        loadPaymentHistory();
+
+        const qs = new URLSearchParams({ page: String(page || 1), limit: String(paymentHistoryLimit) }).toString();
         const resp = await fetch(
-            `${API_BASE_URL}/payments/users/${encodeURIComponent(userId)}`,
-            {
-            headers: { Authorization: `Bearer ${token}` },
-            }
+            `${API_BASE_URL}/payments/users/${encodeURIComponent(userId)}?${qs}`,
+            { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (resp.status === 401 || resp.status === 403) {
+            isPaymentHistoryLoading = false;
             paymentHistory = [];
             loadPaymentHistory();
+            renderPaymentHistoryPagination();
             return;
         }
 
-        if (!resp.ok) {
-            throw new Error(`Failed to fetch payment history (${resp.status})`);
-        }
+        if (!resp.ok) throw new Error(`Failed to fetch payment history (${resp.status})`);
 
         const data = await resp.json().catch(() => ({}));
         const rows = Array.isArray(data.payments) ? data.payments : [];
         paymentHistory = rows.map(mapPaymentRecordToHistory);
+        paymentHistoryPage = Number(data.page || page) || 1;
+        paymentHistoryTotalPages = Number(data.totalPages || 1) || 1;
+        isPaymentHistoryLoading = false;
         loadPaymentHistory();
+        renderPaymentHistoryPagination();
     } catch (error) {
         console.error("fetchPaymentHistory error:", error);
+        isPaymentHistoryLoading = false;
+        paymentHistory = [];
+        paymentHistoryPage = 1;
+        paymentHistoryTotalPages = 1;
+        loadPaymentHistory();
+        renderPaymentHistoryPagination();
     }
 }
 
@@ -260,7 +280,7 @@ async function initializePage() {
     await fetchRentedSpaces();
     loadRentedSpaces();
     loadPaymentHistory();
-    await fetchPaymentHistory();
+    await fetchPaymentHistory(1);
     showNoSpaceAlert();
 
     populateMonthYearFilters();
@@ -1070,6 +1090,18 @@ function loadPaymentHistory() {
 
     if (!tbody) return;
 
+    if (isPaymentHistoryLoading) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state">
+                    <div class="loading loading-sm" style="margin-right:8px;"></div>
+                    Fetching payment history...
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
     if (paymentHistory.length === 0) {
         tbody.innerHTML = `
                     <tr>
@@ -1083,11 +1115,7 @@ function loadPaymentHistory() {
         return;
     }
 
-    const sortedHistory = [...paymentHistory].sort(
-        (a, b) => new Date(b.date) - new Date(a.date)
-    );
-
-    tbody.innerHTML = sortedHistory
+    tbody.innerHTML = paymentHistory
         .map(
             (payment) => `
                 <tr>
@@ -1112,13 +1140,97 @@ function loadPaymentHistory() {
                     </td>
                     <td>
                         <span class="status ${payment.statusClass}">
-                            ${getStatusIcon(payment.statusClass)} ${escapeHtml(payment.statusLabel)}
+                            ${escapeHtml(payment.statusLabel)}
                         </span>
                     </td>
                 </tr>
             `
         )
         .join("");
+}
+
+function renderPaymentHistoryPagination() {
+    let container = document.getElementById("payment-pagination");
+    if (!container) {
+        const table = document.getElementById("payment-table");
+        if (!table || !table.parentElement) return;
+        container = document.createElement("div");
+        container.id = "payment-pagination";
+        container.className = "pagination-bar";
+        table.parentElement.appendChild(container);
+    }
+
+    const page = paymentHistoryPage;
+    const totalPages = paymentHistoryTotalPages;
+
+    const prevDisabled = page <= 1 ? "disabled" : "";
+    const nextDisabled = page >= totalPages ? "disabled" : "";
+
+    const displayRange = (() => {
+        const start = (page - 1) * paymentHistoryLimit + 1;
+        const end = start + paymentHistory.length - 1;
+        return `${start}-${end}`;
+    })();
+
+    
+    function buildPageList(current, total) {
+        const pages = new Set([1, total, current - 2, current - 1, current, current + 1, current + 2]);
+        const normalized = [...pages]
+            .filter((n) => Number.isFinite(n) && n >= 1 && n <= total)
+            .sort((a, b) => a - b);
+        const result = [];
+        let last = 0;
+        for (const p of normalized) {
+            if (last && p - last > 1) {
+                result.push("ellipsis");
+            }
+            result.push(p);
+            last = p;
+        }
+        return result;
+    }
+
+    const pageItems = buildPageList(page, Math.max(totalPages, 1))
+        .map((item) => {
+            if (item === "ellipsis") {
+                return `<span class="ellipsis" aria-hidden="true">…</span>`;
+            }
+            const p = Number(item);
+            const active = p === page ? "active" : "";
+            const disabled = isPaymentHistoryLoading ? "disabled" : "";
+            return `<button class="page-btn ${active}" ${disabled} data-action="goto" data-page="${p}" aria-label="Go to page ${p}">${p}</button>`;
+        })
+        .join("");
+
+    const anyDisabled = isPaymentHistoryLoading ? "disabled" : "";
+    const loadingInline = isPaymentHistoryLoading ? '<div class="loading loading-sm" style="margin-left:8px;"></div>' : '';
+
+    container.innerHTML = `
+        <div class="pagination-left">
+            <button class="page-btn" ${prevDisabled} ${anyDisabled} data-action="prev" aria-label="Previous page">Prev</button>
+            <div class="page-numbers">${pageItems}</div>
+            <button class="page-btn" ${nextDisabled} ${anyDisabled} data-action="next" aria-label="Next page">Next</button>
+            <span class="page-info">Page ${page} of ${totalPages} · Showing ${displayRange}</span>
+            ${loadingInline}
+        </div>
+    `;
+
+    container.querySelectorAll(".page-btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+            if (isPaymentHistoryLoading) return;
+            const action = e.currentTarget.getAttribute("data-action");
+            if (action === "prev" && paymentHistoryPage > 1) {
+                await fetchPaymentHistory(paymentHistoryPage - 1);
+            } else if (action === "next" && paymentHistoryPage < paymentHistoryTotalPages) {
+                await fetchPaymentHistory(paymentHistoryPage + 1);
+            } else if (action === "goto") {
+                const p = Number(e.currentTarget.getAttribute("data-page"));
+                if (Number.isFinite(p) && p >= 1 && p <= paymentHistoryTotalPages) {
+                    await fetchPaymentHistory(p);
+                }
+            }
+        });
+    });
 }
 
 async function fetchPendingPaymentsForCharges(charges) {
@@ -1620,7 +1732,7 @@ async function submitPayment() {
 
         showModalAlert("success", successMessage);
 
-        await fetchPaymentHistory();
+    await fetchPaymentHistory(1);
 
         uploadedFiles = [];
         renderUploadedFilesPreview();
@@ -2168,21 +2280,30 @@ function showModalAlert(type, message) {
 }
 
 function showAlert(type, message) {
-    const alertDiv = document.createElement("div");
-    alertDiv.className = `alert ${type} active`;
-    alertDiv.innerHTML = `<i class="fas fa-${type === "success" ? "check-circle" : "exclamation-triangle"
-        }"></i> ${message}`;
-    alertDiv.style.position = "fixed";
-    alertDiv.style.top = "20px";
-    alertDiv.style.right = "20px";
-    alertDiv.style.zIndex = "1001";
-    alertDiv.style.minWidth = "300px";
+    
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        document.body.appendChild(container);
+    }
 
-    document.body.appendChild(alertDiv);
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    const icon = type === "success" ? "check-circle" : type === "error" ? "exclamation-triangle" : "info-circle";
+    toast.innerHTML = `
+        <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
+        <div class="toast-message">${escapeHtml(message)}</div>
+    `;
 
+    container.appendChild(toast);
+
+    
+    const DURATION = type === "error" ? 9000 : 7000;
     setTimeout(() => {
-        alertDiv.remove();
-    }, 4000);
+        toast.classList.add("fade-out");
+        setTimeout(() => toast.remove(), 300);
+    }, DURATION);
 }
 
 function copyToClipboard(text) {
@@ -2263,15 +2384,6 @@ function escapeHtml(text) {
         .replace(/'/g, "&#39;");
 }
 
-function getStatusIcon(status) {
-    const icons = {
-        paid: "✅",
-        pending: "⏳",
-        overdue: "❌",
-    };
-    return icons[status] || "📄";
-}
-
 document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => {
         const upcomingDue = rentedSpaces.filter((space) => {
@@ -2284,7 +2396,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (upcomingDue.length > 0) {
             showAlert(
                 "error",
-                `⚠️ ${upcomingDue.length} payment(s) due within 7 days!`
+                `${upcomingDue.length} payment(s) due within 7 days!`
             );
         }
     }, 2000);
@@ -2300,10 +2412,7 @@ setInterval(() => {
         randomPending.statusClass = "paid";
         randomPending.statusLabel = "Confirmed";
         loadPaymentHistory();
-        showAlert(
-            "success",
-            `Payment ${randomPending.reference} has been confirmed!`
-        );
+        showAlert("success", `Payment ${randomPending.reference} has been confirmed!`);
     }
 }, 10000);
 
@@ -2314,3 +2423,4 @@ window.handleFileUpload = handleFileUpload;
 window.removeUploadedImage = removeUploadedImage;
 window.submitPayment = submitPayment;
 window.escapeHtml = escapeHtml;
+window.copyToClipboard = copyToClipboard;

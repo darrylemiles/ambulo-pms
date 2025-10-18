@@ -1,5 +1,5 @@
 :root {
- --primary-color: #6366f1;
+  --primary-color: #6366f1;
   --primary-light: #8b5cf6;
   --primary-dark: #4f46e5;
   --secondary-color: #06b6d4;
@@ -39,27 +39,27 @@ html {
 }
 
 body {
-  font-size: 1rem; /* 12px */
+  font-size: 1rem;
   line-height: 1.4;
 }
 
 h1 {
-  font-size: 1.25rem; /* 20px */
+  font-size: 1.25rem;
 }
 h2 {
-  font-size: 1.125rem; /* 18px */
+  font-size: 1.125rem;
 }
 h3 {
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
 }
 h4 {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
 }
 h5 {
-  font-size: 0.8125rem; /* 13px */
+  font-size: 0.8125rem;
 }
 h6 {
-  font-size: 0.75rem; /* 12px */
+  font-size: 0.75rem;
 }
 
 * {
@@ -85,21 +85,18 @@ body {
   padding: 0 20px;
 }
 
-/* Main Content - Updated for sidebar integration */
 .main-content {
   padding: 25px;
-  margin-left: 280px; /* Default expanded sidebar width */
-  margin-top: 80px; /* Adjusted for top navbar */
+  margin-left: 280px;
+  margin-top: 80px;
   overflow-y: auto;
-  transition: margin-left 0.3s ease; /* Smooth transition */
+  transition: margin-left 0.3s ease;
 }
 
-/* When sidebar is collapsed */
 .sidebar.collapsed ~ .main-content {
   margin-left: 80px;
 }
 
-/* Mobile responsive - no left margin on mobile */
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0 !important;
@@ -108,7 +105,6 @@ body {
   }
 }
 
-/* Header */
 .header .container {
   max-width: 100%;
   margin-left: 0;
@@ -179,7 +175,6 @@ body {
   font-size: 1.2em;
 }
 
-/* Rented Spaces */
 .spaces-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -294,7 +289,6 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Payment Breakdown */
 .breakdown-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -351,7 +345,6 @@ body {
   color: var(--text-primary);
 }
 
-/* Date Filter Styling */
 .filter-row {
   display: flex;
   align-items: center;
@@ -478,8 +471,6 @@ body {
     0 8px 24px rgba(59, 130, 246, 0.1);
 }
 
-/* Payment History */
-
 .pay-now-btn:hover {
   background: linear-gradient(135deg, var(--primary-dark), #0369a1);
   transform: translateY(-3px);
@@ -487,9 +478,58 @@ body {
     0 12px 32px rgba(14, 165, 233, 0.15);
 }
 
-/* Payment History */
 .payment-history {
   overflow-x: auto;
+}
+
+.pagination-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 0 0;
+}
+
+.pagination-bar .page-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-bar .page-btn:hover:not(:disabled) {
+  background: var(--background-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.pagination-bar .page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-bar .page-info {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.pagination-bar .page-numbers {
+  display: inline-flex;
+  gap: 6px;
+  margin: 0 6px;
+}
+.pagination-bar .page-btn.active {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+.pagination-bar .ellipsis {
+  color: var(--text-secondary);
+  padding: 0 4px;
 }
 
 table {
@@ -590,7 +630,6 @@ tbody tr:hover {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-/* Modal Styles */
 .modal {
   display: none;
   position: fixed;
@@ -1293,7 +1332,6 @@ tbody tr:hover {
   display: block;
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -1326,7 +1364,6 @@ tbody tr:hover {
   font-weight: 400;
 }
 
-/* Copy button */
 .copy-btn {
   background: none;
   border: none;
@@ -1342,7 +1379,6 @@ tbody tr:hover {
   background: rgba(14, 165, 233, 0.1);
 }
 
-/* Loading state */
 .loading {
   display: inline-block;
   width: 20px;
@@ -1354,6 +1390,13 @@ tbody tr:hover {
   margin-right: 0.5rem;
 }
 
+.loading.loading-sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  margin: 0;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -1363,7 +1406,51 @@ tbody tr:hover {
   }
 }
 
-/* Animations */
+#toast-container {
+  position: fixed;
+  top: 95px;
+  right: 20px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  min-width: 320px;
+  max-width: 440px;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  animation: fadeInUp 0.25s ease;
+  pointer-events: auto;
+}
+.toast .toast-icon {
+  font-size: 16px;
+}
+.toast .toast-message {
+  font-size: 14px;
+  line-height: 1.4;
+}
+.toast-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.toast-error {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+.toast-info {
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+}
+.toast.fade-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -1406,7 +1493,6 @@ tbody tr:hover {
   opacity: 0;
 }
 
-/* Responsive Design */
 @media (max-width: 1200px) {
   .breakdown-grid {
     grid-template-columns: 1fr;
@@ -1552,7 +1638,6 @@ tbody tr:hover {
   }
 }
 
-/* Charge payment indicator styles */
 .charge-payment-status {
   margin-top: 6px;
   font-size: 0.875rem;
@@ -1566,7 +1651,6 @@ tbody tr:hover {
   background: rgba(15, 23, 42, 0.02);
 }
 
-/* Compact late-fee hint used under the total */
 .late-fee-hint-compact {
   gap: 10px;
   align-items: center;
@@ -1586,12 +1670,11 @@ tbody tr:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
-.late-fee-hint-compact i { 
+.late-fee-hint-compact i {
   color: var(--error-color);
   font-size: 1.1em;
 }
 
-/* Small per-charge hint */
 .late-fee-small {
   margin-top: 6px;
   font-size: 11px;
@@ -1600,7 +1683,9 @@ tbody tr:hover {
   gap: 6px;
   align-items: center;
 }
-.late-fee-small i { font-size: 0.95em; }
+.late-fee-small i {
+  font-size: 0.95em;
+}
 
 .charge-payment-status i {
   font-size: 0.9rem;
@@ -1618,7 +1703,6 @@ tbody tr:hover {
   background: rgba(16, 185, 129, 0.06);
 }
 
-/* Print styles */
 @media print {
   body {
     background: white;
