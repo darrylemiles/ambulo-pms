@@ -236,9 +236,23 @@ const getAllPayments = async (filters = {}) => {
     }
 };
 
-const getPaymentsByUserId = async (userId) => {
-    if (!userId) return [];
+const getPaymentsByUserId = async (userId, { page = 1, limit = 10 } = {}) => {
+    if (!userId) return { rows: [], total: 0, page: 1, limit, totalPages: 0 };
     try {
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const pageLimit = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
+        const offset = (pageNum - 1) * pageLimit;
+
+        const countQuery = `
+            SELECT COUNT(*) AS cnt
+            FROM payments pay
+            LEFT JOIN charges c ON pay.charge_id = c.charge_id
+            LEFT JOIN leases l ON c.lease_id = l.lease_id
+            WHERE (pay.user_id = ? OR l.user_id = ?)
+        `;
+        const [countRows] = await pool.execute(countQuery, [userId, userId]);
+        const total = countRows && countRows.length ? Number(countRows[0].cnt || 0) : 0;
+
         const query = `
             SELECT 
                 pay.payment_id,
@@ -263,6 +277,7 @@ const getPaymentsByUserId = async (userId) => {
             LEFT JOIN properties p ON l.property_id = p.property_id
             WHERE (pay.user_id = ? OR l.user_id = ?)
             ORDER BY pay.created_at DESC
+            LIMIT ${pageLimit} OFFSET ${offset}
         `;
 
         const [rows] = await pool.execute(query, [userId, userId]);
@@ -271,7 +286,7 @@ const getPaymentsByUserId = async (userId) => {
             if (r.status === "Completed") r.status = "Confirmed";
         });
 
-        if (!rows || !rows.length) return rows || [];
+        if (!rows || !rows.length) return { rows: rows || [], total, page: pageNum, limit: pageLimit, totalPages: Math.ceil(total / pageLimit) };
         const ids = rows.map((r) => r.payment_id);
         const placeholders = ids.map(() => "?").join(",");
         const [proofRows] = await pool.execute(
@@ -287,7 +302,7 @@ const getPaymentsByUserId = async (userId) => {
             r.proofs = proofsMap.get(r.payment_id) || [];
         });
 
-        return rows;
+        return { rows, total, page: pageNum, limit: pageLimit, totalPages: Math.ceil(total / pageLimit) };
     } catch (error) {
         console.error("Error in getPaymentsByUserId:", error);
         throw error;

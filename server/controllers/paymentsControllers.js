@@ -65,8 +65,21 @@ const getPaymentsByUserId = expressAsync(async (req, res) => {
         return res.status(403).json({ message: "Forbidden" });
     }
 
-    const result = await paymentsServices.getPaymentsByUserId(targetUserId);
-    res.status(200).json({ payments: result });
+    const page = Number.isFinite(parseInt(req.query.page, 10)) && parseInt(req.query.page, 10) > 0
+        ? parseInt(req.query.page, 10)
+        : 1;
+    const limitRaw = Number.isFinite(parseInt(req.query.limit, 10)) && parseInt(req.query.limit, 10) > 0
+        ? parseInt(req.query.limit, 10)
+        : 10;
+    const limit = Math.min(100, limitRaw);
+    const result = await paymentsServices.getPaymentsByUserId(targetUserId, { page, limit });
+    res.status(200).json({
+        payments: result.rows,
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+    });
 });
 
 const getPaymentById = expressAsync(async (req, res) => {
