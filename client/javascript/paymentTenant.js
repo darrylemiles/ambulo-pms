@@ -73,15 +73,22 @@ function normalizePaymentStatus(status) {
 }
 
 function mapPaymentRecordToHistory(record = {}) {
-    const createdAtRaw = record.created_at || record.payment_date || new Date().toISOString();
+    const createdAtRaw =
+        record.created_at || record.payment_date || new Date().toISOString();
     const createdAt = new Date(createdAtRaw);
     const safeDate = Number.isNaN(createdAt.getTime()) ? new Date() : createdAt;
     const isoDate = safeDate.toISOString().split("T")[0];
     const { className, label } = normalizePaymentStatus(record.status);
 
     const amountValue = Number(record.amount_paid ?? record.amount ?? 0);
-    const propertyName = record.property_name || record.charge_description || record.charge_type || "Payment";
-    const description = record.charge_description || record.charge_type || "Payment";
+    const propertyName =
+        record.property_name ||
+        record.charge_description ||
+        record.charge_type ||
+        "Payment";
+    const description =
+        record.charge_description || record.charge_type || "Payment";
+    const notes = record.notes || record.payment_notes || record.note || "";
 
     return {
         id: record.payment_id || record.id || `${Date.now()}`,
@@ -89,11 +96,14 @@ function mapPaymentRecordToHistory(record = {}) {
         space: propertyName,
         description,
         amount: Number.isFinite(amountValue) ? amountValue : 0,
-        reference: record.payment_id || record.reference || record.reference_number || "-",
+        reference:
+            record.payment_id || record.reference || record.reference_number || "-",
         method: record.payment_method || "",
         statusClass: className,
         statusLabel: label,
         rawStatus: record.status || label,
+        notes:
+            typeof notes === "string" ? notes : notes ? JSON.stringify(notes) : "",
     };
 }
 
@@ -110,12 +120,14 @@ async function fetchPaymentHistory(page = 1) {
     }
 
     try {
-        
         isPaymentHistoryLoading = true;
         renderPaymentHistoryPagination();
         loadPaymentHistory();
 
-        const qs = new URLSearchParams({ page: String(page || 1), limit: String(paymentHistoryLimit) }).toString();
+        const qs = new URLSearchParams({
+            page: String(page || 1),
+            limit: String(paymentHistoryLimit),
+        }).toString();
         const resp = await fetch(
             `${API_BASE_URL}/payments/users/${encodeURIComponent(userId)}?${qs}`,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -129,7 +141,8 @@ async function fetchPaymentHistory(page = 1) {
             return;
         }
 
-        if (!resp.ok) throw new Error(`Failed to fetch payment history (${resp.status})`);
+        if (!resp.ok)
+            throw new Error(`Failed to fetch payment history (${resp.status})`);
 
         const data = await resp.json().catch(() => ({}));
         const rows = Array.isArray(data.payments) ? data.payments : [];
@@ -151,7 +164,9 @@ async function fetchPaymentHistory(page = 1) {
 }
 
 function getQrPlaceholderSrc(label = "QR") {
-    const sanitizedLabel = String(label).replace(/[^a-z0-9\s/+-]/gi, "").toUpperCase();
+    const sanitizedLabel = String(label)
+        .replace(/[^a-z0-9\s/+-]/gi, "")
+        .toUpperCase();
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><rect width='200' height='200' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='24' font-family='Arial'>${sanitizedLabel}</text></svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
@@ -275,6 +290,120 @@ function calculateNextDueDate(startDate) {
 document.addEventListener("DOMContentLoaded", function () {
     initializePage();
 });
+
+(function initTooltip() {
+    let tipEl = null;
+    let hideTimer = null;
+    let currentTarget = null;
+
+    function ensureTip() {
+        if (!tipEl) {
+            tipEl = document.createElement("div");
+            tipEl.className = "tooltip";
+            document.body.appendChild(tipEl);
+        }
+        return tipEl;
+    }
+
+    function positionTip(target) {
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
+        const tip = ensureTip();
+        const padding = 8;
+        const gap = 10;
+
+        const width = tip.offsetWidth || 0;
+        const height = tip.offsetHeight || 0;
+
+        const preferTop = rect.top >= height + gap + padding;
+
+        let x = rect.left + (rect.width - width) / 2;
+        x = Math.max(padding, Math.min(window.innerWidth - width - padding, x));
+
+        let y;
+        if (preferTop) {
+            y = rect.top - height - gap;
+            tip.classList.add("above");
+            tip.classList.remove("below");
+        } else {
+            y = rect.bottom + gap;
+            tip.classList.add("below");
+            tip.classList.remove("above");
+        }
+
+        if (y < padding) y = padding;
+        if (y + height > window.innerHeight - padding) {
+            y = Math.max(padding, window.innerHeight - height - padding);
+        }
+
+        const targetCenterX = rect.left + rect.width / 2;
+        let arrowLeft = targetCenterX - x;
+
+        arrowLeft = Math.max(8, Math.min(width - 8, arrowLeft));
+        tip.style.setProperty("--arrow-left", Math.round(arrowLeft) + "px");
+
+        tip.style.left = x + "px";
+        tip.style.top = y + "px";
+    }
+
+    function showTip(target) {
+        clearTimeout(hideTimer);
+        const content = target.getAttribute("data-tooltip");
+        if (!content) return;
+        currentTarget = target;
+        const tip = ensureTip();
+        tip.textContent = content;
+
+        tip.style.left = "-10000px";
+        tip.style.top = "-10000px";
+        tip.classList.add("show");
+        requestAnimationFrame(() => positionTip(target));
+    }
+
+    function hideTip() {
+        if (!tipEl) return;
+        tipEl.classList.remove("show");
+        tipEl.classList.remove("above");
+        tipEl.classList.remove("below");
+        currentTarget = null;
+    }
+
+    document.addEventListener("mouseover", (e) => {
+        const t = e.target.closest("[data-tooltip]");
+        if (t) showTip(t);
+    });
+    document.addEventListener("focusin", (e) => {
+        const t = e.target.closest("[data-tooltip]");
+        if (t) showTip(t);
+    });
+    document.addEventListener("mouseout", (e) => {
+        if (!currentTarget) return;
+
+        const related = e.relatedTarget;
+        if (
+            related &&
+            (related === currentTarget || currentTarget.contains(related))
+        )
+            return;
+        hideTimer = setTimeout(hideTip, 80);
+    });
+    document.addEventListener("focusout", () => {
+        hideTimer = setTimeout(hideTip, 80);
+    });
+
+    window.addEventListener(
+        "scroll",
+        () => {
+            if (currentTarget && tipEl && tipEl.classList.contains("show"))
+                positionTip(currentTarget);
+        },
+        true
+    );
+    window.addEventListener("resize", () => {
+        if (currentTarget && tipEl && tipEl.classList.contains("show"))
+            positionTip(currentTarget);
+    });
+})();
 
 async function initializePage() {
     await fetchRentedSpaces();
@@ -421,17 +550,23 @@ async function refreshSelectedSpaceData() {
         const activeFilter = getActiveFilter();
         const charges = await fetchPendingCharges(selectedSpace.id, activeFilter);
 
-        const normalized = (Array.isArray(charges) ? charges : []).map((c) => {
-            const total = Number(c.amount) || 0;
-            const paid = Number(c.total_paid || 0) || 0;
-            const remaining = Math.max(0, total - paid);
-            return { ...c, remaining_amount: remaining };
-        }).filter((c) => {
-            const status = String(c.canonical_status || c.status || '').toUpperCase();
-            const isWaived = status === 'WAIVED';
-            const isPaid = status === 'PAID' || (Number(c.total_paid || 0) >= Number(c.amount || 0));
-            return !isWaived && !isPaid && (Number(c.remaining_amount) > 0);
-        });
+        const normalized = (Array.isArray(charges) ? charges : [])
+            .map((c) => {
+                const total = Number(c.amount) || 0;
+                const paid = Number(c.total_paid || 0) || 0;
+                const remaining = Math.max(0, total - paid);
+                return { ...c, remaining_amount: remaining };
+            })
+            .filter((c) => {
+                const status = String(
+                    c.canonical_status || c.status || ""
+                ).toUpperCase();
+                const isWaived = status === "WAIVED";
+                const isPaid =
+                    status === "PAID" ||
+                    Number(c.total_paid || 0) >= Number(c.amount || 0);
+                return !isWaived && !isPaid && Number(c.remaining_amount) > 0;
+            });
         selectedSpace.pendingCharges = normalized;
     } catch (e) {
         selectedSpace.pendingCharges = [];
@@ -507,7 +642,6 @@ function loadRentedSpaces() {
             );
             const grace = parseInt(space.gracePeriodDays || 0, 10) || 0;
 
-            
             let urgencyClass = "paid";
             if (daysUntilDue < -grace) {
                 urgencyClass = "overdue";
@@ -520,7 +654,7 @@ function loadRentedSpaces() {
             }
 
             const statusText = String(space.status || "").toLowerCase();
-            
+
             let statusClass = "paid";
             if (statusText.includes("pending") || statusText.includes("processing")) {
                 statusClass = "pending";
@@ -536,15 +670,16 @@ function loadRentedSpaces() {
                 statusText.includes("vacant")
             ) {
                 statusClass = "overdue";
-            } else if (statusText.includes("active") || statusText.includes("paid") || statusText.includes("occupied")) {
-                
+            } else if (
+                statusText.includes("active") ||
+                statusText.includes("paid") ||
+                statusText.includes("occupied")
+            ) {
                 statusClass = "paid";
             } else {
-                
                 statusClass = urgencyClass;
             }
 
-            
             if (urgencyClass === "overdue") statusClass = "overdue";
 
             return `
@@ -679,20 +814,26 @@ async function selectSpace(spaceId) {
                     activeFilter
                 );
 
-                const normalized = (Array.isArray(charges) ? charges : []).map((c) => {
-                    const total = Number(c.amount) || 0;
-                    const paid = Number(c.total_paid || 0) || 0;
-                    const remaining = Math.max(0, total - paid);
-                    return {
-                        ...c,
-                        remaining_amount: remaining,
-                    };
-                }).filter((c) => {
-                    const status = String(c.canonical_status || c.status || '').toUpperCase();
-                    const isWaived = status === 'WAIVED';
-                    const isPaid = status === 'PAID' || (Number(c.total_paid || 0) >= Number(c.amount || 0));
-                    return !isWaived && !isPaid && (Number(c.remaining_amount) > 0);
-                });
+                const normalized = (Array.isArray(charges) ? charges : [])
+                    .map((c) => {
+                        const total = Number(c.amount) || 0;
+                        const paid = Number(c.total_paid || 0) || 0;
+                        const remaining = Math.max(0, total - paid);
+                        return {
+                            ...c,
+                            remaining_amount: remaining,
+                        };
+                    })
+                    .filter((c) => {
+                        const status = String(
+                            c.canonical_status || c.status || ""
+                        ).toUpperCase();
+                        const isWaived = status === "WAIVED";
+                        const isPaid =
+                            status === "PAID" ||
+                            Number(c.total_paid || 0) >= Number(c.amount || 0);
+                        return !isWaived && !isPaid && Number(c.remaining_amount) > 0;
+                    });
                 selectedSpace.pendingCharges = normalized;
             } catch (e) {
                 selectedSpace.pendingCharges = [];
@@ -731,26 +872,48 @@ function loadPaymentTotal() {
         charges.length > 0
             ? charges
                 .filter((c) => {
-                    const rem = (typeof c.remaining_amount === 'number')
-                        ? Number(c.remaining_amount) || 0
-                        : Math.max(0, (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0));
-                    const status = String(c.canonical_status || c.status || '').toUpperCase();
-                    return rem > 0 && status !== 'WAIVED' && status !== 'PAID';
+                    const rem =
+                        typeof c.remaining_amount === "number"
+                            ? Number(c.remaining_amount) || 0
+                            : Math.max(
+                                0,
+                                (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0)
+                            );
+                    const status = String(
+                        c.canonical_status || c.status || ""
+                    ).toUpperCase();
+                    return rem > 0 && status !== "WAIVED" && status !== "PAID";
                 })
-                .reduce((s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0), 0)
+                .reduce(
+                    (s, c) =>
+                        s +
+                        (parseFloat(
+                            c.remaining_amount != null ? c.remaining_amount : c.amount
+                        ) || 0),
+                    0
+                )
             : 0;
-
 
     const now = new Date();
     const activeFilter = getActiveFilter();
     let periodLabel;
     if (activeFilter.month || activeFilter.year) {
-        const y = activeFilter.year ? parseInt(activeFilter.year, 10) : now.getFullYear();
-        const mIndex = activeFilter.month ? (parseInt(activeFilter.month, 10) - 1) : now.getMonth();
+        const y = activeFilter.year
+            ? parseInt(activeFilter.year, 10)
+            : now.getFullYear();
+        const mIndex = activeFilter.month
+            ? parseInt(activeFilter.month, 10) - 1
+            : now.getMonth();
         const ref = new Date(y, Math.max(0, Math.min(11, mIndex)), 1);
-        periodLabel = ref.toLocaleString("en-US", { month: "long", year: "numeric" });
+        periodLabel = ref.toLocaleString("en-US", {
+            month: "long",
+            year: "numeric",
+        });
     } else {
-        periodLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+        periodLabel = now.toLocaleString("en-US", {
+            month: "long",
+            year: "numeric",
+        });
     }
 
     let displayedTotal = totalFixed;
@@ -770,32 +933,54 @@ function loadPaymentTotal() {
             return true;
         });
         chargesForTotal = chargesForTotal.filter((c) => {
-            const rem = (typeof c.remaining_amount === 'number')
-                ? Number(c.remaining_amount) || 0
-                : Math.max(0, (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0));
-            const status = String(c.canonical_status || c.status || '').toUpperCase();
-            return rem > 0 && status !== 'WAIVED' && status !== 'PAID';
+            const rem =
+                typeof c.remaining_amount === "number"
+                    ? Number(c.remaining_amount) || 0
+                    : Math.max(
+                        0,
+                        (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0)
+                    );
+            const status = String(c.canonical_status || c.status || "").toUpperCase();
+            return rem > 0 && status !== "WAIVED" && status !== "PAID";
         });
-        displayedTotal = chargesForTotal.reduce((s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0), 0);
+        displayedTotal = chargesForTotal.reduce(
+            (s, c) =>
+                s +
+                (parseFloat(
+                    c.remaining_amount != null ? c.remaining_amount : c.amount
+                ) || 0),
+            0
+        );
     }
 
-
-    const lateFeeTotal = (chargesForTotal || []).reduce((s, c) => s + (parseFloat(c.late_fee_amount) || 0), 0);
+    const lateFeeTotal = (chargesForTotal || []).reduce(
+        (s, c) => s + (parseFloat(c.late_fee_amount) || 0),
+        0
+    );
     const baseTotal = (chargesForTotal || []).reduce((s, c) => {
-        const base = (typeof c.original_amount === 'number' && c.original_amount !== null)
-            ? Number(c.original_amount) || 0
-            : (parseFloat(c.amount) || 0) - (parseFloat(c.late_fee_amount) || 0);
+        const base =
+            typeof c.original_amount === "number" && c.original_amount !== null
+                ? Number(c.original_amount) || 0
+                : (parseFloat(c.amount) || 0) - (parseFloat(c.late_fee_amount) || 0);
         return s + base;
     }, 0);
 
     if (container) {
-        
-        const lateFeeHtml = lateFeeTotal > 0 ? `
-            <div class="late-fee-hint-compact" title="Base total: ₱${formatCurrency(baseTotal)} + Late fees: ₱${formatCurrency(lateFeeTotal)} = Final total: ₱${formatCurrency(displayedTotal)}" style="text-align:center;margin:16px auto 8px auto;max-width:300px;">
+        const lateFeeHtml =
+            lateFeeTotal > 0
+                ? `
+            <div class="late-fee-hint-compact" data-tooltip="Base total: ₱${formatCurrency(
+                    baseTotal
+                )} + Late fees: ₱${formatCurrency(
+                    lateFeeTotal
+                )} = Final total: ₱${formatCurrency(
+                    displayedTotal
+                )}" style="text-align:center;margin:16px auto 8px auto;max-width:300px;">
                 <i class="fas fa-info-circle"></i>
                 <span>Includes late fees (hover to see breakdown)</span>
             </div>
-        ` : '';
+        `
+                : "";
 
         container.innerHTML = `
                     <div class="total-section">
@@ -803,11 +988,14 @@ function loadPaymentTotal() {
                             <i class="fas fa-calendar-days"></i>
                             ${periodLabel} - Total Due
                         </div>
-                        <div class="total-amount" title="Total remaining including any late fees: ₱${formatCurrency(displayedTotal)}">
+                        <div class="total-amount" title="Total remaining including any late fees: ₱${formatCurrency(
+            displayedTotal
+        )}">
                             ₱${formatCurrency(displayedTotal)}
                         </div>
                         ${lateFeeHtml}
-                        <button class="pay-now-btn" ${displayedTotal > 0 ? '' : 'disabled'} onclick="openPaymentModal(${displayedTotal})">
+                        <button class="pay-now-btn" ${displayedTotal > 0 ? "" : "disabled"
+            } onclick="openPaymentModal(${displayedTotal})">
                             <i class="fas fa-credit-card"></i> Pay Now
                         </button>
                     </div>
@@ -907,14 +1095,18 @@ function loadPaymentBreakdown() {
             });
         }
 
-
         displayedCharges = (displayedCharges || []).filter((c) => {
-            const status = String(c.canonical_status || c.status || '').toUpperCase();
-            const isWaived = status === 'WAIVED';
-            const isPaid = status === 'PAID' || (Number(c.total_paid || 0) >= Number(c.amount || 0));
-            const remaining = (typeof c.remaining_amount === 'number')
-                ? Number(c.remaining_amount) || 0
-                : Math.max(0, (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0));
+            const status = String(c.canonical_status || c.status || "").toUpperCase();
+            const isWaived = status === "WAIVED";
+            const isPaid =
+                status === "PAID" || Number(c.total_paid || 0) >= Number(c.amount || 0);
+            const remaining =
+                typeof c.remaining_amount === "number"
+                    ? Number(c.remaining_amount) || 0
+                    : Math.max(
+                        0,
+                        (Number(c.amount) || 0) - (Number(c.total_paid || 0) || 0)
+                    );
             return !isWaived && !isPaid && remaining > 0;
         });
 
@@ -927,8 +1119,6 @@ function loadPaymentBreakdown() {
         const hasFilter = !!(filterMonth || filterYear);
         let pendingListHtml = "";
         if (displayedCharges.length > 0) {
-
-
             const idsKey = JSON.stringify(
                 displayedCharges
                     .map((c) => String(c.charge_id || c.chargeId || c.id || ""))
@@ -938,53 +1128,74 @@ function loadPaymentBreakdown() {
             if (window.__pendingPaymentsKey !== idsKey) {
                 window.__pendingPaymentsKey = idsKey;
                 (async () => {
-                    const pendingMap = await fetchPendingPaymentsForCharges(displayedCharges);
+                    const pendingMap = await fetchPendingPaymentsForCharges(
+                        displayedCharges
+                    );
                     window.__pendingPaymentsMap = pendingMap;
 
                     loadPaymentBreakdown();
                 })();
             }
             pendingListHtml = displayedCharges
-                .map(
-                    (ch) => {
-                        const totalAmt = parseFloat(ch.amount) || 0;
-                        const lateFeeAmt = parseFloat(ch.late_fee_amount) || 0;
-                        const baseAmt = (typeof ch.original_amount === 'number' && ch.original_amount !== null)
+                .map((ch) => {
+                    const totalAmt = parseFloat(ch.amount) || 0;
+                    const lateFeeAmt = parseFloat(ch.late_fee_amount) || 0;
+                    const baseAmt =
+                        typeof ch.original_amount === "number" &&
+                            ch.original_amount !== null
                             ? Number(ch.original_amount) || 0
-                            : (totalAmt - lateFeeAmt);
-                        const remaining = (typeof ch.remaining_amount === 'number') ? Number(ch.remaining_amount) || 0 : Math.max(0, totalAmt - (Number(ch.total_paid || 0) || 0));
-                        const titleTxt = lateFeeAmt > 0
-                            ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(totalAmt)}`
+                            : totalAmt - lateFeeAmt;
+                    const remaining =
+                        typeof ch.remaining_amount === "number"
+                            ? Number(ch.remaining_amount) || 0
+                            : Math.max(0, totalAmt - (Number(ch.total_paid || 0) || 0));
+                    const titleTxt =
+                        lateFeeAmt > 0
+                            ? `Base: ₱${formatCurrency(
+                                baseAmt
+                            )} + Late fee: ₱${formatCurrency(
+                                lateFeeAmt
+                            )} = ₱${formatCurrency(totalAmt)}`
                             : `Amount: ₱${formatCurrency(totalAmt)}`;
-                        const feeHint = lateFeeAmt > 0
-                            ? ``
-                            : '';
-                        return `
+                    const feeHint = lateFeeAmt > 0 ? `` : "";
+                    return `
                     <div class="breakdown-item">
                         <div>
                             <div class="breakdown-label" style="font-size:18px; font-weight:800;">${ch.charge_type || ch.description || "Charge"
-                            }</div>
+                        }</div>
                             ${ch.description
-                                ? `<div class="breakdown-desc" style="color:#6b7280; margin:6px 0; font-size:13px;">${escapeHtml(
-                                    ch.description
-                                )}</div>`
-                                : ""
-                            }
+                            ? `<div class="breakdown-desc" style="color:#6b7280; margin:6px 0; font-size:13px;">${escapeHtml(
+                                ch.description
+                            )}</div>`
+                            : ""
+                        }
                                 ${renderDuePill(
-                                    ch.due_date || ch.charge_date || ch.dueDate || "",
-                                    selectedSpace && selectedSpace.gracePeriodDays
-                                        ? selectedSpace.gracePeriodDays
-                                        : 0
-                                )}
-                                ${renderChargePaymentIndicator(ch)}
-                                ${lateFeeAmt > 0 ? `<div class="late-fee-small" title="Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(totalAmt)}"><i class='fas fa-info-circle'></i> Late fee applied</div>` : ''}
+                            ch.due_date ||
+                            ch.charge_date ||
+                            ch.dueDate ||
+                            "",
+                            selectedSpace && selectedSpace.gracePeriodDays
+                                ? selectedSpace.gracePeriodDays
+                                : 0
+                        )}
+                ${renderChargePaymentIndicator(ch)}
+                ${lateFeeAmt > 0
+                            ? `<div class="late-fee-small" data-tooltip="Base: ₱${formatCurrency(
+                                baseAmt
+                            )} + Late fee: ₱${formatCurrency(
+                                lateFeeAmt
+                            )} = ₱${formatCurrency(
+                                totalAmt
+                            )}"><i class='fas fa-info-circle'></i> Late fee applied</div>`
+                            : ""
+                        }
                         </div>
                         <span class="breakdown-amount" title="${titleTxt}">₱${formatCurrency(
-                                remaining
-                            )}</span>
+                            remaining
+                        )}</span>
                     </div>
-                `}
-                )
+                `;
+                })
                 .join("");
         } else {
             if (hasFilter) {
@@ -1015,12 +1226,20 @@ function loadPaymentBreakdown() {
         let totalPendingAmount = 0;
         if (hasFilter) {
             totalPendingAmount = displayedCharges.reduce(
-                (s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0),
+                (s, c) =>
+                    s +
+                    (parseFloat(
+                        c.remaining_amount != null ? c.remaining_amount : c.amount
+                    ) || 0),
                 0
             );
         } else if (charges.length > 0) {
             totalPendingAmount = charges.reduce(
-                (s, c) => s + (parseFloat(c.remaining_amount != null ? c.remaining_amount : c.amount) || 0),
+                (s, c) =>
+                    s +
+                    (parseFloat(
+                        c.remaining_amount != null ? c.remaining_amount : c.amount
+                    ) || 0),
                 0
             );
         } else {
@@ -1123,23 +1342,41 @@ function loadPaymentHistory() {
                     <td>
                         <strong>${escapeHtml(payment.space)}</strong>
                         ${payment.method
-                ? `<span class="history-method">${escapeHtml(payment.method)}</span>`
-                : ""}
+                    ? `<span class="history-method">${escapeHtml(
+                        payment.method
+                    )}</span>`
+                    : ""
+                }
                     </td>
                     <td>${escapeHtml(payment.description)}</td>
-                    <td class="history-amount">₱${formatCurrency(payment.amount)}</td>
+                    <td class="history-amount">₱${formatCurrency(
+                    payment.amount
+                )}</td>
                     <td>
                         <code style="background: rgba(102, 126, 234, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-family: 'Courier New', monospace;">
                             ${escapeHtml(payment.reference)}
                         </code>
                         <button class="copy-btn" onclick="copyToClipboard('${escapeJsString(
-                payment.reference
-            )}')" style="margin-left: 0.5rem;">
+                    payment.reference
+                )}')" style="margin-left: 0.5rem;">
                             <i class="fas fa-copy"></i>
                         </button>
                     </td>
                     <td>
-                        <span class="status ${payment.statusClass}">
+                        ${(() => {
+                    const tooltip = escapeHtml(
+                        payment.notes
+                            ? String(payment.notes)
+                                .replace(/\s+/g, " ")
+                                .trim()
+                            : "No notes provided"
+                    );
+                    const attr =
+                        payment.statusClass === "overdue"
+                            ? ` data-tooltip="${tooltip}"`
+                            : "";
+                    return `<span class="status ${payment.statusClass}"${attr}>`;
+                })()}
                             ${escapeHtml(payment.statusLabel)}
                         </span>
                     </td>
@@ -1172,9 +1409,16 @@ function renderPaymentHistoryPagination() {
         return `${start}-${end}`;
     })();
 
-    
     function buildPageList(current, total) {
-        const pages = new Set([1, total, current - 2, current - 1, current, current + 1, current + 2]);
+        const pages = new Set([
+            1,
+            total,
+            current - 2,
+            current - 1,
+            current,
+            current + 1,
+            current + 2,
+        ]);
         const normalized = [...pages]
             .filter((n) => Number.isFinite(n) && n >= 1 && n <= total)
             .sort((a, b) => a - b);
@@ -1203,7 +1447,9 @@ function renderPaymentHistoryPagination() {
         .join("");
 
     const anyDisabled = isPaymentHistoryLoading ? "disabled" : "";
-    const loadingInline = isPaymentHistoryLoading ? '<div class="loading loading-sm" style="margin-left:8px;"></div>' : '';
+    const loadingInline = isPaymentHistoryLoading
+        ? '<div class="loading loading-sm" style="margin-left:8px;"></div>'
+        : "";
 
     container.innerHTML = `
         <div class="pagination-left">
@@ -1221,7 +1467,10 @@ function renderPaymentHistoryPagination() {
             const action = e.currentTarget.getAttribute("data-action");
             if (action === "prev" && paymentHistoryPage > 1) {
                 await fetchPaymentHistory(paymentHistoryPage - 1);
-            } else if (action === "next" && paymentHistoryPage < paymentHistoryTotalPages) {
+            } else if (
+                action === "next" &&
+                paymentHistoryPage < paymentHistoryTotalPages
+            ) {
                 await fetchPaymentHistory(paymentHistoryPage + 1);
             } else if (action === "goto") {
                 const p = Number(e.currentTarget.getAttribute("data-page"));
@@ -1242,10 +1491,16 @@ async function fetchPendingPaymentsForCharges(charges) {
         if (!ids.length) return {};
 
         const token = getJwtToken();
-        const query = new URLSearchParams({ charge_ids: ids.join(","), status: "Pending" }).toString();
-        const resp = await fetch(`${API_BASE_URL}/payments/search/by-charge?${query}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const query = new URLSearchParams({
+            charge_ids: ids.join(","),
+            status: "Pending",
+        }).toString();
+        const resp = await fetch(
+            `${API_BASE_URL}/payments/search/by-charge?${query}`,
+            {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+        );
         if (!resp.ok) return {};
         const data = await resp.json();
         const map = {};
@@ -1269,7 +1524,9 @@ function renderChargePaymentIndicator(charge) {
         const pendingMap = window.__pendingPaymentsMap || {};
         const group = pendingMap[key];
         if (!group || !group.length) return "";
-        const pendingAmount = Number(group.reduce((s, p) => s + (Number(p.amount_paid || p.amount || 0)), 0));
+        const pendingAmount = Number(
+            group.reduce((s, p) => s + Number(p.amount_paid || p.amount || 0), 0)
+        );
         const formattedAmount = pendingAmount
             ? `₱${formatCurrency(pendingAmount)}`
             : "Pending payment submitted";
@@ -1287,11 +1544,16 @@ function renderChargePaymentIndicator(charge) {
 
 function getPendingAmountForCharge(charge) {
     try {
-        const key = String(charge?.charge_id || charge?.chargeId || charge?.id || "");
+        const key = String(
+            charge?.charge_id || charge?.chargeId || charge?.id || ""
+        );
         if (!key) return 0;
         const map = window.__pendingPaymentsMap || {};
         const list = map[key] || [];
-        const total = list.reduce((s, p) => s + (Number(p.amount_paid || p.amount || 0)), 0);
+        const total = list.reduce(
+            (s, p) => s + Number(p.amount_paid || p.amount || 0),
+            0
+        );
         return Number(total) || 0;
     } catch (e) {
         return 0;
@@ -1313,7 +1575,8 @@ function getOutstandingBalanceForCharge(charge) {
     const rawRemaining =
         charge.remaining_amount !== undefined && charge.remaining_amount !== null
             ? Number(charge.remaining_amount) || 0
-            : (parseFloat(charge.amount) || 0) - (Number(charge.total_paid || 0) || 0);
+            : (parseFloat(charge.amount) || 0) -
+            (Number(charge.total_paid || 0) || 0);
     const pendingAmt = getPendingAmountForCharge(charge);
     const remaining = Number.isFinite(rawRemaining) ? rawRemaining : 0;
     return Math.max(0, remaining - (pendingAmt || 0));
@@ -1414,7 +1677,8 @@ function updateFileLimitHint() {
     const hint = document.getElementById("file-limit-hint");
     if (!hint) return;
     hint.textContent = `${uploadedFiles.length} of ${MAX_PAYMENT_PROOF_FILES} images selected (PNG, JPG, JPEG).`;
-    hint.style.color = uploadedFiles.length >= MAX_PAYMENT_PROOF_FILES ? "#dc2626" : "#047857";
+    hint.style.color =
+        uploadedFiles.length >= MAX_PAYMENT_PROOF_FILES ? "#dc2626" : "#047857";
 }
 
 function renderUploadedFilesPreview() {
@@ -1445,7 +1709,9 @@ function renderUploadedFilesPreview() {
                             <strong>${escapeHtml(file.name)}</strong>
                             <small>${sizeMb} MB</small>
                         </div>
-                        <button type="button" class="preview-remove" onclick="removeUploadedImage(${index})" aria-label="Remove ${escapeHtml(file.name)}">
+                        <button type="button" class="preview-remove" onclick="removeUploadedImage(${index})" aria-label="Remove ${escapeHtml(
+                    file.name
+                )}">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1518,14 +1784,16 @@ function handleFileUpload(event) {
     if (errorMessage && addedCount > 0) {
         showModalAlert(
             "error",
-            `${errorMessage} Added ${addedCount} image${addedCount > 1 ? "s" : ""} successfully.`
+            `${errorMessage} Added ${addedCount} image${addedCount > 1 ? "s" : ""
+            } successfully.`
         );
     } else if (errorMessage) {
         showModalAlert("error", errorMessage);
     } else if (addedCount > 0) {
         showModalAlert(
             "success",
-            `Added ${addedCount} image${addedCount > 1 ? "s" : ""}. You can remove or add more before submitting.`
+            `Added ${addedCount} image${addedCount > 1 ? "s" : ""
+            }. You can remove or add more before submitting.`
         );
     }
 
@@ -1536,7 +1804,10 @@ function removeUploadedImage(index) {
     if (index < 0 || index >= uploadedFiles.length) return;
     uploadedFiles.splice(index, 1);
     renderUploadedFilesPreview();
-    showModalAlert("success", "Image removed. You can upload another before submitting.");
+    showModalAlert(
+        "success",
+        "Image removed. You can upload another before submitting."
+    );
 }
 
 async function submitPayment() {
@@ -1620,7 +1891,11 @@ async function submitPayment() {
             amountCents: portionCents,
             amount: portionCents / 100,
             outstandingCents,
-            label: charge.charge_type || charge.type || charge.title || `Charge ${index + 1}`,
+            label:
+                charge.charge_type ||
+                charge.type ||
+                charge.title ||
+                `Charge ${index + 1}`,
             displayId: String(
                 charge.charge_reference ||
                 charge.reference ||
@@ -1689,7 +1964,8 @@ async function submitPayment() {
             const noteSegments = [
                 "Submitted via tenant portal.",
                 `Allocation summary: ${allocationSummary}.`,
-                `This entry allocates ₱${formatCurrency(allocation.amount)} to ${allocation.label} (${allocation.displayId}).`,
+                `This entry allocates ₱${formatCurrency(allocation.amount)} to ${allocation.label
+                } (${allocation.displayId}).`,
             ];
             if (allocations.length > 1) {
                 noteSegments.push(`Batch ${i + 1} of ${allocations.length}.`);
@@ -1715,7 +1991,9 @@ async function submitPayment() {
 
             if (!response.ok) {
                 const errorBody = await response.json().catch(() => ({}));
-                throw new Error(errorBody.message || "Failed to submit payment confirmation.");
+                throw new Error(
+                    errorBody.message || "Failed to submit payment confirmation."
+                );
             }
 
             const result = await response.json().catch(() => ({}));
@@ -1732,7 +2010,7 @@ async function submitPayment() {
 
         showModalAlert("success", successMessage);
 
-    await fetchPaymentHistory(1);
+        await fetchPaymentHistory(1);
 
         uploadedFiles = [];
         renderUploadedFilesPreview();
@@ -1740,10 +2018,14 @@ async function submitPayment() {
         try {
             await refreshSelectedSpaceData();
         } catch (refreshError) {
-            console.warn("Failed to refresh lease data after payment submission", refreshError);
+            console.warn(
+                "Failed to refresh lease data after payment submission",
+                refreshError
+            );
         }
 
-        submitBtn.innerHTML = '<i class="fas fa-check"></i> Submitted Successfully!';
+        submitBtn.innerHTML =
+            '<i class="fas fa-check"></i> Submitted Successfully!';
 
         setTimeout(() => {
             submitBtn.innerHTML =
@@ -1753,12 +2035,14 @@ async function submitPayment() {
     } catch (error) {
         console.error("submitPayment error:", error);
         const partialMessage = createdPaymentIds.length
-            ? ` We recorded ${createdPaymentIds.length} payment${createdPaymentIds.length === 1 ? "" : "s"} before the error. We've refreshed the data, but please contact support if anything looks off.`
+            ? ` We recorded ${createdPaymentIds.length} payment${createdPaymentIds.length === 1 ? "" : "s"
+            } before the error. We've refreshed the data, but please contact support if anything looks off.`
             : "";
         showModalAlert(
             "error",
-            (error.message || "Failed to submit payment confirmation. Please try again.") +
-                partialMessage
+            (error.message ||
+                "Failed to submit payment confirmation. Please try again.") +
+            partialMessage
         );
         if (createdPaymentIds.length) {
             try {
@@ -1899,9 +2183,10 @@ function preparePaymentModal(defaultAmount) {
         : [];
     selectedChargeIds = new Set();
 
-
     (async () => {
-        const pendingMap = await fetchPendingPaymentsForCharges(paymentModalCharges);
+        const pendingMap = await fetchPendingPaymentsForCharges(
+            paymentModalCharges
+        );
         window.__pendingPaymentsMap = pendingMap;
         renderPaymentChargeList();
         updatePaymentSummary();
@@ -1945,8 +2230,12 @@ function preparePaymentModal(defaultAmount) {
     }
 
     paymentModalCharges.sort((a, b) => {
-        const dateA = new Date(a.due_date || a.charge_date || a.dueDate || a.created_at || 0);
-        const dateB = new Date(b.due_date || b.charge_date || b.dueDate || b.created_at || 0);
+        const dateA = new Date(
+            a.due_date || a.charge_date || a.dueDate || a.created_at || 0
+        );
+        const dateB = new Date(
+            b.due_date || b.charge_date || b.dueDate || b.created_at || 0
+        );
         return dateA - dateB;
     });
 
@@ -1997,12 +2286,22 @@ function renderPaymentChargeList() {
             const chargeId = resolveChargeIdentifier(charge, index);
             const amount = parseFloat(charge.amount) || 0;
             const lateFeeAmt = parseFloat(charge.late_fee_amount) || 0;
-            const baseAmt = (typeof charge.original_amount === 'number' && charge.original_amount !== null)
-                ? Number(charge.original_amount) || 0
-                : (amount - lateFeeAmt);
-            const chargeType = charge.charge_type || charge.type || charge.title || "Charge";
-            const description = charge.description ? escapeHtml(charge.description) : "";
-            const dueDateRaw = charge.due_date || charge.charge_date || charge.dueDate || charge.created_at || "";
+            const baseAmt =
+                typeof charge.original_amount === "number" &&
+                    charge.original_amount !== null
+                    ? Number(charge.original_amount) || 0
+                    : amount - lateFeeAmt;
+            const chargeType =
+                charge.charge_type || charge.type || charge.title || "Charge";
+            const description = charge.description
+                ? escapeHtml(charge.description)
+                : "";
+            const dueDateRaw =
+                charge.due_date ||
+                charge.charge_date ||
+                charge.dueDate ||
+                charge.created_at ||
+                "";
             const dueDateLabel = dueDateRaw
                 ? `Due ${escapeHtml(formatDate(dueDateRaw))}`
                 : "Due date not specified";
@@ -2013,35 +2312,66 @@ function renderPaymentChargeList() {
                 charge.id_charge ||
                 charge.reference ||
                 null;
-            const displayChargeId = rawDisplayId ? String(rawDisplayId) : "Not provided";
-
+            const displayChargeId = rawDisplayId
+                ? String(rawDisplayId)
+                : "Not provided";
 
             const pendingAmt = getPendingAmountForCharge(charge);
             let paymentIndicator = "";
             if (pendingAmt > 0) {
-                paymentIndicator = `<div class="charge-payment-status payment-pending"><i class="fas fa-hourglass-half"></i> Submitted ₱${formatCurrency(pendingAmt)} (Pending)</div>`;
+                paymentIndicator = `<div class="charge-payment-status payment-pending"><i class="fas fa-hourglass-half"></i> Submitted ₱${formatCurrency(
+                    pendingAmt
+                )} (Pending)</div>`;
             }
             const remainingAfterPending = getOutstandingBalanceForCharge(charge);
-            const titleTooltip = lateFeeAmt > 0
-                ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)}`
-                : `Amount: ₱${formatCurrency(amount)}`;
+            const titleTooltip =
+                lateFeeAmt > 0
+                    ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(
+                        lateFeeAmt
+                    )} = ₱${formatCurrency(amount)}`
+                    : `Amount: ₱${formatCurrency(amount)}`;
 
             return `
-                <label class="charge-option" title="${escapeHtml(titleTooltip)}" aria-label="Charge ${escapeHtml(chargeType)}: ${escapeHtml(titleTooltip)}">
+                <label class="charge-option" title="${escapeHtml(
+                titleTooltip
+            )}" aria-label="Charge ${escapeHtml(chargeType)}: ${escapeHtml(
+                titleTooltip
+            )}">
                     <input type="checkbox" class="charge-checkbox" data-charge-id="${escapeHtml(
                 chargeId
             )}" ${selectedChargeIds.has(chargeId) ? "checked" : ""}>
                     <div class="charge-details">
                         <div class="charge-type">${escapeHtml(chargeType)}</div>
-                        ${description ? `<div class="charge-description">${description}</div>` : ""}
+                        ${description
+                    ? `<div class="charge-description">${description}</div>`
+                    : ""
+                }
                         <div class="charge-meta">
                             <span>${dueDateLabel}</span>
-                            <span>Charge ID: ${escapeHtml(displayChargeId)}</span>
+                            <span>Charge ID: ${escapeHtml(
+                    displayChargeId
+                )}</span>
                         </div>
                         ${paymentIndicator}
                         
                     </div>
-                    <div class="charge-amount" title="${lateFeeAmt > 0 ? `Base: ₱${formatCurrency(baseAmt)} + Late fee: ₱${formatCurrency(lateFeeAmt)} = ₱${formatCurrency(amount)} | Remaining: ₱${formatCurrency(remainingAfterPending)}` : `Remaining: ₱${formatCurrency(remainingAfterPending)} of ₱${formatCurrency(amount)}`}" aria-label="${lateFeeAmt > 0 ? `Includes late fee of ₱${formatCurrency(lateFeeAmt)}.` : ''}">₱${formatCurrency(remainingAfterPending)}</div>
+                    <div class="charge-amount" title="${lateFeeAmt > 0
+                    ? `Base: ₱${formatCurrency(
+                        baseAmt
+                    )} + Late fee: ₱${formatCurrency(
+                        lateFeeAmt
+                    )} = ₱${formatCurrency(
+                        amount
+                    )} | Remaining: ₱${formatCurrency(
+                        remainingAfterPending
+                    )}`
+                    : `Remaining: ₱${formatCurrency(
+                        remainingAfterPending
+                    )} of ₱${formatCurrency(amount)}`
+                }" aria-label="${lateFeeAmt > 0
+                    ? `Includes late fee of ₱${formatCurrency(lateFeeAmt)}.`
+                    : ""
+                }">₱${formatCurrency(remainingAfterPending)}</div>
                 </label>
             `;
         })
@@ -2061,7 +2391,8 @@ function updatePaymentSummary() {
     const totalSelected = calculateSelectedChargesTotal();
 
     if (countSpan) {
-        countSpan.textContent = `${selectedCount} charge${selectedCount === 1 ? "" : "s"} selected`;
+        countSpan.textContent = `${selectedCount} charge${selectedCount === 1 ? "" : "s"
+            } selected`;
     }
     if (totalSpan) {
         totalSpan.textContent = `₱${formatCurrency(totalSelected)}`;
@@ -2146,7 +2477,9 @@ function renderPaymentInstructions(methodValue) {
                 <h4><i class="fas fa-university"></i>Bank Transfer</h4>
                 <div class="qr-card">
                     <div class="qr-placeholder">
-                        <img src="${getQrPlaceholderSrc("BANK QR")}" alt="Bank transfer QR code placeholder">
+                        <img src="${getQrPlaceholderSrc(
+            "BANK QR"
+        )}" alt="Bank transfer QR code placeholder">
                     </div>
                     <div class="instruction-note">After transferring, upload your payment proof and keep the reference number for verification.</div>
                 </div>
@@ -2172,7 +2505,9 @@ function renderPaymentInstructions(methodValue) {
                     <h4><i class="fas fa-mobile-screen"></i>GCash</h4>
                     <div class="qr-card">
                         <div class="qr-placeholder">
-                            <img src="${getQrPlaceholderSrc("GCASH")}" alt="GCash payment QR code placeholder">
+                            <img src="${getQrPlaceholderSrc(
+            "GCASH"
+        )}" alt="GCash payment QR code placeholder">
                         </div>
                         <div class="instruction-meta">
                             <span><strong>Account Name</strong>Ambulo PMS</span>
@@ -2185,7 +2520,9 @@ function renderPaymentInstructions(methodValue) {
                     <h4><i class="fas fa-wallet"></i>Maya</h4>
                     <div class="qr-card">
                         <div class="qr-placeholder">
-                            <img src="${getQrPlaceholderSrc("MAYA")}" alt="Maya payment QR code placeholder">
+                            <img src="${getQrPlaceholderSrc(
+            "MAYA"
+        )}" alt="Maya payment QR code placeholder">
                         </div>
                         <div class="instruction-meta">
                             <span><strong>Account Name</strong>Ambulo PMS</span>
@@ -2280,7 +2617,6 @@ function showModalAlert(type, message) {
 }
 
 function showAlert(type, message) {
-    
     let container = document.getElementById("toast-container");
     if (!container) {
         container = document.createElement("div");
@@ -2290,7 +2626,12 @@ function showAlert(type, message) {
 
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
-    const icon = type === "success" ? "check-circle" : type === "error" ? "exclamation-triangle" : "info-circle";
+    const icon =
+        type === "success"
+            ? "check-circle"
+            : type === "error"
+                ? "exclamation-triangle"
+                : "info-circle";
     toast.innerHTML = `
         <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
         <div class="toast-message">${escapeHtml(message)}</div>
@@ -2298,7 +2639,6 @@ function showAlert(type, message) {
 
     container.appendChild(toast);
 
-    
     const DURATION = type === "error" ? 9000 : 7000;
     setTimeout(() => {
         toast.classList.add("fade-out");
@@ -2383,38 +2723,6 @@ function escapeHtml(text) {
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
-
-document.addEventListener("DOMContentLoaded", function () {
-    setTimeout(() => {
-        const upcomingDue = rentedSpaces.filter((space) => {
-            const daysUntilDue = Math.ceil(
-                (new Date(space.dueDate) - new Date()) / (1000 * 60 * 60 * 24)
-            );
-            return daysUntilDue <= 7 && daysUntilDue > 0;
-        });
-
-        if (upcomingDue.length > 0) {
-            showAlert(
-                "error",
-                `${upcomingDue.length} payment(s) due within 7 days!`
-            );
-        }
-    }, 2000);
-});
-
-setInterval(() => {
-    const pendingPayments = paymentHistory.filter(
-        (p) => p.statusClass === "pending"
-    );
-    if (pendingPayments.length > 0 && Math.random() > 0.95) {
-        const randomPending =
-            pendingPayments[Math.floor(Math.random() * pendingPayments.length)];
-        randomPending.statusClass = "paid";
-        randomPending.statusLabel = "Confirmed";
-        loadPaymentHistory();
-        showAlert("success", `Payment ${randomPending.reference} has been confirmed!`);
-    }
-}, 10000);
 
 window.selectSpace = selectSpace;
 window.openPaymentModal = openPaymentModal;
