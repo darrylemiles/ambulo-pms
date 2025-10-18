@@ -169,12 +169,13 @@ const getAllPayments = async (filters = {}) => {
     try {
     const { status } = filters || {};
 
-        let query = `
+    let query = `
             SELECT 
                 pay.payment_id,
                 pay.charge_id,
                 pay.status,
                 pay.payment_method,
+        pay.notes,
                 pay.amount AS amount_paid,
                 pay.created_at,
                 pay.confirmed_by AS processed_by,
@@ -253,12 +254,13 @@ const getPaymentsByUserId = async (userId, { page = 1, limit = 10 } = {}) => {
         const [countRows] = await pool.execute(countQuery, [userId, userId]);
         const total = countRows && countRows.length ? Number(countRows[0].cnt || 0) : 0;
 
-        const query = `
+    const query = `
             SELECT 
                 pay.payment_id,
                 pay.charge_id,
                 pay.status,
                 pay.payment_method,
+        pay.notes,
                 pay.amount AS amount_paid,
                 pay.created_at,
                 pay.confirmed_by AS processed_by,
