@@ -9,13 +9,15 @@ import {
     updateChargeById,
     deleteChargeById,
     getRecurringTemplateById,
-    updateRecurringTemplateById
+    updateRecurringTemplateById,
+    getChargesStats
 } from "../controllers/chargesControllers.js";
 
 const router = express.Router();
 
 router.post('/create-charge', protect, createCharge);
 router.get('/', getAllCharges);
+router.get('/stats', getChargesStats);
 router.get('/users/:userId', getChargeByUserId);
 router.get('/leases/:leaseId', getChargeByLeaseId);
 router.get('/:id', getChargeById);

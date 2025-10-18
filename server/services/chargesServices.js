@@ -487,6 +487,71 @@ const getChargeByLeaseId = async (leaseId, queryParams = {}) => {
     }
 };
 
+
+const getChargesStats = async () => {
+    try {
+        const sql = `
+            SELECT
+                COUNT(*) AS total,
+                SUM(
+                    CASE WHEN 
+                        DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                        AND IFNULL(c.total_paid, IFNULL(pay_sum.total_paid,0)) < (
+                            c.amount + CASE
+                                WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                                    THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                                ELSE 0
+                            END
+                        )
+                    THEN 1 ELSE 0 END
+                ) AS overdue_unsettled,
+                SUM(
+                    CASE WHEN 
+                        DATEDIFF(DATE(c.due_date), CURDATE()) BETWEEN 0 AND 3
+                        AND IFNULL(c.total_paid, IFNULL(pay_sum.total_paid,0)) < (
+                            c.amount + CASE
+                                WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                                    THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                                ELSE 0
+                            END
+                        )
+                    THEN 1 ELSE 0 END
+                ) AS due_soon_unsettled,
+                SUM(
+                    CASE WHEN 
+                        IFNULL(c.total_paid, IFNULL(pay_sum.total_paid,0)) < (
+                            c.amount + CASE
+                                WHEN DATEDIFF(CURDATE(), DATE(c.due_date)) > IFNULL(l.grace_period_days, 0)
+                                    THEN ROUND(c.amount * IFNULL(l.late_fee_percentage, 0) / 100, 2)
+                                ELSE 0
+                            END
+                        )
+                        AND c.status <> 'Waived'
+                    THEN 1 ELSE 0 END
+                ) AS outstanding_unsettled
+            FROM charges c
+            LEFT JOIN (
+                SELECT charge_id, IFNULL(SUM(amount), 0) AS total_paid
+                FROM payments
+                WHERE status = 'Confirmed' OR status = 'Completed'
+                GROUP BY charge_id
+            ) pay_sum ON pay_sum.charge_id = c.charge_id
+            LEFT JOIN leases l ON c.lease_id = l.lease_id
+        `;
+        const [rows] = await pool.query(sql);
+        const r = rows?.[0] || { total: 0, overdue_unsettled: 0, due_soon_unsettled: 0, outstanding_unsettled: 0 };
+        return {
+            total: Number(r.total || 0),
+            overdue: Number(r.overdue_unsettled || 0),
+            dueSoon: Number(r.due_soon_unsettled || 0),
+            outstanding: Number(r.outstanding_unsettled || 0),
+        };
+    } catch (error) {
+        console.error('Error computing charges stats:', error);
+        throw error;
+    }
+};
+
 const updateChargeById = async (id, charge = {}) => {
     try {
         const fields = [];
@@ -526,4 +591,5 @@ export default {
     deleteChargeById,
     getRecurringTemplateById,
     updateRecurringTemplateById,
+    getChargesStats,
 };

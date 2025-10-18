@@ -118,6 +118,11 @@ const updateRecurringTemplateById = expressAsync(async (req, res) => {
     }
 });
 
+const getChargesStats = expressAsync(async (_req, res) => {
+    const stats = await chargesServices.getChargesStats();
+    res.status(200).json(stats);
+});
+
 export {
     createCharge,
     getAllCharges,
@@ -128,4 +133,5 @@ export {
     deleteChargeById,
     getRecurringTemplateById,
     updateRecurringTemplateById,
+    getChargesStats,
 };
