@@ -180,6 +180,29 @@ const getAllCharges = async (queryParams = {}) => {
 
         const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
+        
+        const page = Math.max(1, parseInt(queryParams.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(queryParams.limit, 10) || 10));
+        const offset = (page - 1) * limit;
+
+        
+        const countSql = `
+            SELECT COUNT(*) AS cnt
+            FROM charges c
+            LEFT JOIN (
+                SELECT charge_id, IFNULL(SUM(amount), 0) AS total_paid
+                FROM payments
+                WHERE status = 'Confirmed' OR status = 'Completed'
+                GROUP BY charge_id
+            ) pay_sum ON pay_sum.charge_id = c.charge_id
+            LEFT JOIN leases l ON c.lease_id = l.lease_id
+            LEFT JOIN users u ON l.user_id = u.user_id
+            LEFT JOIN properties p ON l.property_id = p.property_id
+            ${whereClause}
+        `;
+        const [countRows] = await pool.query(countSql, values);
+        const total = Number(countRows?.[0]?.cnt || 0);
+
         const sql = `
         SELECT
             c.*, 
@@ -210,10 +233,16 @@ const getAllCharges = async (queryParams = {}) => {
         LEFT JOIN properties p ON l.property_id = p.property_id
         ${whereClause}
         ORDER BY c.charge_date DESC, c.due_date DESC
+        LIMIT ${limit} OFFSET ${offset}
         `;
 
         const [rows] = await pool.query(sql, values);
-        return rows;
+        return {
+            data: rows,
+            total,
+            page,
+            limit,
+        };
     } catch (error) {
         console.error("Error fetching all charges:", error);
         throw error;
