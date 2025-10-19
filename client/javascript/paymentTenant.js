@@ -24,6 +24,25 @@ let selectedChargeIds = new Set();
 
 const API_BASE_URL = "/api/v1";
 
+
+const paymentAllocCache = {};
+async function preloadAllocationsForHistory() {
+    try {
+        const promises = (paymentHistory || []).map(async (p) => {
+            const pid = p.id;
+            if (!pid) return;
+            if (paymentAllocCache[pid]) {
+                p.hasAllocations = Array.isArray(paymentAllocCache[pid]) && paymentAllocCache[pid].length > 0;
+                return;
+            }
+            const allocs = await fetchPaymentAllocationsTenant(pid).catch(() => []);
+            paymentAllocCache[pid] = allocs;
+            p.hasAllocations = Array.isArray(allocs) && allocs.length > 0;
+        });
+        await Promise.allSettled(promises);
+    } catch {}
+}
+
 async function fetchPaymentAllocationsTenant(paymentId) {
     const token = getJwtToken();
     const resp = await fetch(`${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/allocations`, {
@@ -88,6 +107,11 @@ function openTenantAllocationsModal(paymentId) {
 
 function escapeJsString(val) {
     return String(val).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+function safeId(id) {
+    
+    return String(id || '').replace(/[^a-z0-9_-]/gi, '_');
 }
 
 function getJwtToken() {
@@ -217,11 +241,13 @@ async function fetchPaymentHistory(page = 1) {
 
         const data = await resp.json().catch(() => ({}));
         const rows = Array.isArray(data.payments) ? data.payments : [];
-        paymentHistory = rows.map(mapPaymentRecordToHistory);
+    paymentHistory = rows.map(mapPaymentRecordToHistory);
         paymentHistoryPage = Number(data.page || page) || 1;
         paymentHistoryTotalPages = Number(data.totalPages || 1) || 1;
         isPaymentHistoryLoading = false;
-        loadPaymentHistory();
+    
+    await preloadAllocationsForHistory();
+    loadPaymentHistory();
         renderPaymentHistoryPagination();
     } catch (error) {
         console.error("fetchPaymentHistory error:", error);
@@ -1429,59 +1455,115 @@ function loadPaymentHistory() {
     }
 
     tbody.innerHTML = paymentHistory
-        .map(
-            (payment) => `
-                <tr>
+        .map((payment) => {
+            const hasAlloc = !!payment.hasAllocations;
+            const invoiceBtn = (payment.statusClass === 'paid')
+                ? `<a class="copy-btn" title="View Invoice" href="${API_BASE_URL}/payments/${encodeURIComponent(payment.id)}/invoice.pdf" target="_blank" rel="noopener" style="margin-left: 0.5rem;"><i class="fas fa-file-invoice"></i></a>`
+                : '';
+            const allocIndicator = hasAlloc
+                ? `<span class="alloc-indicator" style="margin-left:8px;background:#eef2ff;color:#4f46e5;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-layer-group"></i> Allocations</span>`
+                : '';
+            const sid = safeId(payment.id);
+            const allocToggle = hasAlloc
+                ? `<button class="copy-btn" title="Show Allocations" onclick="event.stopPropagation(); togglePaymentAllocationsRow('${escapeJsString(sid)}')" style="margin-left: 0.5rem;"><i class="fas fa-chevron-down" id="alloc-chevron-${sid}"></i></button>`
+                : '';
+            const rowHtml = `
+                <tr id="payment-row-${escapeHtml(payment.id)}" onclick="togglePaymentAllocationsRow('${escapeJsString(sid)}')" style="cursor: pointer;">
                     <td>${formatDate(payment.date)}</td>
                     <td>
                         <strong>${escapeHtml(payment.space)}</strong>
-                        ${payment.method
-                    ? `<span class="history-method">${escapeHtml(
-                        payment.method
-                    )}</span>`
-                    : ""
-                }
+                        ${payment.method ? `<span class=\"history-method\">${escapeHtml(payment.method)}</span>` : ''}
+                        ${allocIndicator}
                     </td>
                     <td>${escapeHtml(payment.description)}</td>
-                    <td class="history-amount">₱${formatCurrency(
-                    payment.amount
-                )}</td>
+                    <td class="history-amount">₱${formatCurrency(payment.amount)}</td>
                     <td>
-                        <code style="background: rgba(102, 126, 234, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-family: 'Courier New', monospace;">
-                            ${escapeHtml(payment.reference)}
-                        </code>
-                        <button class="copy-btn" onclick="copyToClipboard('${escapeJsString(
-                    payment.reference
-                )}')" style="margin-left: 0.5rem;">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="copy-btn" title="View Allocation Breakdown" onclick="openTenantAllocationsModal('${escapeJsString(payment.id)}')" style="margin-left: 0.5rem;">
-                            <i class="fas fa-list-ul"></i>
-                        </button>
+                        <code style="background: rgba(102, 126, 234, 0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-family: 'Courier New', monospace;">${escapeHtml(payment.reference)}</code>
+                        <button class="copy-btn" onclick="copyToClipboard('${escapeJsString(payment.reference)}')" style="margin-left: 0.5rem;"><i class="fas fa-copy"></i></button>
+                        ${invoiceBtn}
+                        ${allocToggle}
                     </td>
                     <td>
                         ${(() => {
-                    const tooltip = escapeHtml(
-                        payment.notes
-                            ? String(payment.notes)
-                                .replace(/\s+/g, " ")
-                                .trim()
-                            : "No notes provided"
-                    );
-                    const attr =
-                        payment.statusClass === "overdue"
-                            ? ` data-tooltip="${tooltip}"`
-                            : "";
-                    return `<span class="status ${payment.statusClass}"${attr}>`;
-                })()}
+                            const tooltip = escapeHtml(payment.notes ? String(payment.notes).replace(/\s+/g, ' ').trim() : 'No notes provided');
+                            const attr = payment.statusClass === 'overdue' ? ` data-tooltip=\"${tooltip}\"` : '';
+                            return `<span class=\"status ${payment.statusClass}\"${attr}>`;
+                        })()}
                             ${escapeHtml(payment.statusLabel)}
                         </span>
                     </td>
                 </tr>
-            `
-        )
+                ${hasAlloc ? `
+                <tr id="alloc-row-${sid}" data-pid="${escapeHtml(payment.id)}" class="payment-alloc-row" style="display:none;background:#fafafa;">
+                    <td colspan="6" style="padding:12px 16px;">
+                        <div id="alloc-content-${sid}" class="allocations-list">
+                            <div class="loading" style="margin:4px 0;">Loading allocations…</div>
+                        </div>
+                    </td>
+                </tr>` : ''}
+            `;
+            return rowHtml;
+        })
         .join("");
 }
+
+function buildAllocationsHtml(allocs) {
+    if (!Array.isArray(allocs) || allocs.length === 0) {
+        return `<div class='empty-state'><div class='empty-icon'><i class='fas fa-file-invoice'></i></div><div>No allocation details available.</div></div>`;
+    }
+    return allocs.map(a => `
+        <div class="allocation-item" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">
+            <div>
+                <div style="font-weight:600;">${escapeHtml(a.description || 'Charge')}</div>
+                <div style="color:#6b7280;font-size:12px;">Type: ${escapeHtml(a.charge_type || '')} • Charge ID: ${escapeHtml(String(a.charge_id || ''))}</div>
+            </div>
+            <div style="font-weight:700;">₱${formatCurrency(a.amount)}</div>
+        </div>
+    `).join('');
+}
+
+async function togglePaymentAllocationsRow(safePaymentId) {
+    try {
+        const row = document.getElementById(`alloc-row-${safePaymentId}`);
+        const chev = document.getElementById(`alloc-chevron-${safePaymentId}`);
+        if (!row) return;
+        
+        const computed = window.getComputedStyle ? window.getComputedStyle(row) : null;
+        const isHidden = computed ? computed.display === 'none' : row.style.display === 'none' || row.getAttribute('hidden') != null;
+        
+        const originalId = row.dataset && row.dataset.pid ? row.dataset.pid : safePaymentId;
+        const container = document.getElementById(`alloc-content-${safePaymentId}`);
+        if (isHidden) {
+            
+            const cached = paymentAllocCache[originalId];
+            if (cached) {
+                if (container) container.innerHTML = buildAllocationsHtml(cached);
+            } else {
+                if (container) container.innerHTML = `<div class="loading" style="margin:4px 0;">Loading allocations…</div>`;
+                const allocs = await fetchPaymentAllocationsTenant(originalId).catch(() => []);
+                paymentAllocCache[originalId] = allocs;
+                if (container) container.innerHTML = buildAllocationsHtml(allocs);
+            }
+            
+            row.style.display = '';
+            if (chev) {
+                chev.classList.remove('fa-chevron-down');
+                chev.classList.add('fa-chevron-up');
+            }
+        } else {
+            row.style.display = 'none';
+            if (chev) {
+                chev.classList.remove('fa-chevron-up');
+                chev.classList.add('fa-chevron-down');
+            }
+        }
+    } catch (e) {
+        console.warn('togglePaymentAllocationsRow error', e);
+    }
+}
+
+
+window.togglePaymentAllocationsRow = togglePaymentAllocationsRow;
 
 function renderPaymentHistoryPagination() {
     let container = document.getElementById("payment-pagination");
@@ -2104,17 +2186,6 @@ async function submitPayment() {
     }
 }
 
-function calculateTotalAmount() {
-    if (!selectedSpace) return 0;
-
-    const baseRent = selectedSpace.monthlyRent;
-    const utilities = Math.floor(Math.random() * 1000) + 2000;
-    const water = Math.floor(Math.random() * 300) + 600;
-    const maintenance = 500;
-
-    return baseRent + utilities + water + maintenance;
-}
-
 function formatCurrency(amount) {
     try {
         return Number(amount).toLocaleString();
@@ -2123,10 +2194,6 @@ function formatCurrency(amount) {
     }
 }
 
-/**
- * Render a due-date pill with formatted date and urgency indicator.
- * dueDateStr: raw date string (ISO or other). graceDays: integer.
- */
 function renderDuePill(dueDateStr, graceDays = 0) {
     if (!dueDateStr) return "<small style='color:#6b7280;'>No due date</small>";
     const d = new Date(dueDateStr);
