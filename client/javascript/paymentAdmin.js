@@ -74,6 +74,71 @@ const CHARGE_STATUS_MAPPINGS_CONST = (window.AppConstants &&
 
 const API_BASE_URL = "/api/v1";
 
+async function fetchPaymentAllocations(paymentId) {
+    const token = getJwtToken();
+    const resp = await fetch(`${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/allocations`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}));
+        throw new Error(body.message || `Failed to load allocations (${resp.status})`);
+    }
+    const data = await resp.json().catch(() => ({ allocations: [] }));
+    return Array.isArray(data.allocations) ? data.allocations : [];
+}
+
+function ensureAllocationsModal() {
+    let modal = document.getElementById('allocations-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'allocations-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title"><i class="fas fa-list-ul"></i> Payment Allocations</h2>
+                    <button class="close-btn" onclick="closeModal('allocations-modal')"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="allocations-modal-body"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    return modal;
+}
+
+function renderAllocationsList(allocations) {
+    if (!allocations || !allocations.length) {
+        return `<div class="empty-state"><div class="empty-icon"><i class="fas fa-file-invoice"></i></div><div>No allocations recorded for this payment.</div></div>`;
+    }
+    return `
+        <div class="allocations-list">
+            ${allocations.map(a => `
+                <div class="allocation-item">
+                    <div class="allocation-main">
+                        <div class="alloc-desc"><strong>${escapeHtml(a.description || 'Charge')}</strong> <small style="color:#6b7280;">${escapeHtml(a.charge_type || '')}</small></div>
+                        <div class="alloc-meta">Charge ID: ${escapeHtml(String(a.charge_id || ''))}</div>
+                    </div>
+                    <div class="allocation-amount">₱${formatCurrency(a.amount)}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+window.viewPaymentAllocations = async function(paymentId) {
+    try {
+        const modal = ensureAllocationsModal();
+        const body = modal.querySelector('#allocations-modal-body');
+        body.innerHTML = `<div class="loading" style="margin: 1rem 0;">Loading allocations…</div>`;
+        openModal('allocations-modal');
+        const allocations = await fetchPaymentAllocations(paymentId);
+        body.innerHTML = renderAllocationsList(allocations);
+    } catch (e) {
+        try { showAlert(e.message || 'Failed to load allocations', 'error'); } catch {}
+    }
+};
+
 async function fetchAllPayments(page = 1, limit = 10) {
     try {
         const params = new URLSearchParams({
@@ -222,6 +287,9 @@ function renderPaymentsTable() {
                 <div class="action-buttons">
                     <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
                         <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="viewPaymentAllocations('${payment.id}')" class="btn btn-sm btn-warning" title="View Allocation Breakdown">
+                        <i class="fas fa-list-ul"></i>
                     </button>
                     ${String(payment.status || '').toLowerCase() === 'confirmed' ? `
                     <button onclick="viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">

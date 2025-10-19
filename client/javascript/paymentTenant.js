@@ -24,6 +24,68 @@ let selectedChargeIds = new Set();
 
 const API_BASE_URL = "/api/v1";
 
+async function fetchPaymentAllocationsTenant(paymentId) {
+    const token = getJwtToken();
+    const resp = await fetch(`${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/allocations`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json().catch(() => ({ allocations: [] }));
+    return Array.isArray(data.allocations) ? data.allocations : [];
+}
+
+function ensureTenantAllocationsModal() {
+    let modal = document.getElementById('tenant-allocations-modal');
+        if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'tenant-allocations-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title"><i class="fas fa-list-ul"></i> Payment Allocation Breakdown</h2>
+                        <button class="close-btn" onclick="closeTenantAllocationsModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="tenant-allocations-modal-body"></div>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+    return modal;
+}
+
+function closeTenantAllocationsModal() {
+    const modal = document.getElementById('tenant-allocations-modal');
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function openTenantAllocationsModal(paymentId) {
+    const modal = ensureTenantAllocationsModal();
+    const body = modal.querySelector('#tenant-allocations-modal-body');
+    body.innerHTML = `<div class="loading" style="margin:1rem 0;">Loading allocations…</div>`;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    fetchPaymentAllocationsTenant(paymentId).then((allocs)=>{
+        if (!allocs.length) {
+            body.innerHTML = `<div class='empty-state'><div class='empty-icon'><i class='fas fa-file-invoice'></i></div><div>No allocation details available.</div></div>`;
+            return;
+        }
+        const html = allocs.map(a=>`
+            <div class="allocation-item" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">
+                <div>
+                    <div style="font-weight:600;">${escapeHtml(a.description || 'Charge')}</div>
+                    <div style="color:#6b7280;font-size:12px;">Type: ${escapeHtml(a.charge_type || '')} • Charge ID: ${escapeHtml(String(a.charge_id || ''))}</div>
+                </div>
+                <div style="font-weight:700;">₱${formatCurrency(a.amount)}</div>
+            </div>
+        `).join('');
+        body.innerHTML = `<div class="allocations-list">${html}</div>`;
+    }).catch(()=>{
+        body.innerHTML = `<div class='empty-state'><div class='empty-icon'><i class='fas fa-triangle-exclamation'></i></div><div>Failed to load allocations.</div></div>`;
+    });
+}
+
+
 function escapeJsString(val) {
     return String(val).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
@@ -88,8 +150,15 @@ function mapPaymentRecordToHistory(record = {}) {
         record.charge_description ||
         record.charge_type ||
         "Payment";
-    const description =
-        record.charge_description || record.charge_type || "Payment";
+    const description = (() => {
+        if (record.charge_description) return record.charge_description;
+        if (record.charge_type) return record.charge_type;
+        
+        if (record.notes && String(record.notes).toLowerCase().includes('allocation')) {
+            return 'Consolidated Payment';
+        }
+        return 'Payment';
+    })();
     const notes = record.notes || record.payment_notes || record.note || "";
 
     return {
@@ -1386,6 +1455,9 @@ function loadPaymentHistory() {
                 )}')" style="margin-left: 0.5rem;">
                             <i class="fas fa-copy"></i>
                         </button>
+                        <button class="copy-btn" title="View Allocation Breakdown" onclick="openTenantAllocationsModal('${escapeJsString(payment.id)}')" style="margin-left: 0.5rem;">
+                            <i class="fas fa-list-ul"></i>
+                        </button>
                     </td>
                     <td>
                         ${(() => {
@@ -1529,6 +1601,7 @@ async function fetchPendingPaymentsForCharges(charges) {
         if (!resp.ok) return {};
         const data = await resp.json();
         const map = {};
+        
         (data.payments || []).forEach((p) => {
             const key = String(p.charge_id);
             if (!map[key]) map[key] = [];
@@ -1549,6 +1622,7 @@ function renderChargePaymentIndicator(charge) {
         const pendingMap = window.__pendingPaymentsMap || {};
         const group = pendingMap[key];
         if (!group || !group.length) return "";
+        
         const pendingAmount = Number(
             group.reduce((s, p) => s + Number(p.amount_paid || p.amount || 0), 0)
         );
@@ -1973,67 +2047,28 @@ async function submitPayment() {
         .map((alloc) => `${alloc.displayId}: ₱${formatCurrency(alloc.amount)}`)
         .join("; ");
 
-    const createdPaymentIds = [];
-    let primaryPaymentId = null;
-
     try {
-        for (let i = 0; i < allocations.length; i++) {
-            const allocation = allocations[i];
-            const formData = new FormData();
-            formData.append("chargeId", allocation.chargeId);
-            formData.append("paymentDate", paymentDate);
-            formData.append("amountPaid", allocation.amount.toFixed(2));
-            formData.append("paymentMethod", paymentMethodSelect.value);
-            formData.append("user_id", currentUserId);
+        
+        const formData = new FormData();
+        formData.append("paymentDate", paymentDate);
+        formData.append("amountPaid", Number(amountValue).toFixed(2));
+        formData.append("paymentMethod", paymentMethodSelect.value);
+        formData.append("user_id", currentUserId);
+        formData.append("notes", `Submitted via tenant portal. Allocation summary: ${allocationSummary}.`);
+        formData.append("allocations", JSON.stringify(allocations.map(a => ({ chargeId: a.chargeId, amount: a.amount }))));
+        uploadedFiles.forEach((file) => formData.append("proofs", file));
 
-            const noteSegments = [
-                "Submitted via tenant portal.",
-                `Allocation summary: ${allocationSummary}.`,
-                `This entry allocates ₱${formatCurrency(allocation.amount)} to ${allocation.label
-                } (${allocation.displayId}).`,
-            ];
-            if (allocations.length > 1) {
-                noteSegments.push(`Batch ${i + 1} of ${allocations.length}.`);
-            }
-            if (i > 0 && primaryPaymentId) {
-                noteSegments.push(
-                    `Supporting proofs uploaded with payment ${primaryPaymentId}.`
-                );
-            }
-            formData.append("notes", noteSegments.join(" "));
-
-            if (i === 0) {
-                uploadedFiles.forEach((file) => {
-                    formData.append("proofs", file);
-                });
-            }
-
-            const response = await fetch(`${API_BASE_URL}/payments/create-payment`, {
-                method: "POST",
-                headers,
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorBody = await response.json().catch(() => ({}));
-                throw new Error(
-                    errorBody.message || "Failed to submit payment confirmation."
-                );
-            }
-
-            const result = await response.json().catch(() => ({}));
-            if (!primaryPaymentId && result.payment_id) {
-                primaryPaymentId = result.payment_id;
-            }
-            createdPaymentIds.push(result.payment_id || null);
+        const response = await fetch(`${API_BASE_URL}/payments/create-payment`, {
+            method: "POST",
+            headers,
+            body: formData,
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            throw new Error(errorBody.message || "Failed to submit payment confirmation.");
         }
 
-        const successMessage =
-            allocations.length === 1
-                ? "Payment confirmation submitted! We'll review it shortly."
-                : `Payment confirmations submitted for ${allocations.length} charges! We'll review them shortly.`;
-
-        showModalAlert("success", successMessage);
+        showModalAlert("success", "Payment confirmation submitted! We'll review it shortly.");
 
         await fetchPaymentHistory(1);
 
@@ -2059,27 +2094,10 @@ async function submitPayment() {
         }, 2500);
     } catch (error) {
         console.error("submitPayment error:", error);
-        const partialMessage = createdPaymentIds.length
-            ? ` We recorded ${createdPaymentIds.length} payment${createdPaymentIds.length === 1 ? "" : "s"
-            } before the error. We've refreshed the data, but please contact support if anything looks off.`
-            : "";
         showModalAlert(
             "error",
-            (error.message ||
-                "Failed to submit payment confirmation. Please try again.") +
-            partialMessage
+            error.message || "Failed to submit payment confirmation. Please try again."
         );
-        if (createdPaymentIds.length) {
-            try {
-                await fetchPaymentHistory();
-                await refreshSelectedSpaceData();
-            } catch (refreshError) {
-                console.warn(
-                    "Failed to refresh data after partial payment submission",
-                    refreshError
-                );
-            }
-        }
         submitBtn.disabled = false;
         submitBtn.innerHTML =
             '<i class="fas fa-paper-plane"></i> Submit Payment Confirmation';
@@ -2757,3 +2775,5 @@ window.removeUploadedImage = removeUploadedImage;
 window.submitPayment = submitPayment;
 window.escapeHtml = escapeHtml;
 window.copyToClipboard = copyToClipboard;
+window.openTenantAllocationsModal = openTenantAllocationsModal;
+window.closeTenantAllocationsModal = closeTenantAllocationsModal;
