@@ -220,14 +220,16 @@ function renderPaymentsTable() {
                 )}</td>
             <td class="actions-cell">
                 <div class="action-buttons">
-                    <button onclick="viewPaymentDetails('${payment.id
-                }')" class="btn btn-sm btn-info" title="View Details">
+                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="generateReceipt('${payment.id
-                }')" class="btn btn-sm btn-success" title="View Receipt">
-                        <i class="fas fa-receipt"></i>
+                    ${String(payment.status || '').toLowerCase() === 'confirmed' ? `
+                    <button onclick="viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">
+                        <i class="fas fa-file-pdf"></i>
                     </button>
+                    <button onclick="downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">
+                        <i class="fas fa-download"></i>
+                    </button>` : ``}
                 </div>
             </td>
         </tr>
@@ -301,14 +303,16 @@ function renderPaymentsTable() {
                 </div>
                 
                 <div class="card-actions">
-                    <button onclick="viewPaymentDetails('${payment.id
-                    }')" class="btn btn-sm btn-info" title="View Details">
+                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="generateReceipt('${payment.id
-                    }')" class="btn btn-sm btn-success" title="View Receipt">
-                        <i class="fas fa-receipt"></i>
+                    ${String(payment.status || '').toLowerCase() === 'confirmed' ? `
+                    <button onclick="viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">
+                        <i class="fas fa-file-pdf"></i>
                     </button>
+                    <button onclick="downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">
+                        <i class="fas fa-download"></i>
+                    </button>` : ``}
                 </div>
             </div>
         `
@@ -316,6 +320,68 @@ function renderPaymentsTable() {
             .join("");
     }
 }
+
+
+async function fetchInvoiceBlob(paymentId, download = false) {
+    try {
+        const token = typeof getJwtToken === "function" ? getJwtToken() : null;
+        const url = `${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/invoice.pdf${download ? "?download=1" : ""}`;
+        const res = await fetch(url, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: token ? "same-origin" : "include",
+        });
+        if (!res.ok) throw new Error(`Failed to fetch invoice: ${res.status}`);
+        const blob = await res.blob();
+        return blob;
+    } catch (e) {
+        console.error("Invoice fetch failed", e);
+        showAlert("Unable to load invoice PDF.", "error");
+        return null;
+    }
+}
+
+window.viewInvoicePDF = async function (paymentId) {
+    
+    try {
+        const token = typeof getJwtToken === "function" ? getJwtToken() : null;
+        const url = `${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/invoice.pdf`;
+        const res = await fetch(url, {
+            method: "GET",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: "include",
+        });
+        if (!res.ok) {
+            console.error("Invoice fetch failed", res.status, res.statusText);
+            showAlert("Unable to load invoice PDF.", "error");
+            return;
+        }
+        const ctype = (res.headers.get("content-type") || "").toLowerCase();
+        if (!ctype.includes("application/pdf")) {
+            const txt = await res.text();
+            console.error("Unexpected content-type for invoice:", ctype, txt);
+            showAlert("Invoice response is not a PDF.", "error");
+            return;
+        }
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (e) {
+        console.error("Invoice preview error", e);
+        showAlert("Unable to open invoice PDF.", "error");
+    }
+};
+
+window.downloadInvoicePDF = function (paymentId) {
+    const url = `${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/invoice.pdf?download=1`;
+    
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+};
 
 function renderPaymentsPagination() {
     const container = document.getElementById("payments-pagination");
