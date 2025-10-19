@@ -68,13 +68,14 @@ export async function streamInvoicePdf(req, res, next) {
     const leftColWidth = Math.floor(contentWidth * 0.6) - 12; 
     const rightColX = margin + leftColWidth + 24; 
 
-    const drawFooter = () => {
+  const drawFooter = () => {
       
       const footerTop = pageHeight - margin - 24; 
       doc.save();
       doc.strokeColor('#E5E7EB').moveTo(margin, footerTop).lineTo(pageWidth - margin, footerTop).stroke();
-      const leftText = company?.company_name ? `${company.company_name}` : '';
-      const rightText = `Page ${doc.page.number}`;
+  const leftText = company?.company_name ? `${company.company_name}` : '';
+  const pageNo = (doc.page && typeof doc.page.number === 'number' && !Number.isNaN(doc.page.number)) ? doc.page.number : 1;
+  const rightText = `Page ${pageNo}`;
       doc.fontSize(8).fillColor('#6B7280');
       doc.text(leftText, margin, footerTop + 6, { width: contentWidth / 2, lineBreak: false });
       doc.text(rightText, margin + contentWidth / 2, footerTop + 6, { width: contentWidth / 2, align: 'right', lineBreak: false });
@@ -206,9 +207,9 @@ export async function streamInvoicePdf(req, res, next) {
     
     let lineItems = Array.isArray(items) && items.length
       ? items
-      : [{ description: charge.description || 'Charge', type: charge.type || '—', amount: Number(charge.amount || 0) }];
+      : [{ description: charge.description || 'Charge', type: charge.type || '—', amount: Number(charge.amount || 0), lateFeePercentage: null }];
     if ((!items || !items.length) && charge.lateFee && Number(charge.lateFee) > 0) {
-      lineItems.push({ description: 'Late Fee', type: 'fee', amount: Number(charge.lateFee) });
+      lineItems.push({ description: 'Late Fee', type: 'fee', amount: Number(charge.lateFee), lateFeePercentage: (typeof charge.lateFeePercentage === 'number' ? charge.lateFeePercentage : null) });
     }
     const ensureSpace = (increment = 18) => {
       const reserved = 160; 
@@ -226,9 +227,14 @@ export async function streamInvoicePdf(req, res, next) {
     };
     lineItems.forEach((it) => {
       ensureSpace();
+      const isLateFee = String(it.type || '').toLowerCase() === 'fee' || /late fee/i.test(String(it.description || ''));
+      const descText = isLateFee
+        ? `   • Late Fee${typeof it.lateFeePercentage === 'number' ? ` (${it.lateFeePercentage}%)` : ''}`
+        : String(it.description || '');
+
       doc.fontSize(10)
-        .text(it.description, col1, y, { width: 230 })
-        .text(String(it.type || ''), col2, y, { width: 60, lineBreak: false })
+        .text(descText, col1, y, { width: 230 })
+        .text(isLateFee ? 'fee' : String(it.type || ''), col2, y, { width: 60, lineBreak: false })
         .text(formatMoney(it.amount), col3, y, { width: 100, align: 'right', lineBreak: false });
       y += 18;
     });
@@ -243,9 +249,9 @@ export async function streamInvoicePdf(req, res, next) {
       .fontSize(11)
       .text('Subtotal:', 380, totalsTop, { width: 100, align: 'right', lineBreak: false })
       .text(formatMoney(subtotal), 480, totalsTop, { width: 70, align: 'right', lineBreak: false })
-      .text('Total:', 380, totalsTop + 16, { width: 100, align: 'right', lineBreak: false })
-      .font('Helvetica-Bold')
-      .text(formatMoney(invoice.total || subtotal), 480, totalsTop + 16, { width: 70, align: 'right', lineBreak: false })
+  .text('Total:', 380, totalsTop + 16, { width: 100, align: 'right', lineBreak: false })
+  .font('Helvetica-Bold')
+  .text(formatMoney((typeof invoice.total === 'number' && invoice.total > 0) ? invoice.total : subtotal), 480, totalsTop + 16, { width: 70, align: 'right', lineBreak: false })
       .font('Helvetica');
 
     

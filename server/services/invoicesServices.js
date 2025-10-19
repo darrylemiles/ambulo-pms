@@ -77,7 +77,18 @@ export async function getInvoiceByPaymentId(paymentId) {
     if (r.invoice_id) {
         try {
             const [itemRows] = await pool.execute(
-                `SELECT item_id, charge_id, description, item_type, amount FROM invoice_items WHERE invoice_id = ? ORDER BY item_id`,
+                `SELECT 
+                    ii.item_id,
+                    ii.charge_id,
+                    ii.description,
+                    ii.item_type,
+                    ii.amount,
+                    l.late_fee_percentage
+                 FROM invoice_items ii
+                 LEFT JOIN charges c ON ii.charge_id = c.charge_id
+                 LEFT JOIN leases l ON c.lease_id = l.lease_id
+                 WHERE ii.invoice_id = ?
+                 ORDER BY ii.item_id`,
                 [r.invoice_id]
             );
             items = (itemRows || []).map((it) => ({
@@ -86,16 +97,25 @@ export async function getInvoiceByPaymentId(paymentId) {
                 description: it.description,
                 type: it.item_type,
                 amount: Number(it.amount || 0),
+                lateFeePercentage: (it.late_fee_percentage !== null && it.late_fee_percentage !== undefined)
+                    ? Number(it.late_fee_percentage)
+                    : null,
             }));
         } catch {}
     }
+
+    
+    const itemsTotal = (items || []).reduce((s, it) => s + Number(it.amount || 0), 0);
+    const computedTotal = (items && items.length)
+        ? itemsTotal
+        : Number(r.invoice_total ?? r.payment_amount ?? 0);
 
     return {
         invoice: {
             id: r.invoice_id,
             issueDate: r.issue_date,
             status: r.invoice_status,
-            total: Number(r.invoice_total ?? r.payment_amount ?? 0),
+            total: computedTotal,
         },
         payment: {
             id: r.payment_id,
