@@ -38,6 +38,9 @@ import invoicesTable from "./invoicesTable.js";
 import invoiceItemsTable from "./invoiceItemsTable.js";
 import paymentAllocationsTable from "./paymentAllocationsTable.js";
 
+//messages
+import messagesTable from "./messagesTable.js";
+
 const tables = async (dbConnection) => {
   const queries = [
     // users
@@ -78,7 +81,10 @@ const tables = async (dbConnection) => {
     paymentsAuditTable,
   invoicesTable,
     invoiceItemsTable,
-    paymentAllocationsTable
+    paymentAllocationsTable,
+
+    //messages
+    messagesTable
 
   ];
 
