@@ -68,11 +68,24 @@ const getConversations = expressAsync(async (req, res) => {
   }
 });
 
+const uploadAttachments = expressAsync(async (req, res) => {
+  
+  try {
+    const files = (req.files && req.files['attachments']) || [];
+    const attachments = files.map(f => ({ filename: f.originalname, url: f.path }));
+    res.status(201).json({ message: 'Attachments uploaded', attachments });
+  } catch (error) {
+    console.error('Error uploading attachments:', error);
+    res.status(400).json({ message: error.message || 'Failed to upload attachments' });
+  }
+});
+
 export {
   createMessage,
   getMessagesByQuery,
   getMessageById,
   updateMessageById,
   deleteMessageById,
-  getConversations
+  getConversations,
+  uploadAttachments
 }

@@ -22,60 +22,18 @@
         <div class="main-container">
             <!-- Navigation Tabs -->
             <div class="nav-tabs">
-                <button class="nav-tab active" onclick="switchTab('messages', this)">
-                    <i class="fas fa-envelope"></i> Messages
-                    <span class="badge" id="messagesBadge">4</span>
-                </button>
-                <button class="nav-tab" onclick="switchTab('chat', this)">
+                <button class="nav-tab active" onclick="switchTab('chat', this)">
                     <i class="fas fa-comments"></i> Live Chat
                     <span class="badge" id="chatBadge" style="display: none;">2</span>
                 </button>
+                <button class="nav-tab" onclick="switchTab('announcements', this)">
+                    <i class="fas fa-bullhorn"></i> Announcements
+                    <span class="badge" id="announcementsBadge">3</span>
+                </button>
             </div>
 
-            <!-- Messages Tab -->
-            <div class="tab-content active" id="messagesTab">
-                <div class="messages-header">
-                    <div class="messages-header-left">
-                        <div class="header-stats">
-                            <div class="stat-item unread">
-                                <div class="stat-dot unread"></div>
-                                <span id="unreadCount">4 Unread</span>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-dot"></div>
-                                <span id="totalCount">8 Total</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="compose-btn" onclick="openComposeModal()">
-                        <i class="fas fa-plus"></i>
-                        Compose Message
-                    </button>
-                </div>
-
-                <div class="messages-controls">
-                    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-                    <button class="filter-btn" onclick="setFilter('unread', this)">Unread</button>
-                    <button class="filter-btn" onclick="setFilter('urgent', this)">Urgent</button>
-                    <button class="filter-btn" onclick="setFilter('maintenance', this)">Maintenance</button>
-
-                    <div class="search-container">
-                        <span class="search-icon"><i class="fas fa-search"></i></span>
-                        <input type="text" class="search-input" placeholder="Search messages..." id="searchInput">
-                    </div>
-                </div>
-
-                <!-- UPDATED: Added messages-list-container wrapper -->
-                <div class="messages-list-container">
-                    <div class="messages-list" id="messagesList">
-                        <!-- Messages will be populated here -->
-                    </div>
-                    <!-- Pagination will be inserted here by JavaScript -->
-                </div>
-            </div>
-
-            <!-- Chat Tab -->
-            <div class="tab-content" id="chatTab">
+            <!-- Live Chat Tab -->
+            <div class="tab-content active" id="chatTab">
                 <div class="chat-container">
                     <div class="chat-sidebar" id="chatSidebar">
                         <div class="chat-header">
@@ -84,6 +42,9 @@
                                 <span class="search-icon"><i class="fas fa-search"></i></span>
                                 <input type="text" placeholder="Search contacts..." id="chatSearchInput">
                             </div>
+                            <button class="create-announcement-btn" style="margin-top:0.75rem" onclick="openNewMessageModal()">
+                                <i class="fas fa-plus"></i> New Message
+                            </button>
                         </div>
                         <div class="chat-contacts" id="chatContacts">
                             <!-- Contacts will be populated here -->
@@ -99,55 +60,129 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Announcements Tab -->
+            <div class="tab-content" id="announcementsTab">
+                <div class="announcements-header">
+                    <div class="announcements-title">
+                        <i class="fas fa-bullhorn"></i>
+                        <h2>Property Announcements</h2>
+                    </div>
+                    <button class="create-announcement-btn" onclick="openCreateAnnouncementModal()">
+                        <i class="fas fa-plus-circle"></i>
+                        Create Announcement
+                    </button>
+                </div>
+
+                <div class="announcements-filters">
+                    <div class="filter-group">
+                        <button class="filter-chip active" onclick="setAnnouncementFilter('all', this)">
+                            <i class="fas fa-list"></i> All Announcements
+                        </button>
+                        <button class="filter-chip" onclick="setAnnouncementFilter('important', this)">
+                            <i class="fas fa-star"></i> Important
+                        </button>
+                        <button class="filter-chip" onclick="setAnnouncementFilter('maintenance', this)">
+                            <i class="fas fa-tools"></i> Maintenance
+                        </button>
+                        <button class="filter-chip" onclick="setAnnouncementFilter('events', this)">
+                            <i class="fas fa-calendar-alt"></i> Events
+                        </button>
+                    </div>
+
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search announcements..." id="announcementSearch">
+                    </div>
+                </div>
+
+                <div class="announcements-list-container">
+                    <div class="announcements-grid" id="announcementsList">
+                        <!-- Announcements will be populated here -->
+                    </div>
+                    
+                    <!-- Pagination will be inserted here -->
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Compose Message Modal -->
-    <div class="modal-overlay" id="composeModal">
-        <div class="modal">
+    <!-- Create Announcement Modal -->
+    <div class="modal-overlay" id="createAnnouncementModal">
+        <div class="modal modal-wide">
             <div class="modal-header">
-                <h3>Compose New Message</h3>
-                <button class="modal-close" onclick="closeModal('composeModal')">
+                <h3><i class="fas fa-bullhorn"></i> Create New Announcement</h3>
+                <button class="modal-close" onclick="closeModal('createAnnouncementModal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
                 <div class="modal-field">
-                    <label for="composeRecipient">To</label>
-                    <select id="composeRecipient" required>
-                        <option value="">Select recipient...</option>
-                        <option value="Property Manager">Property Manager</option>
-                        <option value="Maintenance Team">Maintenance Team</option>
-                        <option value="Front Desk">Front Desk</option>
-                        <option value="Emergency Services">Emergency Services</option>
-                        <option value="Billing Department">Billing Department</option>
-                        <option value="Community Manager">Community Manager</option>
-                        <option value="Security Office">Security Office</option>
-                        <option value="Ambulo Properties">Ambulo Properties</option>
+                    <label for="announcementTitle">Announcement Title</label>
+                    <input type="text" id="announcementTitle" placeholder="Enter announcement title..." required>
+                </div>
+                <div class="modal-field">
+                    <label for="announcementCategory">Category</label>
+                    <select id="announcementCategory">
+                        <option value="general">General</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="events">Events</option>
+                        <option value="policy">Policy Update</option>
+                        <option value="emergency">Emergency</option>
                     </select>
                 </div>
                 <div class="modal-field">
-                    <label for="composeSubject">Subject</label>
-                    <input type="text" id="composeSubject" placeholder="Enter message subject..." required>
+                    <label for="announcementPriority">Priority Level</label>
+                    <div class="priority-selector">
+                        <label class="priority-option">
+                            <input type="radio" name="priority" value="low">
+                            <span class="priority-badge low"><i class="fas fa-circle"></i> Low</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="priority" value="medium" checked>
+                            <span class="priority-badge medium"><i class="fas fa-circle"></i> Medium</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="priority" value="high">
+                            <span class="priority-badge high"><i class="fas fa-circle"></i> High</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="modal-field">
-                    <label for="composePriority">Priority</label>
-                    <select id="composePriority">
-                        <option value="low">Low</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="high">High</option>
-                    </select>
+                    <label for="announcementContent">Announcement Content</label>
+                    <textarea id="announcementContent" placeholder="Type your announcement here..." required rows="8"></textarea>
                 </div>
                 <div class="modal-field">
-                    <label for="composeMessage">Message</label>
-                    <textarea id="composeMessage" placeholder="Type your message here..." required rows="6"></textarea>
+                    <label>
+                        <input type="checkbox" id="pinAnnouncement">
+                        Pin this announcement to the top
+                    </label>
                 </div>
             </div>
             <div class="modal-actions">
-                <button class="modal-btn secondary" onclick="closeModal('composeModal')">Cancel</button>
-                <button class="modal-btn primary" onclick="sendNewMessage()">
-                    <i class="fas fa-paper-plane"></i> Send Message
+                <button class="modal-btn secondary" onclick="closeModal('createAnnouncementModal')">Cancel</button>
+                <button class="modal-btn primary" onclick="createAnnouncement()">
+                    <i class="fas fa-bullhorn"></i> Publish Announcement
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Announcement Modal -->
+    <div class="modal-overlay" id="viewAnnouncementModal">
+        <div class="modal modal-wide">
+            <div class="modal-header">
+                <div class="announcement-modal-title" id="modalAnnouncementTitle"></div>
+                <button class="modal-close" onclick="closeModal('viewAnnouncementModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="announcement-modal-meta" id="modalAnnouncementMeta"></div>
+                <div class="announcement-modal-content" id="modalAnnouncementContent"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeModal('viewAnnouncementModal')">Close</button>
             </div>
         </div>
     </div>
@@ -175,8 +210,41 @@
         </div>
     </div>
 
-    <script src="/javascript/messages.js"></script>
-        <script>
+    <!-- New Message Modal -->
+    <div class="modal-overlay" id="newMessageModal">
+        <div class="modal modal-wide">
+            <div class="modal-header">
+                <h3><i class="fas fa-paper-plane"></i> New Message</h3>
+                <button class="modal-close" onclick="closeModal('newMessageModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label for="recipientSearch">Recipient</label>
+                    <div class="chat-search">
+                        <span class="search-icon"><i class="fas fa-search"></i></span>
+                        <input type="text" placeholder="Search tenants..." id="recipientSearch" oninput="searchRecipients(this.value)">
+                    </div>
+                    <div id="recipientResults" style="max-height: 300px; overflow: auto; margin-top: 0.5rem;"></div>
+                </div>
+                <div class="modal-field">
+                    <label for="newMessageText">Message</label>
+                    <textarea id="newMessageText" rows="3" placeholder="Type your message..."></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeModal('newMessageModal')">Cancel</button>
+                <button class="modal-btn primary" onclick="sendFirstMessage()">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="/javascript/messages.js"></script>
+    <script>
         var user = null;
         try {
             user = JSON.parse(localStorage.getItem('user'));

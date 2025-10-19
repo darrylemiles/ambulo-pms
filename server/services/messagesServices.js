@@ -5,7 +5,7 @@ const pool = await conn();
 
 const createMessage = async (messageData = {}, io = null) => {
   try {
-    const { sender_user_id, recipient_user_id, message } = messageData;
+    const { sender_user_id, recipient_user_id, message, attachments } = messageData;
 
     if (!sender_user_id || !recipient_user_id || !message) {
       throw new Error("Sender, recipient, and message are required");
@@ -36,6 +36,34 @@ const createMessage = async (messageData = {}, io = null) => {
     );
 
     const messageData_result = newMessage[0];
+    
+    
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      try {
+        const values = attachments
+          .filter(a => a && a.url)
+          .map(a => [messageData_result.message_id, a.url, a.filename || null]);
+        if (values.length) {
+          await pool.query(
+            'INSERT INTO message_attachments (message_id, url, filename) VALUES ?',[values]
+          );
+        }
+        const [rows] = await pool.query('SELECT id, url, filename FROM message_attachments WHERE message_id = ?', [messageData_result.message_id]);
+        messageData_result.attachments = rows;
+      } catch (e) {
+        console.error('Error saving attachments:', e);
+        messageData_result.attachments = attachments;
+      }
+    }
 
     if (io) {
       emitToUser(io, recipient_user_id, 'new_message', messageData_result);
@@ -147,6 +175,24 @@ const getMessagesByQuery = async (queryObj = {}) => {
     }
 
     const [messages] = await pool.query(query, params);
+    
+    try {
+      if (messages.length > 0) {
+        const ids = messages.map(m => m.message_id);
+        const [attRows] = await pool.query(
+          `SELECT id, message_id, url, filename FROM message_attachments WHERE message_id IN (${ids.map(()=>'?').join(',')})`, ids
+        );
+        const map = new Map();
+        attRows.forEach(a => {
+          if (!map.has(a.message_id)) map.set(a.message_id, []);
+          map.get(a.message_id).push({ id: a.id, url: a.url, filename: a.filename });
+        });
+        messages.forEach(m => { m.attachments = map.get(m.message_id) || []; });
+      }
+    } catch (e) {
+      
+      messages.forEach(m => { m.attachments = []; });
+    }
     const [countResult] = await pool.query(countQuery, countParams);
     const total = countResult[0].total;
 
@@ -186,13 +232,21 @@ const getMessageById = async (message_id) => {
        WHERE m.message_id = ?
     `;
 
-    const [messages] = await pool.query(query, [message_id]);
+  const [messages] = await pool.query(query, [message_id]);
 
     if (messages.length === 0) {
       throw new Error("Message not found");
     }
 
-    return messages[0];
+    const msg = messages[0];
+    
+    try {
+      const [attRows] = await pool.query('SELECT id, url, filename FROM message_attachments WHERE message_id = ?', [message_id]);
+      msg.attachments = attRows;
+    } catch {
+      msg.attachments = [];
+    }
+  return msg;
   } catch (error) {
     console.error("Error getting message:", error);
     throw new Error(error.message || "Failed to get message");
