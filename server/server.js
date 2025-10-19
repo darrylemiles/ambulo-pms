@@ -9,6 +9,8 @@ import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import { createServer } from 'http';
+import { initializeSocket } from './config/socket.js';
 
 /*  ========== Importing Routes ========== */
 import usersRoutes from './routes/usersRoutes.js';
@@ -32,6 +34,7 @@ import tables from './tables/tables.js';
 import conn from './config/db.js';
 
 const app = express();
+const server = createServer(app);
 const __dirname = path.resolve();
 dotenv.config();
 
@@ -100,8 +103,11 @@ app.use(notFound);
 app.use(errorHandler);
 
 const startServer = async () => {
+    // Initialize Socket.IO and attach to app for controllers to use
+    const io = initializeSocket(server);
+    app.set('io', io);
     try {
-        app.listen(PORT, console.log(colours.fg.yellow, `${PROJECT_NAME}`, `API is running in ${process.env.NODE_ENV} mode on port ${PORT}`, colours.reset));
+        server.listen(PORT, () => console.log(colours.fg.yellow, `${PROJECT_NAME}`, `API is running in ${process.env.NODE_ENV} mode on port ${PORT}`, colours.reset));
     } catch (error) {
         console.log(error);
     }
