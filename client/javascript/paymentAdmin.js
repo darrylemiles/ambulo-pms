@@ -87,6 +87,27 @@ async function fetchPaymentAllocations(paymentId) {
     return Array.isArray(data.allocations) ? data.allocations : [];
 }
 
+
+const adminPaymentAllocCache = {};
+async function preloadAdminAllocationsForPayments() {
+    try {
+        const list = Array.isArray(filteredPayments) ? filteredPayments : [];
+        const ids = list.map((p) => p.id).filter(Boolean);
+        const promises = ids.map(async (pid, index) => {
+            const p = list[index];
+            if (!pid) return;
+            if (adminPaymentAllocCache[pid]) {
+                p.__hasAllocations = Array.isArray(adminPaymentAllocCache[pid]) && adminPaymentAllocCache[pid].length > 0;
+                return;
+            }
+            const allocs = await fetchPaymentAllocations(pid).catch(() => []);
+            adminPaymentAllocCache[pid] = allocs;
+            p.__hasAllocations = Array.isArray(allocs) && allocs.length > 0;
+        });
+        await Promise.allSettled(promises);
+    } catch {}
+}
+
 function ensureAllocationsModal() {
     let modal = document.getElementById('allocations-modal');
     if (!modal) {
@@ -97,7 +118,7 @@ function ensureAllocationsModal() {
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title"><i class="fas fa-list-ul"></i> Payment Allocations</h2>
-                    <button class="close-btn" onclick="closeModal('allocations-modal')"><i class="fas fa-times"></i></button>
+                    <button class="close-btn" onclick="closeAdminAllocationsModal()"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body" id="allocations-modal-body"></div>
             </div>
@@ -107,49 +128,251 @@ function ensureAllocationsModal() {
     return modal;
 }
 
-function renderAllocationsList(allocations) {
-    if (!allocations || !allocations.length) {
-        return `<div class="empty-state"><div class="empty-icon"><i class="fas fa-file-invoice"></i></div><div>No allocations recorded for this payment.</div></div>`;
+
+window.toggleAdminPaymentAllocationsCard = async function(paymentId) {
+    try {
+        const container = document.getElementById(`admin-alloc-card-${paymentId}`);
+        if (!container) return;
+        const isHidden = getComputedStyle(container).display === 'none';
+        if (isHidden) {
+            if (!container.dataset.loaded) {
+                container.innerHTML = '<div class="loading" style="margin:4px 0;">Loading allocations…</div>';
+                let allocs = adminPaymentAllocCache[paymentId];
+                if (!allocs) {
+                    allocs = await fetchPaymentAllocations(paymentId).catch(() => []);
+                    adminPaymentAllocCache[paymentId] = allocs;
+                }
+                container.innerHTML = buildAdminAllocationsHtml(allocs);
+                container.dataset.loaded = '1';
+            }
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+        const chevDesktop = document.getElementById(`admin-alloc-chevron-${paymentId}`);
+        const chevMobile = document.getElementById(`admin-alloc-chevron-mobile-${paymentId}`);
+        [chevDesktop, chevMobile].forEach(ch => { if (ch) ch.className = `fas fa-chevron-${isHidden ? 'up' : 'down'}`; });
+    } catch (e) {
+        console.error(e);
+        showAlert('Failed to toggle allocations', 'error');
     }
-    return `
-        <div class="allocations-list">
-            ${allocations.map(a => `
-                <div class="allocation-item">
-                    <div class="allocation-main">
-                        <div class="alloc-desc"><strong>${escapeHtml(a.description || 'Charge')}</strong> <small style="color:#6b7280;">${escapeHtml(a.charge_type || '')}</small></div>
-                        <div class="alloc-meta">Charge ID: ${escapeHtml(String(a.charge_id || ''))}</div>
-                    </div>
-                    <div class="allocation-amount">₱${formatCurrency(a.amount)}</div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
+};
+
+
+window.toggleMobileReference = function(paymentId) {
+    const el = document.getElementById(`mobile-ref-${paymentId}`);
+    if (!el) return;
+    const isMasked = el.classList.contains('masked');
+    if (isMasked) {
+        el.textContent = el.dataset.full || '';
+        el.classList.remove('masked');
+    } else {
+        el.textContent = el.dataset.masked || '';
+        el.classList.add('masked');
+    }
+};
 
 window.viewPaymentAllocations = async function(paymentId) {
     try {
         const modal = ensureAllocationsModal();
         const body = modal.querySelector('#allocations-modal-body');
         body.innerHTML = `<div class="loading" style="margin: 1rem 0;">Loading allocations…</div>`;
-        openModal('allocations-modal');
-        const allocations = await fetchPaymentAllocations(paymentId);
-        body.innerHTML = renderAllocationsList(allocations);
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        const allocations = await fetchPaymentAllocations(paymentId).catch(() => []);
+        body.innerHTML = buildAdminAllocationsHtml(allocations);
     } catch (e) {
         try { showAlert(e.message || 'Failed to load allocations', 'error'); } catch {}
     }
 };
 
-async function fetchAllPayments(page = 1, limit = 10) {
+window._paymentsRefHidden = true;
+window.toggleReferenceVisibility = function () {
+    window._paymentsRefHidden = !window._paymentsRefHidden;
     try {
-        const params = new URLSearchParams({
-            page: String(page),
-            limit: String(limit),
-        });
+        renderPaymentsTable();
+    } catch (e) {
+        console.error(e);
+    }
+};
 
+function renderPaymentsTable() {
+    const tbody = document.getElementById("payments-tbody");
+    if (!tbody) return;
+
+    if (!Array.isArray(filteredPayments) || filteredPayments.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="12">
+                    <div class="empty-state" style="text-align: center; padding: 40px 20px;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; color: #94a3b8; margin-bottom: 12px;"></i>
+                        <h3 style="color: #64748b; margin-bottom: 8px;">No payments found</h3>
+                        <p style="color: #94a3b8;">No payment history available</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const baseIndex = (paymentsPage - 1) * paymentsLimit;
+    const refHidden = !!window._paymentsRefHidden;
+    const maskedRef = (ref) => {
+        const s = String(ref || "");
+        if (!s) return "";
+        const last4 = s.slice(-4);
+        
+        return `•••• ${last4}`;
+    };
+
+    tbody.innerHTML = filteredPayments
+        .map((payment, idx) => {
+            const hasAlloc = !!payment.__hasAllocations;
+            const allocIndicatorPill = hasAlloc
+                ? `<span class="alloc-indicator" style="margin-top:6px;background:#eef2ff;color:#4f46e5;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;max-width:max-content;"><i class="fas fa-layer-group"></i> Allocations</span>`
+                : '';
+            const allocToggle = hasAlloc
+                ? `<button class="btn btn-sm btn-light" title="Toggle Allocations" onclick="event.stopPropagation(); toggleAdminPaymentAllocationsRow('${payment.id}')"><i class="fas fa-chevron-down" id="admin-alloc-chevron-${payment.id}"></i></button>`
+                : '';
+            const invoiceButtons = String(payment.status || '').toLowerCase() === 'confirmed' ? `
+                <button onclick="event.stopPropagation(); viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button onclick="event.stopPropagation(); downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">
+                    <i class="fas fa-download"></i>
+                </button>` : ``;
+
+            const mainRow = `
+                <tr ${hasAlloc ? `onclick="toggleAdminPaymentAllocationsRow('${payment.id}')" style="cursor:pointer;"` : ''}>
+                    <td class="row-number">${String(baseIndex + idx + 1).padStart(2, '0')}</td>
+                    <td class="reference-cell">
+                        <code class="reference-code ${refHidden ? 'masked' : ''}">${refHidden ? maskedRef(payment.reference) : escapeHtml(String(payment.reference || ''))}</code>
+                    </td>
+                    <td>
+                        <div class="tenant-info">
+                            <strong>${escapeHtml(payment.tenant || '—')}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="unit-info"><strong>${escapeHtml(payment.unit || '—')}</strong></div>
+                    </td>
+                    <td class="payment-description">${escapeHtml(payment.description || payment.charge_description || `Charge #${payment.charge_id || 'N/A'}`)}</td>
+                    <td class="payment-amount">${formatCurrency(Number(payment.amount) || 0)}${allocIndicatorPill ? `<div>${allocIndicatorPill}</div>` : ''}</td>
+                    <td><span class="payment-method">${escapeHtml(capitalizeFirst(payment.paymentMethod || ''))}</span></td>
+                    <td class="payment-notes">${escapeHtml(payment.notes || '')}</td>
+                    <td class="payment-date">${formatDate(payment.paymentDate)}</td>
+                    <td class="payment-status">${renderPaymentStatusBadge(payment.status)}</td>
+                    <td class="payment-processed-by">${escapeHtml(payment.processedBy || '')}</td>
+                    <td class="actions-cell">
+                        ${allocToggle}
+                        ${invoiceButtons}
+                    </td>
+                </tr>`;
+            const allocRow = hasAlloc ? `
+                <tr id="admin-alloc-row-${payment.id}" class="payment-alloc-row" style="display:none;background:#fafafa;">
+                    <td colspan="12" style="padding:12px 16px;">
+                        <div id="admin-alloc-content-${payment.id}" class="allocations-list">
+                            <div class="loading" style="margin:4px 0;">Loading allocations…</div>
+                        </div>
+                    </td>
+                </tr>` : '';
+            return mainRow + allocRow;
+        })
+        .join("");
+
+    const mobileCards = document.getElementById('payments-mobile');
+    if (mobileCards) {
+        mobileCards.innerHTML = filteredPayments.map((payment) => {
+            const hasAlloc = !!payment.__hasAllocations;
+            const allocIndicatorPillMobile = hasAlloc
+                ? `<span class="alloc-indicator" style="margin-top:6px;background:#eef2ff;color:#4f46e5;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;max-width:max-content;"><i class="fas fa-layer-group"></i> Allocations</span>`
+                : '';
+            const allocToggle = hasAlloc
+                ? `<button class="btn btn-sm btn-light" title="Toggle Allocations" onclick="toggleAdminPaymentAllocationsCard('${payment.id}')"><i class="fas fa-chevron-down" id="admin-alloc-chevron-mobile-${payment.id}"></i></button>`
+                : '';
+            const invoiceButtons = String(payment.status || '').toLowerCase() === 'confirmed' ? `
+                <button onclick="viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">\n<i class="fas fa-file-pdf"></i></button>
+                <button onclick="downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">\n<i class="fas fa-download"></i></button>` : ``;
+            const refValue = String(payment.reference || '');
+            const masked = refHidden ? (refValue ? `•••• ${refValue.slice(-4)}` : '') : refValue;
+            const headerClick = hasAlloc ? `onclick=\"toggleAdminPaymentAllocationsCard('${payment.id}')\" style=\"cursor:pointer;\"` : '';
+            return `
+                <div class="payment-card">
+                    <div class="card-header" ${headerClick}>
+                        <div class="card-title">${escapeHtml(payment.tenant || '—')} - ${escapeHtml(payment.unit || '—')}</div>
+                        <div class="card-amount payment">${formatCurrency(Number(payment.amount) || 0)}${hasAlloc ? `<div style=\"margin-top:6px;\">${allocIndicatorPillMobile}</div>` : ''}</div>
+                    </div>
+                    <div class="card-details">
+                        <div class="card-detail-row"><span class="card-detail-label">Reference</span><span class="card-detail-value"><code id="mobile-ref-${payment.id}" class="reference-code ${refHidden ? 'masked' : ''}" data-full="${escapeHtml(refValue)}" data-masked="${escapeHtml(masked)}" onclick="toggleMobileReference('${payment.id}')" style="cursor:pointer;">${escapeHtml(masked)}</code></span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Description</span><span class="card-detail-value">${escapeHtml(payment.description || payment.charge_description || `Charge #${payment.charge_id || 'N/A'}`)}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Method</span><span class="card-detail-value"><span class="payment-method">${escapeHtml(capitalizeFirst(payment.paymentMethod || ''))}</span></span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Payment Date</span><span class="card-detail-value">${formatDate(payment.paymentDate)}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Status</span><span class="card-detail-value">${renderPaymentStatusBadge(payment.status)}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Processed By</span><span class="card-detail-value">${escapeHtml(payment.processedBy || '')}</span></div>
+                    </div>
+                    <div class="card-actions">
+                        ${allocToggle}
+                        ${invoiceButtons}
+                    </div>
+                    <div class="mobile-allocations" id="admin-alloc-card-${payment.id}" style="display:none;padding:8px 12px;background:#fafafa;border-top:1px dashed #e5e7eb;"></div>
+                </div>`;
+        }).join('');
+    }
+}
+
+
+window.toggleAdminPaymentAllocationsCard = async function(paymentId) {
+    try {
+        const container = document.getElementById(`admin-alloc-card-${paymentId}`);
+        if (!container) return;
+        const isHidden = getComputedStyle(container).display === 'none';
+        if (isHidden) {
+            if (!container.dataset.loaded) {
+                container.innerHTML = '<div class="loading" style="margin:4px 0;">Loading allocations…</div>';
+                let allocs = adminPaymentAllocCache[paymentId];
+                if (!allocs) {
+                    allocs = await fetchPaymentAllocations(paymentId).catch(() => []);
+                    adminPaymentAllocCache[paymentId] = allocs;
+                }
+                container.innerHTML = buildAdminAllocationsHtml(allocs);
+                container.dataset.loaded = '1';
+            }
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+        const chev = document.getElementById(`admin-alloc-chevron-mobile-${paymentId}`);
+        if (chev) chev.className = `fas fa-chevron-${isHidden ? 'up' : 'down'}`;
+    } catch (e) {
+        console.error(e);
+        showAlert('Failed to toggle allocations', 'error');
+    }
+};
+
+window.toggleMobileReference = function(paymentId) {
+    const el = document.getElementById(`mobile-ref-${paymentId}`);
+    if (!el) return;
+    const isMasked = el.classList.contains('masked');
+    if (isMasked) {
+        el.textContent = el.dataset.full || '';
+        el.classList.remove('masked');
+    } else {
+        el.textContent = el.dataset.masked || '';
+        el.classList.add('masked');
+    }
+};
+
+
+async function fetchAllPayments(page = 1, limit = paymentsLimit) {
+    try {
         const methodEl = document.getElementById("payments-method");
         const typeEl = document.getElementById("payments-type");
         const dateEl = document.getElementById("payments-date");
         const searchEl = document.getElementById("payments-search");
+
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("limit", String(limit));
         const method = methodEl ? methodEl.value : "";
         const paymentType = typeEl ? typeEl.value : "";
         const month = dateEl ? dateEl.value : "";
@@ -158,9 +381,8 @@ async function fetchAllPayments(page = 1, limit = 10) {
         if (paymentType) params.set("payment_type", paymentType);
         if (month) params.set("month", month);
         if (search) params.set("q", search);
-        const res = await fetch(`/api/v1/payments?${params.toString()}`, {
-            credentials: "include",
-        });
+
+        const res = await fetch(`${API_BASE_URL}/payments?${params.toString()}`, { credentials: "include" });
         if (!res.ok) throw new Error(`Failed to fetch payments: ${res.status}`);
         const json = await res.json();
         const rows = json.payments || [];
@@ -183,7 +405,9 @@ async function fetchAllPayments(page = 1, limit = 10) {
         paymentsPage = Number(json.page) || page;
         paymentsLimit = Number(json.limit) || limit;
         paymentsTotal = Number(json.total) || rows.length;
+
         filteredPayments = [...payments];
+        await preloadAdminAllocationsForPayments();
         renderPaymentsTable();
         renderPaymentsPagination();
         updateStatistics();
@@ -192,200 +416,51 @@ async function fetchAllPayments(page = 1, limit = 10) {
     }
 }
 
-window._paymentsRefHidden = true;
-window.toggleReferenceVisibility = function () {
-    window._paymentsRefHidden = !window._paymentsRefHidden;
+function buildAdminAllocationsHtml(allocs) {
+    if (!Array.isArray(allocs) || allocs.length === 0) {
+        return `<div class="empty-state"><div class="empty-icon"><i class="fas fa-file-invoice"></i></div><div>No allocations recorded for this payment.</div></div>`;
+    }
+    return `
+        <div class="allocations-list">
+            ${allocs.map(a => `
+                <div class="allocation-item" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">
+                    <div class="allocation-main">
+                        <div class="alloc-desc"><strong>${escapeHtml(a.description || 'Charge')}</strong> <small style="color:#6b7280;">${escapeHtml(a.charge_type || '')}</small></div>
+                        <div class="alloc-meta">Charge ID: ${escapeHtml(String(a.charge_id || ''))}</div>
+                    </div>
+                    <div class="allocation-amount">${formatCurrency(a.amount)}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+window.toggleAdminPaymentAllocationsRow = async function(paymentId) {
     try {
-        renderPaymentsTable();
-    } catch (e) {
-        console.error(e);
-    }
-};
-
-function renderPaymentsTable() {
-    const tbody = document.getElementById("payments-tbody");
-    const mobileCards = document.getElementById("payments-mobile");
-    if (!tbody) return;
-
-    if (!Array.isArray(filteredPayments)) filteredPayments = [];
-
-    if (filteredPayments.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="empty-state">
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <h3>No payments found</h3>
-                        <p>No payment history available</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-        if (mobileCards) {
-            mobileCards.innerHTML = `
-                <div class="empty-state" style="text-align: center; padding: 40px 20px;">
-                    <i class="fas fa-inbox" style="font-size: 2rem; color: #94a3b8; margin-bottom: 12px;"></i>
-                    <h3 style="color: #64748b; margin-bottom: 8px;">No payments found</h3>
-                    <p style="color: #94a3b8;">No payment history available</p>
-                </div>
-            `;
+        const row = document.getElementById(`admin-alloc-row-${paymentId}`);
+        const chev = document.getElementById(`admin-alloc-chevron-${paymentId}`);
+        if (!row) return;
+        const cs = window.getComputedStyle(row);
+        const isHidden = cs.display === 'none';
+        if (isHidden) {
+            const container = document.getElementById(`admin-alloc-content-${paymentId}`);
+            const cached = adminPaymentAllocCache[paymentId];
+            if (cached) {
+                container.innerHTML = buildAdminAllocationsHtml(cached);
+            } else {
+                container.innerHTML = `<div class="loading" style="margin:4px 0;">Loading allocations…</div>`;
+                const allocs = await fetchPaymentAllocations(paymentId).catch(() => []);
+                adminPaymentAllocCache[paymentId] = allocs;
+                container.innerHTML = buildAdminAllocationsHtml(allocs);
+            }
+            row.style.display = '';
+            if (chev) { chev.classList.remove('fa-chevron-down'); chev.classList.add('fa-chevron-up'); }
+        } else {
+            row.style.display = 'none';
+            if (chev) { chev.classList.remove('fa-chevron-up'); chev.classList.add('fa-chevron-down'); }
         }
-        return;
-    }
-
-    const baseIndex = (paymentsPage - 1) * paymentsLimit;
-
-    const maskedRef = (ref) => {
-        if (!ref) return "";
-
-        const s = String(ref);
-        if (s.length <= 4) return "••••";
-        return s.slice(0, 2) + "••••" + s.slice(-2);
-    };
-
-    const refHidden = !!window._paymentsRefHidden;
-
-    tbody.innerHTML = filteredPayments
-        .map(
-            (payment, idx) => `
-        <tr class="payment-row">
-            <td class="td-number">${baseIndex + idx + 1}</td>
-            <td>
-                <code class="reference-code ${refHidden ? "masked" : ""}">${refHidden
-                    ? maskedRef(payment.reference)
-                    : escapeHtml(String(payment.reference || ""))
-                }</code>
-            </td>
-            <td>
-                <div class="tenant-info">
-                    <strong>${payment.tenant}</strong>
-                </div>
-            </td>
-            <td>
-                <div class="unit-info">
-                    <strong>${payment.unit}</strong>
-                </div>
-            </td>
-            <td class="payment-description">${escapeHtml(
-                    payment.charge_description ||
-                    payment.description ||
-                    `Charge #${payment.charge_id || "N/A"}`
-                )}</td>
-            <td class="payment-amount">${formatCurrency(payment.amount)}</td>
-            <td>
-                <span class="payment-method">${capitalizeFirst(
-                    payment.paymentMethod
-                )}</span>
-            </td>
-            <td class="payment-notes">${escapeHtml(payment.notes || "")}</td>
-            <td class="payment-date">${formatDate(payment.paymentDate)}</td>
-            <td class="payment-status">${escapeHtml(payment.status || "")}</td>
-            <td class="payment-processed-by">${escapeHtml(
-                    payment.processedBy || ""
-                )}</td>
-            <td class="actions-cell">
-                <div class="action-buttons">
-                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button onclick="viewPaymentAllocations('${payment.id}')" class="btn btn-sm btn-warning" title="View Allocation Breakdown">
-                        <i class="fas fa-list-ul"></i>
-                    </button>
-                    ${String(payment.status || '').toLowerCase() === 'confirmed' ? `
-                    <button onclick="viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">
-                        <i class="fas fa-file-pdf"></i>
-                    </button>
-                    <button onclick="downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">
-                        <i class="fas fa-download"></i>
-                    </button>` : ``}
-                </div>
-            </td>
-        </tr>
-    `
-        )
-        .join("");
-
-    if (mobileCards) {
-        mobileCards.innerHTML = filteredPayments
-            .map(
-                (payment, idx) => `
-            <div class="mobile-card payments">
-                <div class="card-header">
-                    <div class="card-title">${payment.tenant} - ${payment.unit
-                    }</div>
-                    <div class="card-number">${String(
-                        baseIndex + idx + 1
-                    ).padStart(2, "0")}</div>
-                </div>
-                
-                <div class="card-amount payment">${formatCurrency(
-                        payment.amount
-                    )}</div>
-                
-                <div class="card-details">
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Reference</span>
-                        <span class="card-detail-value"><code class="reference-code ${refHidden ? "masked" : ""
-                    }">${refHidden
-                        ? maskedRef(payment.reference)
-                        : escapeHtml(String(payment.reference || ""))
-                    }</code></span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Notes</span>
-                        <span class="card-detail-value">${escapeHtml(
-                        payment.notes || ""
-                    )}</span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Description</span>
-                        <span class="card-detail-value">${escapeHtml(
-                        payment.description ||
-                        `Charge #${payment.charge_id || "N/A"}`
-                    )}</span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Method</span>
-                        <span class="card-detail-value"><span class="payment-method">${capitalizeFirst(
-                        payment.paymentMethod
-                    )}</span></span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Payment Date</span>
-                        <span class="card-detail-value">${formatDate(
-                        payment.paymentDate
-                    )}</span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Status</span>
-                        <span class="card-detail-value">${escapeHtml(
-                        payment.status || ""
-                    )}</span>
-                    </div>
-                    <div class="card-detail-row">
-                        <span class="card-detail-label">Processed By</span>
-                        <span class="card-detail-value">${escapeHtml(
-                        payment.processedBy || ""
-                    )}</span>
-                    </div>
-                </div>
-                
-                <div class="card-actions">
-                    <button onclick="viewPaymentDetails('${payment.id}')" class="btn btn-sm btn-info" title="View Details">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    ${String(payment.status || '').toLowerCase() === 'confirmed' ? `
-                    <button onclick="viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">
-                        <i class="fas fa-file-pdf"></i>
-                    </button>
-                    <button onclick="downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">
-                        <i class="fas fa-download"></i>
-                    </button>` : ``}
-                </div>
-            </div>
-        `
-            )
-            .join("");
+    } catch (e) {
+        console.warn('toggleAdminPaymentAllocationsRow error', e);
     }
 }
 
@@ -5847,6 +5922,8 @@ function injectPaymentButtonStyles() {
             justify-content: center !important;
         }
         .pending-payments-table .btn-narrow { margin-right: 6px; }
+        .reference-cell { max-width: 220px; }
+        .reference-cell code.reference-code { display:inline-block; max-width: 180px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:middle; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
         .reference-code.masked { letter-spacing: 1px; color: #64748b; }
         .col-toggle { font-size: 12px; }
     `;
@@ -5922,6 +5999,23 @@ let currentPendingStatus = "Pending";
 let pendingPayments = [];
 let filteredPendingPayments = [];
 
+function renderPaymentStatusBadge(status) {
+    const s = String(status || '').trim().toLowerCase();
+    let cls = 'pending';
+    let label = status || '';
+    if (s === 'confirmed' || s === 'approved') {
+        cls = 'approved';
+        label = 'Confirmed';
+    } else if (s === 'rejected') {
+        cls = 'rejected';
+        label = 'Rejected';
+    } else {
+        cls = 'pending';
+        label = 'Pending';
+    }
+    return `<span class="status-badge ${cls}">${escapeHtml(label)}</span>`;
+}
+
 async function fetchPaymentsByStatus(status = "Pending") {
     try {
         const token = localStorage.getItem("token") || "";
@@ -5945,6 +6039,7 @@ async function fetchPaymentsByStatus(status = "Pending") {
 
 function switchPaymentView(view) {
     currentPaymentView = view;
+    try { localStorage.setItem('paymentsView', view); } catch {}
 
     const buttons = document.querySelectorAll(".view-toggle-btn");
     buttons.forEach((btn) => {
@@ -6055,7 +6150,7 @@ function renderPendingPaymentsTable() {
     if (filteredPendingPayments.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-row">
-                <td colspan="10">
+                <td colspan="14">
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
                         <p>No ${currentPendingStatus.toLowerCase()} payments found</p>
@@ -6288,11 +6383,36 @@ document.addEventListener("DOMContentLoaded", function () {
 
     initializeActiveTab();
 
+    
+    const savedView = (localStorage.getItem('paymentsView') || 'pending');
+    if (savedView === 'all') {
+        switchPaymentView('all');
+    } else {
+        switchPaymentView('pending');
+    }
+
     const activeTab = localStorage.getItem("activePaymentTab") || "charges";
     if (activeTab === "payments") {
         loadPendingPayments("Pending");
         updatePendingStatusCounts();
     }
+
+    
+    try {
+        const pendingCard = document.querySelector('.stat-card.pending');
+        if (pendingCard) {
+            pendingCard.addEventListener('click', () => {
+                
+                switchTab('payments');
+                
+                switchPaymentView('pending');
+                
+                filterPendingByStatus('Pending');
+                
+                document.getElementById('pending-payments-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+    } catch {}
 });
 
 window.showSection = showSection;

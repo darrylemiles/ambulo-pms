@@ -2229,7 +2229,7 @@ body:has(.sidebar.collapsed) .main-content,
   .mobile-cards {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 40px;
     padding: 0 8px 20px;
   }
 
