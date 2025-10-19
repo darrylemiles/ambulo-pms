@@ -528,6 +528,174 @@ const updatePaymentById = async (id, payment = {}, performedBy = null) => {
                     console.error("Failed to write charge_status_audit on confirm:", e);
                 }
             }
+
+            
+            try {
+                const [detailRows] = await connHandle.execute(
+                    `SELECT 
+                        pay.payment_id,
+                        pay.amount AS amount_paid,
+                        pay.payment_method,
+                        pay.notes,
+                        pay.created_at,
+                        l.lease_id,
+                        CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
+                        p.property_name
+                    FROM payments pay
+                    LEFT JOIN charges c ON pay.charge_id = c.charge_id
+                    LEFT JOIN leases l ON c.lease_id = l.lease_id
+                    LEFT JOIN users u ON l.user_id = u.user_id
+                    LEFT JOIN properties p ON l.property_id = p.property_id
+                    WHERE pay.payment_id = ?
+                    LIMIT 1`,
+                    [id]
+                );
+                const info = detailRows && detailRows.length ? detailRows[0] : null;
+                if (info && info.lease_id) {
+                    const [invExistsRows] = await connHandle.execute(
+                        `SELECT COUNT(*) AS cnt FROM invoices WHERE payment_id = ?`,
+                        [info.payment_id]
+                    );
+                    const invExists = invExistsRows && invExistsRows.length ? Number(invExistsRows[0].cnt || 0) > 0 : false;
+                    if (!invExists) {
+                        const [invResult] = await connHandle.execute(
+                            `INSERT INTO invoices (payment_id, lease_id, tenant_name, property_name, total_amount, payment_method, reference_number, status, notes)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, 'Issued', ?)` ,
+                            [
+                                info.payment_id,
+                                info.lease_id,
+                                info.tenant_name || null,
+                                info.property_name || null,
+                                Number(info.amount_paid || 0),
+                                info.payment_method || null,
+                                info.payment_id,
+                                info.notes || null,
+                            ]
+                        );
+
+                        
+                        try {
+                            const newInvoiceId = invResult && invResult.insertId ? invResult.insertId : null;
+                            if (newInvoiceId && chargeId) {
+                                
+                                const [chargeRows2] = await connHandle.execute(
+                                    `SELECT c.charge_id, c.description, c.charge_type, c.amount AS original_amount, c.due_date,
+                                            l.grace_period_days, l.late_fee_percentage
+                                     FROM charges c
+                                     LEFT JOIN leases l ON c.lease_id = l.lease_id
+                                     WHERE c.charge_id = ?
+                                     LIMIT 1`,
+                                    [chargeId]
+                                );
+                                const cr = chargeRows2 && chargeRows2.length ? chargeRows2[0] : null;
+                                if (cr) {
+                                    const now = new Date();
+                                    const dueDate = cr.due_date ? new Date(cr.due_date) : null;
+                                    let lateFee = 0;
+                                    if (dueDate) {
+                                        const ms = now.getTime() - dueDate.getTime();
+                                        const daysPast = Math.floor(ms / (1000 * 60 * 60 * 24));
+                                        const grace = Number(cr.grace_period_days || 0);
+                                        const pct = Number(cr.late_fee_percentage || 0);
+                                        if (daysPast > grace && pct > 0) {
+                                            lateFee = Math.round((Number(cr.original_amount || 0) * pct / 100) * 100) / 100;
+                                        }
+                                    }
+
+                                    
+                                    await connHandle.execute(
+                                        `INSERT INTO invoice_items (invoice_id, charge_id, description, item_type, amount)
+                                         VALUES (?, ?, ?, ?, ?)`,
+                                        [
+                                            newInvoiceId,
+                                            cr.charge_id,
+                                            cr.description || 'Charge',
+                                            cr.charge_type || null,
+                                            Number(cr.original_amount || 0),
+                                        ]
+                                    );
+
+                                    
+                                    if (lateFee > 0) {
+                                        await connHandle.execute(
+                                            `INSERT INTO invoice_items (invoice_id, charge_id, description, item_type, amount)
+                                             VALUES (?, ?, ?, ?, ?)`,
+                                            [
+                                                newInvoiceId,
+                                                cr.charge_id,
+                                                'Late Fee',
+                                                'fee',
+                                                Number(lateFee),
+                                            ]
+                                        );
+                                    }
+
+                                    
+                                    try {
+                                        const paidTotal = Number(info.amount_paid || 0);
+                                        let covered = Number(cr.original_amount || 0) + Number(lateFee || 0);
+                                        const remaining = () => Math.max(0, Math.round((paidTotal - covered) * 100) / 100);
+
+                                        if (remaining() > 0 && info.lease_id) {
+                                            const [otherRows] = await connHandle.execute(
+                                                `SELECT c.charge_id, c.description, c.charge_type, c.amount AS original_amount, c.due_date,
+                                                        l.grace_period_days, l.late_fee_percentage,
+                                                        IFNULL(c.total_paid, 0) AS total_paid
+                                                 FROM charges c
+                                                 LEFT JOIN leases l ON c.lease_id = l.lease_id
+                                                 WHERE c.lease_id = ? AND c.charge_id <> ? AND (c.status IS NULL OR c.status <> 'Waived')
+                                                 ORDER BY c.due_date ASC, c.charge_date ASC, c.charge_id ASC`,
+                                                [info.lease_id, cr.charge_id]
+                                            );
+                                            for (const oc of (otherRows || [])) {
+                                                if (remaining() <= 0) break;
+                                                
+                                                const odue = oc.due_date ? new Date(oc.due_date) : null;
+                                                let olate = 0;
+                                                if (odue) {
+                                                    const ms2 = now.getTime() - odue.getTime();
+                                                    const daysPast2 = Math.floor(ms2 / (1000 * 60 * 60 * 24));
+                                                    const grace2 = Number(oc.grace_period_days || 0);
+                                                    const pct2 = Number(oc.late_fee_percentage || 0);
+                                                    if (daysPast2 > grace2 && pct2 > 0) {
+                                                        olate = Math.round((Number(oc.original_amount || 0) * pct2 / 100) * 100) / 100;
+                                                    }
+                                                }
+                                                const eff = Math.max(0, Number(oc.original_amount || 0) + Number(olate || 0) - Number(oc.total_paid || 0));
+                                                if (eff <= 0) continue;
+                                                if (eff <= remaining()) {
+                                                    
+                                                    await connHandle.execute(
+                                                        `INSERT INTO invoice_items (invoice_id, charge_id, description, item_type, amount)
+                                                         VALUES (?, ?, ?, ?, ?)`,
+                                                        [
+                                                            newInvoiceId,
+                                                            oc.charge_id,
+                                                            oc.description || 'Charge',
+                                                            oc.charge_type || null,
+                                                            Number(eff),
+                                                        ]
+                                                    );
+                                                    covered = Math.round((covered + eff) * 100) / 100;
+                                                } else {
+                                                    
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    } catch (moreErr) {
+                                        console.warn('Auto-add additional charges to invoice failed:', moreErr);
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Failed to insert invoice_items for payment:', id, e);
+                        }
+                    }
+                }
+            } catch (invErr) {
+                console.error("Failed to insert invoice for payment:", id, invErr);
+            }
         }
 
         

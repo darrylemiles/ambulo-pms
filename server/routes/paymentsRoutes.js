@@ -13,6 +13,7 @@ import {
 } from "../controllers/paymentsControllers.js";
 
 import createUploadMiddleware from "../middlewares/multer/uploadMiddleware.js";
+import { streamInvoicePdf } from "../controllers/invoicesControllers.js";
 
 const router = express.Router();
 
@@ -29,6 +30,8 @@ router.get("/", getAllPayments);
 router.get("/stats", getPaymentsStats);
 router.get("/search/by-charge", protect, searchPayments);
 router.get("/users/:userId", protect, getPaymentsByUserId);
+
+router.get("/:id/invoice.pdf", protect, streamInvoicePdf);
 router.get("/:id", getPaymentById);
 router.patch(
     "/:id",
