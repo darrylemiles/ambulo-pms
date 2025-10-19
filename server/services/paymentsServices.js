@@ -356,6 +356,28 @@ const getPaymentById = async (id) => {
     }
 };
 
+
+const getPaymentAllocations = async (paymentId) => {
+    if (!paymentId) return [];
+    try {
+        const [rows] = await pool.execute(
+            `SELECT pa.allocation_id, pa.payment_id, pa.charge_id, pa.amount,
+                    c.description, c.charge_type, c.due_date,
+                    l.lease_id
+             FROM payment_allocations pa
+             LEFT JOIN charges c ON pa.charge_id = c.charge_id
+             LEFT JOIN leases l ON c.lease_id = l.lease_id
+             WHERE pa.payment_id = ?
+             ORDER BY pa.allocation_id`,
+            [paymentId]
+        );
+        return rows || [];
+    } catch (e) {
+        console.error('Error in getPaymentAllocations:', e);
+        throw e;
+    }
+};
+
 const updatePaymentById = async (id, payment = {}, performedBy = null) => {
     const {
         chargeId,
@@ -482,7 +504,173 @@ const updatePaymentById = async (id, payment = {}, performedBy = null) => {
             console.error("Failed to write payment_audit (update):", err);
         }
 
-    if (callerIntendsConfirm && currentStatus !== "Confirmed" && chargeId) {
+    
+    let allocRows = [];
+    try {
+        const [rowsAlloc] = await connHandle.execute(
+            `SELECT charge_id, amount FROM payment_allocations WHERE payment_id = ?`,
+            [id]
+        );
+        allocRows = rowsAlloc || [];
+    } catch {}
+
+    if (callerIntendsConfirm && currentStatus !== "Confirmed" && allocRows.length > 0) {
+            
+            try {
+                for (const alloc of allocRows) {
+                    const acId = alloc.charge_id;
+                    const aAmt = Number(alloc.amount || 0);
+                    if (!acId || !(aAmt > 0)) continue;
+                    const [cRows2] = await connHandle.execute(
+                        `SELECT amount, total_paid, status FROM charges WHERE charge_id = ? LIMIT 1`,
+                        [acId]
+                    );
+                    if (!cRows2 || !cRows2.length) continue;
+                    const currAmount = Number(cRows2[0].amount || 0);
+                    const currPaid = Number(cRows2[0].total_paid || 0);
+                    const newPaid = currPaid + aAmt;
+                    let newChargeStatus = "Unpaid";
+                    if (newPaid <= 0) newChargeStatus = "Unpaid";
+                    else if (newPaid >= currAmount) newChargeStatus = "Paid";
+                    else newChargeStatus = "Partially Paid";
+                    await connHandle.execute(
+                        `UPDATE charges SET total_paid = ?, status = ? WHERE charge_id = ?`,
+                        [newPaid, newChargeStatus, acId]
+                    );
+                    try {
+                        await connHandle.execute(
+                            `INSERT INTO charge_status_audit (charge_id, old_status, new_status, old_total_paid, new_total_paid, performed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                            [
+                                acId,
+                                cRows2[0].status || null,
+                                newChargeStatus,
+                                currPaid,
+                                newPaid,
+                                processedByUserId || performedBy || null,
+                                new Date(),
+                            ]
+                        );
+                    } catch (e) {
+                        console.error("Failed to write charge_status_audit on consolidated confirm:", e);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed applying consolidated allocations:', e);
+            }
+
+            
+            try {
+                const [detailRows] = await connHandle.execute(
+                    `SELECT 
+                        pay.payment_id,
+                        pay.amount AS amount_paid,
+                        pay.payment_method,
+                        pay.notes,
+                        pay.created_at,
+                        l.lease_id,
+                        CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
+                        p.property_name
+                    FROM payments pay
+                    LEFT JOIN charges c ON pay.charge_id = c.charge_id
+                    LEFT JOIN leases l ON c.lease_id = l.lease_id
+                    LEFT JOIN users u ON l.user_id = u.user_id
+                    LEFT JOIN properties p ON l.property_id = p.property_id
+                    WHERE pay.payment_id = ?
+                    LIMIT 1`,
+                    [id]
+                );
+                const info = detailRows && detailRows.length ? detailRows[0] : null;
+                
+                let leaseId = info && info.lease_id ? info.lease_id : null;
+                if (!leaseId && allocRows.length) {
+                    const firstChargeId = allocRows[0].charge_id;
+                    const [lr] = await connHandle.execute(
+                        `SELECT l.lease_id, CONCAT(u.first_name, ' ', u.last_name, IFNULL(CONCAT(' ', u.suffix), '')) AS tenant_name,
+                                p.property_name
+                         FROM charges c
+                         LEFT JOIN leases l ON c.lease_id = l.lease_id
+                         LEFT JOIN users u ON l.user_id = u.user_id
+                         LEFT JOIN properties p ON l.property_id = p.property_id
+                         WHERE c.charge_id = ?
+                         LIMIT 1`,
+                        [firstChargeId]
+                    );
+                    if (lr && lr.length) {
+                        leaseId = lr[0].lease_id;
+                        if (info) {
+                            info.lease_id = leaseId;
+                            info.tenant_name = info.tenant_name || lr[0].tenant_name || null;
+                            info.property_name = info.property_name || lr[0].property_name || null;
+                        }
+                    }
+                }
+                if (leaseId) {
+                    const [invExistsRows] = await connHandle.execute(
+                        `SELECT COUNT(*) AS cnt FROM invoices WHERE payment_id = ?`,
+                        [id]
+                    );
+                    const invExists = invExistsRows && invExistsRows.length ? Number(invExistsRows[0].cnt || 0) > 0 : false;
+                    if (!invExists) {
+                        const [invResult] = await connHandle.execute(
+                            `INSERT INTO invoices (payment_id, lease_id, tenant_name, property_name, total_amount, payment_method, reference_number, status, notes)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, 'Issued', ?)`,
+                            [
+                                id,
+                                leaseId,
+                                (info && info.tenant_name) || null,
+                                (info && info.property_name) || null,
+                                Number((info && info.amount_paid) || 0),
+                                (info && info.payment_method) || null,
+                                id,
+                                (info && info.notes) || null,
+                            ]
+                        );
+                        const newInvoiceId = invResult && invResult.insertId ? invResult.insertId : null;
+                        if (newInvoiceId) {
+                            const now = new Date();
+                            for (const alloc of allocRows) {
+                                const [cr] = await connHandle.execute(
+                                    `SELECT c.description, c.charge_type, c.amount AS original_amount, c.due_date,
+                                            l.grace_period_days, l.late_fee_percentage
+                                     FROM charges c
+                                     LEFT JOIN leases l ON c.lease_id = l.lease_id
+                                     WHERE c.charge_id = ?
+                                     LIMIT 1`,
+                                    [alloc.charge_id]
+                                );
+                                const row = cr && cr.length ? cr[0] : null;
+                                const desc = (row && row.description) || 'Charge';
+                                const ctype = (row && row.charge_type) || null;
+                                const allocAmt = Number(alloc.amount || 0);
+                                await connHandle.execute(
+                                    `INSERT INTO invoice_items (invoice_id, charge_id, description, item_type, amount) VALUES (?, ?, ?, ?, ?)`,
+                                    [newInvoiceId, alloc.charge_id, desc, ctype, allocAmt]
+                                );
+                                
+                                if (row && row.due_date) {
+                                    const due = new Date(row.due_date);
+                                    const daysPast = Math.floor((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+                                    const grace = Number(row.grace_period_days || 0);
+                                    const pct = Number(row.late_fee_percentage || 0);
+                                    if (daysPast > grace && pct > 0) {
+                                        const lateFee = Math.round((Number(row.original_amount || 0) * pct / 100) * 100) / 100;
+                                        if (lateFee > 0) {
+                                            await connHandle.execute(
+                                                `INSERT INTO invoice_items (invoice_id, charge_id, description, item_type, amount) VALUES (?, ?, ?, ?, ?)`,
+                                                [newInvoiceId, alloc.charge_id, 'Late Fee', 'fee', lateFee]
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (invErr) {
+                console.error('Failed to create consolidated invoice:', invErr);
+            }
+    } else if (callerIntendsConfirm && currentStatus !== "Confirmed" && chargeId) {
+            
             let amtToApply = amountPaid;
             if (amtToApply === undefined || amtToApply === null) {
                 const [amtRows] = await connHandle.execute(
@@ -699,11 +887,13 @@ const updatePaymentById = async (id, payment = {}, performedBy = null) => {
         }
 
         
-        await computeAndSetChargeStatus(
-            connHandle,
-            chargeId,
-            processedByUserId || performedBy
-        );
+        if (allocRows.length === 0 && chargeId) {
+            await computeAndSetChargeStatus(
+                connHandle,
+                chargeId,
+                processedByUserId || performedBy
+            );
+        }
         await connHandle.commit();
         return { message: "Payment updated successfully" };
     } catch (error) {
@@ -763,11 +953,80 @@ const deletePaymentById = async (id, performedBy = null) => {
 
 export default {
     createPayment,
+    async createConsolidatedPayment(paymentData = {}, performedBy = null) {
+        const { paymentDate, amountPaid, paymentMethod, notes, user_id, proofs = [], allocations = [] } = paymentData || {};
+        if (!Array.isArray(allocations) || allocations.length === 0) throw new Error('allocations required');
+        const totalAlloc = allocations.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+        const grandAmount = typeof amountPaid === 'number' ? amountPaid : totalAlloc;
+        if (grandAmount <= 0) throw new Error('amount must be greater than 0');
+
+        const paymentId = uuidv4();
+        const createdAt = new Date();
+        const connHandle = await pool.getConnection();
+        try {
+            await connHandle.beginTransaction();
+
+            const status = 'Pending';
+            const insertPayment = `
+                INSERT INTO payments (payment_id, charge_id, user_id, amount, payment_method, status, notes, confirmed_by, confirmed_at, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
+            `;
+            const firstChargeId = allocations[0] && (allocations[0].chargeId || allocations[0].charge_id) || null;
+            await connHandle.execute(insertPayment, [
+                paymentId,
+                firstChargeId,
+                user_id || null,
+                grandAmount,
+                paymentMethod || null,
+                status,
+                notes || null,
+                createdAt,
+            ]);
+
+            
+            const insertAlloc = `INSERT INTO payment_allocations (payment_id, charge_id, amount, created_at) VALUES (?, ?, ?, ?)`;
+            for (const a of allocations) {
+                const cid = a.chargeId || a.charge_id;
+                const amt = Number(a.amount) || 0;
+                if (!cid || !(amt > 0)) continue;
+                await connHandle.execute(insertAlloc, [paymentId, cid, amt, createdAt]);
+            }
+
+            
+            if (proofs && proofs.length) {
+                const insertProof = `INSERT INTO payment_proof (payment_id, proof_url, uploaded_at) VALUES (?, ?, ?)`;
+                for (const url of proofs) {
+                    await connHandle.execute(insertProof, [paymentId, String(url), createdAt]);
+                }
+            }
+
+            
+            try {
+                await connHandle.execute(
+                    `INSERT INTO payment_audit (payment_id, action, payload, performed_by, created_at) VALUES (?, ?, ?, ?, ?)`,
+                    [paymentId, 'create_consolidated', JSON.stringify({ amount: grandAmount, paymentMethod, notes, allocations }), performedBy || null, createdAt]
+                );
+            } catch (e) { console.error('Failed to write payment_audit (create_consolidated):', e); }
+
+            
+            
+
+            await connHandle.commit();
+            return { message: 'Payment created successfully', payment_id: paymentId };
+        } catch (err) {
+            await connHandle.rollback();
+            console.error('Error in createConsolidatedPayment:', err);
+            throw err;
+        } finally {
+            connHandle.release();
+        }
+    },
     getAllPayments,
     getPaymentsByUserId,
     updatePaymentById,
     getPaymentById,
     deletePaymentById,
+    getPaymentAllocations,
     async getPaymentsStats() {
         try {
             const [countRows] = await pool.execute(`SELECT COUNT(*) AS cnt FROM payments`);
@@ -798,26 +1057,66 @@ export default {
     } = {}) {
         if (!Array.isArray(chargeIds) || !chargeIds.length) return [];
         const placeholders = chargeIds.map(() => "?").join(",");
-        const params = [...chargeIds];
-        let sql = `SELECT payment_id, charge_id, amount as amount_paid, status, payment_method, created_at
-                   FROM payments
-                   WHERE charge_id IN (${placeholders})`;
+        const baseParams = [...chargeIds];
+
+        
+        const filters = [];
+        const filterParams = [];
         if (status) {
-            
-            if (String(status).toLowerCase() === 'confirmed') {
-                sql += ` AND status = ?`;
-                params.push('Confirmed');
+            const s = String(status).toLowerCase();
+            if (s === 'confirmed') {
+                
+                filters.push("(p.status = 'Confirmed' OR p.status = 'Completed')");
             } else {
-                sql += ` AND status = ?`;
-                params.push(status);
+                filters.push("p.status = ?");
+                filterParams.push(status);
             }
         }
         if (userId) {
-            sql += ` AND user_id = ?`;
-            params.push(userId);
+            filters.push("p.user_id = ?");
+            filterParams.push(userId);
         }
-        sql += ` ORDER BY created_at DESC`;
-        const [rows] = await pool.execute(sql, params);
-        return rows || [];
+        const wherePay = filters.length ? ` AND ${filters.join(' AND ')}` : '';
+
+        
+        const sqlDirect = `
+            SELECT 
+                p.payment_id,
+                p.charge_id,
+                p.amount AS amount_paid,
+                p.status,
+                p.payment_method,
+                p.created_at
+            FROM payments p
+            WHERE p.charge_id IN (${placeholders})
+            ${wherePay}
+              AND NOT EXISTS (
+                  SELECT 1 FROM payment_allocations pa2 WHERE pa2.payment_id = p.payment_id
+              )
+        `;
+
+        
+        const sqlAlloc = `
+            SELECT 
+                p.payment_id,
+                pa.charge_id,
+                pa.amount AS amount_paid,
+                p.status,
+                p.payment_method,
+                p.created_at
+            FROM payment_allocations pa
+            INNER JOIN payments p ON p.payment_id = pa.payment_id
+            WHERE pa.charge_id IN (${placeholders})
+            ${wherePay}
+        `;
+
+        
+        const [rowsDirect] = await pool.execute(sqlDirect, [...baseParams, ...filterParams]);
+        const [rowsAlloc] = await pool.execute(sqlAlloc, [...baseParams, ...filterParams]);
+
+        const merged = [...(rowsDirect || []), ...(rowsAlloc || [])];
+        
+        merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        return merged;
     },
 };

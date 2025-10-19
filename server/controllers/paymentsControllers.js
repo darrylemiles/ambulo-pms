@@ -16,34 +16,46 @@ const extractProofUrls = (req) => {
 
 const createPayment = expressAsync(async (req, res) => {
     const raw = req.body || {};
+    const proofs = extractProofUrls(req);
 
+    
+    
+    let allocations = [];
+    try {
+        if (raw.allocations) {
+            allocations = typeof raw.allocations === 'string' ? JSON.parse(raw.allocations) : raw.allocations;
+        } else if (raw.allocation) {
+            allocations = typeof raw.allocation === 'string' ? JSON.parse(raw.allocation) : raw.allocation;
+        }
+        if (!Array.isArray(allocations)) allocations = [];
+    } catch {}
 
-    const payment = {
-        chargeId: raw.chargeId || raw.charge_id || null,
+    const base = {
         paymentDate: raw.paymentDate || raw.payment_date || null,
         amountPaid: raw.amountPaid || raw.amount_paid || raw.amount || null,
         paymentMethod: raw.paymentMethod || raw.payment_method || null,
         notes: raw.notes || null,
         user_id: raw.user_id || req.user?.user_id || null,
+        proofs,
+        allocations,
     };
 
-    const proofs = extractProofUrls(req);
-    if (proofs.length) payment.proofs = proofs;
-
-    if (!payment.chargeId) {
-        return res.status(400).json({ message: "chargeId is required" });
+    
+    if (!allocations.length) {
+        const payment = { ...base, chargeId: raw.chargeId || raw.charge_id || null };
+        if (!payment.chargeId) {
+            return res.status(400).json({ message: "chargeId is required" });
+        }
+        if (payment.amountPaid !== null) payment.amountPaid = Number(payment.amountPaid);
+        const performedBy = req.user ? (`${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || req.user.email || req.user.user_id) : null;
+        const result = await paymentsServices.createPayment(payment, performedBy);
+        return res.status(201).json(result);
     }
 
-    if (payment.amountPaid !== null)
-        payment.amountPaid = Number(payment.amountPaid);
-
-    const performedBy = req.user
-        ? `${req.user.first_name || ""} ${req.user.last_name || ""}`.trim() ||
-        req.user.email ||
-        req.user.user_id
-        : null;
-    const result = await paymentsServices.createPayment(payment, performedBy);
-    res.status(201).json(result);
+    
+    const performedBy = req.user ? (`${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || req.user.email || req.user.user_id) : null;
+    const result = await paymentsServices.createConsolidatedPayment(base, performedBy);
+    return res.status(201).json(result);
 });
 
 const getAllPayments = expressAsync(async (req, res) => {
@@ -198,3 +210,10 @@ export {
     searchPayments,
     getPaymentsStats,
 };
+
+
+export const getPaymentAllocations = expressAsync(async (req, res) => {
+    const { id } = req.params;
+    const rows = await paymentsServices.getPaymentAllocations(id);
+    res.status(200).json({ allocations: rows });
+});
