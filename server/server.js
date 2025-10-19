@@ -72,6 +72,7 @@ app.use(`/api/${API_VERSION}/about-us`, aboutUsRoutes);
 app.use(`/api/${API_VERSION}/charges`, chargesRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentsRoutes);
 app.use(`/api/${API_VERSION}/contact-us`, contactUsRoutes);
+app.use(`/api/${API_VERSION}/messages`, messagesRoutes);
 
 // Serve login page
 app.get('/', (req, res) => {
