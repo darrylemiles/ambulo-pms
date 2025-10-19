@@ -74,21 +74,68 @@ const CHARGE_STATUS_MAPPINGS_CONST = (window.AppConstants &&
 
 const API_BASE_URL = "/api/v1";
 
+const CACHE_TTLS = {
+    payments: 60 * 1000,
+    charges: 60 * 1000,
+    stats: 30 * 1000,
+    allocations: 5 * 60 * 1000,
+};
+
+const paymentsListCache = new Map();
+const chargesListCache = new Map();
+let statsCache = { data: null, fetchedAt: 0 };
+
+function makeCacheKey(base, params) {
+    try {
+        const entries = [];
+        for (const [k, v] of params.entries()) entries.push([k, v]);
+        entries.sort((a, b) =>
+            a[0] > b[0]
+                ? 1
+                : a[0] < b[0]
+                    ? -1
+                    : String(a[1]).localeCompare(String(b[1]))
+        );
+        return `${base}?${entries.map(([k, v]) => `${k}=${v}`).join("&")}`;
+    } catch {
+        return `${base}`;
+    }
+}
+
+function isFresh(ts, ttl) {
+    return ts && Date.now() - ts < ttl;
+}
+
+function invalidatePaymentsCache() {
+    paymentsListCache.clear();
+}
+function invalidateChargesCache() {
+    chargesListCache.clear();
+}
+function invalidateStatsCache() {
+    statsCache = { data: null, fetchedAt: 0 };
+}
+
 async function fetchPaymentAllocations(paymentId) {
     const token = getJwtToken();
-    const resp = await fetch(`${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/allocations`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const resp = await fetch(
+        `${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/allocations`,
+        {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+    );
     if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
-        throw new Error(body.message || `Failed to load allocations (${resp.status})`);
+        throw new Error(
+            body.message || `Failed to load allocations (${resp.status})`
+        );
     }
     const data = await resp.json().catch(() => ({ allocations: [] }));
     return Array.isArray(data.allocations) ? data.allocations : [];
 }
 
-
 const adminPaymentAllocCache = {};
+const adminPaymentAllocCacheTs = {};
 async function preloadAdminAllocationsForPayments() {
     try {
         const list = Array.isArray(filteredPayments) ? filteredPayments : [];
@@ -97,23 +144,40 @@ async function preloadAdminAllocationsForPayments() {
             const p = list[index];
             if (!pid) return;
             if (adminPaymentAllocCache[pid]) {
-                p.__hasAllocations = Array.isArray(adminPaymentAllocCache[pid]) && adminPaymentAllocCache[pid].length > 0;
+                p.__hasAllocations =
+                    Array.isArray(adminPaymentAllocCache[pid]) &&
+                    adminPaymentAllocCache[pid].length > 0;
                 return;
             }
             const allocs = await fetchPaymentAllocations(pid).catch(() => []);
             adminPaymentAllocCache[pid] = allocs;
+            adminPaymentAllocCacheTs[pid] = Date.now();
             p.__hasAllocations = Array.isArray(allocs) && allocs.length > 0;
         });
         await Promise.allSettled(promises);
-    } catch {}
+    } catch { }
+}
+
+function getCachedAllocations(paymentId) {
+    const ttl = CACHE_TTLS.allocations;
+    const ts = adminPaymentAllocCacheTs[paymentId] || 0;
+    if (adminPaymentAllocCache[paymentId] && isFresh(ts, ttl)) {
+        return adminPaymentAllocCache[paymentId];
+    }
+    return null;
+}
+
+function setCachedAllocations(paymentId, allocs) {
+    adminPaymentAllocCache[paymentId] = allocs;
+    adminPaymentAllocCacheTs[paymentId] = Date.now();
 }
 
 function ensureAllocationsModal() {
-    let modal = document.getElementById('allocations-modal');
+    let modal = document.getElementById("allocations-modal");
     if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'allocations-modal';
-        modal.className = 'modal';
+        modal = document.createElement("div");
+        modal.id = "allocations-modal";
+        modal.className = "modal";
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
@@ -128,61 +192,21 @@ function ensureAllocationsModal() {
     return modal;
 }
 
-
-window.toggleAdminPaymentAllocationsCard = async function(paymentId) {
-    try {
-        const container = document.getElementById(`admin-alloc-card-${paymentId}`);
-        if (!container) return;
-        const isHidden = getComputedStyle(container).display === 'none';
-        if (isHidden) {
-            if (!container.dataset.loaded) {
-                container.innerHTML = '<div class="loading" style="margin:4px 0;">Loading allocations…</div>';
-                let allocs = adminPaymentAllocCache[paymentId];
-                if (!allocs) {
-                    allocs = await fetchPaymentAllocations(paymentId).catch(() => []);
-                    adminPaymentAllocCache[paymentId] = allocs;
-                }
-                container.innerHTML = buildAdminAllocationsHtml(allocs);
-                container.dataset.loaded = '1';
-            }
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
-        }
-        const chevDesktop = document.getElementById(`admin-alloc-chevron-${paymentId}`);
-        const chevMobile = document.getElementById(`admin-alloc-chevron-mobile-${paymentId}`);
-        [chevDesktop, chevMobile].forEach(ch => { if (ch) ch.className = `fas fa-chevron-${isHidden ? 'up' : 'down'}`; });
-    } catch (e) {
-        console.error(e);
-        showAlert('Failed to toggle allocations', 'error');
-    }
-};
-
-
-window.toggleMobileReference = function(paymentId) {
-    const el = document.getElementById(`mobile-ref-${paymentId}`);
-    if (!el) return;
-    const isMasked = el.classList.contains('masked');
-    if (isMasked) {
-        el.textContent = el.dataset.full || '';
-        el.classList.remove('masked');
-    } else {
-        el.textContent = el.dataset.masked || '';
-        el.classList.add('masked');
-    }
-};
-
-window.viewPaymentAllocations = async function(paymentId) {
+window.viewPaymentAllocations = async function (paymentId) {
     try {
         const modal = ensureAllocationsModal();
-        const body = modal.querySelector('#allocations-modal-body');
+        const body = modal.querySelector("#allocations-modal-body");
         body.innerHTML = `<div class="loading" style="margin: 1rem 0;">Loading allocations…</div>`;
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        const allocations = await fetchPaymentAllocations(paymentId).catch(() => []);
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+        const allocations = await fetchPaymentAllocations(paymentId).catch(
+            () => []
+        );
         body.innerHTML = buildAdminAllocationsHtml(allocations);
     } catch (e) {
-        try { showAlert(e.message || 'Failed to load allocations', 'error'); } catch {}
+        try {
+            showAlert(e.message || "Failed to load allocations", "error");
+        } catch { }
     }
 };
 
@@ -221,7 +245,7 @@ function renderPaymentsTable() {
         const s = String(ref || "");
         if (!s) return "";
         const last4 = s.slice(-4);
-        
+
         return `•••• ${last4}`;
     };
 
@@ -230,140 +254,216 @@ function renderPaymentsTable() {
             const hasAlloc = !!payment.__hasAllocations;
             const allocIndicatorPill = hasAlloc
                 ? `<span class="alloc-indicator" style="margin-top:6px;background:#eef2ff;color:#4f46e5;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;max-width:max-content;"><i class="fas fa-layer-group"></i> Allocations</span>`
-                : '';
+                : "";
             const allocToggle = hasAlloc
                 ? `<button class="btn btn-sm btn-light" title="Toggle Allocations" onclick="event.stopPropagation(); toggleAdminPaymentAllocationsRow('${payment.id}')"><i class="fas fa-chevron-down" id="admin-alloc-chevron-${payment.id}"></i></button>`
-                : '';
-            const invoiceButtons = String(payment.status || '').toLowerCase() === 'confirmed' ? `
+                : "";
+            const invoiceButtons =
+                String(payment.status || "").toLowerCase() === "confirmed"
+                    ? `
                 <button onclick="event.stopPropagation(); viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">
                     <i class="fas fa-file-pdf"></i>
                 </button>
                 <button onclick="event.stopPropagation(); downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">
                     <i class="fas fa-download"></i>
-                </button>` : ``;
+                </button>`
+                    : ``;
 
             const mainRow = `
-                <tr ${hasAlloc ? `onclick="toggleAdminPaymentAllocationsRow('${payment.id}')" style="cursor:pointer;"` : ''}>
-                    <td class="row-number">${String(baseIndex + idx + 1).padStart(2, '0')}</td>
+                <tr ${hasAlloc
+                    ? `onclick="toggleAdminPaymentAllocationsRow('${payment.id}')" style="cursor:pointer;"`
+                    : ""
+                }>
+                    <td class="row-number">${String(
+                    baseIndex + idx + 1
+                ).padStart(2, "0")}</td>
                     <td class="reference-cell">
-                        <code class="reference-code ${refHidden ? 'masked' : ''}">${refHidden ? maskedRef(payment.reference) : escapeHtml(String(payment.reference || ''))}</code>
+                        <code class="reference-code ${refHidden ? "masked" : ""
+                }">${refHidden
+                    ? maskedRef(payment.reference)
+                    : escapeHtml(String(payment.reference || ""))
+                }</code>
                     </td>
                     <td>
                         <div class="tenant-info">
-                            <strong>${escapeHtml(payment.tenant || '—')}</strong>
+                            <strong>${escapeHtml(
+                    payment.tenant || "—"
+                )}</strong>
                         </div>
                     </td>
                     <td>
-                        <div class="unit-info"><strong>${escapeHtml(payment.unit || '—')}</strong></div>
+                        <div class="unit-info"><strong>${escapeHtml(
+                    payment.unit || "—"
+                )}</strong></div>
                     </td>
-                    <td class="payment-description">${escapeHtml(payment.description || payment.charge_description || `Charge #${payment.charge_id || 'N/A'}`)}</td>
-                    <td class="payment-amount">${formatCurrency(Number(payment.amount) || 0)}${allocIndicatorPill ? `<div>${allocIndicatorPill}</div>` : ''}</td>
-                    <td><span class="payment-method">${escapeHtml(capitalizeFirst(payment.paymentMethod || ''))}</span></td>
-                    <td class="payment-notes">${escapeHtml(payment.notes || '')}</td>
-                    <td class="payment-date">${formatDate(payment.paymentDate)}</td>
-                    <td class="payment-status">${renderPaymentStatusBadge(payment.status)}</td>
-                    <td class="payment-processed-by">${escapeHtml(payment.processedBy || '')}</td>
+                    <td class="payment-description">${escapeHtml(
+                    payment.description ||
+                    payment.charge_description ||
+                    `Charge #${payment.charge_id || "N/A"}`
+                )}</td>
+                    <td class="payment-amount">${formatCurrency(
+                    Number(payment.amount) || 0
+                )}${allocIndicatorPill ? `<div>${allocIndicatorPill}</div>` : ""
+                }</td>
+                    <td><span class="payment-method">${escapeHtml(
+                    capitalizeFirst(payment.paymentMethod || "")
+                )}</span></td>
+                    <td class="payment-notes">${escapeHtml(
+                    payment.notes || ""
+                )}</td>
+                    <td class="payment-date">${formatDate(
+                    payment.paymentDate
+                )}</td>
+                    <td class="payment-status">${renderPaymentStatusBadge(
+                    payment.status
+                )}</td>
+                    <td class="payment-processed-by">${escapeHtml(
+                    payment.processedBy || ""
+                )}</td>
                     <td class="actions-cell">
                         ${allocToggle}
                         ${invoiceButtons}
                     </td>
                 </tr>`;
-            const allocRow = hasAlloc ? `
+            const allocRow = hasAlloc
+                ? `
                 <tr id="admin-alloc-row-${payment.id}" class="payment-alloc-row" style="display:none;background:#fafafa;">
                     <td colspan="12" style="padding:12px 16px;">
                         <div id="admin-alloc-content-${payment.id}" class="allocations-list">
                             <div class="loading" style="margin:4px 0;">Loading allocations…</div>
                         </div>
                     </td>
-                </tr>` : '';
+                </tr>`
+                : "";
             return mainRow + allocRow;
         })
         .join("");
 
-    const mobileCards = document.getElementById('payments-mobile');
+    const mobileCards = document.getElementById("payments-mobile");
     if (mobileCards) {
-        mobileCards.innerHTML = filteredPayments.map((payment) => {
-            const hasAlloc = !!payment.__hasAllocations;
-            const allocIndicatorPillMobile = hasAlloc
-                ? `<span class="alloc-indicator" style="margin-top:6px;background:#eef2ff;color:#4f46e5;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;max-width:max-content;"><i class="fas fa-layer-group"></i> Allocations</span>`
-                : '';
-            const allocToggle = hasAlloc
-                ? `<button class="btn btn-sm btn-light" title="Toggle Allocations" onclick="toggleAdminPaymentAllocationsCard('${payment.id}')"><i class="fas fa-chevron-down" id="admin-alloc-chevron-mobile-${payment.id}"></i></button>`
-                : '';
-            const invoiceButtons = String(payment.status || '').toLowerCase() === 'confirmed' ? `
+        mobileCards.innerHTML = filteredPayments
+            .map((payment) => {
+                const hasAlloc = !!payment.__hasAllocations;
+                const allocIndicatorPillMobile = hasAlloc
+                    ? `<span class="alloc-indicator" style="margin-top:6px;background:#eef2ff;color:#4f46e5;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;max-width:max-content;"><i class="fas fa-layer-group"></i> Allocations</span>`
+                    : "";
+                const allocToggle = hasAlloc
+                    ? `<button class="btn btn-sm btn-light" title="Toggle Allocations" onclick="toggleAdminPaymentAllocationsCard('${payment.id}')"><i class="fas fa-chevron-down" id="admin-alloc-chevron-mobile-${payment.id}"></i></button>`
+                    : "";
+                const invoiceButtons =
+                    String(payment.status || "").toLowerCase() === "confirmed"
+                        ? `
                 <button onclick="viewInvoicePDF('${payment.id}')" class="btn btn-sm btn-secondary" title="View Invoice (PDF)">\n<i class="fas fa-file-pdf"></i></button>
-                <button onclick="downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">\n<i class="fas fa-download"></i></button>` : ``;
-            const refValue = String(payment.reference || '');
-            const masked = refHidden ? (refValue ? `•••• ${refValue.slice(-4)}` : '') : refValue;
-            const headerClick = hasAlloc ? `onclick=\"toggleAdminPaymentAllocationsCard('${payment.id}')\" style=\"cursor:pointer;\"` : '';
-            return `
+                <button onclick="downloadInvoicePDF('${payment.id}')" class="btn btn-sm btn-primary" title="Download Invoice (PDF)">\n<i class="fas fa-download"></i></button>`
+                        : ``;
+                const refValue = String(payment.reference || "");
+                const masked = refHidden
+                    ? refValue
+                        ? `•••• ${refValue.slice(-4)}`
+                        : ""
+                    : refValue;
+                const headerClick = hasAlloc
+                    ? `onclick=\"toggleAdminPaymentAllocationsCard('${payment.id}')\" style=\"cursor:pointer;\"`
+                    : "";
+                return `
                 <div class="payment-card">
                     <div class="card-header" ${headerClick}>
-                        <div class="card-title">${escapeHtml(payment.tenant || '—')} - ${escapeHtml(payment.unit || '—')}</div>
-                        <div class="card-amount payment">${formatCurrency(Number(payment.amount) || 0)}${hasAlloc ? `<div style=\"margin-top:6px;\">${allocIndicatorPillMobile}</div>` : ''}</div>
+                        <div class="card-title">${escapeHtml(
+                    payment.tenant || "—"
+                )} - ${escapeHtml(payment.unit || "—")}</div>
+                        <div class="card-amount payment">${formatCurrency(
+                    Number(payment.amount) || 0
+                )}${hasAlloc
+                        ? `<div style=\"margin-top:6px;\">${allocIndicatorPillMobile}</div>`
+                        : ""
+                    }</div>
                     </div>
                     <div class="card-details">
-                        <div class="card-detail-row"><span class="card-detail-label">Reference</span><span class="card-detail-value"><code id="mobile-ref-${payment.id}" class="reference-code ${refHidden ? 'masked' : ''}" data-full="${escapeHtml(refValue)}" data-masked="${escapeHtml(masked)}" onclick="toggleMobileReference('${payment.id}')" style="cursor:pointer;">${escapeHtml(masked)}</code></span></div>
-                        <div class="card-detail-row"><span class="card-detail-label">Description</span><span class="card-detail-value">${escapeHtml(payment.description || payment.charge_description || `Charge #${payment.charge_id || 'N/A'}`)}</span></div>
-                        <div class="card-detail-row"><span class="card-detail-label">Method</span><span class="card-detail-value"><span class="payment-method">${escapeHtml(capitalizeFirst(payment.paymentMethod || ''))}</span></span></div>
-                        <div class="card-detail-row"><span class="card-detail-label">Payment Date</span><span class="card-detail-value">${formatDate(payment.paymentDate)}</span></div>
-                        <div class="card-detail-row"><span class="card-detail-label">Status</span><span class="card-detail-value">${renderPaymentStatusBadge(payment.status)}</span></div>
-                        <div class="card-detail-row"><span class="card-detail-label">Processed By</span><span class="card-detail-value">${escapeHtml(payment.processedBy || '')}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Reference</span><span class="card-detail-value"><code id="mobile-ref-${payment.id
+                    }" class="reference-code ${refHidden ? "masked" : ""
+                    }" data-full="${escapeHtml(refValue)}" data-masked="${escapeHtml(
+                        masked
+                    )}" onclick="toggleMobileReference('${payment.id
+                    }')" style="cursor:pointer;">${escapeHtml(masked)}</code></span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Description</span><span class="card-detail-value">${escapeHtml(
+                        payment.description ||
+                        payment.charge_description ||
+                        `Charge #${payment.charge_id || "N/A"}`
+                    )}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Method</span><span class="card-detail-value"><span class="payment-method">${escapeHtml(
+                        capitalizeFirst(payment.paymentMethod || "")
+                    )}</span></span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Payment Date</span><span class="card-detail-value">${formatDate(
+                        payment.paymentDate
+                    )}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Status</span><span class="card-detail-value">${renderPaymentStatusBadge(
+                        payment.status
+                    )}</span></div>
+                        <div class="card-detail-row"><span class="card-detail-label">Processed By</span><span class="card-detail-value">${escapeHtml(
+                        payment.processedBy || ""
+                    )}</span></div>
                     </div>
                     <div class="card-actions">
                         ${allocToggle}
                         ${invoiceButtons}
                     </div>
-                    <div class="mobile-allocations" id="admin-alloc-card-${payment.id}" style="display:none;padding:8px 12px;background:#fafafa;border-top:1px dashed #e5e7eb;"></div>
+                    <div class="mobile-allocations" id="admin-alloc-card-${payment.id
+                    }" style="display:none;padding:8px 12px;background:#fafafa;border-top:1px dashed #e5e7eb;"></div>
                 </div>`;
-        }).join('');
+            })
+            .join("");
     }
 }
 
-
-window.toggleAdminPaymentAllocationsCard = async function(paymentId) {
+window.toggleAdminPaymentAllocationsCard = async function (paymentId) {
     try {
         const container = document.getElementById(`admin-alloc-card-${paymentId}`);
         if (!container) return;
-        const isHidden = getComputedStyle(container).display === 'none';
+        const isHidden = getComputedStyle(container).display === "none";
         if (isHidden) {
             if (!container.dataset.loaded) {
-                container.innerHTML = '<div class="loading" style="margin:4px 0;">Loading allocations…</div>';
-                let allocs = adminPaymentAllocCache[paymentId];
+                container.innerHTML =
+                    '<div class="loading" style="margin:4px 0;">Loading allocations…</div>';
+                let allocs = getCachedAllocations(paymentId);
                 if (!allocs) {
                     allocs = await fetchPaymentAllocations(paymentId).catch(() => []);
-                    adminPaymentAllocCache[paymentId] = allocs;
+                    setCachedAllocations(paymentId, allocs);
                 }
                 container.innerHTML = buildAdminAllocationsHtml(allocs);
-                container.dataset.loaded = '1';
+                container.dataset.loaded = "1";
             }
-            container.style.display = 'block';
+            container.style.display = "block";
         } else {
-            container.style.display = 'none';
+            container.style.display = "none";
         }
-        const chev = document.getElementById(`admin-alloc-chevron-mobile-${paymentId}`);
-        if (chev) chev.className = `fas fa-chevron-${isHidden ? 'up' : 'down'}`;
+        const chev = document.getElementById(
+            `admin-alloc-chevron-mobile-${paymentId}`
+        );
+        if (chev) chev.className = `fas fa-chevron-${isHidden ? "up" : "down"}`;
     } catch (e) {
         console.error(e);
-        showAlert('Failed to toggle allocations', 'error');
+        showAlert("Failed to toggle allocations", "error");
     }
 };
 
-window.toggleMobileReference = function(paymentId) {
+window.toggleMobileReference = function (paymentId) {
     const el = document.getElementById(`mobile-ref-${paymentId}`);
     if (!el) return;
-    const isMasked = el.classList.contains('masked');
+    const isMasked = el.classList.contains("masked");
     if (isMasked) {
-        el.textContent = el.dataset.full || '';
-        el.classList.remove('masked');
+        el.textContent = el.dataset.full || "";
+        el.classList.remove("masked");
     } else {
-        el.textContent = el.dataset.masked || '';
-        el.classList.add('masked');
+        el.textContent = el.dataset.masked || "";
+        el.classList.add("masked");
     }
 };
 
-
-async function fetchAllPayments(page = 1, limit = paymentsLimit) {
+async function fetchAllPayments(
+    page = 1,
+    limit = paymentsLimit,
+    { force = false } = {}
+) {
     try {
         const methodEl = document.getElementById("payments-method");
         const typeEl = document.getElementById("payments-type");
@@ -382,7 +482,26 @@ async function fetchAllPayments(page = 1, limit = paymentsLimit) {
         if (month) params.set("month", month);
         if (search) params.set("q", search);
 
-        const res = await fetch(`${API_BASE_URL}/payments?${params.toString()}`, { credentials: "include" });
+        const cacheKey = makeCacheKey(`${API_BASE_URL}/payments`, params);
+        const cached = paymentsListCache.get(cacheKey);
+        if (!force && cached && isFresh(cached.fetchedAt, CACHE_TTLS.payments)) {
+            payments = cached.data;
+            paymentsPage = cached.page;
+            paymentsLimit = cached.limit;
+            paymentsTotal = cached.total;
+            filteredPayments = [...payments];
+            await preloadAdminAllocationsForPayments();
+            renderPaymentsTable();
+            renderPaymentsPagination();
+            requestStatisticsUpdate();
+            return;
+        }
+
+        setPaymentsLoading(true, force ? "Refreshing…" : "Loading…");
+
+        const res = await fetch(`${API_BASE_URL}/payments?${params.toString()}`, {
+            credentials: "include",
+        });
         if (!res.ok) throw new Error(`Failed to fetch payments: ${res.status}`);
         const json = await res.json();
         const rows = json.payments || [];
@@ -406,11 +525,19 @@ async function fetchAllPayments(page = 1, limit = paymentsLimit) {
         paymentsLimit = Number(json.limit) || limit;
         paymentsTotal = Number(json.total) || rows.length;
 
+        paymentsListCache.set(cacheKey, {
+            data: payments,
+            page: paymentsPage,
+            limit: paymentsLimit,
+            total: paymentsTotal,
+            fetchedAt: Date.now(),
+        });
+
         filteredPayments = [...payments];
         await preloadAdminAllocationsForPayments();
         renderPaymentsTable();
         renderPaymentsPagination();
-        updateStatistics();
+        requestStatisticsUpdate();
     } catch (err) {
         console.error(err);
     }
@@ -422,53 +549,74 @@ function buildAdminAllocationsHtml(allocs) {
     }
     return `
         <div class="allocations-list">
-            ${allocs.map(a => `
+            ${allocs
+            .map(
+                (a) => `
                 <div class="allocation-item" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">
                     <div class="allocation-main">
-                        <div class="alloc-desc"><strong>${escapeHtml(a.description || 'Charge')}</strong> <small style="color:#6b7280;">${escapeHtml(a.charge_type || '')}</small></div>
-                        <div class="alloc-meta">Charge ID: ${escapeHtml(String(a.charge_id || ''))}</div>
+                        <div class="alloc-desc"><strong>${escapeHtml(
+                    a.description || "Charge"
+                )}</strong> <small style="color:#6b7280;">${escapeHtml(
+                    a.charge_type || ""
+                )}</small></div>
+                        <div class="alloc-meta">Charge ID: ${escapeHtml(
+                    String(a.charge_id || "")
+                )}</div>
                     </div>
-                    <div class="allocation-amount">${formatCurrency(a.amount)}</div>
+                    <div class="allocation-amount">${formatCurrency(
+                    a.amount
+                )}</div>
                 </div>
-            `).join('')}
+            `
+            )
+            .join("")}
         </div>
     `;
 }
 
-window.toggleAdminPaymentAllocationsRow = async function(paymentId) {
+window.toggleAdminPaymentAllocationsRow = async function (paymentId) {
     try {
         const row = document.getElementById(`admin-alloc-row-${paymentId}`);
         const chev = document.getElementById(`admin-alloc-chevron-${paymentId}`);
         if (!row) return;
         const cs = window.getComputedStyle(row);
-        const isHidden = cs.display === 'none';
+        const isHidden = cs.display === "none";
         if (isHidden) {
-            const container = document.getElementById(`admin-alloc-content-${paymentId}`);
-            const cached = adminPaymentAllocCache[paymentId];
+            const container = document.getElementById(
+                `admin-alloc-content-${paymentId}`
+            );
+            const cached = getCachedAllocations(paymentId);
             if (cached) {
                 container.innerHTML = buildAdminAllocationsHtml(cached);
             } else {
                 container.innerHTML = `<div class="loading" style="margin:4px 0;">Loading allocations…</div>`;
                 const allocs = await fetchPaymentAllocations(paymentId).catch(() => []);
-                adminPaymentAllocCache[paymentId] = allocs;
+                setCachedAllocations(paymentId, allocs);
                 container.innerHTML = buildAdminAllocationsHtml(allocs);
             }
-            row.style.display = '';
-            if (chev) { chev.classList.remove('fa-chevron-down'); chev.classList.add('fa-chevron-up'); }
+            row.style.display = "";
+            if (chev) {
+                chev.classList.remove("fa-chevron-down");
+                chev.classList.add("fa-chevron-up");
+            }
         } else {
-            row.style.display = 'none';
-            if (chev) { chev.classList.remove('fa-chevron-up'); chev.classList.add('fa-chevron-down'); }
+            row.style.display = "none";
+            if (chev) {
+                chev.classList.remove("fa-chevron-up");
+                chev.classList.add("fa-chevron-down");
+            }
         }
     } catch (e) {
-        console.warn('toggleAdminPaymentAllocationsRow error', e);
+        console.warn("toggleAdminPaymentAllocationsRow error", e);
     }
-}
-
+};
 
 async function fetchInvoiceBlob(paymentId, download = false) {
     try {
         const token = typeof getJwtToken === "function" ? getJwtToken() : null;
-        const url = `${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/invoice.pdf${download ? "?download=1" : ""}`;
+        const url = `${API_BASE_URL}/payments/${encodeURIComponent(
+            paymentId
+        )}/invoice.pdf${download ? "?download=1" : ""}`;
         const res = await fetch(url, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             credentials: token ? "same-origin" : "include",
@@ -484,10 +632,11 @@ async function fetchInvoiceBlob(paymentId, download = false) {
 }
 
 window.viewInvoicePDF = async function (paymentId) {
-    
     try {
         const token = typeof getJwtToken === "function" ? getJwtToken() : null;
-        const url = `${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/invoice.pdf`;
+        const url = `${API_BASE_URL}/payments/${encodeURIComponent(
+            paymentId
+        )}/invoice.pdf`;
         const res = await fetch(url, {
             method: "GET",
             headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -516,8 +665,10 @@ window.viewInvoicePDF = async function (paymentId) {
 };
 
 window.downloadInvoicePDF = function (paymentId) {
-    const url = `${API_BASE_URL}/payments/${encodeURIComponent(paymentId)}/invoice.pdf?download=1`;
-    
+    const url = `${API_BASE_URL}/payments/${encodeURIComponent(
+        paymentId
+    )}/invoice.pdf?download=1`;
+
     const a = document.createElement("a");
     a.href = url;
     a.rel = "noopener";
@@ -583,97 +734,112 @@ function onReady(fn) {
     }
 }
 
+function ensureLoadingStyles() {
+    if (document.getElementById("admin-loading-styles")) return;
+    const style = document.createElement("style");
+    style.id = "admin-loading-styles";
+    style.textContent = `
+        .loading-row { display:flex; justify-content:center; align-items:center; gap:8px; color:#64748b; padding:16px; }
+        .loading-row .spinner { width:14px; height:14px; border:2px solid #cbd5e1; border-top-color:#3b82f6; border-radius:50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    `;
+    document.head.appendChild(style);
+}
+
+function setChargesLoading(isLoading, message = "Loading…") {
+    const tbody = document.getElementById("charges-tbody");
+    const mobile = document.getElementById("charges-mobile");
+    if (!tbody) return;
+    if (isLoading) {
+        ensureLoadingStyles();
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="loading-state">
+                    <div class="loading-row"><span class="spinner"></span>${message}</div>
+                </td>
+            </tr>
+        `;
+        if (mobile)
+            mobile.innerHTML = `<div class="loading-row"><span class="spinner"></span>${message}</div>`;
+    }
+}
+
+function setPaymentsLoading(isLoading, message = "Loading…") {
+    const tbody = document.getElementById("payments-tbody");
+    if (!tbody) return;
+    if (isLoading) {
+        ensureLoadingStyles();
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="loading-state">
+                    <div class="loading-row"><span class="spinner"></span>${message}</div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function setStatsLoading(isLoading) {
+    const outstandingElement = document.getElementById("outstanding-charges");
+    const collectedElement = document.getElementById("collected-amount");
+    const pendingElement = document.getElementById("pending-charges");
+    const revenueElement = document.getElementById("total-revenue");
+    if (!isLoading) return;
+    const set = (el) => el && (el.textContent = "Refreshing…");
+    set(outstandingElement);
+    set(collectedElement);
+    set(pendingElement);
+    set(revenueElement);
+}
+
+let statsUpdateTimer = null;
+let statsUpdateForcePending = false;
+function requestStatisticsUpdate({ force = false } = {}) {
+    statsUpdateForcePending = statsUpdateForcePending || !!force;
+    setStatsLoading(true);
+    if (statsUpdateTimer) clearTimeout(statsUpdateTimer);
+    statsUpdateTimer = setTimeout(async () => {
+        const useForce = statsUpdateForcePending;
+        statsUpdateForcePending = false;
+        statsUpdateTimer = null;
+        await updateStatistics({ force: useForce });
+    }, 250);
+}
+
 onReady(() => {
     setDynamicInfo();
-    updateStatistics();
+    requestStatisticsUpdate();
 });
 
-async function fetchCharges() {
+function hydrateChargesFromServer(serverCharges) {
     try {
-        const searchEl = document.getElementById("charges-search");
-        const typeEl = document.getElementById("charges-type");
-        const statusEl = document.getElementById("charges-status");
-        const dateEl = document.getElementById("charges-date");
-
-        const params = new URLSearchParams();
-        if (searchEl && searchEl.value.trim())
-            params.append("q", searchEl.value.trim());
-        if (typeEl && typeEl.value) params.append("charge_type", typeEl.value);
-        if (statusEl && statusEl.value) params.append("status", statusEl.value);
-        if (dateEl && dateEl.value) {
-            const v = dateEl.value;
-            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                params.append("due_date", v);
-            } else if (/^\d{4}-\d{2}$/.test(v)) {
-                const [y, m] = v.split("-").map(Number);
-                const from = `${y}-${String(m).padStart(2, "0")}-01`;
-                const lastDay = new Date(y, m, 0).getDate();
-                const to = `${y}-${String(m).padStart(2, "0")}-${String(
-                    lastDay
-                ).padStart(2, "0")}`;
-                params.append("due_date_from", from);
-                params.append("due_date_to", to);
-            }
-        }
-
-        if (typeof window.chargesPage === "undefined") window.chargesPage = 1;
-        if (typeof window.chargesLimit === "undefined") window.chargesLimit = 10;
-        params.set("page", String(window.chargesPage));
-        params.set("limit", String(window.chargesLimit));
-
-        const url =
-            `${API_BASE_URL}/charges` +
-            (params.toString() ? `?${params.toString()}` : "");
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Failed to fetch charges from server");
-        const payload = await res.json();
-
-        let serverCharges = Array.isArray(payload)
-            ? payload
-            : payload && Array.isArray(payload.data)
-                ? payload.data
-                : [];
-
-        window.chargesTotal = Array.isArray(payload)
-            ? payload.length || 0
-            : Number(payload?.total) || 0;
-        if (!Number.isFinite(window.chargesTotal))
-            window.chargesTotal = serverCharges.length;
-        if (payload && !Array.isArray(payload)) {
-            if (Number(payload.page)) window.chargesPage = Number(payload.page);
-            if (Number(payload.limit)) window.chargesLimit = Number(payload.limit);
-        }
-
         leasesData.length = 0;
         charges = [];
         payments = [];
         filteredCharges = [];
         filteredPayments = [];
 
-        serverCharges.forEach((row) => {
+        (serverCharges || []).forEach((row) => {
             const mappedCharge = {
                 id: row.charge_id || row.id,
                 type: row.charge_type || row.type,
                 description: row.description || "",
-
                 amount:
                     typeof row.amount === "number"
                         ? row.amount
                         : parseFloat(row.amount) || 0,
-
                 original_amount:
-                    typeof row.original_amount === "number"
-                        ? row.original_amount
-                        : row.original_amount != null
-                            ? parseFloat(row.original_amount) || 0
-                            : null,
+                    row.original_amount != null
+                        ? typeof row.original_amount === "number"
+                            ? row.original_amount
+                            : parseFloat(row.original_amount) || 0
+                        : null,
                 late_fee_amount:
-                    typeof row.late_fee_amount === "number"
-                        ? row.late_fee_amount
-                        : row.late_fee_amount != null
-                            ? parseFloat(row.late_fee_amount) || 0
-                            : 0,
-
+                    row.late_fee_amount != null
+                        ? typeof row.late_fee_amount === "number"
+                            ? row.late_fee_amount
+                            : parseFloat(row.late_fee_amount) || 0
+                        : 0,
                 total_paid:
                     typeof row.total_paid === "number"
                         ? row.total_paid
@@ -690,12 +856,13 @@ async function fetchCharges() {
                 isRecurring: !!row.is_recurring,
                 template_id: row.template_id || null,
                 leaseId: row.lease_id || row.leaseId || null,
-
                 gracePeriodDays:
                     parseInt(
                         row.grace_period_days || row.gracePeriodDays || row.grace || 0,
                         10
                     ) || 0,
+                tenant: row.tenant || row.tenant_name || row.tenantName || "",
+                unit: row.unit || row.unit_number || row.unitNumber || "",
             };
 
             let lease = null;
@@ -734,14 +901,15 @@ async function fetchCharges() {
                 const placeholderLease = {
                     id: mappedCharge.leaseId || `lease-${mappedCharge.id}`,
                     lease_id: mappedCharge.leaseId || null,
-                    tenant: row.tenant_name ? row.tenant_name : "Unknown Tenant",
+                    tenant: row.tenant_name
+                        ? row.tenant_name
+                        : row.tenant || "Unknown Tenant",
                     unit: row.unit || row.unit_number || row.property_name || "",
                     property_name: row.property_name || "",
                     email: row.email || "",
                     phone: row.phone_number || "",
                     paymentHistory: [],
                     charges: [mappedCharge],
-
                     grace_period_days:
                         parseInt(
                             row.lease_grace_period_days ||
@@ -750,7 +918,6 @@ async function fetchCharges() {
                             0,
                             10
                         ) || 0,
-
                     late_fee_percentage:
                         typeof row.lease_late_fee_percentage === "number" &&
                             row.lease_late_fee_percentage >= 0
@@ -768,6 +935,94 @@ async function fetchCharges() {
         });
 
         syncDataArrays();
+        filteredCharges = [...charges];
+    } catch (e) {
+        console.warn("hydrateChargesFromServer failed", e);
+    }
+}
+
+async function fetchCharges({ force = false } = {}) {
+    try {
+        const searchEl = document.getElementById("charges-search");
+        const typeEl = document.getElementById("charges-type");
+        const statusEl = document.getElementById("charges-status");
+        const dateEl = document.getElementById("charges-date");
+
+        const params = new URLSearchParams();
+        if (searchEl && searchEl.value.trim())
+            params.append("q", searchEl.value.trim());
+        if (typeEl && typeEl.value) params.append("charge_type", typeEl.value);
+        if (statusEl && statusEl.value) params.append("status", statusEl.value);
+        if (dateEl && dateEl.value) {
+            const v = dateEl.value;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                params.append("due_date", v);
+            } else if (/^\d{4}-\d{2}$/.test(v)) {
+                const [y, m] = v.split("-").map(Number);
+                const from = `${y}-${String(m).padStart(2, "0")}-01`;
+                const lastDay = new Date(y, m, 0).getDate();
+                const to = `${y}-${String(m).padStart(2, "0")}-${String(
+                    lastDay
+                ).padStart(2, "0")}`;
+                params.append("due_date_from", from);
+                params.append("due_date_to", to);
+            }
+        }
+
+        if (typeof window.chargesPage === "undefined") window.chargesPage = 1;
+        if (typeof window.chargesLimit === "undefined") window.chargesLimit = 10;
+        params.set("page", String(window.chargesPage));
+        params.set("limit", String(window.chargesLimit));
+
+        const base = `${API_BASE_URL}/charges`;
+        const cacheKey = makeCacheKey(base, params);
+        const cached = chargesListCache.get(cacheKey);
+        if (!force && cached && isFresh(cached.fetchedAt, CACHE_TTLS.charges)) {
+            const serverCharges = cached.payload || [];
+            window.chargesTotal = cached.total;
+            window.chargesPage = cached.page;
+            window.chargesLimit = cached.limit;
+            hydrateChargesFromServer(serverCharges);
+            applyCurrentSort();
+            renderChargesTable();
+            if (typeof renderChargesPagination === "function")
+                renderChargesPagination();
+            renderPaymentsTable();
+            return;
+        }
+
+        setChargesLoading(true, force ? "Refreshing…" : "Loading…");
+
+        const url = base + (params.toString() ? `?${params.toString()}` : "");
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch charges from server");
+        const payload = await res.json();
+
+        let serverCharges = Array.isArray(payload)
+            ? payload
+            : payload && Array.isArray(payload.data)
+                ? payload.data
+                : [];
+
+        window.chargesTotal = Array.isArray(payload)
+            ? payload.length || 0
+            : Number(payload?.total) || 0;
+        if (!Number.isFinite(window.chargesTotal))
+            window.chargesTotal = serverCharges.length;
+        if (payload && !Array.isArray(payload)) {
+            if (Number(payload.page)) window.chargesPage = Number(payload.page);
+            if (Number(payload.limit)) window.chargesLimit = Number(payload.limit);
+        }
+
+        hydrateChargesFromServer(serverCharges);
+
+        chargesListCache.set(cacheKey, {
+            payload: serverCharges,
+            total: window.chargesTotal,
+            page: window.chargesPage,
+            limit: window.chargesLimit,
+            fetchedAt: Date.now(),
+        });
 
         applyCurrentSort();
         renderChargesTable();
@@ -784,7 +1039,7 @@ onReady(() => {
     setupChargeFilters();
 
     setupChargesGroupingControl();
-    fetchCharges().finally(() => updateStatistics());
+    fetchCharges().finally(() => requestStatisticsUpdate());
 
     try {
         const methodEl = document.getElementById("payments-method");
@@ -812,19 +1067,27 @@ onReady(() => {
         const dateEl = document.getElementById("payments-date");
         if (searchEl)
             searchEl.addEventListener("input", () =>
-                fetchAllPayments(1, paymentsLimit).finally(() => updateStatistics())
+                fetchAllPayments(1, paymentsLimit).finally(() =>
+                    requestStatisticsUpdate()
+                )
             );
         if (methodEl)
             methodEl.addEventListener("change", () =>
-                fetchAllPayments(1, paymentsLimit).finally(() => updateStatistics())
+                fetchAllPayments(1, paymentsLimit).finally(() =>
+                    requestStatisticsUpdate()
+                )
             );
         if (typeEl)
             typeEl.addEventListener("change", () =>
-                fetchAllPayments(1, paymentsLimit).finally(() => updateStatistics())
+                fetchAllPayments(1, paymentsLimit).finally(() =>
+                    requestStatisticsUpdate()
+                )
             );
         if (dateEl)
             dateEl.addEventListener("change", () =>
-                fetchAllPayments(1, paymentsLimit).finally(() => updateStatistics())
+                fetchAllPayments(1, paymentsLimit).finally(() =>
+                    requestStatisticsUpdate()
+                )
             );
     } catch (e) {
         console.warn("Failed to initialize Payment History filters", e);
@@ -1362,73 +1625,83 @@ function showAlert(message, type = "info") {
     }, 4000);
 }
 
-function updateStatistics() {
-    Promise.all([
-        fetch(`/api/v1/charges/stats`, { credentials: "include" })
-            .then((r) => r.json())
-            .catch(() => null),
-        fetch(`/api/v1/payments/stats`, { credentials: "include" })
-            .then((r) => r.json())
-            .catch(() => null),
-    ])
-        .then(([chargeStats, paymentStats]) => {
-            const outstandingElement = document.getElementById("outstanding-charges");
-            const collectedElement = document.getElementById("collected-amount");
-            const pendingElement = document.getElementById("pending-charges");
-            const revenueElement = document.getElementById("total-revenue");
+async function updateStatistics({ force = false } = {}) {
+    try {
+        let chargeStats = null;
+        let paymentStats = null;
+        if (
+            !force &&
+            isFresh(statsCache.fetchedAt, CACHE_TTLS.stats) &&
+            statsCache.data
+        ) {
+            ({ chargeStats, paymentStats } = statsCache.data);
+        } else {
+            const [c, p] = await Promise.all([
+                fetch(`/api/v1/charges/stats`, { credentials: "include" })
+                    .then((r) => r.json())
+                    .catch(() => null),
+                fetch(`/api/v1/payments/stats`, { credentials: "include" })
+                    .then((r) => r.json())
+                    .catch(() => null),
+            ]);
+            chargeStats = c;
+            paymentStats = p;
+            statsCache = {
+                data: { chargeStats, paymentStats },
+                fetchedAt: Date.now(),
+            };
+        }
 
-            if (outstandingElement && chargeStats)
-                outstandingElement.textContent = String(chargeStats.outstanding ?? 0);
-            if (collectedElement && paymentStats)
-                collectedElement.textContent = formatCurrency(
-                    Number(paymentStats.collectedThisMonth || 0)
-                );
-            if (pendingElement && paymentStats)
-                pendingElement.textContent = String(paymentStats.pendingCount ?? 0);
-            if (revenueElement && paymentStats)
-                revenueElement.textContent = formatCurrency(
-                    Number(paymentStats.totalCollected || 0)
-                );
+        const outstandingElement = document.getElementById("outstanding-charges");
+        const collectedElement = document.getElementById("collected-amount");
+        const pendingElement = document.getElementById("pending-charges");
+        const revenueElement = document.getElementById("total-revenue");
 
-            const chargesTotalStat = document.getElementById("charges-total-stat");
-            const chargesOverdueStat = document.getElementById(
-                "charges-overdue-stat"
+        if (outstandingElement && chargeStats)
+            outstandingElement.textContent = String(chargeStats.outstanding ?? 0);
+        if (collectedElement && paymentStats)
+            collectedElement.textContent = formatCurrency(
+                Number(paymentStats.collectedThisMonth || 0)
             );
-            const chargesActiveStat = document.getElementById("charges-active-stat");
-            if (chargesTotalStat && chargeStats)
-                chargesTotalStat.textContent = `${Number(
-                    chargeStats.total || 0
-                )} Total`;
-            if (chargesOverdueStat && chargeStats)
-                chargesOverdueStat.textContent = `${Number(
-                    chargeStats.overdue || 0
-                )} Overdue`;
-            if (chargesActiveStat && chargeStats)
-                chargesActiveStat.textContent = `${Number(
-                    chargeStats.dueSoon || 0
-                )} Due Soon`;
-
-            const paymentsCountStat = document.getElementById("payments-count-stat");
-            const paymentsAmountStat = document.getElementById(
-                "payments-amount-stat"
+        if (pendingElement && paymentStats)
+            pendingElement.textContent = String(paymentStats.pendingCount ?? 0);
+        if (revenueElement && paymentStats)
+            revenueElement.textContent = formatCurrency(
+                Number(paymentStats.totalCollected || 0)
             );
-            const paymentsMonthStat = document.getElementById("payments-month-stat");
-            if (paymentsCountStat && paymentStats)
-                paymentsCountStat.textContent = `${Number(
-                    paymentStats.totalPayments || 0
-                )} Payments`;
-            if (paymentsAmountStat && paymentStats)
-                paymentsAmountStat.textContent = `${formatCurrency(
-                    Number(paymentStats.totalCollected || 0)
-                )} Collected`;
-            if (paymentsMonthStat && paymentStats)
-                paymentsMonthStat.textContent = `This Month: ${formatCurrency(
-                    Number(paymentStats.collectedThisMonth || 0)
-                )}`;
-        })
-        .catch((e) => {
-            console.warn("Failed to fetch live stats", e);
-        });
+
+        const chargesTotalStat = document.getElementById("charges-total-stat");
+        const chargesOverdueStat = document.getElementById("charges-overdue-stat");
+        const chargesActiveStat = document.getElementById("charges-active-stat");
+        if (chargesTotalStat && chargeStats)
+            chargesTotalStat.textContent = `${Number(chargeStats.total || 0)} Total`;
+        if (chargesOverdueStat && chargeStats)
+            chargesOverdueStat.textContent = `${Number(
+                chargeStats.overdue || 0
+            )} Overdue`;
+        if (chargesActiveStat && chargeStats)
+            chargesActiveStat.textContent = `${Number(
+                chargeStats.dueSoon || 0
+            )} Due Soon`;
+
+        const paymentsCountStat = document.getElementById("payments-count-stat");
+        const paymentsAmountStat = document.getElementById("payments-amount-stat");
+        const paymentsMonthStat = document.getElementById("payments-month-stat");
+        if (paymentsCountStat && paymentStats)
+            paymentsCountStat.textContent = `${Number(
+                paymentStats.totalPayments || 0
+            )} Payments`;
+        if (paymentsAmountStat && paymentStats)
+            paymentsAmountStat.textContent = `${formatCurrency(
+                Number(paymentStats.totalCollected || 0)
+            )} Collected`;
+        if (paymentsMonthStat && paymentStats)
+            paymentsMonthStat.textContent = `This Month: ${formatCurrency(
+                Number(paymentStats.collectedThisMonth || 0)
+            )}`;
+    } catch (e) {
+        console.warn("Failed to fetch or render stats", e);
+    }
 }
 
 function findChargeById(chargeId) {
@@ -2267,7 +2540,9 @@ function handleAddChargeSubmission(event) {
 
     syncDataArrays();
     filteredCharges = [...charges];
-    updateStatistics();
+    invalidateChargesCache();
+    invalidateStatsCache();
+    requestStatisticsUpdate({ force: true });
     renderChargesTable();
     closeModal("addChargeModal");
 
@@ -2727,9 +3002,10 @@ async function handleEditChargeSubmission(event) {
         showAlert("Charge updated successfully!", "success");
         closeModal("editChargeModal");
 
-        await fetchCharges();
-
-        updateStatistics();
+        invalidateChargesCache();
+        invalidateStatsCache();
+        await fetchCharges({ force: true });
+        requestStatisticsUpdate({ force: true });
         renderChargesTable();
     } catch (e) {
         console.error(e);
@@ -2788,7 +3064,9 @@ function confirmDeleteCharge() {
     syncDataArrays();
     filteredCharges = [...charges];
     filteredPayments = [...payments];
-    updateStatistics();
+    invalidateChargesCache();
+    invalidateStatsCache();
+    requestStatisticsUpdate({ force: true });
     renderChargesTable();
     renderPaymentsTable();
     closeModal("deleteChargeModal");
@@ -3788,12 +4066,16 @@ function closeModal(modalId) {
 }
 
 function showSection(sectionName) {
-    syncDataArrays();
-    filteredCharges = [...charges];
-    filteredPayments = [...payments];
     updateStatistics();
-    renderChargesTable();
-    renderPaymentsTable();
+    if (sectionName === "charges") {
+        fetchCharges();
+    } else if (sectionName === "payments") {
+        if ((window.currentPaymentView || "pending") === "all") {
+            fetchAllPayments(1, paymentsLimit);
+        } else {
+            loadPendingPayments(window.currentPendingStatus || "Pending");
+        }
+    }
 }
 
 function createModalsAndDialogs() {
@@ -5307,7 +5589,9 @@ function setupAdvancedChargesModalFunctions(
             }
 
             closeModal("advancedAddChargeModal");
-            await fetchCharges();
+            invalidateChargesCache();
+            invalidateStatsCache();
+            await fetchCharges({ force: true });
 
             const totalAdded = chargeData.length;
             const totalAmount = chargeData.reduce(
@@ -5923,7 +6207,7 @@ function injectPaymentButtonStyles() {
         }
         .pending-payments-table .btn-narrow { margin-right: 6px; }
         .reference-cell { max-width: 220px; }
-        .reference-cell code.reference-code { display:inline-block; max-width: 180px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:middle; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .reference-cell code.reference-code { display:inline-block; max-width: 180px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; vertical-align:middle; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
         .reference-code.masked { letter-spacing: 1px; color: #64748b; }
         .col-toggle { font-size: 12px; }
     `;
@@ -5986,6 +6270,8 @@ function switchTab(tabName) {
         if (currentPaymentView === "all") {
             fetchAllPayments(paymentsPage, paymentsLimit);
         }
+    } else if (tabName === "charges") {
+        fetchCharges();
     }
 }
 
@@ -6000,18 +6286,20 @@ let pendingPayments = [];
 let filteredPendingPayments = [];
 
 function renderPaymentStatusBadge(status) {
-    const s = String(status || '').trim().toLowerCase();
-    let cls = 'pending';
-    let label = status || '';
-    if (s === 'confirmed' || s === 'approved') {
-        cls = 'approved';
-        label = 'Confirmed';
-    } else if (s === 'rejected') {
-        cls = 'rejected';
-        label = 'Rejected';
+    const s = String(status || "")
+        .trim()
+        .toLowerCase();
+    let cls = "pending";
+    let label = status || "";
+    if (s === "confirmed" || s === "approved") {
+        cls = "approved";
+        label = "Confirmed";
+    } else if (s === "rejected") {
+        cls = "rejected";
+        label = "Rejected";
     } else {
-        cls = 'pending';
-        label = 'Pending';
+        cls = "pending";
+        label = "Pending";
     }
     return `<span class="status-badge ${cls}">${escapeHtml(label)}</span>`;
 }
@@ -6039,7 +6327,9 @@ async function fetchPaymentsByStatus(status = "Pending") {
 
 function switchPaymentView(view) {
     currentPaymentView = view;
-    try { localStorage.setItem('paymentsView', view); } catch {}
+    try {
+        localStorage.setItem("paymentsView", view);
+    } catch { }
 
     const buttons = document.querySelectorAll(".view-toggle-btn");
     buttons.forEach((btn) => {
@@ -6320,9 +6610,14 @@ async function approvePayment(paymentId) {
         }
 
         showAlert("Payment confirmed successfully", "success");
+
+        invalidatePaymentsCache();
+        invalidateChargesCache();
+        invalidateStatsCache();
         await loadPendingPayments(currentPendingStatus);
-        await fetchCharges();
-        updateStatistics();
+        await fetchCharges({ force: true });
+        await fetchAllPayments(1, paymentsLimit, { force: true });
+        await updateStatistics({ force: true });
     } catch (error) {
         console.error("Error confirming payment:", error);
         showAlert("Failed to confirm payment", "error");
@@ -6352,7 +6647,10 @@ async function rejectPayment(paymentId) {
         }
 
         showAlert("Payment rejected", "success");
+        invalidatePaymentsCache();
+        invalidateStatsCache();
         await loadPendingPayments(currentPendingStatus);
+        await fetchAllPayments(1, paymentsLimit, { force: true });
     } catch (error) {
         console.error("Error rejecting payment:", error);
         showAlert("Failed to reject payment", "error");
@@ -6374,7 +6672,7 @@ document.addEventListener("DOMContentLoaded", function () {
     filteredCharges = [...charges];
     filteredPayments = [...payments];
 
-    updateStatistics();
+    updateStatistics({ force: true });
 
     renderChargesTable();
     renderPaymentsTable();
@@ -6383,12 +6681,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     initializeActiveTab();
 
-    
-    const savedView = (localStorage.getItem('paymentsView') || 'pending');
-    if (savedView === 'all') {
-        switchPaymentView('all');
+    const savedView = localStorage.getItem("paymentsView") || "pending";
+    if (savedView === "all") {
+        switchPaymentView("all");
     } else {
-        switchPaymentView('pending');
+        switchPaymentView("pending");
     }
 
     const activeTab = localStorage.getItem("activePaymentTab") || "charges";
@@ -6397,22 +6694,22 @@ document.addEventListener("DOMContentLoaded", function () {
         updatePendingStatusCounts();
     }
 
-    
     try {
-        const pendingCard = document.querySelector('.stat-card.pending');
+        const pendingCard = document.querySelector(".stat-card.pending");
         if (pendingCard) {
-            pendingCard.addEventListener('click', () => {
-                
-                switchTab('payments');
-                
-                switchPaymentView('pending');
-                
-                filterPendingByStatus('Pending');
-                
-                document.getElementById('pending-payments-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            pendingCard.addEventListener("click", () => {
+                switchTab("payments");
+
+                switchPaymentView("pending");
+
+                filterPendingByStatus("Pending");
+
+                document
+                    .getElementById("pending-payments-view")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
             });
         }
-    } catch {}
+    } catch { }
 });
 
 window.showSection = showSection;
@@ -6445,4 +6742,3 @@ window.viewPaymentDetails = viewPaymentDetails;
 window.generateReceipt = generateReceipt;
 window.sortTable = sortTable;
 window.toggleReferenceVisibility = window.toggleReferenceVisibility;
-
