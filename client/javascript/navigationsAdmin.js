@@ -116,7 +116,7 @@ async function setupAdminNavbar() {
         if (profileRole) {
             profileRole.textContent = user.role || '';
         }
-        if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messagesAdmin.html";
+        if (viewAllMessagesBtn) viewAllMessagesBtn.href = "/messages.html";
         const contactSubmissionsMenuItem = document.getElementById('contactSubmissionsMenuItem');
         if (contactSubmissionsMenuItem) contactSubmissionsMenuItem.style.display = '';
         window.currentAdminUser = user;
@@ -147,7 +147,7 @@ function setupSidebar(role) {
     if (role === 'admin') {
         links = [
             { href: '/adminDashboard.html', icon: 'fas fa-chart-line', text: 'Dashboard', page: 'dashboard', tooltip: 'Dashboard' },
-            { href: '/messagesAdmin.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messagesAdmin', tooltip: 'Messages' },
+            { href: '/messages.html', icon: 'fa-solid fa-envelope', text: 'Messages', page: 'messagesAdmin', tooltip: 'Messages' },
             { section: 'Property Management', isSection: true },
             { href: '/propertyAdmin.html', icon: 'fas fa-building', text: 'Properties', page: 'propertyAdmin', tooltip: 'Properties' },
             { href: '/tenants.html', icon: 'fas fa-users', text: 'Tenants', page: 'tenants', tooltip: 'Tenants' },
@@ -243,7 +243,7 @@ class NavigationManager {
             paymentAdmin: "Payments",
             "maintenance.html": "Maintenance Requests",
             maintenance: "Maintenance Requests",
-            "messagesAdmin.html": "Messages",
+            "messages.html": "Messages",
             messagesAdmin: "Messages",
             "documents.html": "Documents",
             documents: "Documents",
@@ -292,7 +292,7 @@ class NavigationManager {
             paymentAdmin: "fas fa-credit-card",
             "maintenance.html": "fas fa-tools",
             maintenance: "fas fa-tools",
-            "messagesAdmin.html": "fas fa-envelope",
+            "messages.html": "fas fa-envelope",
             messagesAdmin: "fas fa-envelope",
             "documents.html": "fas fa-folder",
             documents: "fas fa-folder",
@@ -341,7 +341,7 @@ class NavigationManager {
             paymentAdmin: "Process payments, track collections, and manage financial transactions",
             "maintenance.html": "Oversee maintenance requests, assign work orders, and track service completion",
             maintenance: "Oversee maintenance requests, assign work orders, and track service completion",
-            "messagesAdmin.html": "Communicate with tenants and manage property-related correspondence",
+            "messages.html": "Communicate with tenants and manage property-related correspondence",
             messagesAdmin: "Communicate with tenants and manage property-related correspondence",
             "documents.html": "Manage property documents, leases, and important administrative files",
             documents: "Manage property documents, leases, and important administrative files",
