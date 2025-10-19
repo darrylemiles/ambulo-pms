@@ -23,6 +23,7 @@ import aboutUsRoutes from './routes/aboutUsRoutes.js';
 import chargesRoutes from './routes/chargesRoutes.js';
 import paymentsRoutes from './routes/paymentsRoutes.js';
 import contactUsRoutes from './routes/contactUsRoutes.js';
+import messagesRoutes from './routes/messagesRoutes.js';
 
 
 import tables from './tables/tables.js';
