@@ -18,4 +18,66 @@ router.get(
     assistantController.getMessagesSummary
 );
 
+// Admin-focused endpoints
+router.get(
+    "/admin/tenants",
+    protect,
+    assistantController.adminSearchTenants
+);
+router.get(
+    "/admin/tickets",
+    protect,
+    assistantController.adminListTickets
+);
+router.get(
+    "/admin/charges",
+    protect,
+    assistantController.adminSearchCharges
+);
+router.get(
+    "/admin/payments",
+    protect,
+    assistantController.adminSearchPayments
+);
+router.get(
+    "/admin/tenants/:user_id/financials",
+    protect,
+    assistantController.adminGetTenantFinancials
+);
+router.get(
+    "/admin/leases/:lease_id/charges",
+    protect,
+    assistantController.adminGetLeaseCharges
+);
+router.post(
+    "/admin/charges",
+    protect,
+    assistantController.adminCreateCharge
+);
+router.post(
+    "/admin/payments",
+    protect,
+    assistantController.adminCreatePayment
+);
+router.put(
+    "/admin/payments/:payment_id",
+    protect,
+    assistantController.adminUpdatePayment
+);
+router.delete(
+    "/admin/payments/:payment_id",
+    protect,
+    assistantController.adminDeletePayment
+);
+router.put(
+    "/admin/charges/:charge_id",
+    protect,
+    assistantController.adminUpdateCharge
+);
+router.post(
+    "/admin/charges/:charge_id/waive",
+    protect,
+    assistantController.adminWaiveCharge
+);
+
 export default router;
