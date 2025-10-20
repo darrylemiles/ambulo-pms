@@ -16,6 +16,7 @@ let currentUser = null;
 let typingTimeouts = {};
 const API_BASE = "/api/v1";
 let pendingAttachments = [];
+let pendingTmpMap = new Map();
 
 document.addEventListener("DOMContentLoaded", async function () {
     jwtToken = getJwtToken();
@@ -60,7 +61,8 @@ function switchTab(tabName, tabElement) {
 
     if (tabName === "chat" && !currentChatContact) {
         if (chatContacts.length > 0) {
-            selectChatContact(chatContacts[0].id);
+            
+            selectChatContact(chatContacts[0].id, { immediate: true });
         }
     }
 }
@@ -90,12 +92,24 @@ function tryInitSocket() {
                 if (convWith == currentChatContact) {
                     if (!chatMessagesCache[currentChatContact])
                         chatMessagesCache[currentChatContact] = [];
-                    chatMessagesCache[currentChatContact].push({
+                    
+                    const incoming = {
                         id: msg.message_id,
                         text: msg.message,
                         sent: msg.sender_user_id == currentUser.user_id,
                         time: formatTime(msg.created_at),
-                    });
+                        attachments: Array.isArray(msg.attachments) ? msg.attachments : [],
+                    };
+                    if (msg.tmpId) {
+                        const idx = chatMessagesCache[currentChatContact].findIndex(m => m.id === msg.tmpId);
+                        if (idx >= 0) {
+                            chatMessagesCache[currentChatContact][idx] = incoming;
+                        } else {
+                            chatMessagesCache[currentChatContact].push(incoming);
+                        }
+                    } else {
+                        chatMessagesCache[currentChatContact].push(incoming);
+                    }
                     const contact = chatContacts.find((c) => c.id == currentChatContact);
                     renderChatMain(contact);
                     scrollChatToBottom();
@@ -119,12 +133,25 @@ function tryInitSocket() {
             if (currentChatContact && currentChatContact == otherUserId) {
                 if (!chatMessagesCache[currentChatContact])
                     chatMessagesCache[currentChatContact] = [];
-                chatMessagesCache[currentChatContact].push({
+                const incoming = {
                     id: msg.message_id,
                     text: msg.message,
                     sent: msg.sender_user_id == currentUser.user_id,
                     time: formatTime(msg.created_at),
-                });
+                    attachments: Array.isArray(msg.attachments) ? msg.attachments : [],
+                };
+                if (msg.tmpId) {
+                    const idx = chatMessagesCache[currentChatContact].findIndex(m => m.id === msg.tmpId);
+                    if (idx >= 0) {
+                        chatMessagesCache[currentChatContact][idx] = incoming;
+                    } else {
+                        chatMessagesCache[currentChatContact].push(incoming);
+                    }
+                } else {
+                    
+                    const idx = chatMessagesCache[currentChatContact].findIndex(m => String(m.text||"").trim() === String(msg.message||"").trim() && m.sent && String(m.id).startsWith('tmp_'));
+                    if (idx >= 0) chatMessagesCache[currentChatContact][idx] = incoming; else chatMessagesCache[currentChatContact].push(incoming);
+                }
                 const contact = chatContacts.find((c) => c.id == currentChatContact);
                 renderChatMain(contact);
                 scrollChatToBottom();
@@ -201,7 +228,9 @@ function formatTime(raw) {
     try {
         const d = new Date(raw);
         if (isNaN(d)) return raw;
-        return d.toLocaleString();
+        
+        const opts = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return d.toLocaleString(undefined, opts);
     } catch (e) {
         return raw;
     }
@@ -330,6 +359,11 @@ function viewAnnouncement(id) {
                 <i class="fas fa-${getCategoryIcon(announcement.category)}"></i>
                 ${announcement.category}
             </span>
+            <div style="margin-left:auto; display:flex; align-items:center; gap:0.5rem;">
+                <button type="button" onclick="openConversationMedia()" title="View media & files" style="border:none; background:transparent; color: var(--primary-color); cursor:pointer; font-size:1rem;">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+            </div>
         </div>
         <div>
             <span class="announcement-priority ${announcement.priority}">
@@ -502,6 +536,7 @@ async function loadConversationsOnly() {
                 id: c.other_user_id,
                 name: c.other_user_name,
                 avatar: getInitialsFromName(c.other_user_name),
+                avatarUrl: c.other_user_avatar || null,
                 online: false,
                 lastMessage: c.last_message || "",
                 lastTime: c.last_message_time ? formatTime(c.last_message_time) : "",
@@ -517,18 +552,24 @@ function renderChatContacts() {
     let html = "";
     chatContacts.forEach((contact) => {
         const onlineClass = contact.online ? "online" : "";
-        const activeClass = currentChatContact === contact.id ? "active" : "";
+        const activeClass = String(currentChatContact) === String(contact.id) ? "active" : "";
         const unreadBadge =
             contact.unreadCount > 0
                 ? `<span class="unread-count">${contact.unreadCount}</span>`
                 : "";
 
+        const safeId = String(contact.id).replace(/'/g, "\\'");
+        const safeName = escapeHtml(contact.name || "");
+        const safeLast = escapeHtml(contact.lastMessage || "");
+
         html += `
-            <div class="contact-item ${activeClass}" onclick="selectChatContact(${contact.id})">
-                <div class="contact-avatar ${onlineClass}">${contact.avatar}</div>
+            <div class="contact-item ${activeClass}" onclick="selectChatContact('${safeId}')">
+                <div class="contact-avatar ${onlineClass}" style="display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                    ${contact.avatarUrl ? `<img src="${contact.avatarUrl}" alt="${safeName}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"/>` : `${contact.avatar}`}
+                </div>
                 <div class="contact-info">
-                    <div class="contact-name">${contact.name}</div>
-                    <div class="contact-last-message">${contact.lastMessage}</div>
+                    <div class="contact-name">${safeName}</div>
+                    <div class="contact-last-message">${safeLast}</div>
                 </div>
                 <div class="contact-meta">
                     <div class="contact-time">${contact.lastTime}</div>
@@ -541,16 +582,31 @@ function renderChatContacts() {
     document.getElementById("chatContacts").innerHTML = html;
 }
 
-async function selectChatContact(contactId) {
+async function selectChatContact(contactId, options = {}) {
     currentChatContact = contactId;
     const contact = chatContacts.find((c) => c.id === contactId);
 
     renderChatContacts();
 
-    if (!chatMessagesCache[contactId]) {
-        await loadMessagesForContact(contactId);
+    
+    renderChatSkeleton(contact);
+
+    
+    try {
+        if (!chatMessagesCache[contactId]) {
+            await loadMessagesForContact(contactId);
+        }
+    } catch (e) {
+        console.error("Failed to load messages for contact", contactId, e);
+        chatMessagesCache[contactId] = chatMessagesCache[contactId] || [];
     }
+
     renderChatMain(contact);
+    
+    pendingAttachments = [];
+    const previewEl = document.getElementById("attachmentsPreview");
+    if (previewEl) { previewEl.innerHTML = ""; previewEl.style.display = "none"; }
+    updateSendButtonState();
 }
 
 function renderChatMain(contact) {
@@ -558,8 +614,9 @@ function renderChatMain(contact) {
 
     let html = `
         <div class="chat-main-header" style="padding: 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 1rem; background: var(--background-white); flex-shrink: 0;">
-            <div class="contact-avatar ${contact.online ? "online" : ""}">${contact.avatar
-        }</div>
+            <div class="contact-avatar ${contact.online ? "online" : ""}" style="display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                ${contact.avatarUrl ? `<img src="${contact.avatarUrl}" alt="${escapeHtml(contact.name||'User')}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"/>` : `${contact.avatar}`}
+            </div>
             <div>
                 <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0;">${contact.name
         }</h3>
@@ -567,50 +624,32 @@ function renderChatMain(contact) {
         }</p>
             </div>
         </div>
-        <div class="chat-messages" id="chatMessages">
+        <div class="chat-messages" id="chatMessages" style="flex:1; overflow:auto; display:flex; flex-direction:column; gap:0.5rem; padding:1rem; background: var(--background-light)">
             ${renderChatMessages(messages)}
             <div id="typingIndicator" style="display:none; color: var(--text-muted); font-size: 0.8125rem; margin: 0.5rem 1rem;">Typing...</div>
         </div>
-        <div class="chat-input-container">
-            <div class="chat-input-wrapper">
-                <textarea id="chatInput" placeholder="Type your message..." rows="1" oninput="autoResizeTextarea(this)" onkeydown="handleChatKeyDown(event)" onfocus="focusChatInput(this)" onblur="blurChatInput(this)"></textarea>
-                <button class="image-upload-btn" onclick="document.getElementById('imageUpload').click()" title="Attach files">
+        <div class="chat-input-container" style="border-top:1px solid var(--border-color); padding:0.75rem; background: var(--background-white);">
+            <div class="chat-input-wrapper" id="chatInputWrapper" style="position:relative; display:flex; align-items:center; gap:0.5rem; border:1px solid var(--border-color); border-radius:0.5rem; padding:0.5rem; background: var(--background-light)"
+                ondragenter="handleDragEnter(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                <textarea id="chatInput" placeholder="Type your message..." rows="1" oninput="autoResizeTextarea(this)" onkeydown="handleChatKeyDown(event)" onfocus="focusChatInput(this)" onblur="blurChatInput(this)" style="flex:1; resize:none; border:none; outline:none; background:transparent"></textarea>
+                <button class="image-upload-btn" onclick="openAttachmentPicker()" title="Attach files">
                     <i class="fas fa-image"></i>
                 </button>
-                <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                <input type="file" id="imageUpload" multiple style="display: none;" onchange="handleImageUpload(event)">
                 <button class="image-upload-btn" onclick="toggleEmojiPicker()" title="Insert emoji">
                     <i class="fas fa-face-smile"></i>
                 </button>
-                <button class="chat-send-btn" onclick="sendChatMessage()" id="sendBtn" disabled>
+                <button class="chat-send-btn" onclick="sendChatMessage()" id="sendBtn" disabled style="display:inline-flex; align-items:center; justify-content:center; height:2.25rem; width:2.5rem; border:none; border-radius:0.375rem; background: var(--primary-color); color:white; opacity:0.7">
                     <i class="fas fa-paper-plane"></i>
                 </button>
+                <div id="dropHint" style="display:none; position:absolute; inset:0; border:2px dashed var(--primary-color); border-radius:0.5rem; background:rgba(99,102,241,0.06); align-items:center; justify-content:center; color:var(--primary-color); font-size:0.9rem;">
+                  Drop files to attach
+                </div>
             </div>
             <div id="attachmentsPreview" style="display:none; margin-top:0.5rem; gap:0.5rem; flex-wrap:wrap"></div>
-            <div id="emojiPicker" style="display:none; margin-top:0.5rem; background: var(--background-white); border:1px solid var(--border-color); border-radius:0.5rem; padding:0.5rem; max-width:18rem;">
+            <div id="emojiPicker" style="display:none; margin-top:0.5rem; background: var(--background-white); border:1px solid var(--border-color); border-radius:0.5rem; padding:0.5rem; max-width:20rem; max-height:12rem; overflow:auto;">
                 <div style="display:flex; flex-wrap:wrap; gap:0.25rem;">
-                    ${[
-            "😀",
-            "😁",
-            "😂",
-            "🤣",
-            "😊",
-            "😍",
-            "😘",
-            "😎",
-            "🤔",
-            "😴",
-            "👍",
-            "🙏",
-            "🎉",
-            "🔥",
-            "✅",
-            "❌",
-        ]
-            .map(
-                (e) =>
-                    `<button type="button" style="border:none;background:none;font-size:1.25rem;cursor:pointer" onclick="insertEmoji('${e}')">${e}</button>`
-            )
-            .join("")}
+                    ${["😀","😁","😂","🤣","😃","😄","😅","🙂","🙃","😉","😊","😇","😍","😘","😗","😙","😚","😋","😜","�","🤪","🤩","🤗","🤔","🤨","😐","😑","😶","🙄","😏","😴","😪","😮","😲","😳","😱","😭","😡","🤬","👍","👎","👏","🙌","🙏","💪","🤝","👀","🎉","✨","🔥","💯","✅","❌","☕","🍕","🍔","🍟","🍩","🍪","🍰","🍻","🍷","🍎","🍔","🥗","🚀","💡","📎","📷","🖼️","📍"].map(e=>`<button type="button" style="border:none;background:none;font-size:1.25rem;cursor:pointer" onclick="insertEmoji('${e}')">${e}</button>`).join("")}
                 </div>
             </div>
             <div style="margin-top:0.5rem; color: var(--text-light); font-size: 0.75rem;">Press Enter to send • Shift+Enter for a new line</div>
@@ -623,43 +662,299 @@ function renderChatMain(contact) {
         const otherUserId = contact.id;
         socket.emit("join_conversation", { otherUserId });
     }
+    updateSendButtonState();
 }
+
+function renderChatSkeleton(contact) {
+    const skeletonBubble = (alignRight = false) => `
+      <div style="display:flex; justify-content:${alignRight ? "flex-end" : "flex-start"};">
+        <div style="width:60%; height:2.25rem; background:linear-gradient(90deg, #f2f3f7 25%, #e9ebf2 37%, #f2f3f7 63%); background-size:400% 100%; border-radius:0.75rem; animation: shimmer 1.2s infinite;">
+        </div>
+      </div>`;
+
+    const html = `
+        <div class="chat-main-header" style="padding: 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 1rem; background: var(--background-white); flex-shrink: 0;">
+            <div class="contact-avatar ${contact.online ? "online" : ""}">${contact.avatar}</div>
+            <div>
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0;">${contact.name}</h3>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin: 0;">Loading conversation…</p>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages" style="flex:1; overflow:auto; display:flex; flex-direction:column; gap:0.75rem; padding:1rem; background: var(--background-light)">
+            ${skeletonBubble(false)}
+            ${skeletonBubble(true)}
+            ${skeletonBubble(false)}
+        </div>
+        <div class="chat-input-container" style="border-top:1px solid var(--border-color); padding:0.75rem; background: var(--background-white);">
+            <div class="chat-input-wrapper" style="display:flex; align-items:center; gap:0.5rem; border:1px solid var(--border-color); border-radius:0.5rem; padding:0.5rem; background: var(--background-light)">
+                <textarea id="chatInput" placeholder="Type your message..." rows="1" oninput="autoResizeTextarea(this)" onkeydown="handleChatKeyDown(event)" onfocus="focusChatInput(this)" onblur="blurChatInput(this)" style="flex:1; resize:none; border:none; outline:none; background:transparent"></textarea>
+                <button class="image-upload-btn" onclick="document.getElementById('imageUpload').click()" title="Attach files">
+                    <i class="fas fa-image"></i>
+                </button>
+                <input type="file" id="imageUpload" multiple style="display: none;" onchange="handleImageUpload(event)">
+                <button class="image-upload-btn" onclick="toggleEmojiPicker()" title="Insert emoji">
+                    <i class="fas fa-face-smile"></i>
+                </button>
+                <button class="chat-send-btn" onclick="sendChatMessage()" id="sendBtn" disabled style="display:inline-flex; align-items:center; justify-content:center; height:2.25rem; width:2.5rem; border:none; border-radius:0.375rem; background: var(--primary-color); color:white; opacity:0.7">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div id="attachmentsPreview" style="display:none; margin-top:0.5rem; gap:0.5rem; flex-wrap:wrap"></div>
+            <div id="emojiPicker" style="display:none; margin-top:0.5rem; background: var(--background-white); border:1px solid var(--border-color); border-radius:0.5rem; padding:0.5rem; max-width:18rem;"></div>
+            <div style="margin-top:0.5rem; color: var(--text-light); font-size: 0.75rem;">Press Enter to send • Shift+Enter for a new line</div>
+        </div>
+    `;
+    document.getElementById("chatMain").innerHTML = html;
+}
+
+
+(() => {
+    if (document.getElementById("chatShimmerStyle")) return;
+    const style = document.createElement("style");
+    style.id = "chatShimmerStyle";
+    style.textContent = `@keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:0 0} }`;
+    document.head.appendChild(style);
+})();
 
 function renderChatMessages(messages) {
     return messages
         .map((msg) => {
-            const sentClass = msg.sent ? "sent" : "received";
+            const align = msg.sent ? "flex-end" : "flex-start";
+            const bubbleBg = msg.sent ? "var(--primary-color)" : "#ffffff";
+            const textColor = msg.sent ? "#ffffff" : "var(--text-primary)";
+            const border = msg.sent ? "none" : "1px solid var(--border-color)";
+            const safeText = escapeHtml(String(msg.text || ""));
+            const attachmentsHtml = (Array.isArray(msg.attachments) && msg.attachments.length)
+                ? (() => {
+                    const images = [];
+                    const files = [];
+                    msg.attachments.forEach(a => {
+                        const isImg = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(a.filename || a.url);
+                        const fname = escapeHtml(a.filename || "Attachment");
+                        if (isImg) {
+                            images.push(`<button type="button" class="chat-image-thumb" onclick="openImageModal('${encodeURIComponent(a.url)}', '${encodeURIComponent(fname)}', ${msg.id})" style="display:inline-block; padding:0; border:none; background:none; cursor:zoom-in"><img src="${a.url}" alt="${fname}" style="max-width:160px; max-height:120px; border-radius:0.5rem; border:1px solid var(--border-color);"/></button>`);
+                        } else {
+                            files.push({ url: a.url, name: fname });
+                        }
+                    });
+                    const imagesHtml = images.length ? `<div class="image-message" style="margin-top:0.25rem; display:flex; gap:0.5rem; flex-wrap:wrap;">${images.join("")}</div>` : "";
+                    const filesHtml = files.length ? `<div class="file-list" style="margin-top:${images.length?'.25rem':'0'}; display:flex; flex-direction:column; gap:0.25rem;">${files.map(f => `<a href="${f.url}" target="_blank" rel="noopener" style="display:inline-block;color:${msg.sent ? '#E0E7FF' : 'var(--primary-color)'}"><i class='fas fa-paperclip'></i> ${f.name}</a>`).join("")}</div>` : "";
+                    return imagesHtml + filesHtml;
+                })()
+                : "";
             return `
-            <div class="message-bubble ${sentClass}">
-                <div class="message-text">${msg.text}</div>
-                <div class="message-time">${msg.time}</div>
-                ${msg.attachments && msg.attachments.length
-                    ? `<div class="image-message">${msg.attachments
-                        .map(
-                            (a) =>
-                                `<a href="${a.url
-                                }" target="_blank" rel="noopener" style="display:inline-block;margin-top:0.25rem;color:var(--primary-color)"><i class='fas fa-paperclip'></i> ${a.filename || "Attachment"
-                                }</a>`
-                        )
-                        .join("")}</div>`
-                    : ""
-                }
-            </div>
-        `;
+            <div style="display:flex; justify-content:${align};">
+              <div class="message-bubble" style="max-width:70%; background:${bubbleBg}; color:${textColor}; border:${border}; border-radius:0.75rem; padding:0.5rem 0.75rem; box-shadow:0 1px 1px rgba(0,0,0,0.05)">
+                <div class="message-text" style="white-space:pre-wrap; word-wrap:break-word;">${safeText}</div>
+                ${attachmentsHtml}
+                <div class="message-time" style="font-size:0.75rem; opacity:0.8; margin-top:0.25rem; text-align:${msg.sent ? "right" : "left"};">${msg.time}</div>
+              </div>
+            </div>`;
         })
         .join("");
+}
+
+
+let imageModalState = { messageId: null, items: [], index: 0 };
+
+function ensureImageModal() {
+    if (document.getElementById('imageModalOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'imageModalOverlay';
+    overlay.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:1000;`;
+    overlay.innerHTML = `
+      <div id="imageModalContent" style="position:relative; max-width:95vw; max-height:90vh; display:flex; align-items:center; justify-content:center;">
+        <button id="imgPrev" style="position:absolute; left:-3rem; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.15); color:#fff; border:none; width:2.5rem; height:2.5rem; border-radius:50%; cursor:pointer"><i class="fas fa-chevron-left"></i></button>
+        <img id="imageModalImg" src="" alt="" style="max-width:95vw; max-height:90vh; border-radius:0.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.35)"/>
+        <button id="imgNext" style="position:absolute; right:-3rem; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.15); color:#fff; border:none; width:2.5rem; height:2.5rem; border-radius:50%; cursor:pointer"><i class="fas fa-chevron-right"></i></button>
+        <button id="imgClose" style="position:absolute; right:-0.5rem; top:-0.5rem; background:rgba(0,0,0,0.6); color:#fff; border:none; width:2rem; height:2rem; border-radius:50%; cursor:pointer"><i class="fas fa-times"></i></button>
+        <div id="imgCaption" style="position:absolute; left:0; bottom:-2.25rem; color:#fff; font-size:0.9rem; opacity:0.9; max-width:90vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target.id === 'imageModalOverlay') closeImageModal();
+    });
+    overlay.querySelector('#imgClose').addEventListener('click', closeImageModal);
+    overlay.querySelector('#imgPrev').addEventListener('click', () => stepImage(-1));
+    overlay.querySelector('#imgNext').addEventListener('click', () => stepImage(1));
+    document.addEventListener('keydown', imageModalKeydown);
+}
+
+function imageModalKeydown(e) {
+    const ov = document.getElementById('imageModalOverlay');
+    if (!ov || ov.style.display === 'none') return;
+    if (e.key === 'Escape') closeImageModal();
+    if (e.key === 'ArrowLeft') stepImage(-1);
+    if (e.key === 'ArrowRight') stepImage(1);
+}
+
+function openImageModal(encUrl, encName, messageId) {
+    ensureImageModal();
+    
+    const msgs = chatMessagesCache[currentChatContact] || [];
+    const msg = msgs.find(m => m.id === messageId);
+    const images = (msg?.attachments || []).filter(a => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(a.filename || a.url));
+    imageModalState.messageId = messageId;
+    imageModalState.items = images.map(a => ({ url: a.url, name: a.filename || 'Image' }));
+    const url = decodeURIComponent(encUrl);
+    const name = decodeURIComponent(encName);
+    imageModalState.index = Math.max(0, imageModalState.items.findIndex(i => i.url === url));
+
+    const ov = document.getElementById('imageModalOverlay');
+    const img = document.getElementById('imageModalImg');
+    const cap = document.getElementById('imgCaption');
+    img.src = url;
+    img.alt = name;
+    cap.textContent = name;
+    ov.style.display = 'flex';
+    initImagePanZoom();
+}
+
+function stepImage(delta) {
+    if (!imageModalState.items.length) return;
+    imageModalState.index = (imageModalState.index + delta + imageModalState.items.length) % imageModalState.items.length;
+    const item = imageModalState.items[imageModalState.index];
+    const img = document.getElementById('imageModalImg');
+    const cap = document.getElementById('imgCaption');
+    if (img && cap) { img.src = item.url; img.alt = item.name; cap.textContent = item.name; }
+}
+
+function closeImageModal() {
+    const ov = document.getElementById('imageModalOverlay');
+    if (ov) ov.style.display = 'none';
+}
+
+
+let panZoom = { scale: 1, x: 0, y: 0, dragging: false, lastX: 0, lastY: 0 };
+function initImagePanZoom() {
+    const img = document.getElementById('imageModalImg');
+    if (!img) return;
+    panZoom = { scale: 1, x: 0, y: 0, dragging: false, lastX: 0, lastY: 0 };
+    img.style.cursor = 'grab';
+    img.style.transform = 'translate(0px, 0px) scale(1)';
+    img.onwheel = (e) => {
+        e.preventDefault();
+        const delta = -Math.sign(e.deltaY) * 0.1;
+        const newScale = Math.min(4, Math.max(1, panZoom.scale + delta));
+        panZoom.scale = newScale;
+        img.style.transform = `translate(${panZoom.x}px, ${panZoom.y}px) scale(${panZoom.scale})`;
+        img.style.cursor = panZoom.scale > 1 ? 'grab' : 'default';
+    };
+    img.onmousedown = (e) => {
+        if (panZoom.scale <= 1) return;
+        panZoom.dragging = true;
+        panZoom.lastX = e.clientX;
+        panZoom.lastY = e.clientY;
+        img.style.cursor = 'grabbing';
+    };
+    window.onmouseup = () => {
+        if (!panZoom.dragging) return;
+        panZoom.dragging = false;
+        img.style.cursor = 'grab';
+    };
+    window.onmousemove = (e) => {
+        if (!panZoom.dragging) return;
+        const dx = e.clientX - panZoom.lastX;
+        const dy = e.clientY - panZoom.lastY;
+        panZoom.x += dx;
+        panZoom.y += dy;
+        panZoom.lastX = e.clientX;
+        panZoom.lastY = e.clientY;
+        img.style.transform = `translate(${panZoom.x}px, ${panZoom.y}px) scale(${panZoom.scale})`;
+    };
+}
+
+
+function ensureMediaModal() {
+    if (document.getElementById('convMediaOverlay')) return;
+    const ov = document.createElement('div');
+    ov.id = 'convMediaOverlay';
+    ov.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; z-index:1000;';
+    ov.innerHTML = `
+      <div style="position:absolute; inset:5%; background:#fff; border-radius:0.5rem; padding:1rem; display:flex; flex-direction:column;">
+        <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+          <h3 style="margin:0; font-size:1rem;">Conversation media & files</h3>
+          <button onclick="closeConversationMedia()" style="border:none;background:transparent;font-size:1.125rem;cursor:pointer"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="convMediaTabs" style="display:flex; gap:0.75rem; margin:0.75rem 0;">
+          <button id="tabMedia" class="active" onclick="switchConvMediaTab('media')" style="border:1px solid var(--border-color); background:#f8f9fb; padding:0.375rem 0.75rem; border-radius:0.375rem; cursor:pointer">Images</button>
+          <button id="tabFiles" onclick="switchConvMediaTab('files')" style="border:1px solid var(--border-color); background:#f8f9fb; padding:0.375rem 0.75rem; border-radius:0.375rem; cursor:pointer">Files</button>
+        </div>
+        <div id="convMediaBody" style="flex:1; overflow:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:0.75rem;"></div>
+      </div>`;
+    document.body.appendChild(ov);
+}
+
+function openConversationMedia() {
+    if (!currentChatContact) return;
+    ensureMediaModal();
+    populateConversationMedia('media');
+    const ov = document.getElementById('convMediaOverlay');
+    if (ov) ov.style.display = 'block';
+}
+
+function closeConversationMedia() {
+    const ov = document.getElementById('convMediaOverlay');
+    if (ov) ov.style.display = 'none';
+}
+
+function switchConvMediaTab(tab) {
+    const tabMedia = document.getElementById('tabMedia');
+    const tabFiles = document.getElementById('tabFiles');
+    if (tab === 'media') {
+        tabMedia.classList.add('active');
+        tabFiles.classList.remove('active');
+    } else {
+        tabFiles.classList.add('active');
+        tabMedia.classList.remove('active');
+    }
+    populateConversationMedia(tab);
+}
+
+function populateConversationMedia(tab) {
+    const body = document.getElementById('convMediaBody');
+    if (!body) return;
+    const msgs = chatMessagesCache[currentChatContact] || [];
+    const atts = msgs.flatMap(m => (Array.isArray(m.attachments) ? m.attachments.map(a => ({...a, messageId: m.id})) : []));
+    const isImg = (a) => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(a.filename || a.url);
+    body.innerHTML = '';
+    if (tab === 'media') {
+        const imgs = atts.filter(isImg);
+        body.style.display = 'grid';
+        imgs.forEach(a => {
+            const fname = escapeHtml(a.filename || 'Image');
+            const div = document.createElement('div');
+            div.innerHTML = `<button type="button" onclick="openImageModal('${encodeURIComponent(a.url)}','${encodeURIComponent(fname)}', ${a.messageId})" style="border:none;background:none;cursor:zoom-in;padding:0"><img src="${a.url}" alt="${fname}" style="width:100%;height:120px;object-fit:cover;border-radius:0.375rem;border:1px solid var(--border-color)"/></button>`;
+            body.appendChild(div);
+        });
+    } else {
+        const files = atts.filter(a => !isImg(a));
+        body.style.display = 'block';
+        body.innerHTML = files.map(f => `<div style="display:flex; align-items:center; gap:0.5rem; padding:0.375rem 0; border-bottom:1px solid var(--border-color)"><i class="fas fa-paperclip" style="color: var(--text-muted)"></i><a href="${f.url}" target="_blank" rel="noopener" style="color: var(--primary-color)">${escapeHtml(f.filename || 'Attachment')}</a></div>`).join('');
+    }
+}
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 function sendChatMessage() {
     const input = document.getElementById("chatInput");
     const message = input.value.trim();
-
-    if (!message || !currentChatContact) return;
+    if ((!message && pendingAttachments.length === 0) || !currentChatContact) return;
 
     if (!chatMessagesCache[currentChatContact])
         chatMessagesCache[currentChatContact] = [];
-    const tmpId = `tmp_${Date.now()}`;
-    const optimistic = { id: tmpId, text: message, sent: true, time: "Just now" };
+    const tmpId = `tmp_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+    const attachmentsMeta = pendingAttachments.map((a) => ({ url: a.url, filename: a.filename }));
+    const optimistic = { id: tmpId, text: message, sent: true, time: "Just now", attachments: attachmentsMeta };
     chatMessagesCache[currentChatContact].push(optimistic);
     input.value = "";
     autoResizeTextarea(input);
@@ -667,11 +962,6 @@ function sendChatMessage() {
     const contact = chatContacts.find((c) => c.id === currentChatContact);
     renderChatMain(contact);
     scrollChatToBottom();
-
-    const attachmentsMeta = pendingAttachments.map((a) => ({
-        url: a.url,
-        filename: a.filename,
-    }));
 
     fetch(`${API_BASE}/messages`, {
         method: "POST",
@@ -683,8 +973,9 @@ function sendChatMessage() {
         body: JSON.stringify({
             sender_user_id: currentUser.user_id,
             recipient_user_id: currentChatContact,
-            message,
+            message: message || "",
             attachments: attachmentsMeta,
+            tmpId,
         }),
     })
         .then((r) => r.json())
@@ -699,7 +990,7 @@ function sendChatMessage() {
                         text: res.data.message || message,
                         sent: true,
                         time: formatTime(res.data.created_at || res.data.createdAt),
-                        attachments: res.data.attachments || attachmentsMeta,
+                        attachments: Array.isArray(res.data.attachments) ? res.data.attachments : attachmentsMeta,
                     };
 
                 pendingAttachments = [];
@@ -710,6 +1001,7 @@ function sendChatMessage() {
                 }
                 renderChatMain(contact);
                 scrollChatToBottom();
+                updateSendButtonState();
             }
         })
         .catch((err) => {
@@ -719,11 +1011,10 @@ function sendChatMessage() {
 }
 
 function scrollChatToBottom() {
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         const messagesContainer = document.getElementById("chatMessages");
-        if (messagesContainer)
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }, 50);
+        if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
 }
 
 async function loadMessagesForContact(contactId) {
@@ -745,6 +1036,7 @@ async function loadMessagesForContact(contactId) {
             text: m.message,
             sent: String(m.sender_user_id) === String(currentUser.user_id),
             time: formatTime(m.created_at),
+            attachments: Array.isArray(m.attachments) ? m.attachments : [],
         }));
         chatMessagesCache[contactId] = msgs;
     } catch (e) {
@@ -782,6 +1074,8 @@ function handleImageUpload(event) {
 
     const form = new FormData();
     files.forEach((f) => form.append("attachments", f));
+    
+    showUploadingState();
     fetch(`${API_BASE}/messages/upload-attachments`, {
         method: "POST",
         credentials: "include",
@@ -792,7 +1086,7 @@ function handleImageUpload(event) {
         .then((res) => {
             if (res && res.attachments) {
                 pendingAttachments = pendingAttachments.concat(
-                    res.attachments.map((a) => ({ url: a.url, filename: a.filename }))
+                    res.attachments.map((a) => ({ url: a.url, filename: a.filename, mimetype: a.mimetype, size: a.size }))
                 );
                 renderAttachmentsPreview();
             } else {
@@ -802,7 +1096,8 @@ function handleImageUpload(event) {
         .catch((err) => {
             console.error(err);
             showNotification("Failed to attach files", "error");
-        });
+        })
+        .finally(() => hideUploadingState());
 }
 
 function renderAttachmentsPreview() {
@@ -815,17 +1110,27 @@ function renderAttachmentsPreview() {
     }
     el.style.display = "flex";
     el.innerHTML = pendingAttachments
-        .map(
-            (a, idx) => `
-        <div style="display:flex; align-items:center; gap:0.5rem; background: var(--background-light); border:1px solid var(--border-color); border-radius:0.5rem; padding:0.25rem 0.5rem;">
-            <i class="fas fa-paperclip" style="color: var(--text-muted)"></i>
-            <a href="${a.url
-                }" target="_blank" rel="noopener" style="color: var(--text-secondary); font-size: 0.8125rem; max-width: 12rem; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${a.filename || "Attachment"
-                }</a>
-            <button type="button" style="border:none;background:none;color: var(--error-color); cursor:pointer" onclick="removeAttachment(${idx})"><i class="fas fa-times"></i></button>
-        </div>
-    `
-        )
+        .map((a, idx) => {
+            const isImg = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(a.filename || a.url);
+            if (isImg) {
+                return `
+                <div style="display:flex; align-items:center; gap:0.5rem; background: var(--background-white); border:1px solid var(--border-color); border-radius:0.5rem; padding:0.25rem;">
+                    <img src="${a.url}" alt="${escapeHtml(a.filename||'image')}" style="width:48px;height:48px;object-fit:cover;border-radius:0.375rem;border:1px solid var(--border-color)"/>
+                    <div style="display:flex; flex-direction:column; max-width:12rem;">
+                        <span style="font-size:0.8rem; color: var(--text-secondary); overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(a.filename||'Image')}</span>
+                        <span style="font-size:0.7rem; color: var(--text-muted);">${formatFileSize(a.size)}</span>
+                    </div>
+                    <button type="button" style="border:none;background:none;color: var(--error-color); cursor:pointer" onclick="removeAttachment(${idx})"><i class="fas fa-times"></i></button>
+                </div>`;
+            }
+            return `
+            <div style="display:flex; align-items:center; gap:0.5rem; background: var(--background-light); border:1px solid var(--border-color); border-radius:0.5rem; padding:0.25rem 0.5rem;">
+                <i class="fas fa-paperclip" style="color: var(--text-muted)"></i>
+                <a href="${a.url}" target="_blank" rel="noopener" style="color: var(--text-secondary); font-size: 0.8125rem; max-width: 12rem; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${escapeHtml(a.filename || 'Attachment')}</a>
+                <span style="font-size:0.7rem; color: var(--text-muted);">${formatFileSize(a.size)}</span>
+                <button type="button" style="border:none;background:none;color: var(--error-color); cursor:pointer" onclick="removeAttachment(${idx})"><i class="fas fa-times"></i></button>
+            </div>`;
+        })
         .join("");
 }
 
@@ -836,11 +1141,102 @@ function removeAttachment(index) {
 
 function toggleEmojiPicker() {
     const picker = document.getElementById("emojiPicker");
-    if (picker)
-        picker.style.display =
-            picker.style.display === "none" || !picker.style.display
-                ? "block"
-                : "none";
+    if (!picker) return;
+    
+    try { document.getElementById('imageUpload').value = ""; } catch {}
+    picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
+}
+
+function openAttachmentPicker() {
+    
+    const picker = document.getElementById("emojiPicker");
+    if (picker) picker.style.display = "none";
+    const input = document.getElementById('imageUpload');
+    if (input) input.click();
+}
+
+function handleDragEnter(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const w = document.getElementById('chatInputWrapper');
+    if (w) w.style.borderColor = 'var(--primary-color)';
+    const hint = document.getElementById('dropHint');
+    if (hint) { hint.style.display = 'flex'; }
+}
+function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+}
+function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const w = document.getElementById('chatInputWrapper');
+    if (w) w.style.borderColor = 'var(--border-color)';
+    const hint = document.getElementById('dropHint');
+    if (hint) { hint.style.display = 'none'; }
+}
+function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const w = document.getElementById('chatInputWrapper');
+    if (w) w.style.borderColor = 'var(--border-color)';
+    const hint = document.getElementById('dropHint');
+    if (hint) { hint.style.display = 'none'; }
+        const dt = e.dataTransfer;
+        const files = Array.from(dt?.files || []);
+        if (!files.length) return;
+        const form = new FormData();
+        files.forEach((f) => form.append('attachments', f));
+    
+    showUploadingState();
+    fetch(`${API_BASE}/messages/upload-attachments`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { Authorization: `Bearer ${jwtToken}` },
+                body: form,
+        })
+            .then(r => r.json())
+            .then(res => {
+                 if (res && res.attachments) {
+                     pendingAttachments = pendingAttachments.concat(
+                         res.attachments.map(a => ({ url: a.url, filename: a.filename, mimetype: a.mimetype, size: a.size }))
+                     );
+                     renderAttachmentsPreview();
+                 } else {
+                     showNotification('Failed to attach files', 'error');
+                 }
+            })
+            .catch(err => {
+                 console.error(err);
+                 showNotification('Failed to attach files', 'error');
+            })
+            .finally(() => hideUploadingState());
+}
+
+function showUploadingState() {
+    const el = document.getElementById('attachmentsPreview');
+    if (!el) return;
+    el.style.display = 'flex';
+    const spinner = document.createElement('div');
+    spinner.id = 'uploadSpinner';
+    spinner.style.cssText = 'display:flex; align-items:center; gap:0.5rem; color: var(--text-muted);';
+    spinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+    el.appendChild(spinner);
+}
+
+function hideUploadingState() {
+    const spinner = document.getElementById('uploadSpinner');
+    if (spinner && spinner.parentElement) spinner.parentElement.removeChild(spinner);
+}
+
+function formatFileSize(bytes) {
+        if (!bytes) return '';
+        const thresh = 1024;
+        if (Math.abs(bytes) < thresh) return bytes + ' B';
+        const units = ['KB','MB','GB','TB'];
+        let u = -1;
+        do { bytes /= thresh; ++u; } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+        return bytes.toFixed(1)+' '+units[u];
 }
 
 function insertEmoji(emoji) {
@@ -853,8 +1249,7 @@ function insertEmoji(emoji) {
     ta.focus();
     ta.selectionStart = ta.selectionEnd = start + emoji.length;
     autoResizeTextarea(ta);
-    const btn = document.getElementById("sendBtn");
-    if (btn) btn.disabled = ta.value.trim().length === 0;
+    updateSendButtonState();
 }
 
 function showTypingIndicator(isTyping) {
@@ -934,10 +1329,19 @@ function setupEventListeners() {
             }, 1200);
         }
         if (e.target && e.target.id === "chatInput") {
-            const btn = document.getElementById("sendBtn");
-            if (btn) btn.disabled = e.target.value.trim().length === 0;
+            updateSendButtonState();
         }
     });
+}
+
+function updateSendButtonState() {
+    const btn = document.getElementById("sendBtn");
+    const ta = document.getElementById("chatInput");
+    if (!btn || !ta) return;
+    const hasText = (ta.value || "").trim().length > 0;
+    const hasFiles = pendingAttachments.length > 0;
+    btn.disabled = !(hasText || hasFiles);
+    btn.style.opacity = btn.disabled ? 0.7 : 1;
 }
 
 function showNotification(message, type = "success") {
@@ -1020,9 +1424,9 @@ async function searchRecipients(query) {
             .map(
                 (u) => `
             <div class="contact-item" style="cursor:pointer" onclick="selectRecipient('${u.user_id
-                    }', '${(u.first_name || "").replace(/'/g, "'")}', '${(
+                    }', '${(u.first_name || "").replace(/'/g, "\\'")}', '${(
                         u.last_name || ""
-                    ).replace(/'/g, "'")}')">
+                    ).replace(/'/g, "\\'")}')">
                 <div class="contact-avatar">${getInitials(
                         u.first_name,
                         u.last_name
@@ -1110,3 +1514,11 @@ window.sendChatMessage = sendChatMessage;
 window.removeAttachment = removeAttachment;
 window.toggleEmojiPicker = toggleEmojiPicker;
 window.insertEmoji = insertEmoji;
+window.openAttachmentPicker = openAttachmentPicker;
+window.handleDragEnter = handleDragEnter;
+window.handleDragOver = handleDragOver;
+window.handleDragLeave = handleDragLeave;
+window.handleDrop = handleDrop;
+window.focusChatInput = focusChatInput;
+window.blurChatInput = blurChatInput;
+window.openImageModal = openImageModal;
