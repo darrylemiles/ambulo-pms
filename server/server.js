@@ -69,23 +69,6 @@ app.get(/^\/(?:([^\/]+))\.html$/, (req, res, next) => {
     return next();
 });
 
-app.use((req, res, next) => {
-    if (req.method !== 'GET') return next();
-    const original = req.originalUrl;
-    const [pathname, search] = original.split('?');
-    if (/^\/(api|assets|css|javascript|fonts|components|favicon|socket\.io)\//.test(pathname)) {
-        return next();
-    }
-    if (/[A-Z]/.test(pathname)) {
-        const kebab = pathname
-            .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-            .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
-            .toLowerCase();
-        return res.redirect(301, search ? `${kebab}?${search}` : kebab);
-    }
-    return next();
-});
-
 app.use(express.static(path.join(__dirname, '../client'), { index: false }));
 
 /*  ========== API - Routes ========== */
@@ -111,61 +94,35 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../client', 'login.html'));
 });
 
-const aliasRoutes = {
+const prettyRoutes = {
     '/properties': 'propertySpaces.html',
+    '/contact-us': 'contactus.html',
+    '/about-us': 'aboutus.html',
+    '/faqs': 'FAQs.html',
+    '/maintenance': 'maintenance.html',
+    '/documents': 'documents.html',
+    '/messages': 'messages.html',
+    '/tenants': 'tenants.html',
+    '/tenant-dashboard': 'tenantDashboard.html',
+    '/profile': 'account-profile.html',
     '/payments': 'paymentTenant.html',
-    '/leases': 'leaseTenant.html'
+    '/leases': 'leaseTenant.html',
+    '/admin/dashboard': 'adminDashboard.html'
 };
 
-for (const [routePath, htmlFile] of Object.entries(aliasRoutes)) {
+for (const [routePath, htmlFile] of Object.entries(prettyRoutes)) {
     app.get(routePath, (req, res) => {
         res.sendFile(path.join(__dirname, '../client', htmlFile));
     });
 }
 
 app.get(/^\/(?!api\/|assets\/|css\/|javascript\/|fonts\/|components\/|favicon\/).+$/, (req, res, next) => {
-    const raw = req.path.replace(/\/+$/, '');
-    if (!raw || raw === '/') return next();
-
-    if (aliasRoutes[raw]) {
-        return res.sendFile(path.join(__dirname, '../client', aliasRoutes[raw]));
-    }
-
-    const parts = raw.replace(/^\//, '').split('/');
-    const hyphenName = parts.join('-');
-    const collapsedLower = hyphenName.replace(/[-_]/g, '').toLowerCase();
-
-    const toCamelFromHyphen = (s) => s
-        .toLowerCase()
-        .split('-')
-        .map((p, i) => i === 0 ? p : (p.charAt(0).toUpperCase() + p.slice(1)))
-        .join('');
-
-    const camelAcross = parts
-        .map(seg => toCamelFromHyphen(seg))
-        .map((seg, i) => i === 0 ? seg : (seg.charAt(0).toUpperCase() + seg.slice(1)))
-        .join('');
-
-    const pascalAcross = camelAcross.charAt(0).toUpperCase() + camelAcross.slice(1);
-
-    const candidates = [
-        `${hyphenName}.html`,
-        `${collapsedLower}.html`,
-        `${camelAcross}.html`,
-        `${pascalAcross}.html`
-    ];
-
-    if (collapsedLower === 'faqs') {
-        candidates.unshift('FAQs.html');
-    } else if (collapsedLower === 'faq') {
-        candidates.unshift('FAQ.html');
-    }
-
-    for (const file of candidates) {
-        const absolute = path.join(__dirname, '../client', file);
-        if (fs.existsSync(absolute)) {
-            return res.sendFile(absolute);
-        }
+    const slug = req.path.replace(/\/+$/, '');
+    if (!slug || slug === '/') return next();
+    const candidate = `${slug.slice(1)}.html`;
+    const absolute = path.join(__dirname, '../client', candidate);
+    if (fs.existsSync(absolute)) {
+        return res.sendFile(absolute);
     }
     return next();
 });
