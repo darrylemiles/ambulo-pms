@@ -25,9 +25,9 @@ router.post(
   uploadAttachments
 );
 
-router.get('/', getMessagesByQuery);
-router.get('/conversations/:user_id', getConversations);
-router.get('/:message_id', getMessageById);
+router.get('/', protect, getMessagesByQuery);
+router.get('/conversations/:user_id', protect, getConversations);
+router.get('/:message_id', protect, getMessageById);
 router.patch('/:message_id', protect, updateMessageById);
 router.delete('/:message_id', protect, deleteMessageById);
 

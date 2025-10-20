@@ -5,20 +5,28 @@ const pool = await conn();
 
 const createMessage = async (messageData = {}, io = null) => {
   try {
-    const { sender_user_id, recipient_user_id, message, attachments } = messageData;
+    const { sender_user_id, recipient_user_id, message, attachments, tmpId } =
+      messageData;
 
     if (!sender_user_id || !recipient_user_id || !message) {
       throw new Error("Sender, recipient, and message are required");
     }
 
-    const conversation_id = [sender_user_id, recipient_user_id].sort().join('_');
+    const conversation_id = [sender_user_id, recipient_user_id]
+      .sort()
+      .join("_");
 
     const query = `
       INSERT INTO messages (conversation_id, sender_user_id, recipient_user_id, message, created_at)
       VALUES (?, ?, ?, ?, NOW())
     `;
 
-    const [result] = await pool.query(query, [conversation_id, sender_user_id, recipient_user_id, message]);
+    const [result] = await pool.query(query, [
+      conversation_id,
+      sender_user_id,
+      recipient_user_id,
+      message,
+    ]);
 
     const [newMessage] = await pool.query(
       `SELECT m.*, 
@@ -36,49 +44,54 @@ const createMessage = async (messageData = {}, io = null) => {
     );
 
     const messageData_result = newMessage[0];
-    
-    
+    if (tmpId) messageData_result.tmpId = tmpId;
+
     if (attachments && Array.isArray(attachments) && attachments.length > 0) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
       try {
         const values = attachments
-          .filter(a => a && a.url)
-          .map(a => [messageData_result.message_id, a.url, a.filename || null]);
+          .filter((a) => a && a.url)
+          .map((a) => [
+            messageData_result.message_id,
+            a.url,
+            a.filename || null,
+          ]);
         if (values.length) {
           await pool.query(
-            'INSERT INTO message_attachments (message_id, url, filename) VALUES ?',[values]
+            "INSERT INTO message_attachments (message_id, url, filename) VALUES ?",
+            [values]
           );
         }
-        const [rows] = await pool.query('SELECT id, url, filename FROM message_attachments WHERE message_id = ?', [messageData_result.message_id]);
+        const [rows] = await pool.query(
+          "SELECT attachment_id, url, filename FROM message_attachments WHERE message_id = ?",
+          [messageData_result.message_id]
+        );
         messageData_result.attachments = rows;
       } catch (e) {
-        console.error('Error saving attachments:', e);
+        console.error("Error saving attachments:", e);
         messageData_result.attachments = attachments;
       }
     }
 
     if (io) {
-      emitToUser(io, recipient_user_id, 'new_message', messageData_result);
-      emitToConversation(io, sender_user_id, recipient_user_id, 'message_sent', messageData_result);
-      emitToUser(io, sender_user_id, 'conversation_updated', {
+      emitToUser(io, recipient_user_id, "new_message", messageData_result);
+      emitToConversation(
+        io,
+        sender_user_id,
+        recipient_user_id,
+        "message_sent",
+        messageData_result
+      );
+      emitToUser(io, sender_user_id, "conversation_updated", {
         otherUserId: recipient_user_id,
         lastMessage: message,
         lastMessageTime: messageData_result.created_at,
-        conversationId: conversation_id
+        conversationId: conversation_id,
       });
-      emitToUser(io, recipient_user_id, 'conversation_updated', {
+      emitToUser(io, recipient_user_id, "conversation_updated", {
         otherUserId: sender_user_id,
         lastMessage: message,
         lastMessageTime: messageData_result.created_at,
-        conversationId: conversation_id
+        conversationId: conversation_id,
       });
     }
 
@@ -175,23 +188,31 @@ const getMessagesByQuery = async (queryObj = {}) => {
     }
 
     const [messages] = await pool.query(query, params);
-    
+
     try {
       if (messages.length > 0) {
-        const ids = messages.map(m => m.message_id);
+        const ids = messages.map((m) => m.message_id);
         const [attRows] = await pool.query(
-          `SELECT id, message_id, url, filename FROM message_attachments WHERE message_id IN (${ids.map(()=>'?').join(',')})`, ids
+          `SELECT attachment_id, message_id, url, filename FROM message_attachments WHERE message_id IN (${ids
+            .map(() => "?")
+            .join(",")})`,
+          ids
         );
         const map = new Map();
-        attRows.forEach(a => {
+        attRows.forEach((a) => {
           if (!map.has(a.message_id)) map.set(a.message_id, []);
-          map.get(a.message_id).push({ id: a.id, url: a.url, filename: a.filename });
+          map
+            .get(a.message_id)
+            .push({ id: a.id, url: a.url, filename: a.filename });
         });
-        messages.forEach(m => { m.attachments = map.get(m.message_id) || []; });
+        messages.forEach((m) => {
+          m.attachments = map.get(m.message_id) || [];
+        });
       }
     } catch (e) {
-      
-      messages.forEach(m => { m.attachments = []; });
+      messages.forEach((m) => {
+        m.attachments = [];
+      });
     }
     const [countResult] = await pool.query(countQuery, countParams);
     const total = countResult[0].total;
@@ -232,21 +253,24 @@ const getMessageById = async (message_id) => {
        WHERE m.message_id = ?
     `;
 
-  const [messages] = await pool.query(query, [message_id]);
+    const [messages] = await pool.query(query, [message_id]);
 
     if (messages.length === 0) {
       throw new Error("Message not found");
     }
 
     const msg = messages[0];
-    
+
     try {
-      const [attRows] = await pool.query('SELECT id, url, filename FROM message_attachments WHERE message_id = ?', [message_id]);
+      const [attRows] = await pool.query(
+        "SELECT attachment_id, url, filename FROM message_attachments WHERE message_id = ?",
+        [message_id]
+      );
       msg.attachments = attRows;
     } catch {
       msg.attachments = [];
     }
-  return msg;
+    return msg;
   } catch (error) {
     console.error("Error getting message:", error);
     throw new Error(error.message || "Failed to get message");
@@ -282,9 +306,25 @@ const updateMessageById = async (message_id, updateData = {}, io = null) => {
     const updatedMessage = await getMessageById(message_id);
 
     if (io) {
-      emitToUser(io, originalMessage.sender_user_id, 'message_updated', updatedMessage);
-      emitToUser(io, originalMessage.recipient_user_id, 'message_updated', updatedMessage);
-      emitToConversation(io, originalMessage.sender_user_id, originalMessage.recipient_user_id, 'message_edited', updatedMessage);
+      emitToUser(
+        io,
+        originalMessage.sender_user_id,
+        "message_updated",
+        updatedMessage
+      );
+      emitToUser(
+        io,
+        originalMessage.recipient_user_id,
+        "message_updated",
+        updatedMessage
+      );
+      emitToConversation(
+        io,
+        originalMessage.sender_user_id,
+        originalMessage.recipient_user_id,
+        "message_edited",
+        updatedMessage
+      );
     }
 
     return {
@@ -324,9 +364,21 @@ const deleteMessageById = async (message_id, io = null) => {
     };
 
     if (io) {
-      emitToUser(io, messageToDelete.sender_user_id, 'message_deleted', { message_id, conversation_id: messageToDelete.conversation_id });
-      emitToUser(io, messageToDelete.recipient_user_id, 'message_deleted', { message_id, conversation_id: messageToDelete.conversation_id });
-      emitToConversation(io, messageToDelete.sender_user_id, messageToDelete.recipient_user_id, 'message_removed', { message_id, conversation_id: messageToDelete.conversation_id });
+      emitToUser(io, messageToDelete.sender_user_id, "message_deleted", {
+        message_id,
+        conversation_id: messageToDelete.conversation_id,
+      });
+      emitToUser(io, messageToDelete.recipient_user_id, "message_deleted", {
+        message_id,
+        conversation_id: messageToDelete.conversation_id,
+      });
+      emitToConversation(
+        io,
+        messageToDelete.sender_user_id,
+        messageToDelete.recipient_user_id,
+        "message_removed",
+        { message_id, conversation_id: messageToDelete.conversation_id }
+      );
     }
 
     return {
@@ -373,7 +425,13 @@ const getConversations = async (user_id) => {
     `;
 
     const [conversations] = await pool.query(query, [
-      user_id, user_id, user_id, user_id, user_id, user_id, user_id
+      user_id,
+      user_id,
+      user_id,
+      user_id,
+      user_id,
+      user_id,
+      user_id,
     ]);
 
     return conversations;
@@ -390,4 +448,4 @@ export default {
   updateMessageById,
   deleteMessageById,
   getConversations,
-}
+};
