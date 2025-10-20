@@ -69,6 +69,23 @@ app.get(/^\/(?:([^\/]+))\.html$/, (req, res, next) => {
     return next();
 });
 
+app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
+    const original = req.originalUrl;
+    const [pathname, search] = original.split('?');
+    if (/^\/(api|assets|css|javascript|fonts|components|favicon|socket\.io)\//.test(pathname)) {
+        return next();
+    }
+    if (/[A-Z]/.test(pathname)) {
+        const kebab = pathname
+            .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+            .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+            .toLowerCase();
+        return res.redirect(301, search ? `${kebab}?${search}` : kebab);
+    }
+    return next();
+});
+
 app.use(express.static(path.join(__dirname, '../client'), { index: false }));
 
 /*  ========== API - Routes ========== */
