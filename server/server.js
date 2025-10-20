@@ -3,6 +3,8 @@ import { colours } from './constants/constants.js';
 /*  ========== Importing Middleware ========== */
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import { assistantAnalytics } from './middlewares/assistantAnalytics.js';
 
 /*  ========== Importing External Libraries ========== */
 import path from 'path';
@@ -27,8 +29,6 @@ import paymentsRoutes from './routes/paymentsRoutes.js';
 import contactUsRoutes from './routes/contactUsRoutes.js';
 import messagesRoutes from './routes/messagesRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
-import rateLimit from 'express-rate-limit';
-import { assistantAnalytics } from './middlewares/assistantAnalytics.js';
 
 
 import tables from './tables/tables.js';
@@ -80,6 +80,7 @@ app.use(`/api/${API_VERSION}/charges`, chargesRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentsRoutes);
 app.use(`/api/${API_VERSION}/contact-us`, contactUsRoutes);
 app.use(`/api/${API_VERSION}/messages`, messagesRoutes);
+
 // Rate limiting specifically for assistant endpoints
 const assistantLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
