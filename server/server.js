@@ -57,14 +57,18 @@ app.use(express.urlencoded({ limit: '50mb', extended: true, parameterLimit: 5000
 app.use(cookieParser());
 
 app.get('/index.html', (req, res) => {
-    return res.redirect(301, '/');
+    const qsIndex = req.url.indexOf('?');
+    const qs = qsIndex !== -1 ? req.url.slice(qsIndex) : '';
+    return res.redirect(301, `/${qs}`);
 });
 
 app.get(/^\/(?:([^\/]+))\.html$/, (req, res, next) => {
     const base = req.params[0];
     const candidate = path.join(__dirname, '../client', `${base}.html`);
     if (fs.existsSync(candidate)) {
-        return res.redirect(301, `/${base}`);
+        const qsIndex = req.url.indexOf('?');
+        const qs = qsIndex !== -1 ? req.url.slice(qsIndex) : '';
+        return res.redirect(301, `/${base}${qs}`);
     }
     return next();
 });
