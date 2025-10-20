@@ -67,7 +67,7 @@ const createUploadMiddleware = ({ fields = [], fieldFolders = {} }) => {
     }
   };
 
-  const upload = multer({ storage, fileFilter });
+  const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
   return (req, res, next) => {
     const handler = upload.fields(fields);
