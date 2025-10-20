@@ -50,12 +50,17 @@
                             <!-- Contacts will be populated here -->
                         </div>
                     </div>
+                    <!-- Mobile overlay for chat sidebar -->
+                    <div class="chat-sidebar-overlay" id="chatSidebarOverlay"></div>
 
                     <div class="chat-main" id="chatMain">
                         <div class="empty-chat">
                             <i class="fas fa-comments"></i>
                             <h3>Select a conversation</h3>
                             <p>Choose from your existing conversations or start a new one</p>
+                            <button type="button" class="create-announcement-btn" style="margin-top:0.75rem; display:none;" onclick="openChatSidebarMobile()" id="openConversationsMobileBtn">
+                                <i class="fas fa-bars" id="open-convo-burger"></i> Open conversations
+                            </button>
                         </div>
                     </div>
                 </div>
