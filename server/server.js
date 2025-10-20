@@ -12,6 +12,7 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { initializeSocket } from './config/socket.js';
+import fs from 'fs';
 
 /*  ========== Importing Routes ========== */
 import usersRoutes from './routes/usersRoutes.js';
@@ -80,6 +81,40 @@ app.get('/', (req, res) => {
 
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../client', 'login.html'));
+});
+
+// Pretty URL mappings -> specific HTML files
+const prettyRoutes = {
+    '/properties': 'propertySpaces.html',
+    '/contact-us': 'contactus.html',
+    '/about-us': 'aboutus.html',
+    '/faqs': 'FAQs.html',
+    '/maintenance': 'maintenance.html',
+    '/documents': 'documents.html',
+    '/messages': 'messages.html',
+    '/tenants': 'tenants.html',
+    '/tenant-dashboard': 'tenantDashboard.html',
+    '/profile': 'account-profile.html',
+    '/payments': 'paymentTenant.html',
+    '/leases': 'leaseTenant.html',
+    '/admin/dashboard': 'adminDashboard.html'
+};
+
+for (const [routePath, htmlFile] of Object.entries(prettyRoutes)) {
+    app.get(routePath, (req, res) => {
+        res.sendFile(path.join(__dirname, '../client', htmlFile));
+    });
+}
+
+app.get(/^\/(?!api\/|assets\/|css\/|javascript\/|fonts\/|components\/|favicon\/).+$/, (req, res, next) => {
+    const slug = req.path.replace(/\/+$/, '');
+    if (!slug || slug === '/') return next();
+    const candidate = `${slug.slice(1)}.html`;
+    const absolute = path.join(__dirname, '../client', candidate);
+    if (fs.existsSync(absolute)) {
+        return res.sendFile(absolute);
+    }
+    return next();
 });
 
 if (process.env.NODE_ENV === 'production') {
