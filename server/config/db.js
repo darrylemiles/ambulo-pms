@@ -6,15 +6,17 @@ dotenv.config();
 
 const conn = async () => {
   try {
-    
+
     const pool = mysql.createPool({
-      host: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_HOST : process.env.MY_SQL_HOST_PROD,
-      user: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_USER : process.env.MY_SQL_USER_PROD,
-      password: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_PASSWORD : process.env.MY_SQL_PASSWORD_PROD,
-      database: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_DATABASE : process.env.MY_SQL_DATABASE_PROD,
+      host: process.env.DB_HOST || "34.142.160.166",
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: process.env.DB_NAME || "ambulo_db",
       waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
+      connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
+      queueLimit: 0,
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+      port: parseInt(process.env.DB_PORT || '3306', 10)
     }).promise();
 
     // Check if the connection works by getting a connection from the pool

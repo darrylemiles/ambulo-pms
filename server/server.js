@@ -42,13 +42,21 @@ const API_VERSION = process.env.API_VERSION;
 const PORT = process.env.PORT || 5000;
 const PROJECT_NAME = process.env.PROJECT_NAME;
 
+// Allow local dev origins and optionally extend via CORS_ORIGINS env (comma-separated)
+const corsOrigins = [
+    'http://localhost:5500',  // Live Server
+    'http://127.0.0.1:5500',  // Live Server alternative
+    'http://localhost:3000',
+    'http://localhost:8080'
+];
+if (process.env.CORS_ORIGINS) {
+    corsOrigins.push(
+        ...process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+    );
+}
+
 const corsOptions = {
-    origin: [
-        'http://localhost:5500',  // Live Server
-        'http://127.0.0.1:5500',  // Live Server alternative
-        'http://localhost:3000',
-        'http://localhost:8080'
-    ],
+    origin: corsOrigins,
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -88,9 +96,11 @@ app.get('/login', (req, res) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'client', 'build')));
+    // In production, serve the static client from the repo's client directory
+    app.use(express.static(path.join(__dirname, '../client')));
     app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
+        // Fallback to index.html for non-API routes
+        res.sendFile(path.join(__dirname, '../client', 'index.html'));
     });
 } else {
     app.get(`/api/${API_VERSION}`, (req, res) => {
