@@ -56,8 +56,23 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
 app.use(cookieParser());
 
+// Redirect index.html to root for cleaner URLs
+app.get('/index.html', (req, res) => {
+    return res.redirect(301, '/');
+});
+
+// Redirect "/slug.html" to "/slug" if the file exists; keep API/assets untouched
+app.get(/^\/(?:([^\/]+))\.html$/, (req, res, next) => {
+    const base = req.params[0];
+    const candidate = path.join(__dirname, '../client', `${base}.html`);
+    if (fs.existsSync(candidate)) {
+        return res.redirect(301, `/${base}`);
+    }
+    return next();
+});
+
 // Serve static files
-app.use(express.static(path.join(__dirname, '../client')));
+app.use(express.static(path.join(__dirname, '../client'), { index: false }));
 
 /*  ========== API - Routes ========== */
 app.use(`/api/${API_VERSION}/users`, usersRoutes);
@@ -119,7 +134,7 @@ app.get(/^\/(?!api\/|assets\/|css\/|javascript\/|fonts\/|components\/|favicon\/)
 
 if (process.env.NODE_ENV === 'production') {
     // In production, serve the static client from the repo's client directory
-    app.use(express.static(path.join(__dirname, '../client')));
+    app.use(express.static(path.join(__dirname, '../client'), { index: false }));
     // Fallback to index.html for non-API routes (Express 5: use RegExp, not '*')
     app.get(/^\/(?!api\/).*/, (req, res) => {
         res.sendFile(path.join(__dirname, '../client', 'index.html'));
