@@ -40,6 +40,7 @@ import paymentAllocationsTable from "./paymentAllocationsTable.js";
 
 //messages
 import messagesTable from "./messagesTable.js";
+import messageAttachmentsTable from "./messageAttachmentsTable.js";
 
 const tables = async (dbConnection) => {
   const queries = [
@@ -84,7 +85,8 @@ const tables = async (dbConnection) => {
     paymentAllocationsTable,
 
     //messages
-    messagesTable
+    messagesTable,
+    messageAttachmentsTable
 
   ];
 
