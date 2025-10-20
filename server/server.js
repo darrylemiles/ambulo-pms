@@ -9,6 +9,7 @@ import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { initializeSocket } from './config/socket.js';
 
@@ -35,7 +36,8 @@ import conn from './config/db.js';
 
 const app = express();
 const server = createServer(app);
-const __dirname = path.resolve();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 dotenv.config();
 
 const API_VERSION = process.env.API_VERSION;
@@ -43,16 +45,9 @@ const PORT = process.env.PORT || 5000;
 const PROJECT_NAME = process.env.PROJECT_NAME;
 
 const corsOptions = {
-    origin: [
-        'http://localhost:5500',  // Live Server
-        'http://127.0.0.1:5500',  // Live Server alternative
-        'http://localhost:3000',
-        'http://localhost:8080'
-    ],
-    credentials: true,
-    optionsSuccessStatus: 200,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+    origin: '*',
+    credentials: true, //access-control-allow-credentials:true
+    optionSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
@@ -88,9 +83,11 @@ app.get('/login', (req, res) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'client', 'build')));
-    app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
+    // In production, serve the static client from the repo's client directory
+    app.use(express.static(path.join(__dirname, '../client')));
+    // Fallback to index.html for non-API routes (Express 5: use RegExp, not '*')
+    app.get(/^\/(?!api\/).*/, (req, res) => {
+        res.sendFile(path.join(__dirname, '../client', 'index.html'));
     });
 } else {
     app.get(`/api/${API_VERSION}`, (req, res) => {
@@ -114,12 +111,12 @@ const startServer = async () => {
 };
 
 const createTables = async () => {
-  try {
-    const pool = await conn();
-    await tables(pool);
-  } catch (error) {
-    console.error('Error setting up tables:', error);
-  }
+    try {
+        const pool = await conn();
+        await tables(pool);
+    } catch (error) {
+        console.error('Error setting up tables:', error);
+    }
 };
 
 

@@ -6,20 +6,28 @@ dotenv.config();
 
 const conn = async () => {
   try {
-    
+
     const pool = mysql.createPool({
-      host: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_HOST : process.env.MY_SQL_HOST_PROD,
-      user: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_USER : process.env.MY_SQL_USER_PROD,
-      password: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_PASSWORD : process.env.MY_SQL_PASSWORD_PROD,
-      database: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_DATABASE : process.env.MY_SQL_DATABASE_PROD,
+      host: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_HOST_LOCAL : process.env.MY_SQL_HOST,
+      user: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_USER_LOCAL : process.env.MY_SQL_USER,
+      password: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_PASSWORD_LOCAL : process.env.MY_SQL_PASSWORD,
+      database: process.env.NODE_ENV === 'development' ? process.env.MY_SQL_DATABASE_LOCAL : process.env.MY_SQL_DATABASE,
       waitForConnections: true,
       connectionLimit: 10,
-      queueLimit: 0
+      queueLimit: 0,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      port: 3306
     }).promise();
 
     // Check if the connection works by getting a connection from the pool
     await pool.getConnection();
-    console.log(colors.bold.yellow('Database is connected...'));
+    if (process.env.NODE_ENV === 'development') {
+      console.log(colors.bold.yellow('Database is connected locally...'));
+    } else {
+      console.log(colors.bold.yellow('Database is connected on live...'));
+    }
 
     return pool;
   } catch (error) {
