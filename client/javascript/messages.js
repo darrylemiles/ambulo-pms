@@ -1960,3 +1960,4 @@ window.closeImageModal = closeImageModal;
 window.switchConvMediaTab = switchConvMediaTab;
 window.openChatSidebarMobile = openChatSidebarMobile;
 window.closeChatSidebarMobile = closeChatSidebarMobile;
+window.closeModal = closeModal;

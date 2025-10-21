@@ -42,6 +42,9 @@ import paymentAllocationsTable from "./paymentAllocationsTable.js";
 import messagesTable from "./messagesTable.js";
 import messageAttachmentsTable from "./messageAttachmentsTable.js";
 
+//assistant
+import assistantLogsTable from "./assistantLogsTable.js";
+
 const tables = async (dbConnection) => {
   const queries = [
     // users
@@ -80,13 +83,16 @@ const tables = async (dbConnection) => {
     paymentProofTable,
     chargesAuditTable,
     paymentsAuditTable,
-  invoicesTable,
+    invoicesTable,
     invoiceItemsTable,
     paymentAllocationsTable,
 
     //messages
     messagesTable,
-    messageAttachmentsTable
+    messageAttachmentsTable,
+
+    // assistant analytics
+    assistantLogsTable
 
   ];
 
