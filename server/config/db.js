@@ -18,7 +18,8 @@ const conn = async () => {
       ssl: {
         rejectUnauthorized: false,
       },
-      port: 3306
+      port: 3306,
+      timezone: 'Z'
     }).promise();
 
     // Check if the connection works by getting a connection from the pool
