@@ -167,7 +167,7 @@ body:has(.sidebar.collapsed) .main-card-wrapper,
   text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
-  margin: 10px 0;
+  margin: 10px 0 10px 20px;
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.95);
   padding: 12px 20px;

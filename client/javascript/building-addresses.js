@@ -675,7 +675,6 @@ window.editBuilding = editBuilding;
 window.cancelEditBuilding = cancelEditBuilding;
 window.saveBuilding = saveBuilding;
 window.previewBuildings = previewBuildings;
-window.goBack = goBack;
 window.showAddressModal = showAddressModal;
 window.closeAddressModal = closeAddressModal;
 window.copyToClipboard = copyToClipboard;

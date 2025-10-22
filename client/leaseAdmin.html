@@ -684,25 +684,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
         integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
         crossorigin="anonymous"></script>
-        <script type="module" src="/javascript/leaseAdmin.js"></script>
-    <script>
-        var user = null;
-        try {
-            user = JSON.parse(localStorage.getItem('user'));
-        } catch (e) { }
-
-        var userRole = (user && user.role) ? user.role.toUpperCase() : 'TENANT';
-
-        if (userRole === 'ADMIN') {
-            var script = document.createElement('script');
-            script.src = '/javascript/navigationsAdmin.js';
-            document.body.appendChild(script);
-        } else {
-            var script = document.createElement('script');
-            script.src = '/javascript/navigationsTenant.js';
-            document.body.appendChild(script);
-        }
-    </script>
+    <script type="module" src="/javascript/leaseAdmin.js"></script>
+    <script src="/javascript/navigations.js"></script>
 </body>
 
 </html>
