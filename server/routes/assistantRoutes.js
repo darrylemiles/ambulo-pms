@@ -18,6 +18,17 @@ router.get(
     assistantController.getMessagesSummary
 );
 
+router.get(
+    "/me/messages",
+    protect,
+    assistantController.getMyMessages
+);
+router.post(
+    "/me/messages",
+    protect,
+    assistantController.sendMyMessage
+);
+
 // Admin-focused endpoints
 router.get(
     "/admin/tenants",

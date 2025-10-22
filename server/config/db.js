@@ -22,7 +22,6 @@ const conn = async () => {
       timezone: 'Z'
     }).promise();
 
-    // Check if the connection works by getting a connection from the pool
     await pool.getConnection();
     if (process.env.NODE_ENV === 'development') {
       console.log(colors.bold.yellow('Database is connected locally...'));
@@ -32,7 +31,6 @@ const conn = async () => {
 
     return pool;
   } catch (error) {
-    // Handle different types of MySQL errors
     if (error.code === 'ER_ACCESS_DENIED_ERROR') {
       console.error(colors.red('Invalid MySQL credentials. Please check your username and password.'));
     } else if (error.code === 'ER_BAD_DB_ERROR') {
@@ -40,7 +38,6 @@ const conn = async () => {
     } else if (error.code === 'ECONNREFUSED') {
       console.error(colors.red('Connection refused. Check if your MySQL server is running.'));
     } else {
-      // General error
       console.error(colors.red(`Error connecting to the database: ${error.message}`));
     }
     throw new Error(error.message);
