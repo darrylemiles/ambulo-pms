@@ -4,6 +4,8 @@ import formatTimeFlexible from "/utils/formatTime.js";
 const announcements = [];
 
 let chatContacts = [];
+let allChatContacts = [];
+let lastChatSearchQuery = "";
 const chatMessagesCache = {};
 
 let currentAnnouncementFilter = "all";
@@ -15,6 +17,7 @@ let socket = null;
 let jwtToken = null;
 let currentUser = null;
 let typingTimeouts = {};
+let chatSearchDebounce = null;
 const API_BASE = "/api/v1";
 let pendingAttachments = [];
 let pendingTmpMap = new Map();
@@ -590,19 +593,19 @@ function renderChatContacts() {
     const safeId = String(contact.id).replace(/'/g, "\\'");
     const safeName = escapeHtml(contact.name || "");
     const safeLast = escapeHtml(contact.lastMessage || "");
+    const highlightedName = lastChatSearchQuery
+      ? highlightMatch(safeName, lastChatSearchQuery)
+      : safeName;
+    const highlightedLast = lastChatSearchQuery
+      ? highlightMatch(safeLast, lastChatSearchQuery)
+      : safeLast;
 
     html += `
             <div class="contact-item ${activeClass}" onclick="selectChatContact('${safeId}')">
-                <div class="contact-avatar ${onlineClass}" style="display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                    ${
-                      contact.avatarUrl
-                        ? `<img src="${contact.avatarUrl}" alt="${safeName}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"/>`
-                        : `${contact.avatar}`
-                    }
-                </div>
+        ${createAvatarHtml(contact.avatarUrl || null, contact.name || "", 36, onlineClass)}
                 <div class="contact-info">
-                    <div class="contact-name">${safeName}</div>
-                    <div class="contact-last-message">${safeLast}</div>
+          <div class="contact-name">${highlightedName}</div>
+          <div class="contact-last-message">${highlightedLast}</div>
                 </div>
                 <div class="contact-meta">
                     <div class="contact-time">${contact.lastTime}</div>
@@ -658,17 +661,7 @@ function renderChatMain(contact) {
             <button type="button" class="chat-mobile-toggle-btn" onclick="openChatSidebarMobile()" title="Conversations" style="display:none; border:none; background:transparent; color: var(--primary-color); font-size:1.25rem; cursor:pointer;">
                 <i class="fas fa-bars"></i>
             </button>
-            <div class="contact-avatar ${
-              contact.online ? "online" : ""
-            }" style="display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                ${
-                  contact.avatarUrl
-                    ? `<img src="${contact.avatarUrl}" alt="${escapeHtml(
-                        contact.name || "User"
-                      )}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"/>`
-                    : `${contact.avatar}`
-                }
-            </div>
+            ${createAvatarHtml(contact.avatarUrl || null, contact.name || "User", 36, contact.online ? "online" : "")}
             <div>
                 <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0;">${
                   contact.name
@@ -1713,7 +1706,31 @@ function setupEventListeners() {
 
   const chatSearchInput = document.getElementById("chatSearchInput");
   if (chatSearchInput) {
-    chatSearchInput.addEventListener("input", function (e) {});
+    chatSearchInput.addEventListener("input", function (e) {
+      const q = (e.target.value || "").trim();
+      
+      clearTimeout(chatSearchDebounce);
+      chatSearchDebounce = setTimeout(() => {
+        searchChatContacts(q);
+      }, 250);
+    });
+  }
+
+  
+  const recipientSearchInput = document.getElementById("recipientSearch");
+  if (recipientSearchInput) {
+    let recipientDebounce = null;
+    recipientSearchInput.addEventListener("input", function (e) {
+      const q = (e.target.value || "").trim();
+      if (recipientDebounce) clearTimeout(recipientDebounce);
+      recipientDebounce = setTimeout(() => {
+        try {
+          searchRecipients(q);
+        } catch (err) {
+          console.error("recipient search failed", err);
+        }
+      }, 300);
+    });
   }
 
   document.addEventListener("input", function (e) {
@@ -1793,6 +1810,81 @@ function getInitialsFromName(name) {
   return s || "U";
 }
 
+
+function createAvatarHtml(avatarUrl, displayName, size = 40, extraClass = "") {
+  const s = size || 40;
+  const initials = escapeHtml(getInitialsFromName(displayName || ""));
+  if (avatarUrl) {
+    const safeUrl = escapeHtml(avatarUrl);
+    const safeAlt = escapeHtml(displayName || "User");
+    
+    return `
+      <div class="contact-avatar ${extraClass}" style="width:${s}px;height:${s}px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%;">
+        <img src="${safeUrl}" alt="${safeAlt}" style="width:${s}px;height:${s}px;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.closest('.contact-avatar').innerHTML='${initials}'" />
+      </div>
+    `;
+  }
+  return `
+    <div class="contact-avatar ${extraClass}" style="width:${s}px;height:${s}px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--background-light);">
+      ${initials}
+    </div>
+  `;
+}
+
+function highlightMatch(text, query) {
+  if (!query) return text;
+  try {
+    const q = String(query).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(q, "ig");
+    return String(text).replace(re, (m) => `<mark style="background:var(--mark-bg, #ffd54d);color:inherit;padding:0 .125rem;border-radius:0.125rem">${m}</mark>`);
+  } catch (e) {
+    return text;
+  }
+}
+
+async function searchChatContacts(query) {
+  lastChatSearchQuery = query || "";
+  const container = document.getElementById("chatContacts");
+  if (container) container.innerHTML = '<div style="padding:0.5rem; color: var(--text-muted);">Searching...</div>';
+  try {
+    if (!currentUser || !currentUser.user_id) {
+      if (container) container.innerHTML = '<div style="padding:0.5rem; color: var(--text-muted);">No conversations.</div>';
+      return;
+    }
+    const res = await fetch(`${API_BASE}/messages/conversations/${currentUser.user_id}`, { credentials: 'include' });
+    const convs = await res.json();
+    const mapped = (convs || []).map((c) => ({
+      id: c.other_user_id,
+      name: c.other_user_name || "",
+      avatar: getInitialsFromName(c.other_user_name || ""),
+      avatarUrl: c.other_user_avatar || null,
+      online: false,
+      lastMessage: c.last_message || "",
+      lastTime: c.last_message_time ? formatTime(c.last_message_time) : "",
+      unreadCount: 0,
+    }));
+    allChatContacts = mapped;
+    if (query) {
+      const ql = String(query).toLowerCase();
+      chatContacts = mapped.filter((c) => {
+        const name = (c.name || '').toLowerCase();
+        const last = (c.lastMessage || '').toLowerCase();
+        return name.includes(ql) || last.includes(ql);
+      });
+    } else {
+      chatContacts = mapped;
+    }
+    if (!chatContacts.length) {
+      if (container) container.innerHTML = '<div style="padding:0.5rem; color: var(--text-muted);">No conversations found.</div>';
+      return;
+    }
+    renderChatContacts();
+  } catch (err) {
+    console.error('searchChatContacts failed', err);
+    if (container) container.innerHTML = '<div style="padding:0.5rem; color: var(--text-muted);">Failed to load conversations.</div>';
+  }
+}
+
 let selectedRecipient = null;
 function openNewMessageModal() {
   selectedRecipient = null;
@@ -1802,6 +1894,11 @@ function openNewMessageModal() {
   if (input) input.value = "";
   const msg = document.getElementById("newMessageText");
   if (msg) msg.value = "";
+  
+  try {
+    
+    searchRecipients("");
+  } catch (e) {}
   showModal("newMessageModal");
 }
 
@@ -1811,7 +1908,8 @@ async function searchRecipients(query) {
   results.innerHTML =
     '<div style="padding:0.5rem; color: var(--text-muted);">Searching...</div>';
   try {
-    const url = `${API_BASE}/users?role=TENANT&limit=20${
+    
+    const url = `${API_BASE}/users?role=TENANT&limit=50${
       query ? `&search=${encodeURIComponent(query)}` : ""
     }`;
     const res = await fetch(url, { credentials: "include" });
@@ -1823,32 +1921,53 @@ async function searchRecipients(query) {
       return;
     }
     results.innerHTML = users
-      .map(
-        (u) => `
-            <div class="contact-item" style="cursor:pointer" onclick="selectRecipient('${
-              u.user_id
-            }', '${(u.first_name || "").replace(/'/g, "\\'")}', '${(
-          u.last_name || ""
-        ).replace(/'/g, "\\'")}')">
-                <div class="contact-avatar">${getInitials(
-                  u.first_name,
-                  u.last_name
-                )}</div>
+      .map((u) => {
+        const avatarUrl = u.avatar || u.avatarUrl || u.profile_image || u.photo || "";
+        const safeFirst = (u.first_name || "").replace(/'/g, "\\'");
+        const safeLast = (u.last_name || "").replace(/'/g, "\\'");
+        const displayName = `${u.first_name || ""} ${u.last_name || ""}`.trim();
+        const nameEsc = escapeHtml(displayName);
+        const emailEsc = escapeHtml(u.email || "");
+        const avatarHtml = createAvatarHtml(avatarUrl, displayName, 40);
+
+        return `
+            <div class="contact-item" style="cursor:pointer" onclick="selectRecipient('${u.user_id}', '${safeFirst}', '${safeLast}')">
+                ${avatarHtml}
                 <div class="contact-info">
-                    <div class="contact-name">${u.first_name || ""} ${
-          u.last_name || ""
-        }</div>
-                    <div class="contact-last-message" style="color: var(--text-muted); font-size: 0.8125rem">${
-                      u.email || ""
-                    }</div>
+                    <div class="contact-name">${nameEsc}</div>
+                    <div class="contact-last-message" style="color: var(--text-muted); font-size: 0.8125rem">${emailEsc}</div>
                 </div>
             </div>
-        `
-      )
+        `;
+      })
       .join("");
-  } catch (e) {
-    results.innerHTML =
-      '<div style="padding:0.5rem; color: var(--error-color);">Failed to search tenants.</div>';
+    const filtered = (arr || []).filter((c) => {
+      if (!query) return true;
+      const ql = query.toLowerCase();
+      const name = (c.other_user_name || "").toLowerCase();
+      const last = (c.last_message || "").toLowerCase();
+      return name.includes(ql) || last.includes(ql);
+    });
+
+    chatContacts = (filtered || []).map((c) => ({
+      id: c.other_user_id,
+      name: c.other_user_name || "",
+      avatar: getInitialsFromName(c.other_user_name || ""),
+      avatarUrl: c.other_user_avatar || null,
+      online: false,
+      lastMessage: c.last_message || "",
+      lastTime: c.last_message_time ? formatTime(c.last_message_time) : "",
+      unreadCount: 0,
+    }));
+
+    if (!chatContacts.length) {
+      container.innerHTML = '<div style="padding:0.5rem; color: var(--text-muted);">No conversations found.</div>';
+      return;
+    }
+
+    renderChatContacts();
+  } catch (err) {
+    console.error("Chat contact search failed", err);
   }
 }
 
