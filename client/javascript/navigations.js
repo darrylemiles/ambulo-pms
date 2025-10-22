@@ -1,4 +1,3 @@
-// Unified navigation loader
 (function () {
   function getCookie(name) {
     if (!document || !document.cookie) return null;
@@ -34,7 +33,6 @@
 
   function ensureScript(src) {
     return new Promise(function (resolve, reject) {
-      // if already present, resolve immediately
       var existing = Array.from(document.getElementsByTagName("script")).find(
         (s) => s.src && s.src.indexOf(src) !== -1
       );
@@ -53,16 +51,15 @@
   }
 
   async function maybeInjectFragment(path, containerId) {
-    // Only inject if container not present
     try {
       if (document.getElementById(containerId)) return;
       const res = await fetch(path, { cache: "no-store" });
       if (!res.ok) return;
       const html = await res.text();
-      // insert near the top of body
+
       const wrapper = document.createElement("div");
       wrapper.innerHTML = html;
-      // move children to body start
+
       const body = document.body || document.getElementsByTagName("body")[0];
       while (wrapper.firstChild) {
         body.insertBefore(wrapper.firstChild, body.firstChild);
@@ -75,43 +72,34 @@
   async function initUnifiedNavigation() {
     var token = getJwtToken();
     var payload = decodeJwtPayload(token);
-    // role in this project is uppercase (ADMIN, TENANT, MANAGER)
+
     var role =
       (payload && (payload.role || payload.user_role || payload.userRole)) ||
       null;
 
-    // normalize role to uppercase for reliable checks
     if (role && typeof role === "string") role = role.toUpperCase();
 
     var target = "tenant";
     if (role && (role === "ADMIN" || role === "MANAGER" || role === "STAFF"))
       target = "admin";
 
-    // Ensure navbar and sidebar HTML fragments exist in DOM (only if not already present)
-    // Many pages expect container IDs `sidebarContainer` and `navbarContainer` (see adminDashboard.html).
-    // Prefer injecting into those containers when present and use the same component paths used by
-    // NavigationManager.initializeNavigation (top-navbar.html). Fall back to the older paths/ids.
     if (
       document.getElementById("sidebarContainer") ||
       document.getElementById("navbarContainer")
     ) {
-      // do not force injection if containers already exist; maybeInjectFragment will no-op when the id exists
       await maybeInjectFragment("/components/sidebar.html", "sidebarContainer");
       await maybeInjectFragment(
         "/components/top-navbar.html",
         "navbarContainer"
       );
     } else {
-      // historic fallback: try the simpler fragment names and ids
       await maybeInjectFragment("/components/top-navbar.html", "navbar");
       await maybeInjectFragment("/components/sidebar.html", "sidebar");
     }
 
-    // Ensure navbar script is present (some pages rely on /javascript/navbar.js)
     try {
       await ensureScript("/javascript/navbar.js");
     } catch (e) {
-      // non-fatal
       console.debug("navbar.js not found or failed to load, continuing");
     }
 
@@ -121,11 +109,9 @@
           await ensureScript("/javascript/navigationsAdmin.js");
         }
         if (typeof NavigationManager !== "undefined") {
-          // initialize with default config
           if (typeof NavigationManager.initializeNavigation === "function") {
             NavigationManager.initializeNavigation();
           } else {
-            // if class exported, call static initializer
             if (
               typeof NavigationManager === "function" &&
               typeof NavigationManager.initializeNavigation === "undefined"
@@ -165,7 +151,6 @@
       console.warn("Failed to dynamically load navigation script", e);
     }
 
-    // fallback: try to initialize any manager available
     if (
       typeof NavigationManager !== "undefined" &&
       typeof NavigationManager.initializeNavigation === "function"
@@ -185,10 +170,6 @@
     initUnifiedNavigation();
   }
 
-  // --- Full NavigationManager and TenantNavigationManager implementations ---
-  // Copied and adapted from navigationsAdmin.js and navigationsTenant.js
-
-  // Admin: setupAdminNavbar / setupSidebar / NavigationManager
   async function setupAdminNavbar() {
     function getCookieLocal(name) {
       if (!document || !document.cookie) return null;
@@ -201,7 +182,6 @@
     function getJwtTokenLocal() {
       const token = getCookieLocal("token");
       if (!token) {
-        // do not force redirect here; keep behaviour consistent with original
         try {
           window.location.href = "/login.html";
         } catch (e) {}
@@ -512,14 +492,7 @@
       this.profileMenu = document.getElementById("profileMenu");
     }
 
-    // (methods omitted in file copy above for brevity; they exist in original navigationsAdmin.js)
-    // To keep the unified file maintainable, we will reuse the original class methods by copying as needed
-
-    // Insert full implementations of helper methods by reusing the ones from the admin file.
-
-    // For brevity in this patch view, include the key methods used by initialization only.
     setupPageTitles() {
-      /* copied from admin file */
       this.pageTitles = {
         "adminDashboard.html": "Dashboard",
         adminDashboard: "Dashboard",
@@ -762,7 +735,6 @@
       ];
     }
 
-    // replicate methods used by the rest of the class from the original file
     saveCollapsedState() {
       try {
         if (!this.isMobile) {
@@ -1373,7 +1345,6 @@
     }
   }
 
-  // Tenant: setupTenantNavbar / setupSidebar / TenantNavigationManager
   async function setupTenantNavbar() {
     function getCookieLocal(name) {
       if (!document || !document.cookie) return null;
@@ -1596,8 +1567,7 @@
       .join("");
   }
 
-
-//#region TENANT NAVIGATION MANAGER
+  //#region TENANT NAVIGATION MANAGER
 
   class TenantNavigationManager {
     constructor(config = {}) {
@@ -1689,7 +1659,7 @@
         "": "Dashboard",
         "account-profile.html": "Account Settings",
         "account-profile": "Account Settings",
-        accountProfile: "Account Settings"
+        accountProfile: "Account Settings",
       };
       this.pageIcons = {
         "tenantDashboard.html": "fas fa-chart-line",
@@ -1712,7 +1682,7 @@
         "": "fas fa-chart-line",
         "account-profile.html": "fas fa-user-cog",
         "account-profile": "fas fa-user-cog",
-        accountProfile: "fas fa-user-cog"
+        accountProfile: "fas fa-user-cog",
       };
       this.pageDescriptions = {
         "tenantDashboard.html":
@@ -1998,9 +1968,8 @@
           this.updatePageTitle(pageKey);
         }
       });
-      // If no sidebar nav link matched (e.g. account-profile or other standalone pages),
-      // still update the page title using our mapping so the top-navbar reflects the page.
-      const activeLink = document.querySelector('.nav-link.active');
+
+      const activeLink = document.querySelector(".nav-link.active");
       if (!activeLink) {
         this.updatePageTitle(currentPage);
       }
@@ -2326,13 +2295,11 @@
     }
   }
 
-  // expose globals that pages expect, but only if not already defined
   if (typeof window.NavigationManager === "undefined")
     window.NavigationManager = NavigationManager;
   if (typeof window.TenantNavigationManager === "undefined")
     window.TenantNavigationManager = TenantNavigationManager;
 
-  // attach helper wrappers (openMessage, profile actions, logout) for both managers
   window.openMessage = (messageId) => {
     if (window.navigationManager) {
       window.navigationManager.openMessage(messageId);
@@ -2379,8 +2346,6 @@
     else if (window.navigationManager)
       window.navigationManager.setActiveNavItem(pageName);
   };
-
-  // Note: the loader (initUnifiedNavigation) will call the appropriate initialize *static* methods when needed.
 })();
 
 //#endregion
