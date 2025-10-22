@@ -6,7 +6,8 @@ import chargesServices from "../services/chargesServices.js";
 import faqsServices from "../services/faqsServices.js";
 import messagesServices from "../services/messagesServices.js";
 
-const isAdminLike = (role) => ["ADMIN", "MANAGER"].includes(String(role || "").toUpperCase());
+const isAdminLike = (role) =>
+    ["ADMIN", "MANAGER"].includes(String(role || "").toUpperCase());
 
 const initSession = async (req, res) => {
     try {
@@ -78,18 +79,104 @@ export default {
     getMyProfile,
     getMyTickets,
     /**
+     * Me: list my messages with another user (direct conversation)
+     */
+    async getMyMessages(req, res) {
+        try {
+            const { user_id } = req.user || {};
+            const {
+                other_user_id,
+                page = 1,
+                limit = 20,
+                search,
+                sort,
+            } = req.query || {};
+            if (!user_id) return res.status(401).json({ message: "Unauthorized" });
+            if (!other_user_id)
+                return res.status(400).json({ message: "other_user_id is required" });
+
+            const conversationId = [String(user_id), String(other_user_id)]
+                .sort()
+                .join("_");
+            const data = await messagesServices.getMessagesByQuery({
+                page: Number(page),
+                limit: Number(limit),
+                conversationId,
+                search,
+                sort,
+            });
+            return res.json(data);
+        } catch (e) {
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to get messages" });
+        }
+    },
+    /**
+     * Me: send a message to another user
+     */
+    async sendMyMessage(req, res) {
+        try {
+            const { user_id } = req.user || {};
+            if (!user_id) return res.status(401).json({ message: "Unauthorized" });
+            const { other_user_id, message, attachments, tmpId } = req.body || {};
+            if (!other_user_id)
+                return res.status(400).json({ message: "other_user_id is required" });
+            if (!message || !String(message).trim())
+                return res.status(400).json({ message: "message is required" });
+
+            // Basic sanitization (server will store plain text)
+            const safeMsg = String(message)
+                .replace(/[\r\n]{3,}/g, "\n\n")
+                .slice(0, 5000);
+            const io = req.app && req.app.get && req.app.get("io");
+            const result = await messagesServices.createMessage(
+                {
+                    sender_user_id: user_id,
+                    recipient_user_id: other_user_id,
+                    message: safeMsg,
+                    attachments: Array.isArray(attachments) ? attachments : [],
+                    tmpId: tmpId || null,
+                },
+                io
+            );
+            return res.status(201).json(result);
+        } catch (e) {
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to send message" });
+        }
+    },
+    /**
      * Admin: search tenants (TENANT role) with basic filters
      */
     async adminSearchTenants(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
 
-            const { page = 1, limit = 10, search, status, sort, ...rest } = req.query || {};
-            const data = await usersServices.getUsers({ page: Number(page), limit: Number(limit), search, status, sort, ...rest });
+            const {
+                page = 1,
+                limit = 10,
+                search,
+                status,
+                sort,
+                ...rest
+            } = req.query || {};
+            const data = await usersServices.getUsers({
+                page: Number(page),
+                limit: Number(limit),
+                search,
+                status,
+                sort,
+                ...rest,
+            });
             return res.json(data);
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to search tenants" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to search tenants" });
         }
     },
     /**
@@ -98,13 +185,34 @@ export default {
     async adminListTickets(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
 
-            const { page = 1, limit = 10, status, priority, request_type, from_date, to_date, search } = req.query || {};
-            const result = await ticketsServices.getTickets({ page, limit, status, priority, request_type, from_date, to_date, search });
+            const {
+                page = 1,
+                limit = 10,
+                status,
+                priority,
+                request_type,
+                from_date,
+                to_date,
+                search,
+            } = req.query || {};
+            const result = await ticketsServices.getTickets({
+                page,
+                limit,
+                status,
+                priority,
+                request_type,
+                from_date,
+                to_date,
+                search,
+            });
             return res.json(result);
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to list tickets" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to list tickets" });
         }
     },
     /**
@@ -113,12 +221,15 @@ export default {
     async adminSearchCharges(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
 
             const data = await chargesServices.getAllCharges(req.query || {});
             return res.json(data);
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to search charges" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to search charges" });
         }
     },
     /**
@@ -127,11 +238,14 @@ export default {
     async adminSearchPayments(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const data = await paymentsServices.getAllPayments(req.query || {});
             return res.json(data);
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to search payments" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to search payments" });
         }
     },
     /**
@@ -140,19 +254,31 @@ export default {
     async adminGetTenantFinancials(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const { user_id } = req.params;
-            if (!user_id) return res.status(400).json({ message: "user_id is required" });
+            if (!user_id)
+                return res.status(400).json({ message: "user_id is required" });
 
             const { status, page = 1, limit = 10 } = req.query || {};
             const charges = await chargesServices.getChargeByUserId(user_id);
-            const filteredCharges = status && String(status).toLowerCase() !== "all"
-                ? charges.filter((c) => String(c.canonical_status).toUpperCase() === String(status).toUpperCase())
-                : charges;
-            const payments = await paymentsServices.getPaymentsByUserId(user_id, { page, limit });
+            const filteredCharges =
+                status && String(status).toLowerCase() !== "all"
+                    ? charges.filter(
+                        (c) =>
+                            String(c.canonical_status).toUpperCase() ===
+                            String(status).toUpperCase()
+                    )
+                    : charges;
+            const payments = await paymentsServices.getPaymentsByUserId(user_id, {
+                page,
+                limit,
+            });
             return res.json({ charges: filteredCharges, payments });
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to get tenant financials" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to get tenant financials" });
         }
     },
     /**
@@ -161,13 +287,20 @@ export default {
     async adminGetLeaseCharges(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const { lease_id } = req.params;
-            if (!lease_id) return res.status(400).json({ message: "lease_id is required" });
-            const rows = await chargesServices.getChargeByLeaseId(lease_id, req.query || {});
+            if (!lease_id)
+                return res.status(400).json({ message: "lease_id is required" });
+            const rows = await chargesServices.getChargeByLeaseId(
+                lease_id,
+                req.query || {}
+            );
             return res.json({ charges: rows });
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to get lease charges" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to get lease charges" });
         }
     },
     /**
@@ -176,14 +309,21 @@ export default {
     async adminCreateCharge(req, res) {
         try {
             const { role, user_id: performedBy } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const payload = req.body || {};
-            if (!payload.lease_id) return res.status(400).json({ message: "lease_id is required" });
-            if (!payload.amount || Number(payload.amount) <= 0) return res.status(400).json({ message: "amount must be > 0" });
+            if (!payload.lease_id)
+                return res.status(400).json({ message: "lease_id is required" });
+            if (!payload.amount || Number(payload.amount) <= 0)
+                return res.status(400).json({ message: "amount must be > 0" });
             const result = await chargesServices.createCharge(payload);
-            return res.status(201).json({ message: "Charge created", charge: result });
+            return res
+                .status(201)
+                .json({ message: "Charge created", charge: result });
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to create charge" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to create charge" });
         }
     },
     /**
@@ -192,17 +332,24 @@ export default {
     async adminCreatePayment(req, res) {
         try {
             const { role, user_id: performedBy } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const payload = req.body || {};
-            const hasAlloc = Array.isArray(payload.allocations) && payload.allocations.length > 0;
+            const hasAlloc =
+                Array.isArray(payload.allocations) && payload.allocations.length > 0;
             if (hasAlloc) {
-                const result = await paymentsServices.createConsolidatedPayment(payload, performedBy);
+                const result = await paymentsServices.createConsolidatedPayment(
+                    payload,
+                    performedBy
+                );
                 return res.status(201).json(result);
             }
             const result = await paymentsServices.createPayment(payload, performedBy);
             return res.status(201).json(result);
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to create payment" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to create payment" });
         }
     },
     /**
@@ -211,13 +358,21 @@ export default {
     async adminUpdatePayment(req, res) {
         try {
             const { role, user_id: performedBy } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const { payment_id } = req.params;
-            if (!payment_id) return res.status(400).json({ message: "payment_id is required" });
-            const result = await paymentsServices.updatePaymentById(payment_id, req.body || {}, performedBy);
+            if (!payment_id)
+                return res.status(400).json({ message: "payment_id is required" });
+            const result = await paymentsServices.updatePaymentById(
+                payment_id,
+                req.body || {},
+                performedBy
+            );
             return res.json(result);
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to update payment" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to update payment" });
         }
     },
     /**
@@ -226,13 +381,20 @@ export default {
     async adminDeletePayment(req, res) {
         try {
             const { role, user_id: performedBy } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const { payment_id } = req.params;
-            if (!payment_id) return res.status(400).json({ message: "payment_id is required" });
-            const result = await paymentsServices.deletePaymentById(payment_id, performedBy);
+            if (!payment_id)
+                return res.status(400).json({ message: "payment_id is required" });
+            const result = await paymentsServices.deletePaymentById(
+                payment_id,
+                performedBy
+            );
             return res.json(result);
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to delete payment" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to delete payment" });
         }
     },
     /**
@@ -241,13 +403,20 @@ export default {
     async adminUpdateCharge(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const { charge_id } = req.params;
-            if (!charge_id) return res.status(400).json({ message: "charge_id is required" });
-            const updated = await chargesServices.updateChargeById(charge_id, req.body || {});
-            return res.json({ message: 'Charge updated', charge: updated });
+            if (!charge_id)
+                return res.status(400).json({ message: "charge_id is required" });
+            const updated = await chargesServices.updateChargeById(
+                charge_id,
+                req.body || {}
+            );
+            return res.json({ message: "Charge updated", charge: updated });
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to update charge" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to update charge" });
         }
     },
     /**
@@ -256,13 +425,19 @@ export default {
     async adminWaiveCharge(req, res) {
         try {
             const { role } = req.user || {};
-            if (!isAdminLike(role)) return res.status(403).json({ message: "Forbidden" });
+            if (!isAdminLike(role))
+                return res.status(403).json({ message: "Forbidden" });
             const { charge_id } = req.params;
-            if (!charge_id) return res.status(400).json({ message: "charge_id is required" });
-            const updated = await chargesServices.updateChargeById(charge_id, { status: 'Waived' });
-            return res.json({ message: 'Charge waived', charge: updated });
+            if (!charge_id)
+                return res.status(400).json({ message: "charge_id is required" });
+            const updated = await chargesServices.updateChargeById(charge_id, {
+                status: "Waived",
+            });
+            return res.json({ message: "Charge waived", charge: updated });
         } catch (e) {
-            return res.status(500).json({ message: e.message || "Failed to waive charge" });
+            return res
+                .status(500)
+                .json({ message: e.message || "Failed to waive charge" });
         }
     },
     async getMyLease(req, res) {
